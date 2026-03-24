@@ -179,6 +179,174 @@
 		.main {
 			flex: 1;
 			background: #f7f8ff;
+			padding: 24px 32px;
+			overflow-y: auto;
+		}
+
+		.dashboard-title {
+			margin: 0 0 24px 0;
+			font-size: 28px;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 16px;
+			margin-bottom: 32px;
+		}
+
+		.stat-card {
+			background: white;
+			border-radius: 12px;
+			padding: 20px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+			border: 1px solid #e8ecf1;
+		}
+
+		.stat-card.visitors {
+			border-left: 4px solid #cfe4ff;
+		}
+
+		.stat-card.inside {
+			border-left: 4px solid #c1ffc7;
+		}
+
+		.stat-card.offices {
+			border-left: 4px solid #ffe8c1;
+		}
+
+		.stat-card.duration {
+			border-left: 4px solid #e8d4ff;
+		}
+
+		.stat-icon {
+			width: 36px;
+			height: 36px;
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 12px;
+			font-size: 20px;
+		}
+
+		.stat-card.visitors .stat-icon {
+			background: #e8f0ff;
+			color: #4b5cd1;
+		}
+
+		.stat-card.inside .stat-icon {
+			background: #e8ffe8;
+			color: #10b981;
+		}
+
+		.stat-card.offices .stat-icon {
+			background: #fff5e6;
+			color: #f59e0b;
+		}
+
+		.stat-card.duration .stat-icon {
+			background: #f3e8ff;
+			color: #a855f7;
+		}
+
+		.stat-number {
+			font-size: 28px;
+			font-weight: 700;
+			color: #0f172a;
+			margin: 8px 0;
+		}
+
+		.stat-label {
+			font-size: 14px;
+			color: #64748b;
+			margin: 0;
+		}
+
+		.charts-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+			gap: 16px;
+			margin-bottom: 32px;
+		}
+
+		.chart-card {
+			background: white;
+			border-radius: 12px;
+			padding: 20px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+			border: 1px solid #e8ecf1;
+		}
+
+		.chart-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #0f172a;
+			margin: 0 0 16px 0;
+			text-align: center;
+		}
+
+		.chart-placeholder {
+			height: 200px;
+			background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #9ca3af;
+			font-size: 14px;
+		}
+
+		.insights-card {
+			background: white;
+			border-radius: 12px;
+			padding: 20px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+			border: 1px solid #e8ecf1;
+			border-left: 4px solid #4b5cd1;
+		}
+
+		.insights-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #0f172a;
+			margin: 0 0 16px 0;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.insights-title svg {
+			width: 20px;
+			height: 20px;
+			color: #4b5cd1;
+		}
+
+		.insights-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.insights-list li {
+			font-size: 14px;
+			color: #475569;
+			display: flex;
+			align-items: flex-start;
+			gap: 8px;
+		}
+
+		.insights-list li:before {
+			content: "•";
+			color: #ffe632;
+			font-weight: bold;
+			margin-right: 4px;
+			flex-shrink: 0;
 		}
 
 		@media (max-width: 1024px) {
@@ -288,7 +456,78 @@
 			</div>
 		</aside>
 
-		<main class="main"></main>
+		<main class="main">
+			<h1 class="dashboard-title">Dashboard Overview</h1>
+
+			<!-- Stat Cards -->
+			<div class="stats-grid">
+				<div class="stat-card visitors">
+					<div class="stat-icon">👥</div>
+					<div class="stat-number">3</div>
+					<p class="stat-label">Total Visitors Today</p>
+				</div>
+
+				<div class="stat-card inside">
+					<div class="stat-icon">🚶</div>
+					<div class="stat-number">3</div>
+					<p class="stat-label">Currently Inside</p>
+				</div>
+
+				<div class="stat-card offices">
+					<div class="stat-icon">🏢</div>
+					<div class="stat-number">8</div>
+					<p class="stat-label">Active Offices</p>
+				</div>
+
+				<div class="stat-card duration">
+					<div class="stat-icon">⏱️</div>
+					<div class="stat-number">45m</div>
+					<p class="stat-label">Average Duration</p>
+				</div>
+			</div>
+
+			<!-- Charts Grid -->
+			<div class="charts-grid">
+				<div class="chart-card">
+					<p class="chart-title">7-Day Visitor Trend</p>
+					<div class="chart-placeholder">Line Chart Preview</div>
+				</div>
+
+				<div class="chart-card">
+					<p class="chart-title">Visitors by Status</p>
+					<div class="chart-placeholder">Pie Chart Preview</div>
+				</div>
+
+				<div class="chart-card">
+					<p class="chart-title">Visitors by Hour</p>
+					<div class="chart-placeholder">Bar Chart Preview</div>
+				</div>
+
+				<div class="chart-card">
+					<p class="chart-title">Visitors by Office</p>
+					<div class="chart-placeholder">Horizontal Bar Chart Preview</div>
+				</div>
+			</div>
+
+			<!-- Key Insights -->
+			<div class="insights-card">
+				<h3 class="insights-title">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<line x1="9" y1="17" x2="15" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					</svg>
+					Key Insights
+				</h3>
+				<ul class="insights-list">
+					<li>Peak visitor hours are between 10:00 AM and 2:00 PM</li>
+					<li>Human Resources receives the most visitors with 1 total visits</li>
+					<li>Average visit duration is 45 minutes</li>
+					<li>100% of today's visitors are currently inside campus</li>
+				</ul>
+			</div>
+		</main>
 	</div>
 </body>
 </html>

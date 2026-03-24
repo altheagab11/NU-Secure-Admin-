@@ -179,20 +179,230 @@
 		.main {
 			flex: 1;
 			background: #f7f8ff;
-			padding: 32px;
+			padding: 24px 32px;
+			overflow-y: auto;
 		}
 
 		.page-title {
 			margin: 0;
 			font-size: 28px;
 			font-weight: 700;
-			color: #1e293b;
+			color: #0f172a;
 		}
 
-		.page-subtitle {
-			margin: 8px 0 0;
+		.alert-stats {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 16px;
+			margin-top: 18px;
+		}
+
+		.stat-card,
+		.alerts-panel,
+		.legend-card {
+			background: #ffffff;
+			border-radius: 12px;
+			border: 1px solid #e8ecf1;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		}
+
+		.stat-card {
+			padding: 16px;
+		}
+
+		.stat-icon {
+			width: 28px;
+			height: 28px;
+			border-radius: 6px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 10px;
+		}
+
+		.stat-icon svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.stat-number {
+			margin: 0;
+			font-size: 32px;
+			line-height: 1;
+			font-weight: 500;
+			color: #111827;
+		}
+
+		.stat-label {
+			margin: 6px 0 0;
+			font-size: 14px;
+			color: #1f2937;
+		}
+
+		.stat-card.unresolved {
+			background: #fff8ef;
+			border-color: #ffd9b0;
+		}
+
+		.stat-card.unresolved .stat-icon {
+			background: #ffe9d4;
+			color: #f97316;
+		}
+
+		.stat-card.resolved {
+			background: #eefdf4;
+			border-color: #bcefd2;
+		}
+
+		.stat-card.resolved .stat-icon {
+			background: #d4f8e3;
+			color: #22c55e;
+		}
+
+		.stat-card.total {
+			background: #f8f9fc;
+			border-color: #e4e7ef;
+		}
+
+		.stat-card.total .stat-icon {
+			background: #eef1f7;
 			color: #64748b;
-			font-size: 15px;
+		}
+
+		.alerts-panel {
+			margin-top: 18px;
+			overflow: hidden;
+		}
+
+		.panel-tabs {
+			display: flex;
+			gap: 30px;
+			padding: 10px 16px;
+			border-bottom: 1px solid #e5e7eb;
+		}
+
+		.tab-link {
+			font-size: 14px;
+			color: #1f2937;
+			text-decoration: none;
+		}
+
+		.tab-link.active {
+			color: #4b5cd1;
+			text-decoration: underline;
+			text-underline-offset: 2px;
+		}
+
+		.empty-state {
+			height: 210px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-direction: column;
+			gap: 10px;
+			color: #c2c6ce;
+		}
+
+		.empty-state svg {
+			width: 52px;
+			height: 52px;
+		}
+
+		.empty-title {
+			margin: 0;
+			font-size: 32px;
+			line-height: 1;
+			font-weight: 500;
+			color: #c8ccd3;
+		}
+
+		.empty-subtitle {
+			margin: 0;
+			font-size: 27px;
+			color: #d2d6dd;
+		}
+
+		.legend-card {
+			margin-top: 24px;
+			padding: 14px 16px;
+		}
+
+		.legend-title {
+			margin: 0 0 10px;
+			font-size: 14px;
+			font-weight: 500;
+			color: #111827;
+		}
+
+		.legend-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 10px;
+		}
+
+		.legend-item {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
+
+		.legend-icon {
+			width: 28px;
+			height: 28px;
+			border-radius: 6px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		.legend-icon svg {
+			width: 17px;
+			height: 17px;
+		}
+
+		.legend-text {
+			font-size: 13px;
+			line-height: 1.2;
+			color: #111827;
+		}
+
+		.legend-subtext {
+			display: block;
+			margin-top: 4px;
+			font-size: 12px;
+			color: #4b5563;
+		}
+
+		.legend-wrong {
+			background: #ffe9d4;
+			color: #f97316;
+		}
+
+		.legend-suspicious {
+			background: #ffe1e1;
+			color: #ef4444;
+		}
+
+		.legend-overstay {
+			background: #feefc7;
+			color: #f59e0b;
+		}
+
+		.legend-unauthorized {
+			background: #f0ddff;
+			color: #9333ea;
+		}
+
+		@media (max-width: 1180px) {
+			.alert-stats {
+				grid-template-columns: 1fr;
+			}
+
+			.legend-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
 		}
 
 		@media (max-width: 1024px) {
@@ -207,6 +417,27 @@
 		}
 
 		@media (max-width: 480px) {
+			.legend-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.panel-tabs {
+				gap: 14px;
+				padding: 10px 12px;
+			}
+
+			.tab-link {
+				font-size: 13px;
+			}
+
+			.empty-title {
+				font-size: 24px;
+			}
+
+			.empty-subtitle {
+				font-size: 16px;
+			}
+
 			.menu-item,
 			.admin-row,
 			.logout-btn {
@@ -303,8 +534,103 @@
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">Alerts</h1>
-			<p class="page-subtitle">View and monitor critical notifications in this section.</p>
+			<h1 class="page-title">Security Alerts</h1>
+
+			<div class="alert-stats">
+				<div class="stat-card unresolved">
+					<span class="stat-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="m12 3 10 18H2L12 3Zm0 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+						</svg>
+					</span>
+					<p class="stat-number">0</p>
+					<p class="stat-label">Unresolved Alerts</p>
+				</div>
+
+				<div class="stat-card resolved">
+					<span class="stat-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+							<path d="m8.5 12.5 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</span>
+					<p class="stat-number">0</p>
+					<p class="stat-label">Resolved Alerts</p>
+				</div>
+
+				<div class="stat-card total">
+					<span class="stat-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="m12 3 10 18H2L12 3Zm0 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+						</svg>
+					</span>
+					<p class="stat-number">0</p>
+					<p class="stat-label">Total Alerts</p>
+				</div>
+			</div>
+
+			<section class="alerts-panel">
+				<div class="panel-tabs">
+					<a href="#" class="tab-link">Unresolved Alerts (0)</a>
+					<a href="#" class="tab-link active">All Alerts (0)</a>
+					<a href="#" class="tab-link">Resolved (0)</a>
+				</div>
+				<div class="empty-state">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/>
+						<path d="m8.5 12.5 2.4 2.4 4.4-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+					<p class="empty-title">No alerts</p>
+					<p class="empty-subtitle">No security alerts to display</p>
+				</div>
+			</section>
+
+			<section class="legend-card">
+				<h2 class="legend-title">Alert Types</h2>
+				<div class="legend-grid">
+					<div class="legend-item">
+						<span class="legend-icon legend-wrong" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="m12 3 10 18H2L12 3Zm0 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+							</svg>
+						</span>
+						<span class="legend-text">Wrong Office<span class="legend-subtext">Incorrect destination</span></span>
+					</div>
+
+					<div class="legend-item">
+						<span class="legend-icon legend-suspicious" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+								<path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+						</span>
+						<span class="legend-text">Suspicious<span class="legend-subtext">Suspicious activity</span></span>
+					</div>
+
+					<div class="legend-item">
+						<span class="legend-icon legend-overstay" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+								<path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+						</span>
+						<span class="legend-text">Overstay<span class="legend-subtext">Extended visit time</span></span>
+					</div>
+
+					<div class="legend-item">
+						<span class="legend-icon legend-unauthorized" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="m12 3 10 18H2L12 3Zm0 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
+							</svg>
+						</span>
+						<span class="legend-text">Unauthorized<span class="legend-subtext">Unauthorized access</span></span>
+					</div>
+				</div>
+			</section>
 		</main>
 	</div>
 </body>
