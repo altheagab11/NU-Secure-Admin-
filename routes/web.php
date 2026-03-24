@@ -21,3 +21,11 @@ Route::get('/admin/alerts', function () {
 Route::get('/admin/user', function () {
     return view('admin.user');
 });
+
+Route::get('/admin/user/guards', function () {
+    return view('admin.user', ['section' => 'guards']);
+});
+
+Route::get('/admin/user/offices', function () {
+    return view('admin.user', ['section' => 'offices']);
+});

@@ -127,6 +127,56 @@
 			background: rgba(255, 255, 255, 0.08);
 		}
 
+		.menu-group {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.menu-toggle {
+			width: 100%;
+			border: 0;
+			background: transparent;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.menu-toggle .caret {
+			width: 16px;
+			height: 16px;
+			transition: transform 0.2s ease;
+		}
+
+		.menu-group.open .menu-toggle .caret {
+			transform: rotate(180deg);
+		}
+
+		.submenu {
+			display: none;
+			flex-direction: column;
+			gap: 4px;
+			margin-left: 34px;
+		}
+
+		.menu-group.open .submenu {
+			display: flex;
+		}
+
+		.submenu-item {
+			text-decoration: none;
+			color: var(--text-white);
+			font-size: 14px;
+			font-weight: 500;
+			padding: 6px 10px;
+			border-radius: 6px;
+		}
+
+		.submenu-item:hover {
+			background: rgba(255, 255, 255, 0.08);
+		}
+
 		.spacer {
 			flex: 1;
 		}
@@ -518,14 +568,23 @@
 					</span>
 				</a>
 
-				<a href="/admin/user" class="menu-item">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				<div class="menu-group" id="userMenuGroup">
+					<button type="button" class="menu-item menu-toggle" id="userMenuToggle" aria-expanded="false" aria-controls="userSubmenu">
+						<span class="inner">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+							User Management
+						</span>
+						<svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
-						User Management
-					</span>
-				</a>
+					</button>
+					<div class="submenu" id="userSubmenu">
+						<a href="/admin/user/guards" class="submenu-item">Guards</a>
+						<a href="/admin/user/offices" class="submenu-item">Offices</a>
+					</div>
+				</div>
 			</nav>
 
 			<div class="spacer" aria-hidden="true"></div>
@@ -760,5 +819,17 @@
 			</div>
 		</main>
 	</div>
+
+	<script>
+		const userMenuGroup = document.getElementById('userMenuGroup');
+		const userMenuToggle = document.getElementById('userMenuToggle');
+
+		if (userMenuGroup && userMenuToggle) {
+			userMenuToggle.addEventListener('click', () => {
+				const isOpen = userMenuGroup.classList.toggle('open');
+				userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+			});
+		}
+	</script>
 </body>
 </html>

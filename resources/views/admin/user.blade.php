@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+	@php
+		$activeSection = $section ?? 'overview';
+	@endphp
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>User Management</title>
+	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}</title>
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -124,6 +127,61 @@
 			background: rgba(255, 255, 255, 0.08);
 		}
 
+		.menu-group {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.menu-toggle {
+			width: 100%;
+			border: 0;
+			background: transparent;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.menu-toggle .caret {
+			width: 16px;
+			height: 16px;
+			transition: transform 0.2s ease;
+		}
+
+		.menu-group.open .menu-toggle .caret {
+			transform: rotate(180deg);
+		}
+
+		.submenu {
+			display: none;
+			flex-direction: column;
+			gap: 4px;
+			margin-left: 34px;
+		}
+
+		.menu-group.open .submenu {
+			display: flex;
+		}
+
+		.submenu-item {
+			text-decoration: none;
+			color: var(--text-white);
+			font-size: 14px;
+			font-weight: 500;
+			padding: 6px 10px;
+			border-radius: 6px;
+		}
+
+		.submenu-item:hover {
+			background: rgba(255, 255, 255, 0.08);
+		}
+
+		.submenu-item.active {
+			background: var(--sidebar-bg-light);
+			color: var(--text-yellow);
+		}
+
 		.spacer { flex: 1; }
 
 		.bottom {
@@ -174,14 +232,14 @@
 		.main {
 			flex: 1;
 			background: #f7f8ff;
-			padding: 32px;
+			padding: 24px 32px;
 		}
 
 		.page-title {
 			margin: 0;
 			font-size: 28px;
 			font-weight: 700;
-			color: #1e293b;
+			color: #0f172a;
 		}
 
 		.page-subtitle {
@@ -238,14 +296,23 @@
 					</span>
 				</a>
 
-				<a href="/admin/user" class="menu-item active">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				<div class="menu-group open" id="userMenuGroup">
+					<button type="button" class="menu-item menu-toggle active" id="userMenuToggle" aria-expanded="true" aria-controls="userSubmenu">
+						<span class="inner">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+							User Management
+						</span>
+						<svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
-						User Management
-					</span>
-				</a>
+					</button>
+					<div class="submenu" id="userSubmenu">
+						<a href="/admin/user/guards" class="submenu-item {{ $activeSection === 'guards' ? 'active' : '' }}">Guards</a>
+						<a href="/admin/user/offices" class="submenu-item {{ $activeSection === 'offices' ? 'active' : '' }}">Offices</a>
+					</div>
+				</div>
 			</nav>
 
 			<div class="spacer" aria-hidden="true"></div>
@@ -271,9 +338,29 @@
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">User Management</h1>
-			<p class="page-subtitle">Manage user accounts from this section.</p>
+			<h1 class="page-title">
+				{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}
+			</h1>
+			<p class="page-subtitle">
+				{{ $activeSection === 'guards'
+					? 'Manage guard user accounts from this section.'
+					: ($activeSection === 'offices'
+						? 'Manage office user accounts from this section.'
+						: 'Manage user accounts from this section.') }}
+			</p>
 		</main>
 	</div>
+
+	<script>
+		const userMenuGroup = document.getElementById('userMenuGroup');
+		const userMenuToggle = document.getElementById('userMenuToggle');
+
+		if (userMenuGroup && userMenuToggle) {
+			userMenuToggle.addEventListener('click', () => {
+				const isOpen = userMenuGroup.classList.toggle('open');
+				userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+			});
+		}
+	</script>
 </body>
 </html>
