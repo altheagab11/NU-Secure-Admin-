@@ -248,7 +248,8 @@
 		}
 
 		.stat-card {
-			background: white;
+			position: relative;
+			background: #ffffff;
 			border-radius: 12px;
 			padding: 20px;
 			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -256,30 +257,34 @@
 		}
 
 		.stat-card.visitors {
-			border-left: 4px solid #cfe4ff;
+			background: #e9eef8;
 		}
 
 		.stat-card.inside {
-			border-left: 4px solid #c1ffc7;
+			background: #e9f7ef;
 		}
 
 		.stat-card.offices {
-			border-left: 4px solid #ffe8c1;
+			background: #f8f3e9;
 		}
 
 		.stat-card.duration {
-			border-left: 4px solid #e8d4ff;
+			background: #f3edf8;
 		}
 
 		.stat-icon {
-			width: 36px;
-			height: 36px;
+			width: 28px;
+			height: 28px;
 			border-radius: 8px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			margin-bottom: 12px;
-			font-size: 20px;
+			margin-bottom: 10px;
+		}
+
+		.stat-icon svg {
+			width: 16px;
+			height: 16px;
 		}
 
 		.stat-card.visitors .stat-icon {
@@ -315,6 +320,18 @@
 			margin: 0;
 		}
 
+		.stat-trend {
+			position: absolute;
+			right: 14px;
+			top: 10px;
+			color: #94a3b8;
+		}
+
+		.stat-trend svg {
+			width: 14px;
+			height: 14px;
+		}
+
 		.charts-grid {
 			display: grid;
 			grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -323,7 +340,7 @@
 		}
 
 		.chart-card {
-			background: white;
+			background: #ffffff;
 			border-radius: 12px;
 			padding: 20px;
 			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -339,7 +356,7 @@
 		}
 
 		.chart-placeholder {
-			height: 200px;
+			height: 230px;
 			background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 			border-radius: 8px;
 			display: flex;
@@ -521,25 +538,45 @@
 			<!-- Stat Cards -->
 			<div class="stats-grid">
 				<div class="stat-card visitors">
-					<div class="stat-icon">👥</div>
+					<span class="stat-trend" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16l5-5 4 4 5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</span>
+					<div class="stat-icon">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/></svg>
+					</div>
 					<div class="stat-number">3</div>
 					<p class="stat-label">Total Visitors Today</p>
 				</div>
 
 				<div class="stat-card inside">
-					<div class="stat-icon">🚶</div>
+					<span class="stat-trend" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16l5-5 4 4 5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</span>
+					<div class="stat-icon">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7.8" cy="9" r="3.4" stroke="currentColor" stroke-width="1.8"/><circle cx="16.2" cy="13" r="3.4" stroke="currentColor" stroke-width="1.8"/><path d="M2.8 20c.5-2.2 2.4-3.8 4.9-3.8M12.3 20c.5-2.2 2.4-3.8 4.9-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+					</div>
 					<div class="stat-number">3</div>
 					<p class="stat-label">Currently Inside</p>
 				</div>
 
 				<div class="stat-card offices">
-					<div class="stat-icon">🏢</div>
+					<span class="stat-trend" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16l5-5 4 4 5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</span>
+					<div class="stat-icon">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 21h16M7 21V7h10v14M10 10h1M13 10h1M10 13h1M13 13h1M10 16h1M13 16h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+					</div>
 					<div class="stat-number">8</div>
 					<p class="stat-label">Active Offices</p>
 				</div>
 
 				<div class="stat-card duration">
-					<div class="stat-icon">⏱️</div>
+					<span class="stat-trend" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16l5-5 4 4 5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</span>
+					<div class="stat-icon">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M12 13V9M12 13h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9.5 3h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+					</div>
 					<div class="stat-number">45m</div>
 					<p class="stat-label">Average Duration</p>
 				</div>
@@ -549,22 +586,22 @@
 			<div class="charts-grid">
 				<div class="chart-card">
 					<p class="chart-title">7-Day Visitor Trend</p>
-					<div class="chart-placeholder">Line Chart Preview</div>
+					<div class="chart-placeholder">Line Chart Slot</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Status</p>
-					<div class="chart-placeholder">Pie Chart Preview</div>
+					<div class="chart-placeholder">Pie Chart Slot</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Hour</p>
-					<div class="chart-placeholder">Bar Chart Preview</div>
+					<div class="chart-placeholder">Bar Chart Slot</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Office</p>
-					<div class="chart-placeholder">Horizontal Bar Chart Preview</div>
+					<div class="chart-placeholder">Horizontal Bar Chart Slot</div>
 				</div>
 			</div>
 
