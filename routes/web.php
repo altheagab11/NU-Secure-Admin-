@@ -28,9 +28,9 @@ Route::get('/admin/user/guards', [App\Http\Controllers\GuardController::class, '
 // handle add guard POST
 Route::post('/admin/user/guards', [GuardController::class, 'store']);
 
-Route::get('/admin/user/offices', function () {
-    return view('admin.user', ['section' => 'offices']);
-});
+Route::get('/admin/user/offices', [App\Http\Controllers\OfficeController::class, 'index']);
+// POST store for new office user
+Route::post('/admin/user/offices', [App\Http\Controllers\OfficeController::class, 'store']);
 
 Route::get('/guard/dashboard', function () {
     return view('guard.dashboard');

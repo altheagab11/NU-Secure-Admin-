@@ -91,6 +91,11 @@ class GuardController extends Controller
                 $user->role_id = 2;
             }
 
+            // set status to active when user is created if supported
+            if (Schema::hasColumn('users', 'status')) {
+                $user->status = 'active';
+            }
+
             if ($usePasswordHash) {
                 $user->password_hash = Hash::make($passwordPlain);
             } else {

@@ -597,7 +597,17 @@
 				</div>
 
 				@if(session('success'))
-					<div style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
+					<div id="guardSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
+					<script>
+						setTimeout(function(){
+							var el = document.getElementById('guardSuccessAlert');
+							if (el) {
+								el.style.transition = 'opacity 0.4s ease';
+								el.style.opacity = '0';
+								setTimeout(function(){ el.remove(); }, 400);
+							}
+						}, 5000);
+					</script>
 				@endif
 
 				@if($errors->any())
@@ -648,7 +658,7 @@
 									<td>{{ $guard->station ?? '—' }}</td>
 									<td>
 										<span class="action-icons">
-											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" style="width:14z`px;height:14px;" />
+											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" style="width:14px;height:14px;" />
 											<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
 										</span>
 									</td>
@@ -664,7 +674,7 @@
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
 					<h1 class="page-title">Office User Management</h1>
-					<button type="button" class="add-guard-btn">
+					<button type="button" id="openAddOfficeBtn" class="add-guard-btn" onclick="document.getElementById('addOfficeModal') && (document.getElementById('addOfficeModal').style.display = 'flex')">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 							<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
@@ -674,6 +684,30 @@
 					</button>
 				</div>
 
+				@if(session('success'))
+					<div id="officeSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
+					<script>
+						setTimeout(function(){
+							var el = document.getElementById('officeSuccessAlert');
+							if (el) {
+								el.style.transition = 'opacity 0.4s ease';
+								el.style.opacity = '0';
+								setTimeout(function(){ el.remove(); }, 400);
+							}
+						}, 5000);
+					</script>
+				@endif
+
+				@if($errors->any())
+					<div id="officeErrorAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+						<ul style="margin:0;padding-left:18px;">
+							@foreach($errors->all() as $err)
+								<li>{{ $err }}</li>
+							@endforeach
+						</ul>
+					</div>
+				@endif
+
 				<section class="office-card">
 					<div class="office-card-head">
 						<h2 class="office-title">
@@ -682,7 +716,7 @@
 							</svg>
 							Office User Accounts
 						</h2>
-						<p class="office-total">Total Users: 8 across 8 offices</p>
+						<p class="office-total">Total Users: {{ isset($totalUsers) ? $totalUsers : count($offices ?? []) }} across {{ isset($totalOffices) ? $totalOffices : count($officeOptions ?? []) }} offices</p>
 					</div>
 
 					<table class="office-table" aria-label="Office user accounts table">
@@ -875,6 +909,95 @@
 			</form>
 		</div>
 	</div>
+
+
+	<!-- Add Office User Modal -->
+	<div id="addOfficeModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:80;">
+		<div role="dialog" aria-modal="true" aria-labelledby="addOfficeTitle" style="background:#fff;border-radius:10px; width:560px; max-width:94%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
+			<div style="display:flex; justify-content:space-between; align-items:center;">
+				<h3 id="addOfficeTitle" style="margin:0; font-size:18px;">Add Office User Account</h3>
+				<button id="closeAddOffice" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+			</div>
+
+			@if($errors->any())
+				<div style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+					<ul style="margin:0;padding-left:18px;">
+						@foreach($errors->all() as $err)
+							<li>{{ $err }}</li>
+						@endforeach
+					</ul>
+				</div>
+			@endif
+
+			<p style="color:#6b7280;margin:8px 0 14px;">Create a new office staff account for the system.</p>
+			<form id="addOfficeForm" method="POST" action="/admin/user/offices">
+				@csrf
+				<div style="display:flex;gap:10px;">
+					<div style="flex:1;">
+						<label style="font-size:13px;color:#334155;">First Name</label>
+						<input name="first_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+					</div>
+					<div style="flex:1;">
+						<label style="font-size:13px;color:#334155;">Last Name</label>
+						<input name="last_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+					</div>
+				</div>
+				<input type="hidden" name="name" id="fullNameOfficeHidden">
+				<div style="margin-top:10px;">
+					<label style="font-size:13px;color:#334155;">Email</label>
+					<input name="email" type="email" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				</div>
+				<div style="margin-top:10px;">
+					<label style="font-size:13px;color:#334155;">Office</label>
+					<select name="office_id" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;background:#fff;">
+						<option value="" disabled selected>Select Office</option>
+						@foreach($officeOptions ?? [] as $officeOption)
+							<option value="{{ $officeOption->office_id }}">{{ $officeOption->office_name }}</option>
+						@endforeach
+					</select>
+				</div>
+				<div style="margin-top:10px;">
+					<label style="font-size:13px;color:#334155;">Position</label>
+					<input name="position" type="text" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				</div>
+				<div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
+					<button type="button" id="cancelAddOffice" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Cancel</button>
+					<button type="submit" style="background:#4b5cd1;color:#fff;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;">Add User</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script>
+		// Modal open/close and form handling for Add Office User
+		(function() {
+			try {
+				const openBtn = document.getElementById('openAddOfficeBtn');
+				function getModal() { return document.getElementById('addOfficeModal'); }
+				function getHiddenFullName() { return document.getElementById('fullNameOfficeHidden'); }
+
+				function showModal() {
+					const modal = getModal(); if (!modal) return; modal.style.display = 'flex';
+					const first = modal.querySelector('input[name="first_name"]'); if (first) first.focus();
+					if (!modal._backdropAttached) { modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); }); modal._backdropAttached = true; }
+				}
+
+				function hideModal() { const modal = getModal(); if (!modal) return; modal.style.display = 'none'; }
+
+				if (openBtn) openBtn.addEventListener('click', showModal);
+				document.addEventListener('click', (e) => { if (e.target && e.target.id === 'closeAddOffice') hideModal(); if (e.target && e.target.id === 'cancelAddOffice') hideModal(); });
+
+				document.addEventListener('submit', (e) => {
+					if (e.target && e.target.id === 'addOfficeForm') {
+						const form = e.target;
+						const fn = form.querySelector('input[name="first_name"]')?.value?.trim() || '';
+						const ln = form.querySelector('input[name="last_name"]')?.value?.trim() || '';
+						const hidden = getHiddenFullName(); if (hidden) hidden.value = (fn + (fn && ln ? ' ' : '') + ln).trim();
+					}
+				});
+			} catch (err) { console && console.error && console.error('Office modal init error:', err); }
+		})();
+	</script>
 
 	</body>
 	</html>
