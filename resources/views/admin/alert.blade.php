@@ -630,9 +630,9 @@
 
 			<section class="alerts-panel">
 				<div class="panel-tabs">
-					<a href="#" class="tab-link">Unresolved Alerts (0)</a>
-					<a href="#" class="tab-link active">All Alerts (0)</a>
-					<a href="#" class="tab-link">Resolved (0)</a>
+					<a href="#" class="tab-link active" data-empty-subtitle="All alerts have been resolved">Unresolved Alerts (0)</a>
+					<a href="#" class="tab-link" data-empty-subtitle="No security alerts to display">All Alerts (0)</a>
+					<a href="#" class="tab-link" data-empty-subtitle="All alerts have been resolved">Resolved (0)</a>
 				</div>
 				<div class="empty-state">
 					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -640,7 +640,7 @@
 						<path d="m8.5 12.5 2.4 2.4 4.4-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 					<p class="empty-title">No alerts</p>
-					<p class="empty-subtitle">No security alerts to display</p>
+					<p class="empty-subtitle" id="emptySubtitle">All alerts have been resolved</p>
 				</div>
 			</section>
 
@@ -694,11 +694,27 @@
 	<script>
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
+		const alertTabLinks = document.querySelectorAll('.panel-tabs .tab-link');
+		const emptySubtitle = document.getElementById('emptySubtitle');
 
 		if (userMenuGroup && userMenuToggle) {
 			userMenuToggle.addEventListener('click', () => {
 				const isOpen = userMenuGroup.classList.toggle('open');
 				userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+			});
+		}
+
+		if (alertTabLinks.length) {
+			alertTabLinks.forEach((tabLink) => {
+				tabLink.addEventListener('click', (event) => {
+					event.preventDefault();
+					alertTabLinks.forEach((link) => link.classList.remove('active'));
+					tabLink.classList.add('active');
+
+					if (emptySubtitle) {
+						emptySubtitle.textContent = tabLink.dataset.emptySubtitle || 'No security alerts to display';
+					}
+				});
 			});
 		}
 	</script>
