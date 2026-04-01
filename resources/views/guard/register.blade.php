@@ -250,6 +250,197 @@
 			color: #0f172a;
 		}
 
+		.register-flow {
+			max-width: 720px;
+			margin: 0 auto;
+		}
+
+		.flow-head {
+			display: flex;
+			justify-content: center;
+			align-items: flex-start;
+			margin: 6px 0 14px;
+		}
+
+		.flow-step-meta {
+			margin-top: 6px;
+			text-align: left;
+		}
+
+		.flow-step-meta p {
+			margin: 0;
+		}
+
+		.flow-step-name {
+			font-size: 28px;
+			font-weight: 700;
+			color: #1f2937;
+			line-height: 1;
+		}
+
+		.flow-step-count {
+			font-size: 14px;
+			color: #475569;
+			margin-top: 6px;
+		}
+
+		.scanner-card {
+			width: 100%;
+			background: #ffffff;
+			border: 1px solid #d9dde4;
+			border-radius: 14px;
+			padding: 16px;
+			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+		}
+
+		.scanner-zone {
+			background: #d9dee6;
+			border-radius: 10px;
+			padding: 44px 24px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 300px;
+		}
+
+		.id-frame {
+			width: 250px;
+			height: 190px;
+			border: 5px solid #3a4aa0;
+			border-radius: 22px;
+			background: #f7f9ff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: relative;
+		}
+
+		.id-frame::before,
+		.id-frame::after {
+			content: '';
+			position: absolute;
+			left: 24px;
+			right: 24px;
+			height: 6px;
+			background: #f7f9ff;
+		}
+
+		.id-frame::before {
+			top: -5px;
+		}
+
+		.id-frame::after {
+			bottom: -5px;
+		}
+
+		.id-hint {
+			text-align: center;
+		}
+
+		.id-icon {
+			width: 64px;
+			height: 64px;
+			border-radius: 20px;
+			background: #c8d9f0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 10px;
+		}
+
+		.id-icon svg {
+			width: 32px;
+			height: 32px;
+			color: #101828;
+		}
+
+		.id-hint-title {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 500;
+			color: #111827;
+		}
+
+		.id-hint-subtitle {
+			margin: 6px 0 0;
+			font-size: 13px;
+			color: #64748b;
+		}
+
+		.scan-action {
+			margin: 16px auto 4px;
+			width: min(100%, 380px);
+			height: 56px;
+			border: 0;
+			border-radius: 10px;
+			background: #3e4ba0;
+			color: #ffffff;
+			font-size: 16px;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			cursor: pointer;
+		}
+
+		.scan-action svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.id-types {
+			margin: 14px auto 0;
+			width: min(100%, 380px);
+			background: #d8e0ec;
+			border: 1px solid #b8c8e2;
+			border-radius: 10px;
+			padding: 10px 12px;
+			color: #3e4ba0;
+		}
+
+		.id-types-title {
+			margin: 0 0 8px;
+			font-size: 12px;
+			font-weight: 500;
+		}
+
+		.id-types-list {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+
+		.id-types-list li {
+			font-size: 11px;
+			line-height: 1.5;
+			margin-bottom: 4px;
+		}
+
+		.id-types-list li:last-child {
+			margin-bottom: 0;
+		}
+
+		.type-placeholder {
+			max-width: 760px;
+			margin: 16px auto 0;
+			background: #ffffff;
+			border: 1px solid #d9dde4;
+			border-radius: 16px;
+			padding: 24px;
+		}
+
+		.type-placeholder h2 {
+			margin: 0 0 8px;
+			font-size: 24px;
+			color: #0f172a;
+		}
+
+		.type-placeholder p {
+			margin: 0;
+			color: #475569;
+		}
+
 		@media (max-width: 1024px) {
 			.sidebar {
 				width: 100%;
@@ -265,6 +456,37 @@
 			.menu-item,
 			.admin-row,
 			.logout-btn {
+				font-size: 16px;
+			}
+
+			.main {
+				padding: 18px 14px;
+			}
+
+			.flow-head {
+				flex-direction: column;
+				gap: 8px;
+			}
+
+			.flow-step-name {
+				font-size: 24px;
+			}
+
+			.scanner-zone {
+				padding: 24px 8px;
+			}
+
+			.id-frame {
+				width: 200px;
+				height: 150px;
+			}
+
+			.id-hint-title {
+				font-size: 16px;
+			}
+
+			.scan-action {
+				height: 50px;
 				font-size: 16px;
 			}
 
@@ -370,7 +592,65 @@
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">Register Visitor</h1>
+			@php($registerType = request('type', 'normal'))
+			@if ($registerType === 'normal')
+				<h1 class="page-title">Register Visitor</h1>
+				<section class="register-flow">
+					<div class="flow-head">
+						<div class="flow-step-meta">
+							<p class="flow-step-name">ID Scan</p>
+							<p class="flow-step-count">Step 1 of 3</p>
+						</div>
+					</div>
+
+					<div class="scanner-card">
+						<div class="scanner-zone">
+							<div class="id-frame" aria-hidden="true">
+								<div class="id-hint">
+									<span class="id-icon">
+										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+											<circle cx="9" cy="12" r="2.2" fill="currentColor"/>
+											<path d="M14 10h4M14 14h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+										</svg>
+									</span>
+									<p class="id-hint-title">Place ID card on scanner</p>
+									<p class="id-hint-subtitle">Ensure card is flat and fully visible</p>
+								</div>
+							</div>
+						</div>
+
+						<button type="button" class="scan-action">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+								<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+								<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
+							</svg>
+							Scan ID Card
+						</button>
+
+						<div class="id-types">
+							<p class="id-types-title">Supported ID Types:</p>
+							<ul class="id-types-list">
+								<li>- National ID / Driver's License</li>
+								<li>- Company ID / Employee Badge</li>
+								<li>- Passport (Photo page)</li>
+							</ul>
+						</div>
+					</div>
+				</section>
+			@elseif ($registerType === 'enrollee')
+				<h1 class="page-title">Register Visitor</h1>
+				<section class="type-placeholder" aria-label="Enrollee registration">
+					<h2>Enrollee</h2>
+					<p>Enrollee registration form content can be placed here.</p>
+				</section>
+			@elseif ($registerType === 'contractor')
+				<h1 class="page-title">Register Visitor</h1>
+				<section class="type-placeholder" aria-label="Contractor registration">
+					<h2>Contractor</h2>
+					<p>Contractor registration form content can be placed here.</p>
+				</section>
+			@endif
 		</main>
 	</div>
 
