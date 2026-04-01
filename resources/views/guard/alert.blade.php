@@ -184,10 +184,171 @@
 		}
 
 		.page-title {
-			margin: 0;
+			margin: 0 0 18px;
 			font-size: 28px;
 			font-weight: 700;
 			color: #0f172a;
+		}
+
+		.alert-summary {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 16px;
+			max-width: 560px;
+			margin: 0 auto 20px;
+		}
+
+		.summary-card {
+			position: relative;
+			background: #ffffff;
+			border: 1px solid #dfe4eb;
+			border-radius: 12px;
+			padding: 16px 22px 12px;
+			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
+		}
+
+		.summary-title {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 500;
+			color: #111827;
+		}
+
+		.summary-value {
+			margin: 10px 0 2px;
+			font-size: 28px;
+			font-weight: 500;
+			color: #111827;
+			line-height: 1.15;
+		}
+
+		.summary-subtitle {
+			margin: 0;
+			font-size: 14px;
+			color: #4b5563;
+		}
+
+		.summary-icon {
+			position: absolute;
+			top: 14px;
+			right: 16px;
+			width: 30px;
+			height: 30px;
+			border-radius: 7px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.summary-icon svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.summary-card.wrong .summary-icon {
+			background: #ffdfe1;
+			color: #ef4444;
+		}
+
+		.summary-card.completed .summary-icon {
+			background: #cef3df;
+			color: #16a34a;
+		}
+
+		.completed-card {
+			background: #ffffff;
+			border: 1px solid #dfe4eb;
+			border-radius: 12px;
+			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
+			padding: 18px 24px 20px;
+		}
+
+		.completed-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 6px;
+			color: #0f9f58;
+		}
+
+		.completed-header svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.completed-title {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 500;
+		}
+
+		.completed-subtitle {
+			margin: 0 0 16px;
+			font-size: 14px;
+			color: #374151;
+		}
+
+		.completed-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			background: #cef3df;
+			border: 1px solid #4ade80;
+			border-radius: 10px;
+			padding: 12px 14px;
+		}
+
+		.item-left {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 0;
+		}
+
+		.item-avatar {
+			width: 38px;
+			height: 38px;
+			flex-shrink: 0;
+			color: #111827;
+		}
+
+		.item-avatar svg {
+			width: 38px;
+			height: 38px;
+		}
+
+		.item-copy {
+			min-width: 0;
+		}
+
+		.item-name {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 500;
+			color: #1f2937;
+		}
+
+		.item-meta,
+		.item-time {
+			margin: 2px 0 0;
+			font-size: 13px;
+			color: #1f2937;
+		}
+
+		.item-time {
+			color: #374151;
+		}
+
+		.item-tag {
+			padding: 7px 12px;
+			font-size: 12px;
+			font-weight: 500;
+			border: 1px solid #22c55e;
+			color: #0f9f58;
+			background: #bbf7d0;
+			border-radius: 6px;
+			white-space: nowrap;
 		}
 
 		@media (max-width: 1024px) {
@@ -198,6 +359,22 @@
 
 			.main {
 				display: none;
+			}
+		}
+
+		@media (max-width: 900px) {
+			.alert-summary {
+				grid-template-columns: 1fr;
+				max-width: none;
+			}
+
+			.completed-item {
+				flex-direction: column;
+				align-items: stretch;
+			}
+
+			.item-tag {
+				align-self: flex-start;
 			}
 		}
 
@@ -214,6 +391,14 @@
 
 			.brand-title span:last-child {
 				font-size: 20px;
+			}
+
+			.main {
+				padding: 16px;
+			}
+
+			.completed-card {
+				padding: 14px;
 			}
 		}
 	</style>
@@ -301,6 +486,59 @@
 
 		<main class="main">
 			<h1 class="page-title">Active Alerts</h1>
+
+			<section class="alert-summary" aria-label="Alert Summary">
+				<article class="summary-card wrong">
+					<div class="summary-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+							<path d="m9 9 6 6M15 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						</svg>
+					</div>
+					<p class="summary-title">Wrong Office</p>
+					<p class="summary-value">0</p>
+					<p class="summary-subtitle">Active alerts</p>
+				</article>
+
+				<article class="summary-card completed">
+					<div class="summary-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+							<path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+					<p class="summary-title">Completed</p>
+					<p class="summary-value">1</p>
+					<p class="summary-subtitle">Ready to exit</p>
+				</article>
+			</section>
+
+			<section class="completed-card" aria-label="Completed Visitors">
+				<div class="completed-header">
+					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+						<path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+					<p class="completed-title">Completed Visitors</p>
+				</div>
+				<p class="completed-subtitle">Visitors who have completed their business and are ready to exit</p>
+
+				<article class="completed-item">
+					<div class="item-left">
+						<div class="item-avatar" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
+							</svg>
+						</div>
+						<div class="item-copy">
+							<p class="item-name">Robert Kim</p>
+							<p class="item-meta">Finance Department • ID123456</p>
+							<p class="item-time">Completed at: 5:00 pm</p>
+						</div>
+					</div>
+					<span class="item-tag">Ready to Exit</span>
+				</article>
+			</section>
 		</main>
 	</div>
 </body>
