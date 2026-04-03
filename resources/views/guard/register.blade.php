@@ -294,77 +294,136 @@
 		}
 
 		.scanner-zone {
-			background: #d9dee6;
+			background: #111827;
 			border-radius: 10px;
-			padding: 44px 24px;
+			padding: 50px 32px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			min-height: 300px;
-		}
-
-		.id-frame {
-			width: 250px;
-			height: 190px;
-			border: 5px solid #3a4aa0;
-			border-radius: 22px;
-			background: #f7f9ff;
-			display: flex;
-			align-items: center;
-			justify-content: center;
+			min-height: 380px;
 			position: relative;
+			overflow: hidden;
 		}
 
-		.id-frame::before,
-		.id-frame::after {
-			content: '';
+		.camera-feed {
 			position: absolute;
-			left: 24px;
-			right: 24px;
-			height: 6px;
-			background: #f7f9ff;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+			background: #111827;
 		}
 
-		.id-frame::before {
-			top: -5px;
-		}
-
-		.id-frame::after {
-			bottom: -5px;
-		}
-
-		.id-hint {
-			text-align: center;
-		}
-
-		.id-icon {
-			width: 64px;
-			height: 64px;
-			border-radius: 20px;
-			background: #c8d9f0;
-			display: inline-flex;
+		.scanner-overlay {
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			display: flex;
 			align-items: center;
 			justify-content: center;
-			margin-bottom: 10px;
+			pointer-events: none;
 		}
 
-		.id-icon svg {
-			width: 32px;
-			height: 32px;
-			color: #101828;
-		}
-
-		.id-hint-title {
-			margin: 0;
-			font-size: 18px;
-			font-weight: 500;
-			color: #111827;
-		}
-
-		.id-hint-subtitle {
-			margin: 6px 0 0;
+		.camera-status {
+			margin: 10px 0 0;
+			text-align: center;
 			font-size: 13px;
-			color: #64748b;
+			color: #4f5b75;
+		}
+
+		.id-guide {
+			width: min(93%, 430px);
+			aspect-ratio: 1.58 / 1;
+			position: relative;
+			border-radius: 16px;
+			border: 2px solid rgba(99, 116, 241, 0.95);
+			background: rgba(15, 23, 42, 0.2);
+			backdrop-filter: blur(1px);
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+		}
+
+		.id-guide .corner {
+			position: absolute;
+			width: 36px;
+			height: 36px;
+			border-color: #3f4a9f;
+			border-style: solid;
+			pointer-events: none;
+		}
+
+		.id-guide .corner.tl {
+			top: 0;
+			left: 0;
+			border-width: 5px 0 0 5px;
+			border-top-left-radius: 16px;
+		}
+
+		.id-guide .corner.tr {
+			top: 0;
+			right: 0;
+			border-width: 5px 5px 0 0;
+			border-top-right-radius: 16px;
+		}
+
+		.id-guide .corner.bl {
+			bottom: 0;
+			left: 0;
+			border-width: 0 0 5px 5px;
+			border-bottom-left-radius: 16px;
+		}
+
+		.id-guide .corner.br {
+			bottom: 0;
+			right: 0;
+			border-width: 0 5px 5px 0;
+			border-bottom-right-radius: 16px;
+		}
+
+		.id-guide-layout {
+			position: absolute;
+			inset: 16px;
+			display: grid;
+			grid-template-columns: 32% 1fr;
+			gap: 12px;
+		}
+
+		.id-guide-photo {
+			border: 2px solid rgba(191, 219, 254, 0.75);
+			border-radius: 10px;
+			background: rgba(148, 163, 184, 0.18);
+		}
+
+		.id-guide-info {
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+		}
+
+		.id-guide-line {
+			height: 9px;
+			border-radius: 999px;
+			background: rgba(191, 219, 254, 0.8);
+		}
+
+		.id-guide-line.short {
+			width: 64%;
+		}
+
+		.id-guide-line.medium {
+			width: 82%;
+		}
+
+		.id-guide-line.long {
+			width: 100%;
+		}
+
+		.id-guide-chip {
+			width: 42px;
+			height: 30px;
+			border-radius: 6px;
+			border: 2px solid rgba(250, 204, 21, 0.75);
+			background: rgba(250, 204, 21, 0.16);
 		}
 
 		.scan-action {
@@ -387,6 +446,11 @@
 		.scan-action svg {
 			width: 20px;
 			height: 20px;
+		}
+
+		.scan-action:disabled {
+			opacity: 0.75;
+			cursor: wait;
 		}
 
 		.id-types {
@@ -473,16 +537,12 @@
 			}
 
 			.scanner-zone {
-				padding: 24px 8px;
+				padding: 28px 12px;
+				min-height: 260px;
 			}
 
-			.id-frame {
-				width: 200px;
-				height: 150px;
-			}
-
-			.id-hint-title {
-				font-size: 16px;
+			.id-guide {
+				width: min(94%, 340px);
 			}
 
 			.scan-action {
@@ -605,27 +665,34 @@
 
 					<div class="scanner-card">
 						<div class="scanner-zone">
-							<div class="id-frame" aria-hidden="true">
-								<div class="id-hint">
-									<span class="id-icon">
-										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-											<circle cx="9" cy="12" r="2.2" fill="currentColor"/>
-											<path d="M14 10h4M14 14h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-										</svg>
-									</span>
-									<p class="id-hint-title">Place ID card on scanner</p>
-									<p class="id-hint-subtitle">Ensure card is flat and fully visible</p>
+							<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
+							<div class="scanner-overlay" aria-hidden="true">
+								<div class="id-guide">
+									<span class="corner tl"></span>
+									<span class="corner tr"></span>
+									<span class="corner bl"></span>
+									<span class="corner br"></span>
+									<div class="id-guide-layout">
+										<span class="id-guide-photo"></span>
+										<div class="id-guide-info">
+											<span class="id-guide-line long"></span>
+											<span class="id-guide-line medium"></span>
+											<span class="id-guide-line short"></span>
+											<span class="id-guide-line long"></span>
+											<span class="id-guide-chip"></span>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
+						<p class="camera-status" id="cameraStatus">Starting camera...</p>
 
-						<button type="button" class="scan-action">
+							<button type="button" class="scan-action" id="scanAction">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 								<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 								<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
 							</svg>
-							Scan ID Card
+								<span id="scanActionText">Scan ID Card</span>
 						</button>
 
 						<div class="id-types">
@@ -657,6 +724,12 @@
 	<script>
 		const registerMenuGroup = document.getElementById('registerMenuGroup');
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
+		const scannerZone = document.querySelector('.scanner-zone');
+		const cameraFeed = document.getElementById('cameraFeed');
+		const cameraStatus = document.getElementById('cameraStatus');
+		const scanAction = document.getElementById('scanAction');
+		const scanActionText = document.getElementById('scanActionText');
+		let activeStream = null;
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -664,6 +737,62 @@
 				registerMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 			});
 		}
+
+		const setCameraState = (isOn, message) => {
+			scannerZone.classList.toggle('camera-on', isOn);
+			cameraStatus.textContent = message;
+			scanActionText.textContent = isOn ? 'Scan ID Card' : 'Retry Camera';
+			scanAction.disabled = false;
+		};
+
+		const releaseCamera = () => {
+			if (!activeStream) {
+				return;
+			}
+
+			activeStream.getTracks().forEach((track) => track.stop());
+			activeStream = null;
+			cameraFeed.srcObject = null;
+		};
+
+		const startCamera = async () => {
+			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+				setCameraState(false, 'Camera access is not supported in this browser.');
+				return;
+			}
+
+			scanAction.disabled = true;
+
+			try {
+				releaseCamera();
+
+				const stream = await navigator.mediaDevices.getUserMedia({
+					video: { facingMode: 'environment' },
+					audio: false
+				});
+
+				activeStream = stream;
+				cameraFeed.srcObject = stream;
+				setCameraState(true, 'Camera is ready. Position the ID inside the frame.');
+			} catch (error) {
+				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
+			}
+		};
+
+		scanAction?.addEventListener('click', () => {
+			if (!activeStream) {
+				startCamera();
+				return;
+			}
+
+			cameraStatus.textContent = 'Camera is live. Keep the ID centered in the frame.';
+		});
+
+		window.addEventListener('beforeunload', () => {
+			releaseCamera();
+		});
+
+		startCamera();
 	</script>
 </body>
 </html>
