@@ -332,6 +332,88 @@
 			color: #4f5b75;
 		}
 
+		.is-hidden {
+			display: none !important;
+		}
+
+		.picture-guide {
+			width: min(78%, 300px);
+			aspect-ratio: 3 / 4;
+			position: relative;
+			border-radius: 18px;
+			border: 2px solid rgba(99, 116, 241, 0.9);
+			background: rgba(15, 23, 42, 0.18);
+			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+		}
+
+		.picture-guide .corner {
+			position: absolute;
+			width: 34px;
+			height: 34px;
+			border-color: #3f4a9f;
+			border-style: solid;
+		}
+
+		.picture-guide .corner.tl {
+			top: 0;
+			left: 0;
+			border-width: 5px 0 0 5px;
+			border-top-left-radius: 16px;
+		}
+
+		.picture-guide .corner.tr {
+			top: 0;
+			right: 0;
+			border-width: 5px 5px 0 0;
+			border-top-right-radius: 16px;
+		}
+
+		.picture-guide .corner.bl {
+			bottom: 0;
+			left: 0;
+			border-width: 0 0 5px 5px;
+			border-bottom-left-radius: 16px;
+		}
+
+		.picture-guide .corner.br {
+			bottom: 0;
+			right: 0;
+			border-width: 0 5px 5px 0;
+			border-bottom-right-radius: 16px;
+		}
+
+		.picture-guide .face-oval {
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -52%);
+			width: 58%;
+			height: 68%;
+			border-radius: 50% / 46%;
+			border: 2px dashed rgba(191, 219, 254, 0.85);
+		}
+
+		.picture-guide .shoulder-line {
+			position: absolute;
+			left: 16%;
+			right: 16%;
+			bottom: 12%;
+			height: 2px;
+			background: rgba(191, 219, 254, 0.85);
+			border-radius: 999px;
+		}
+
+		.picture-guide .id-holder {
+			position: absolute;
+			right: 10%;
+			bottom: 18%;
+			width: 30%;
+			aspect-ratio: 1.58 / 1;
+			border: 2px dashed rgba(250, 204, 21, 0.92);
+			border-radius: 8px;
+			background: rgba(250, 204, 21, 0.12);
+		}
+
 		.id-guide {
 			width: min(93%, 430px);
 			aspect-ratio: 1.58 / 1;
@@ -545,6 +627,10 @@
 				width: min(94%, 340px);
 			}
 
+			.picture-guide {
+				width: min(82%, 260px);
+			}
+
 			.scan-action {
 				height: 50px;
 				font-size: 16px;
@@ -658,8 +744,8 @@
 				<section class="register-flow">
 					<div class="flow-head">
 						<div class="flow-step-meta">
-							<p class="flow-step-name">ID Scan</p>
-							<p class="flow-step-count">Step 1 of 3</p>
+							<p class="flow-step-name" id="flowStepName">Face + ID</p>
+							<p class="flow-step-count" id="flowStepCount">Step 1 of 3</p>
 						</div>
 					</div>
 
@@ -667,7 +753,16 @@
 						<div class="scanner-zone">
 							<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
 							<div class="scanner-overlay" aria-hidden="true">
-								<div class="id-guide">
+								<div class="picture-guide" id="pictureGuide">
+									<span class="corner tl"></span>
+									<span class="corner tr"></span>
+									<span class="corner bl"></span>
+									<span class="corner br"></span>
+									<span class="face-oval"></span>
+									<span class="shoulder-line"></span>
+									<span class="id-holder"></span>
+								</div>
+								<div class="id-guide is-hidden" id="idGuide">
 									<span class="corner tl"></span>
 									<span class="corner tr"></span>
 									<span class="corner bl"></span>
@@ -686,16 +781,17 @@
 							</div>
 						</div>
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
+						<canvas id="captureCanvas" style="display:none;"></canvas>
 
 							<button type="button" class="scan-action" id="scanAction">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 								<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 								<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
 							</svg>
-								<span id="scanActionText">Scan ID Card</span>
+								<span id="scanActionText">Capture Face + ID</span>
 						</button>
 
-						<div class="id-types">
+						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
 							<ul class="id-types-list">
 								<li>- National ID / Driver's License</li>
@@ -724,12 +820,20 @@
 	<script>
 		const registerMenuGroup = document.getElementById('registerMenuGroup');
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
+		const flowStepName = document.getElementById('flowStepName');
+		const flowStepCount = document.getElementById('flowStepCount');
 		const scannerZone = document.querySelector('.scanner-zone');
 		const cameraFeed = document.getElementById('cameraFeed');
+		const pictureGuide = document.getElementById('pictureGuide');
+		const idGuide = document.getElementById('idGuide');
 		const cameraStatus = document.getElementById('cameraStatus');
+		const captureCanvas = document.getElementById('captureCanvas');
+		const idTypesPanel = document.getElementById('idTypesPanel');
 		const scanAction = document.getElementById('scanAction');
 		const scanActionText = document.getElementById('scanActionText');
 		let activeStream = null;
+		let currentStep = 1;
+		let capturedPictureData = '';
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -738,10 +842,22 @@
 			});
 		}
 
+		const updateStepUI = () => {
+			const isPictureStep = currentStep === 1;
+			flowStepName.textContent = isPictureStep ? 'Face + ID' : 'ID Scan';
+			flowStepCount.textContent = isPictureStep ? 'Step 1 of 3' : 'Step 2 of 3';
+			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
+			idGuide.classList.toggle('is-hidden', isPictureStep);
+			idTypesPanel.classList.toggle('is-hidden', isPictureStep);
+			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
+		};
+
 		const setCameraState = (isOn, message) => {
 			scannerZone.classList.toggle('camera-on', isOn);
 			cameraStatus.textContent = message;
-			scanActionText.textContent = isOn ? 'Scan ID Card' : 'Retry Camera';
+			if (!isOn) {
+				scanActionText.textContent = 'Retry Camera';
+			}
 			scanAction.disabled = false;
 		};
 
@@ -773,10 +889,29 @@
 
 				activeStream = stream;
 				cameraFeed.srcObject = stream;
-				setCameraState(true, 'Camera is ready. Position the ID inside the frame.');
+				setCameraState(true, currentStep === 1
+					? 'Camera is ready. Center your face and hold your ID beside it.'
+					: 'Camera is ready. Position the ID inside the frame.');
 			} catch (error) {
 				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
 			}
+		};
+
+		const capturePicture = () => {
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
+				return;
+			}
+
+			captureCanvas.width = cameraFeed.videoWidth;
+			captureCanvas.height = cameraFeed.videoHeight;
+			const context = captureCanvas.getContext('2d');
+			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.92);
+
+			currentStep = 2;
+			updateStepUI();
+			cameraStatus.textContent = 'Face + ID captured. Now align the ID card and continue.';
 		};
 
 		scanAction?.addEventListener('click', () => {
@@ -785,13 +920,19 @@
 				return;
 			}
 
-			cameraStatus.textContent = 'Camera is live. Keep the ID centered in the frame.';
+			if (currentStep === 1) {
+				capturePicture();
+				return;
+			}
+
+			cameraStatus.textContent = 'ID scan is active. Keep the card centered inside the guide.';
 		});
 
 		window.addEventListener('beforeunload', () => {
 			releaseCamera();
 		});
 
+		updateStepUI();
 		startCamera();
 	</script>
 </body>
