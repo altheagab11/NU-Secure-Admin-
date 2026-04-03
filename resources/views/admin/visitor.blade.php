@@ -27,7 +27,8 @@
 
 		.layout {
 			display: flex;
-			min-height: 100vh;
+			height: 100vh;
+			overflow: hidden;
 		}
 
 		.sidebar {
@@ -38,6 +39,9 @@
 			display: flex;
 			flex-direction: column;
 			border-right: 1px solid rgba(0, 0, 0, 0.05);
+			height: 100vh;
+			overflow: hidden;
+			flex-shrink: 0;
 		}
 
 		.brand-row {
@@ -230,6 +234,7 @@
 			flex: 1;
 			background: #f7f8ff;
 			padding: 24px 32px;
+			height: 100vh;
 			overflow-y: auto;
 		}
 
@@ -386,13 +391,29 @@
 
 		.bottom-grid {
 			display: grid;
-			grid-template-columns: 1.8fr 1fr;
+			grid-template-columns: 1.4fr 1fr;
 			gap: 12px;
 			margin-top: 22px;
+			align-items: stretch;
+		}
+
+		.right-stack {
+			display: grid;
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr 1fr;
+			gap: 12px;
+			height: 100%;
 		}
 
 		.panel-card {
 			overflow: hidden;
+		}
+
+		.recent-panel,
+		.stack-panel {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
 		}
 
 		.panel-title {
@@ -411,6 +432,12 @@
 			padding: 0;
 		}
 
+		.recent-panel .recent-list {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+		}
+
 		.recent-item {
 			display: flex;
 			align-items: center;
@@ -418,6 +445,8 @@
 			gap: 10px;
 			padding: 14px 16px;
 			border-bottom: 1px solid #d5d8de;
+			flex: 1;
+			min-height: 66px;
 		}
 
 		.recent-item:last-child {
@@ -483,6 +512,54 @@
 			width: 33%;
 		}
 
+		.correct-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.correct-item {
+			padding: 12px 16px;
+			border-bottom: 1px solid #d5d8de;
+			flex: 1;
+			min-height: 70px;
+		}
+
+		.correct-item:last-child {
+			border-bottom: 0;
+		}
+
+		.correct-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			font-size: 13px;
+			color: #111827;
+			font-weight: 600;
+		}
+
+		.correct-meta {
+			margin-top: 4px;
+			font-size: 12px;
+			color: #4b5563;
+		}
+
+		.correct-pill {
+			display: inline-flex;
+			align-items: center;
+			padding: 5px 8px;
+			border-radius: 999px;
+			background: #dcfce7;
+			color: #15803d;
+			font-size: 10px;
+			font-weight: 700;
+			letter-spacing: 0.02em;
+		}
+
 		@media (max-width: 1180px) {
 			.filters-row {
 				grid-template-columns: 1fr;
@@ -490,6 +567,16 @@
 
 			.bottom-grid {
 				grid-template-columns: 1fr;
+			}
+
+			.right-stack {
+				grid-template-rows: auto;
+				height: auto;
+			}
+
+			.recent-item,
+			.correct-item {
+				flex: initial;
 			}
 		}
 
@@ -729,7 +816,7 @@
 			</div>
 
 			<div class="bottom-grid">
-				<section class="panel-card">
+				<section class="panel-card recent-panel">
 					<h2 class="panel-title">Recent Visitors</h2>
 					<ul class="recent-list">
 						<li class="recent-item">
@@ -773,49 +860,78 @@
 					</ul>
 				</section>
 
-				<section class="panel-card">
-					<h2 class="panel-title">Active by Office</h2>
-					<ul class="office-list">
-						<li class="office-item">
-							<div class="office-row">
-								<span class="office-label">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-									</svg>
-									Human Resources
-								</span>
-								<span>1</span>
-							</div>
-							<div class="bar-track"><div class="bar-fill w-33"></div></div>
-						</li>
+				<div class="right-stack">
+					<section class="panel-card stack-panel">
+						<h2 class="panel-title">Active by Office</h2>
+						<ul class="office-list">
+							<li class="office-item">
+								<div class="office-row">
+									<span class="office-label">
+										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+										</svg>
+										Human Resources
+									</span>
+									<span>1</span>
+								</div>
+								<div class="bar-track"><div class="bar-fill w-33"></div></div>
+							</li>
 
-						<li class="office-item">
-							<div class="office-row">
-								<span class="office-label">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-									</svg>
-									IT Department
-								</span>
-								<span>1</span>
-							</div>
-							<div class="bar-track"><div class="bar-fill w-33"></div></div>
-						</li>
+							<li class="office-item">
+								<div class="office-row">
+									<span class="office-label">
+										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+										</svg>
+										IT Department
+									</span>
+									<span>1</span>
+								</div>
+								<div class="bar-track"><div class="bar-fill w-33"></div></div>
+							</li>
 
-						<li class="office-item">
-							<div class="office-row">
-								<span class="office-label">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-									</svg>
-									Finance Department
-								</span>
-								<span>1</span>
-							</div>
-							<div class="bar-track"><div class="bar-fill w-33"></div></div>
-						</li>
-					</ul>
-				</section>
+							<li class="office-item">
+								<div class="office-row">
+									<span class="office-label">
+										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+										</svg>
+										Finance Department
+									</span>
+									<span>1</span>
+								</div>
+								<div class="bar-track"><div class="bar-fill w-33"></div></div>
+							</li>
+						</ul>
+					</section>
+
+					<section class="panel-card stack-panel">
+						<h2 class="panel-title">Correct Office Scans</h2>
+						<ul class="correct-list" aria-label="Correct office scan results">
+							<li class="correct-item">
+								<div class="correct-head">
+									<span>John Anderson</span>
+									<span class="correct-pill">MATCHED</span>
+								</div>
+								<p class="correct-meta">Human Resources • SVMS-250125-0001 • 10:28 AM</p>
+							</li>
+							<li class="correct-item">
+								<div class="correct-head">
+									<span>Maria Garcia</span>
+									<span class="correct-pill">MATCHED</span>
+								</div>
+								<p class="correct-meta">IT Department • SVMS-250125-0002 • 11:58 AM</p>
+							</li>
+							<li class="correct-item">
+								<div class="correct-head">
+									<span>Robert Kim</span>
+									<span class="correct-pill">MATCHED</span>
+								</div>
+								<p class="correct-meta">Finance Department • SVMS-250125-0003 • 09:29 AM</p>
+							</li>
+						</ul>
+					</section>
+				</div>
 			</div>
 		</main>
 	</div>
