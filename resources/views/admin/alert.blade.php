@@ -240,12 +240,12 @@
 			color: #0f172a;
 		}
 
-		.alert-stats {
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 16px;
-			margin-top: 18px;
-		}
+ 		.alert-stats {
+ 			display: grid;
+ 			grid-template-columns: repeat(4, minmax(0, 1fr));
+ 			gap: 16px;
+ 			margin-top: 18px;
+ 		}
 
 		.stat-card,
 		.alerts-panel,
@@ -317,6 +317,17 @@
 		.stat-card.total .stat-icon {
 			background: #eef1f7;
 			color: #64748b;
+		}
+
+		/* Critical alerts */
+		.stat-card.critical {
+			background: #fff1f2;
+			border-color: #ffccd5;
+		}
+
+		.stat-card.critical .stat-icon {
+			background: #ffe1e6;
+			color: #dc2626;
 		}
 
 		.alerts-panel {
@@ -500,6 +511,22 @@
 				font-size: 20px;
 			}
 		}
+
+				/* compact table sizing for alerts */
+				.alerts-table {
+					font-size: 15px;
+				}
+
+				.alerts-table thead th {
+					padding: 6px 6px !important;
+					font-weight: 500 !important;
+				}
+
+				.alerts-table tbody td {
+					padding: 8px 6px !important;
+				}
+
+				.table-wrap { overflow-x: auto; }
 	</style>
 </head>
 <body>
@@ -626,6 +653,18 @@
 					<p class="stat-number">0</p>
 					<p class="stat-label">Total Alerts</p>
 				</div>
+
+				<div class="stat-card critical">
+					<span class="stat-icon" aria-hidden="true">
+						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M12 2 2 22h20L12 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12 8v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+							<circle cx="12" cy="17" r="0.8" fill="currentColor"/>
+						</svg>
+					</span>
+					<p class="stat-number">{{ isset($criticalCount) ? $criticalCount : 0 }}</p>
+					<p class="stat-label">Critical Alerts</p>
+				</div>
 			</div>
 
 			<section class="alerts-panel">
@@ -634,13 +673,24 @@
 					<a href="#" class="tab-link" data-empty-subtitle="No security alerts to display">All Alerts (0)</a>
 					<a href="#" class="tab-link" data-empty-subtitle="All alerts have been resolved">Resolved (0)</a>
 				</div>
-				<div class="empty-state">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/>
-						<path d="m8.5 12.5 2.4 2.4 4.4-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-					<p class="empty-title">No alerts</p>
-					<p class="empty-subtitle" id="emptySubtitle">All alerts have been resolved</p>
+				<div class="table-wrap">
+					<table class="alerts-table" style="width:100%; border-collapse:collapse;">
+						<thead>
+							<tr style="border-bottom:1px solid #e6edf6;">
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Alert ID</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Date &amp; Time</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Visitor Name</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Pass No.</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Control No.</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Expected Office</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Scanned Office</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Alert Type</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Severity</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Status</th>
+								<th style="text-align:left; padding:10px 8px; font-weight:400;">Actions</th>
+							</tr>
+						</thead>
+					</table>
 				</div>
 			</section>
 
