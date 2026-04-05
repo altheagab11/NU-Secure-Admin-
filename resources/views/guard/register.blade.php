@@ -3,6 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Register Visitor</title>
 	<style>
 		:root {
@@ -310,9 +311,25 @@
 			inset: 0;
 			width: 100%;
 			height: 100%;
-			object-fit: cover;
+			object-fit: contain;
 			display: block;
 			background: #111827;
+		}
+
+		.frozen-frame {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			display: none;
+			z-index: 3;
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+		}
+
+		.frozen-frame.visible {
+			display: block;
 		}
 
 		.scanner-overlay {
@@ -587,6 +604,50 @@
 			color: #475569;
 		}
 
+		.loading-overlay {
+			position: absolute;
+			inset: 0;
+			background: rgba(0, 0, 0, 0.85);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 10px;
+			z-index: 10;
+		}
+
+		.loading-overlay.is-hidden {
+			display: none !important;
+		}
+
+		.loading-content {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 16px;
+		}
+
+		.spinner {
+			width: 50px;
+			height: 50px;
+			border: 4px solid rgba(255, 255, 255, 0.2);
+			border-top-color: #3e4ba0;
+			border-radius: 50%;
+			animation: spin 0.8s linear infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		.loading-text {
+			color: #ffffff;
+			font-size: 16px;
+			font-weight: 500;
+			text-align: center;
+		}
+
 		@media (max-width: 1024px) {
 			.sidebar {
 				width: 100%;
@@ -752,6 +813,7 @@
 					<div class="scanner-card">
 						<div class="scanner-zone">
 							<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
+							<canvas id="frozenFrame" class="frozen-frame"></canvas>
 							<div class="scanner-overlay" aria-hidden="true">
 								<div class="picture-guide" id="pictureGuide">
 									<span class="corner tl"></span>
@@ -776,6 +838,12 @@
 											<span class="id-guide-line long"></span>
 											<span class="id-guide-chip"></span>
 										</div>
+									</div>
+								</div>
+								<div class="loading-overlay is-hidden" id="loadingOverlay">
+									<div class="loading-content">
+										<div class="spinner"></div>
+										<p class="loading-text" id="loadingText">Processing capture...</p>
 									</div>
 								</div>
 							</div>
@@ -828,9 +896,12 @@
 		const idGuide = document.getElementById('idGuide');
 		const cameraStatus = document.getElementById('cameraStatus');
 		const captureCanvas = document.getElementById('captureCanvas');
+		const frozenFrame = document.getElementById('frozenFrame');
 		const idTypesPanel = document.getElementById('idTypesPanel');
 		const scanAction = document.getElementById('scanAction');
 		const scanActionText = document.getElementById('scanActionText');
+		const loadingOverlay = document.getElementById('loadingOverlay');
+		const loadingText = document.getElementById('loadingText');
 		let activeStream = null;
 		let currentStep = 1;
 		let capturedPictureData = '';
@@ -909,9 +980,76 @@
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
 			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.92);
 
-			currentStep = 2;
-			updateStepUI();
-			cameraStatus.textContent = 'Face + ID captured. Now align the ID card and continue.';
+			// Freeze the frame by displaying it and stopping the video
+			const frozenCtx = frozenFrame.getContext('2d');
+			frozenFrame.width = cameraFeed.videoWidth;
+			frozenFrame.height = cameraFeed.videoHeight;
+			frozenCtx.drawImage(cameraFeed, 0, 0);
+			frozenFrame.classList.add('visible');
+
+			// Stop the video stream
+			cameraFeed.pause();
+			if (activeStream) {
+				activeStream.getTracks().forEach(track => track.stop());
+			}
+
+			// Show loading overlay
+			loadingOverlay.classList.remove('is-hidden');
+			loadingText.textContent = 'Processing capture...';
+			scanAction.disabled = true;
+
+			// Send image to server for saving
+			const formData = new FormData();
+			formData.append('image', capturedPictureData);
+			formData.append('step', 1);
+
+			fetch('/guard/capture', {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: formData
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					loadingText.textContent = 'Capture saved! Moving to Step 2...';
+					setTimeout(() => {
+						currentStep = 2;
+						updateStepUI();
+						// Hide frozen frame when transitioning
+						frozenFrame.classList.remove('visible');
+						cameraStatus.textContent = 'Face + ID captured. Now align the ID card and continue.';
+						
+						// Restart camera for ID scan
+						startCamera();
+						
+						// Hide loading overlay
+						loadingOverlay.classList.add('is-hidden');
+						scanAction.disabled = false;
+					}, 1000);
+				} else {
+					loadingText.textContent = 'Failed to save. Try again.';
+					setTimeout(() => {
+						loadingOverlay.classList.add('is-hidden');
+						frozenFrame.classList.remove('visible');
+						scanAction.disabled = false;
+						// Restart camera on failure
+						startCamera();
+					}, 2000);
+				}
+			})
+			.catch(error => {
+				console.error('Capture error:', error);
+				loadingText.textContent = 'Error saving capture. Try again.';
+				setTimeout(() => {
+					loadingOverlay.classList.add('is-hidden');
+					frozenFrame.classList.remove('visible');
+					scanAction.disabled = false;
+					// Restart camera on error
+					startCamera();
+				}, 2000);
+			});
 		};
 
 		scanAction?.addEventListener('click', () => {

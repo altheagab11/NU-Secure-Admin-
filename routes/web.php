@@ -47,3 +47,5 @@ Route::get('/guard/exit', function () {
 Route::get('/guard/alert', function () {
     return view('guard.alert');
 });
+
+Route::post('/guard/capture', [GuardController::class, 'saveCapture']);
