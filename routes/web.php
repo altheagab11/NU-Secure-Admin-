@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GuardController;
+use App\Http\Controllers\GuardVisitorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -48,4 +49,4 @@ Route::get('/guard/alert', function () {
     return view('guard.alert');
 });
 
-Route::post('/guard/capture', [GuardController::class, 'saveCapture']);
+Route::post('/guard/capture', [GuardVisitorController::class, 'saveCapture']);

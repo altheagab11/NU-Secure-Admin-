@@ -584,6 +584,160 @@
 			margin-bottom: 0;
 		}
 
+		.visitor-step {
+			margin-top: 16px;
+		}
+
+		.visitor-card,
+		.visitor-field,
+		.visitor-textarea-wrap {
+			background: #ffffff;
+			border: 1px solid #d9dde4;
+			border-radius: 12px;
+			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+			padding: 14px 16px;
+			margin-bottom: 18px;
+		}
+
+		.visitor-label {
+			font-size: 15px;
+			color: #1f2937;
+			margin-bottom: 10px;
+			display: block;
+		}
+
+		.visitor-details-row {
+			display: flex;
+			gap: 14px;
+			align-items: center;
+		}
+
+		.visitor-avatar {
+			width: 78px;
+			height: 78px;
+			border-radius: 14px;
+			background: #f3f4f6;
+			border: 1px solid #d9dde4;
+			display: grid;
+			place-items: center;
+			font-size: 48px;
+			flex-shrink: 0;
+		}
+
+		.visitor-meta {
+			display: grid;
+			gap: 8px;
+		}
+
+		.visitor-meta-label {
+			font-size: 13px;
+			color: #374151;
+			margin: 0;
+		}
+
+		.visitor-meta-value {
+			font-size: 34px;
+			line-height: 1;
+			font-weight: 600;
+			color: #111827;
+			margin: 0;
+		}
+
+		.visitor-meta-value.id {
+			font-size: 32px;
+		}
+
+		.visitor-select,
+		.visitor-input,
+		.visitor-textarea {
+			width: 100%;
+			border: 1px solid #bcc4cf;
+			border-radius: 9px;
+			background: #ffffff;
+			padding: 10px 12px;
+			font-size: 16px;
+			color: #111827;
+			outline: none;
+		}
+
+		.visitor-select:focus,
+		.visitor-input:focus,
+		.visitor-textarea:focus {
+			border-color: #5c6bc0;
+			box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.12);
+		}
+
+		.visitor-textarea {
+			min-height: 110px;
+			resize: vertical;
+		}
+
+		.office-multi {
+			position: relative;
+		}
+
+		.office-dropdown-btn {
+			width: 100%;
+			border: 1px solid #bcc4cf;
+			border-radius: 9px;
+			background: #ffffff;
+			padding: 10px 12px;
+			font-size: 16px;
+			color: #111827;
+			text-align: left;
+			cursor: pointer;
+		}
+
+		.office-dropdown-btn:focus {
+			border-color: #5c6bc0;
+			box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.12);
+			outline: none;
+		}
+
+		.office-dropdown-menu {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: calc(100% + 6px);
+			background: #ffffff;
+			border: 1px solid #bcc4cf;
+			border-radius: 9px;
+			box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+			padding: 8px;
+			z-index: 20;
+			max-height: 180px;
+			overflow-y: auto;
+		}
+
+		.office-option {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 15px;
+			color: #1f2937;
+			padding: 6px 4px;
+			cursor: pointer;
+		}
+
+		.office-option input {
+			width: 16px;
+			height: 16px;
+		}
+
+		.visitor-submit {
+			margin: 10px auto 0;
+			width: min(100%, 420px);
+			height: 52px;
+			border: 0;
+			border-radius: 10px;
+			background: #3e4ba0;
+			color: #ffffff;
+			font-size: 16px;
+			font-weight: 700;
+			cursor: pointer;
+			display: block;
+		}
+
 		.type-placeholder {
 			max-width: 760px;
 			margin: 16px auto 0;
@@ -695,6 +849,14 @@
 			.scan-action {
 				height: 50px;
 				font-size: 16px;
+			}
+
+			.visitor-meta-value {
+				font-size: 26px;
+			}
+
+			.visitor-meta-value.id {
+				font-size: 24px;
 			}
 
 			.brand-title span:first-child {
@@ -868,6 +1030,51 @@
 							</ul>
 						</div>
 					</div>
+
+					<div class="visitor-step is-hidden" id="visitorStepPanel">
+						<div class="visitor-card">
+							<span class="visitor-label">Visitor Details (Auto-filled)</span>
+							<div class="visitor-details-row">
+								<div class="visitor-avatar" aria-hidden="true">ID</div>
+								<div class="visitor-meta">
+									<div>
+										<p class="visitor-meta-label">Full Name</p>
+										<p class="visitor-meta-value" id="visitorName">John Rodriguez</p>
+									</div>
+									<div>
+										<p class="visitor-meta-label">ID Number</p>
+										<p class="visitor-meta-value id" id="visitorIdNumber">ID990182</p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="visitor-field">
+							<label class="visitor-label" for="destinationOffice">Destination Office *</label>
+							<div class="office-multi" id="officeMulti">
+								<button type="button" class="office-dropdown-btn" id="officeDropdownBtn" aria-expanded="false" aria-controls="officeDropdownMenu">Select one or more offices</button>
+								<div class="office-dropdown-menu is-hidden" id="officeDropdownMenu">
+									<label class="office-option"><input type="checkbox" value="Registrar" class="office-checkbox">Registrar</label>
+									<label class="office-option"><input type="checkbox" value="Accounting" class="office-checkbox">Accounting</label>
+									<label class="office-option"><input type="checkbox" value="Admissions" class="office-checkbox">Admissions</label>
+									<label class="office-option"><input type="checkbox" value="Guidance Office" class="office-checkbox">Guidance Office</label>
+									<label class="office-option"><input type="checkbox" value="Clinic" class="office-checkbox">Clinic</label>
+								</div>
+							</div>
+						</div>
+
+						<div class="visitor-field">
+							<label class="visitor-label" for="visitorPhone">Phone Number (Optional)</label>
+							<input class="visitor-input" id="visitorPhone" type="text" placeholder="">
+						</div>
+
+						<div class="visitor-textarea-wrap">
+							<label class="visitor-label" for="visitReason">Reason For Visit *</label>
+							<textarea class="visitor-textarea" id="visitReason"></textarea>
+						</div>
+
+						<button type="button" class="visitor-submit" id="generateQrBtn">Generate QR Ticket</button>
+					</div>
 				</section>
 			@elseif ($registerType === 'enrollee')
 				<h1 class="page-title">Register Visitor</h1>
@@ -897,11 +1104,18 @@
 		const cameraStatus = document.getElementById('cameraStatus');
 		const captureCanvas = document.getElementById('captureCanvas');
 		const frozenFrame = document.getElementById('frozenFrame');
+		const scannerCard = document.querySelector('.scanner-card');
 		const idTypesPanel = document.getElementById('idTypesPanel');
+		const visitorStepPanel = document.getElementById('visitorStepPanel');
 		const scanAction = document.getElementById('scanAction');
 		const scanActionText = document.getElementById('scanActionText');
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
+		const generateQrBtn = document.getElementById('generateQrBtn');
+		const officeMulti = document.getElementById('officeMulti');
+		const officeDropdownBtn = document.getElementById('officeDropdownBtn');
+		const officeDropdownMenu = document.getElementById('officeDropdownMenu');
+		const officeCheckboxes = document.querySelectorAll('.office-checkbox');
 		let activeStream = null;
 		let currentStep = 1;
 		let capturedPictureData = '';
@@ -915,11 +1129,18 @@
 
 		const updateStepUI = () => {
 			const isPictureStep = currentStep === 1;
-			flowStepName.textContent = isPictureStep ? 'Face + ID' : 'ID Scan';
-			flowStepCount.textContent = isPictureStep ? 'Step 1 of 3' : 'Step 2 of 3';
+			const isIdStep = currentStep === 2;
+			const isVisitorInfoStep = currentStep === 3;
+
+			flowStepName.textContent = isPictureStep ? 'Face + ID' : (isIdStep ? 'ID Scan' : 'Visitor Information');
+			flowStepCount.textContent = isPictureStep ? 'Step 1 of 3' : (isIdStep ? 'Step 2 of 3' : 'Step 3 of 3');
+
+			scannerCard.classList.toggle('is-hidden', isVisitorInfoStep);
+			visitorStepPanel.classList.toggle('is-hidden', !isVisitorInfoStep);
+
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
-			idGuide.classList.toggle('is-hidden', isPictureStep);
-			idTypesPanel.classList.toggle('is-hidden', isPictureStep);
+			idGuide.classList.toggle('is-hidden', !isIdStep);
+			idTypesPanel.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
 		};
 
@@ -1062,6 +1283,54 @@
 			});
 		};
 
+		const captureIdAndProceed = () => {
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
+				return;
+			}
+
+			captureCanvas.width = cameraFeed.videoWidth;
+			captureCanvas.height = cameraFeed.videoHeight;
+			const context = captureCanvas.getContext('2d');
+			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+			const capturedIdData = captureCanvas.toDataURL('image/jpeg', 0.92);
+
+			loadingOverlay.classList.remove('is-hidden');
+			loadingText.textContent = 'Saving ID scan...';
+			scanAction.disabled = true;
+
+			const formData = new FormData();
+			formData.append('image', capturedIdData);
+			formData.append('step', 2);
+
+			fetch('/guard/capture', {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: formData
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (!data.success) {
+					throw new Error(data.message || 'Failed to save ID scan');
+				}
+
+				releaseCamera();
+				loadingOverlay.classList.add('is-hidden');
+				scanAction.disabled = false;
+				currentStep = 3;
+				updateStepUI();
+			})
+			.catch(() => {
+				loadingText.textContent = 'Failed to save ID scan. Try again.';
+				setTimeout(() => {
+					loadingOverlay.classList.add('is-hidden');
+					scanAction.disabled = false;
+				}, 1500);
+			});
+		};
+
 		scanAction?.addEventListener('click', () => {
 			if (!activeStream) {
 				startCamera();
@@ -1073,7 +1342,40 @@
 				return;
 			}
 
-			cameraStatus.textContent = 'ID scan is active. Keep the card centered inside the guide.';
+			if (currentStep === 2) {
+				captureIdAndProceed();
+			}
+		});
+
+		generateQrBtn?.addEventListener('click', () => {
+			alert('QR ticket generation will be connected to backend next.');
+		});
+
+		officeDropdownBtn?.addEventListener('click', () => {
+			const willOpen = officeDropdownMenu.classList.contains('is-hidden');
+			officeDropdownMenu.classList.toggle('is-hidden', !willOpen);
+			officeDropdownBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+		});
+
+		officeCheckboxes.forEach((checkbox) => {
+			checkbox.addEventListener('change', () => {
+				const selected = Array.from(officeCheckboxes)
+					.filter((cb) => cb.checked)
+					.map((cb) => cb.value);
+
+				officeDropdownBtn.textContent = selected.length
+					? selected.join(', ')
+					: 'Select one or more offices';
+			});
+		});
+
+		document.addEventListener('click', (event) => {
+			if (!officeMulti || officeMulti.contains(event.target)) {
+				return;
+			}
+
+			officeDropdownMenu?.classList.add('is-hidden');
+			officeDropdownBtn?.setAttribute('aria-expanded', 'false');
 		});
 
 		window.addEventListener('beforeunload', () => {
