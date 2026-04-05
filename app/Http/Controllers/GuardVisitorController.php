@@ -4,9 +4,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class GuardVisitorController extends Controller
 {
+    /**
+     * Return active offices for guard visitor step.
+     */
+    public function getOffices()
+    {
+        try {
+            $offices = DB::table('office')
+                ->select('office_id', 'office_name')
+                ->where('is_active', true)
+                ->orderBy('office_name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'offices' => $offices,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load offices',
+            ], 500);
+        }
+    }
+
     /**
      * Save visitor capture (face + ID image) to storage.
      */

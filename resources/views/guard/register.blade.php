@@ -28,7 +28,8 @@
 
 		.layout {
 			display: flex;
-			min-height: 100vh;
+			height: 100vh;
+			overflow: hidden;
 		}
 
 		.sidebar {
@@ -39,6 +40,9 @@
 			display: flex;
 			flex-direction: column;
 			border-right: 1px solid rgba(0, 0, 0, 0.05);
+			height: 100vh;
+			overflow: hidden;
+			flex-shrink: 0;
 		}
 
 		.brand-row {
@@ -672,41 +676,19 @@
 			resize: vertical;
 		}
 
-		.office-multi {
-			position: relative;
-		}
-
-		.office-dropdown-btn {
-			width: 100%;
+		.office-list {
 			border: 1px solid #bcc4cf;
 			border-radius: 9px;
 			background: #ffffff;
-			padding: 10px 12px;
-			font-size: 16px;
-			color: #111827;
-			text-align: left;
-			cursor: pointer;
+			padding: 8px 10px;
+			display: grid;
+			gap: 2px;
 		}
 
-		.office-dropdown-btn:focus {
-			border-color: #5c6bc0;
-			box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.12);
-			outline: none;
-		}
-
-		.office-dropdown-menu {
-			position: absolute;
-			left: 0;
-			right: 0;
-			top: calc(100% + 6px);
-			background: #ffffff;
-			border: 1px solid #bcc4cf;
-			border-radius: 9px;
-			box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
-			padding: 8px;
-			z-index: 20;
-			max-height: 180px;
-			overflow-y: auto;
+		.office-list-note {
+			margin: 2px 0;
+			font-size: 14px;
+			color: #4b5563;
 		}
 
 		.office-option {
@@ -1051,15 +1033,8 @@
 
 						<div class="visitor-field">
 							<label class="visitor-label" for="destinationOffice">Destination Office *</label>
-							<div class="office-multi" id="officeMulti">
-								<button type="button" class="office-dropdown-btn" id="officeDropdownBtn" aria-expanded="false" aria-controls="officeDropdownMenu">Select one or more offices</button>
-								<div class="office-dropdown-menu is-hidden" id="officeDropdownMenu">
-									<label class="office-option"><input type="checkbox" value="Registrar" class="office-checkbox">Registrar</label>
-									<label class="office-option"><input type="checkbox" value="Accounting" class="office-checkbox">Accounting</label>
-									<label class="office-option"><input type="checkbox" value="Admissions" class="office-checkbox">Admissions</label>
-									<label class="office-option"><input type="checkbox" value="Guidance Office" class="office-checkbox">Guidance Office</label>
-									<label class="office-option"><input type="checkbox" value="Clinic" class="office-checkbox">Clinic</label>
-								</div>
+							<div class="office-list" id="destinationOffice">
+								<p class="office-list-note" id="officeListNote">Loading offices...</p>
 							</div>
 						</div>
 
@@ -1112,13 +1087,12 @@
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
-		const officeMulti = document.getElementById('officeMulti');
-		const officeDropdownBtn = document.getElementById('officeDropdownBtn');
-		const officeDropdownMenu = document.getElementById('officeDropdownMenu');
-		const officeCheckboxes = document.querySelectorAll('.office-checkbox');
+		const destinationOffice = document.getElementById('destinationOffice');
+		const officeListNote = document.getElementById('officeListNote');
 		let activeStream = null;
 		let currentStep = 1;
 		let capturedPictureData = '';
+		let selectedOfficeIds = [];
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -1351,38 +1325,72 @@
 			alert('QR ticket generation will be connected to backend next.');
 		});
 
-		officeDropdownBtn?.addEventListener('click', () => {
-			const willOpen = officeDropdownMenu.classList.contains('is-hidden');
-			officeDropdownMenu.classList.toggle('is-hidden', !willOpen);
-			officeDropdownBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-		});
-
-		officeCheckboxes.forEach((checkbox) => {
-			checkbox.addEventListener('change', () => {
-				const selected = Array.from(officeCheckboxes)
-					.filter((cb) => cb.checked)
-					.map((cb) => cb.value);
-
-				officeDropdownBtn.textContent = selected.length
-					? selected.join(', ')
-					: 'Select one or more offices';
-			});
-		});
-
-		document.addEventListener('click', (event) => {
-			if (!officeMulti || officeMulti.contains(event.target)) {
+		const renderOfficeList = (offices) => {
+			if (!destinationOffice) {
 				return;
 			}
 
-			officeDropdownMenu?.classList.add('is-hidden');
-			officeDropdownBtn?.setAttribute('aria-expanded', 'false');
-		});
+			destinationOffice.innerHTML = '';
+
+			if (!Array.isArray(offices) || offices.length === 0) {
+				const emptyState = document.createElement('p');
+				emptyState.className = 'office-list-note';
+				emptyState.textContent = 'No active offices found.';
+				destinationOffice.appendChild(emptyState);
+				return;
+			}
+
+			offices.forEach((office) => {
+				const label = document.createElement('label');
+				label.className = 'office-option';
+
+				const checkbox = document.createElement('input');
+				checkbox.type = 'checkbox';
+				checkbox.className = 'office-checkbox';
+				checkbox.value = String(office.office_id);
+
+				checkbox.addEventListener('change', () => {
+					selectedOfficeIds = Array.from(destinationOffice.querySelectorAll('.office-checkbox:checked'))
+						.map((cb) => cb.value);
+				});
+
+				label.appendChild(checkbox);
+				label.appendChild(document.createTextNode(office.office_name));
+				destinationOffice.appendChild(label);
+			});
+		};
+
+		const fetchOffices = async () => {
+			if (officeListNote) {
+				officeListNote.textContent = 'Loading offices...';
+			}
+
+			try {
+				const response = await fetch('/guard/offices');
+				const data = await response.json();
+
+				if (!response.ok || !data.success) {
+					throw new Error(data.message || 'Failed to load offices');
+				}
+
+				renderOfficeList(data.offices || []);
+			} catch (error) {
+				if (destinationOffice) {
+					destinationOffice.innerHTML = '';
+					const errorState = document.createElement('p');
+					errorState.className = 'office-list-note';
+					errorState.textContent = 'Unable to load offices right now.';
+					destinationOffice.appendChild(errorState);
+				}
+			}
+		};
 
 		window.addEventListener('beforeunload', () => {
 			releaseCamera();
 		});
 
 		updateStepUI();
+		fetchOffices();
 		startCamera();
 	</script>
 </body>

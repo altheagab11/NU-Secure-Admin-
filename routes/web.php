@@ -49,4 +49,5 @@ Route::get('/guard/alert', function () {
     return view('guard.alert');
 });
 
+Route::get('/guard/offices', [GuardVisitorController::class, 'getOffices']);
 Route::post('/guard/capture', [GuardVisitorController::class, 'saveCapture']);
