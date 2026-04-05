@@ -301,9 +301,9 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			min-height: 380px;
 			position: relative;
 			overflow: hidden;
+			width: 100%;
 		}
 
 		.camera-feed {
@@ -960,6 +960,16 @@
 
 				activeStream = stream;
 				cameraFeed.srcObject = stream;
+
+				// Set scanner-zone aspect ratio based on camera stream dimensions
+				cameraFeed.onloadedmetadata = () => {
+					const width = cameraFeed.videoWidth;
+					const height = cameraFeed.videoHeight;
+					if (width && height) {
+						scannerZone.style.aspectRatio = `${width} / ${height}`;
+					}
+				};
+
 				setCameraState(true, currentStep === 1
 					? 'Camera is ready. Center your face and hold your ID beside it.'
 					: 'Camera is ready. Position the ID inside the frame.');
