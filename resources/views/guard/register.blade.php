@@ -629,6 +629,10 @@
 			display: block;
 		}
 
+		.required-mark {
+			color: #dc2626;
+		}
+
 		.visitor-details-row {
 			display: flex;
 			gap: 14px;
@@ -1041,55 +1045,60 @@
 							<span class="visitor-card-title">Visitor Details</span>
 							<div class="visitor-details-grid">
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorFirstName">First Name *</label>
-									<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name">
+									<label class="visitor-label" for="visitorFirstName">First Name <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorLastName">Last Name *</label>
-									<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name">
+									<label class="visitor-label" for="visitorLastName">Last Name <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorHouseNo">House No. *</label>
-									<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
+									<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no." required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorStreet">Street *</label>
-									<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
+									<label class="visitor-label" for="visitorStreet">Street <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorBarangay">Barangay *</label>
-									<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
+									<label class="visitor-label" for="visitorBarangay">Barangay <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorCity">City / Municipality *</label>
-									<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
+									<label class="visitor-label" for="visitorCity">City / Municipality <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorProvince">Province *</label>
-									<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
+									<label class="visitor-label" for="visitorProvince">Province <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorRegion">Region *</label>
-									<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region">
+									<label class="visitor-label" for="visitorRegion">Region <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" required>
 								</div>
 							</div>
 						</div>
 
 						<div class="visitor-field">
-							<label class="visitor-label" for="destinationOffice">Destination Office *</label>
+							<label class="visitor-label" for="destinationOffice">Destination Office <span class="required-mark">*</span></label>
 							<div class="office-list" id="destinationOffice">
 								<p class="office-list-note" id="officeListNote">Loading offices...</p>
 							</div>
 						</div>
 
 						<div class="visitor-field">
-							<label class="visitor-label" for="visitorPhone">Phone Number (Optional)</label>
-							<input class="visitor-input" id="visitorPhone" type="text" placeholder="">
+							<label class="visitor-label" for="visitorIdPassNumber">ID Pass Number <span class="required-mark">*</span></label>
+							<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
+						</div>
+
+						<div class="visitor-field">
+							<label class="visitor-label" for="visitorControlNumber">Control Number <span class="required-mark">*</span></label>
+							<input class="visitor-input" id="visitorControlNumber" name="control_number" type="text" placeholder="" required>
 						</div>
 
 						<div class="visitor-textarea-wrap">
-							<label class="visitor-label" for="visitReason">Reason For Visit *</label>
-							<textarea class="visitor-textarea" id="visitReason"></textarea>
+							<label class="visitor-label" for="visitReason">Reason For Visit <span class="required-mark">*</span></label>
+							<textarea class="visitor-textarea" id="visitReason" required></textarea>
 						</div>
 
 						<button type="button" class="visitor-submit" id="generateQrBtn">Generate QR Ticket</button>
@@ -1366,6 +1375,22 @@
 		});
 
 		generateQrBtn?.addEventListener('click', () => {
+			const requiredFields = Array.from(visitorStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
+
+			for (const field of requiredFields) {
+				if (!field.value.trim()) {
+					field.focus();
+					alert('Please complete all required fields.');
+					return;
+				}
+			}
+
+			if (!selectedOfficeIds.length) {
+				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				alert('Please select at least one Destination Office.');
+				return;
+			}
+
 			alert('QR ticket generation will be connected to backend next.');
 		});
 
