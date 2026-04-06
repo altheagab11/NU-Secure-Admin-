@@ -339,7 +339,7 @@
 		.scanner-overlay {
 			position: absolute;
 			inset: 0;
-			z-index: 2;
+			z-index: 4;
 			display: flex;
 			align-items: center;
 			justify-content: center;
