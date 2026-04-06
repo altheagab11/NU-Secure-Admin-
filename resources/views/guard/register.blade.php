@@ -603,6 +603,25 @@
 			margin-bottom: 18px;
 		}
 
+		.visitor-card-title {
+			display: block;
+			font-size: 15px;
+			font-weight: 600;
+			color: #1f2937;
+			margin-bottom: 12px;
+		}
+
+		.visitor-details-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 12px 14px;
+		}
+
+		.visitor-input-group {
+			display: flex;
+			flex-direction: column;
+		}
+
 		.visitor-label {
 			font-size: 15px;
 			color: #1f2937;
@@ -841,6 +860,10 @@
 				font-size: 24px;
 			}
 
+			.visitor-details-grid {
+				grid-template-columns: 1fr;
+			}
+
 			.brand-title span:first-child {
 				font-size: 22px;
 			}
@@ -1015,18 +1038,39 @@
 
 					<div class="visitor-step is-hidden" id="visitorStepPanel">
 						<div class="visitor-card">
-							<span class="visitor-label">Visitor Details (Auto-filled)</span>
-							<div class="visitor-details-row">
-								<div class="visitor-avatar" aria-hidden="true">ID</div>
-								<div class="visitor-meta">
-									<div>
-										<p class="visitor-meta-label">Full Name</p>
-										<p class="visitor-meta-value" id="visitorName">John Rodriguez</p>
-									</div>
-									<div>
-										<p class="visitor-meta-label">ID Number</p>
-										<p class="visitor-meta-value id" id="visitorIdNumber">ID990182</p>
-									</div>
+							<span class="visitor-card-title">Visitor Details</span>
+							<div class="visitor-details-grid">
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorFirstName">First Name *</label>
+									<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorLastName">Last Name *</label>
+									<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorHouseNo">House No. *</label>
+									<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorStreet">Street *</label>
+									<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorBarangay">Barangay *</label>
+									<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorCity">City / Municipality *</label>
+									<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorProvince">Province *</label>
+									<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorRegion">Region *</label>
+									<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region">
 								</div>
 							</div>
 						</div>
