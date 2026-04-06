@@ -628,7 +628,7 @@
 							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
 						</svg>
 					</span>
-					<p class="stat-number">0</p>
+					<p class="stat-number">{{ $unresolvedCount ?? 0 }}</p>
 					<p class="stat-label">Unresolved Alerts</p>
 				</div>
 
@@ -639,7 +639,7 @@
 							<path d="m8.5 12.5 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</span>
-					<p class="stat-number">0</p>
+					<p class="stat-number">{{ $resolvedCount ?? 0 }}</p>
 					<p class="stat-label">Resolved Alerts</p>
 				</div>
 
@@ -650,7 +650,7 @@
 							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
 						</svg>
 					</span>
-					<p class="stat-number">0</p>
+					<p class="stat-number">{{ $total ?? 0 }}</p>
 					<p class="stat-label">Total Alerts</p>
 				</div>
 
@@ -669,9 +669,9 @@
 
 			<section class="alerts-panel">
 				<div class="panel-tabs">
-					<a href="#" class="tab-link active" data-empty-subtitle="All alerts have been resolved">Unresolved Alerts (0)</a>
-					<a href="#" class="tab-link" data-empty-subtitle="No security alerts to display">All Alerts (0)</a>
-					<a href="#" class="tab-link" data-empty-subtitle="All alerts have been resolved">Resolved (0)</a>
+					<a href="#" class="tab-link active" data-filter="unresolved" data-empty-subtitle="All alerts have been resolved">Unresolved Alerts ({{ $unresolvedCount ?? 0 }})</a>
+					<a href="#" class="tab-link" data-filter="all" data-empty-subtitle="No security alerts to display">All Alerts ({{ $total ?? 0 }})</a>
+					<a href="#" class="tab-link" data-filter="resolved" data-empty-subtitle="All alerts have been resolved">Resolved ({{ $resolvedCount ?? 0 }})</a>
 				</div>
 				<div class="table-wrap">
 					<table class="alerts-table" style="width:100%; border-collapse:collapse;">
@@ -690,6 +690,39 @@
 								<th style="text-align:left; padding:10px 8px; font-weight:400;">Actions</th>
 							</tr>
 						</thead>
+						<tbody>
+							@php $hasAlerts = count($alerts ?? []) > 0; @endphp
+							@foreach(($alerts ?? []) as $alert)
+								<tr style="border-bottom:1px solid #f1f5f9;" data-status="{{ strtolower($alert['status'] ?? 'unknown') }}">
+									<td style="padding:10px 8px;">{{ $alert['alert_id'] ?? '' }}</td>
+									<td style="padding:10px 8px;">
+										@php $dt = isset($alert['created_at']) ? \Carbon\Carbon::parse($alert['created_at']) : null; @endphp
+										@if($dt)
+											<div style="line-height:1;">
+												<div style="font-weight:normal;">{{ $dt->format('M d, Y') }}</div>
+												<div style="color:#6b7280; font-size:13px;">{{ $dt->format('h:i A') }}</div>
+											</div>
+										@else
+											-
+										@endif
+									</td>
+									<td style="padding:10px 8px;">{{ ($alert['visitor']['first_name'] ?? '') . ' ' . ($alert['visitor']['last_name'] ?? '') }}</td>
+									<td style="padding:10px 8px;">{{ $alert['visitor']['pass_number'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['visitor']['control_number'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['visit']['office']['office_name'] ?? ($alert['visit']['primary_office_id'] ?? '') }}</td>
+									<td style="padding:10px 8px;">{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['severity'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['status'] ?? '' }}</td>
+									<td style="padding:10px 8px;">
+										<button style="background:#4b5cd1;color:#fff;padding:6px 10px;border-radius:8px;border:0;">View</button>
+									</td>
+								</tr>
+							@endforeach
+							<tr id="noResults" style="display: {{ $hasAlerts ? 'none' : 'table-row' }};">
+								<td colspan="11" style="padding:16px; color:#7b8794; text-align:center;">No alerts found</td>
+							</tr>
+						</tbody>
 					</table>
 				</div>
 			</section>
@@ -747,6 +780,30 @@
 		const alertTabLinks = document.querySelectorAll('.panel-tabs .tab-link');
 		const emptySubtitle = document.getElementById('emptySubtitle');
 
+		// Helpers for filtering rows by status
+		function applyFilter(filter) {
+			const tbody = document.querySelector('.alerts-table tbody');
+			if (!tbody) return;
+
+			const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.id !== 'noResults');
+			let visibleCount = 0;
+
+			rows.forEach(row => {
+				const status = (row.dataset.status || '').toLowerCase();
+				if (filter === 'all' || status === filter) {
+					row.style.display = 'table-row';
+					visibleCount++;
+				} else {
+					row.style.display = 'none';
+				}
+			});
+
+			const noResults = document.getElementById('noResults');
+			if (noResults) {
+				noResults.style.display = visibleCount === 0 ? 'table-row' : 'none';
+			}
+		}
+
 		if (userMenuGroup && userMenuToggle) {
 			userMenuToggle.addEventListener('click', () => {
 				const isOpen = userMenuGroup.classList.toggle('open');
@@ -761,11 +818,19 @@
 					alertTabLinks.forEach((link) => link.classList.remove('active'));
 					tabLink.classList.add('active');
 
+					const filter = tabLink.dataset.filter || 'all';
+					applyFilter(filter);
+
 					if (emptySubtitle) {
 						emptySubtitle.textContent = tabLink.dataset.emptySubtitle || 'No security alerts to display';
 					}
 				});
 			});
+
+			// Apply initial filter (show unresolved by default)
+			const initial = document.querySelector('.panel-tabs .tab-link.active');
+			const initFilter = initial ? (initial.dataset.filter || 'unresolved') : 'unresolved';
+			applyFilter(initFilter);
 		}
 	</script>
 </body>

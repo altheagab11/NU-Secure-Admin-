@@ -16,9 +16,9 @@ Route::get('/admin/visitor', function () {
     return view('admin.visitor');
 });
 
-Route::get('/admin/alerts', function () {
-    return view('admin.alert');
-});
+use App\Http\Controllers\AlertsController;
+
+Route::get('/admin/alerts', [AlertsController::class, 'index']);
 
 Route::get('/admin/user', function () {
     return view('admin.user');
