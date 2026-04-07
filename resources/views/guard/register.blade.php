@@ -530,8 +530,9 @@
 		}
 
 		.scan-action {
-			margin: 16px auto 4px;
-			width: min(100%, 380px);
+			margin: 0;
+			width: auto;
+			flex: 1;
 			height: 56px;
 			border: 0;
 			border-radius: 10px;
@@ -554,6 +555,40 @@
 		.scan-action:disabled {
 			opacity: 0.75;
 			cursor: wait;
+		}
+
+		.scan-actions-row {
+			margin: 16px auto 4px;
+			width: min(100%, 380px);
+			display: flex;
+			gap: 10px;
+		}
+
+		.gallery-action {
+			margin: 0;
+			width: auto;
+			flex: 1;
+			height: 56px;
+			border: 1px solid #3e4ba0;
+			border-radius: 10px;
+			background: #eef1ff;
+			color: #2f3b8f;
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		.gallery-action:disabled {
+			opacity: 0.75;
+			cursor: wait;
+		}
+
+		.gallery-hint {
+			margin: 6px auto 0;
+			width: min(100%, 380px);
+			text-align: center;
+			font-size: 12px;
+			color: #5c6785;
 		}
 
 		.id-types {
@@ -853,7 +888,16 @@
 
 			.scan-action {
 				height: 50px;
-				font-size: 16px;
+				font-size: 14px;
+			}
+
+			.scan-actions-row {
+				gap: 8px;
+			}
+
+			.gallery-action {
+				height: 50px;
+				font-size: 12px;
 			}
 
 			.visitor-meta-value {
@@ -1022,13 +1066,19 @@
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
 						<canvas id="captureCanvas" style="display:none;"></canvas>
 
+						<div class="scan-actions-row">
 							<button type="button" class="scan-action" id="scanAction">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-								<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-								<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
-							</svg>
+								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+									<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+									<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
+								</svg>
 								<span id="scanActionText">Capture Face + ID</span>
-						</button>
+							</button>
+
+							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
+						</div>
+							<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
+							<p class="gallery-hint is-hidden" id="galleryHint">If camera is unavailable, you can upload a clear photo of the ID.</p>
 
 						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
@@ -1137,6 +1187,9 @@
 		const visitorStepPanel = document.getElementById('visitorStepPanel');
 		const scanAction = document.getElementById('scanAction');
 		const scanActionText = document.getElementById('scanActionText');
+		const galleryAction = document.getElementById('galleryAction');
+		const idGalleryInput = document.getElementById('idGalleryInput');
+		const galleryHint = document.getElementById('galleryHint');
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
@@ -1168,6 +1221,8 @@
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
 			idGuide.classList.toggle('is-hidden', !isIdStep);
 			idTypesPanel.classList.toggle('is-hidden', !isIdStep);
+			galleryAction.classList.toggle('is-hidden', !isIdStep);
+			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
 		};
 
@@ -1310,21 +1365,11 @@
 			});
 		};
 
-		const captureIdAndProceed = () => {
-			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
-				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
-				return;
-			}
-
-			captureCanvas.width = cameraFeed.videoWidth;
-			captureCanvas.height = cameraFeed.videoHeight;
-			const context = captureCanvas.getContext('2d');
-			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-			const capturedIdData = captureCanvas.toDataURL('image/jpeg', 0.92);
-
+		const saveIdScanAndProceed = (capturedIdData, progressText = 'Saving ID scan...') => {
 			loadingOverlay.classList.remove('is-hidden');
-			loadingText.textContent = 'Saving ID scan...';
+			loadingText.textContent = progressText;
 			scanAction.disabled = true;
+			galleryAction.disabled = true;
 
 			const formData = new FormData();
 			formData.append('image', capturedIdData);
@@ -1346,6 +1391,7 @@
 				releaseCamera();
 				loadingOverlay.classList.add('is-hidden');
 				scanAction.disabled = false;
+				galleryAction.disabled = false;
 				currentStep = 3;
 				updateStepUI();
 			})
@@ -1354,8 +1400,45 @@
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
 					scanAction.disabled = false;
+					galleryAction.disabled = false;
 				}, 1500);
 			});
+		};
+
+		const captureIdAndProceed = () => {
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
+				return;
+			}
+
+			captureCanvas.width = cameraFeed.videoWidth;
+			captureCanvas.height = cameraFeed.videoHeight;
+			const context = captureCanvas.getContext('2d');
+			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+			const capturedIdData = captureCanvas.toDataURL('image/jpeg', 0.92);
+
+			saveIdScanAndProceed(capturedIdData, 'Saving ID scan...');
+		};
+
+		const importIdFromGallery = (file) => {
+			if (!file || !file.type.startsWith('image/')) {
+				alert('Please choose a valid image file.');
+				return;
+			}
+
+			const reader = new FileReader();
+			reader.onload = () => {
+				if (typeof reader.result !== 'string') {
+					alert('Unable to read selected image. Please try another file.');
+					return;
+				}
+
+				saveIdScanAndProceed(reader.result, 'Uploading ID from gallery...');
+			};
+			reader.onerror = () => {
+				alert('Unable to read selected image. Please try another file.');
+			};
+			reader.readAsDataURL(file);
 		};
 
 		scanAction?.addEventListener('click', () => {
@@ -1372,6 +1455,28 @@
 			if (currentStep === 2) {
 				captureIdAndProceed();
 			}
+		});
+
+		galleryAction?.addEventListener('click', () => {
+			if (currentStep !== 2) {
+				return;
+			}
+
+			idGalleryInput?.click();
+		});
+
+		idGalleryInput?.addEventListener('change', (event) => {
+			if (currentStep !== 2) {
+				return;
+			}
+
+			const input = event.target;
+			const selectedFile = input?.files?.[0];
+			if (selectedFile) {
+				importIdFromGallery(selectedFile);
+			}
+
+			input.value = '';
 		});
 
 		generateQrBtn?.addEventListener('click', () => {
