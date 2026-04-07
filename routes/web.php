@@ -19,6 +19,7 @@ Route::get('/admin/visitor', function () {
 use App\Http\Controllers\AlertsController;
 
 Route::get('/admin/alerts', [AlertsController::class, 'index']);
+Route::post('/admin/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
 
 Route::get('/admin/user', function () {
     return view('admin.user');

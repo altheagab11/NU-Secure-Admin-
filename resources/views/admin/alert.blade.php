@@ -3,6 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Alerts</title>
 	<style>
 		:root {
@@ -527,6 +528,217 @@
 				}
 
 				.table-wrap { overflow-x: auto; }
+
+				/* Alert details modal - match reference UI */
+				.alert-modal {
+					display: none;
+					position: fixed;
+					inset: 0;
+					z-index: 60;
+					background: rgba(15, 23, 42, 0.35);
+					overflow-y: auto;
+				}
+
+				.alert-modal-card {
+					width: 820px;
+					max-width: calc(100% - 24px);
+					margin: 22px auto;
+					background: #ffffff;
+					border-radius: 14px;
+					box-shadow: 0 8px 30px rgba(2, 6, 23, 0.18);
+					overflow: hidden;
+				}
+
+				.alert-modal-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 16px 22px;
+					border-bottom: 1px solid #e9edf3;
+				}
+
+				.alert-modal-title {
+					margin: 0;
+					font-size: 22px;
+					line-height: 1;
+					font-weight: 700;
+					letter-spacing: 0.01em;
+					color: #0f172a;
+				}
+
+				.alert-modal-close {
+					background: transparent;
+					border: 0;
+					padding: 0;
+					font-size: 14px;
+					font-weight: 500;
+					color: #64748b;
+					cursor: pointer;
+				}
+
+				.alert-modal-body {
+					padding: 18px 22px 0;
+				}
+
+				.alert-grid {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					gap: 18px 34px;
+				}
+
+				.alert-divider {
+					grid-column: 1 / -1;
+					height: 1px;
+					background: #e9edf3;
+				}
+
+				.modal-section-title {
+					margin: 0 0 12px;
+					font-size: 14px;
+					font-weight: 700;
+					line-height: 1.1;
+					text-transform: uppercase;
+					letter-spacing: 0.01em;
+					color: #0f2543;
+				}
+
+				.modal-line {
+					margin: 0 0 10px;
+					font-size: 15px;
+					line-height: 1.2;
+					color: #475569;
+				}
+
+				.modal-line span {
+					font-weight: 600;
+					color: #0f172a;
+				}
+
+				.resolution-block {
+					margin-top: 14px;
+					padding-top: 14px;
+					border-top: 1px solid #e9edf3;
+				}
+
+				.alert-modal-footer {
+					margin-top: 14px;
+					padding: 14px 22px;
+					background: #f5f6fa;
+					display: flex;
+					justify-content: flex-end;
+				}
+
+				.resolve-btn {
+					background: #2563eb;
+					color: #ffffff;
+					border: 0;
+					border-radius: 10px;
+					padding: 10px 18px;
+					font-size: 14px;
+					font-weight: 700;
+					cursor: pointer;
+					box-shadow: 0 5px 15px rgba(37, 99, 235, 0.28);
+				}
+
+				.btn-secondary {
+					background: #eef2f7;
+					color: #334155;
+					border: 1px solid #d9e1ec;
+					border-radius: 10px;
+					padding: 10px 18px;
+					font-size: 14px;
+					font-weight: 600;
+					cursor: pointer;
+				}
+
+				.resolve-flow-modal {
+					display: none;
+					position: fixed;
+					inset: 0;
+					z-index: 70;
+					background: rgba(15, 23, 42, 0.4);
+					overflow-y: auto;
+				}
+
+				.resolve-flow-card {
+					width: 680px;
+					max-width: calc(100% - 24px);
+					margin: 40px auto;
+					background: #ffffff;
+					border-radius: 14px;
+					box-shadow: 0 8px 30px rgba(2, 6, 23, 0.18);
+					overflow: hidden;
+				}
+
+				.resolve-flow-body {
+					padding: 18px 22px 0;
+				}
+
+				.resolve-summary {
+					padding: 6px 0 10px;
+				}
+
+				.resolve-summary .modal-line {
+					margin-bottom: 8px;
+				}
+
+				.resolve-notes-wrap {
+					margin-top: 10px;
+					padding-top: 14px;
+					border-top: 1px solid #e9edf3;
+				}
+
+				.resolve-notes-label {
+					display: block;
+					font-size: 14px;
+					font-weight: 700;
+					color: #0f2543;
+					margin-bottom: 10px;
+				}
+
+				.resolve-notes-input {
+					width: 100%;
+					min-height: 92px;
+					resize: vertical;
+					border: 1px solid #d7e0eb;
+					border-radius: 10px;
+					padding: 10px 12px;
+					font: inherit;
+					font-size: 14px;
+					line-height: 1.45;
+					color: #0f172a;
+					outline: none;
+				}
+
+				.resolve-notes-input:focus {
+					border-color: #93c5fd;
+					box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+				}
+
+				.resolve-warning {
+					margin: 10px 0 0;
+					font-size: 13px;
+					color: #b45309;
+				}
+
+				.resolve-flow-footer {
+					margin-top: 14px;
+					padding: 14px 22px;
+					background: #f5f6fa;
+					display: flex;
+					justify-content: space-between;
+					gap: 12px;
+				}
+
+				@media (max-width: 920px) {
+					.alert-modal-title { font-size: 20px; }
+					.modal-section-title { font-size: 13px; }
+					.modal-line { font-size: 14px; }
+					.resolve-btn { font-size: 13px; padding: 9px 14px; }
+					.alert-grid { grid-template-columns: 1fr; gap: 18px; }
+					.alert-divider { display: none; }
+					.resolve-flow-footer { flex-direction: column-reverse; }
+				}
 	</style>
 </head>
 <body>
@@ -628,7 +840,7 @@
 							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
 						</svg>
 					</span>
-					<p class="stat-number">{{ $unresolvedCount ?? 0 }}</p>
+					<p class="stat-number" id="unresolvedCount">{{ $unresolvedCount ?? 0 }}</p>
 					<p class="stat-label">Unresolved Alerts</p>
 				</div>
 
@@ -639,7 +851,7 @@
 							<path d="m8.5 12.5 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					</span>
-					<p class="stat-number">{{ $resolvedCount ?? 0 }}</p>
+					<p class="stat-number" id="resolvedCount">{{ $resolvedCount ?? 0 }}</p>
 					<p class="stat-label">Resolved Alerts</p>
 				</div>
 
@@ -650,7 +862,7 @@
 							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
 						</svg>
 					</span>
-					<p class="stat-number">{{ $total ?? 0 }}</p>
+					<p class="stat-number" id="totalCount">{{ $total ?? 0 }}</p>
 					<p class="stat-label">Total Alerts</p>
 				</div>
 
@@ -662,7 +874,7 @@
 							<circle cx="12" cy="17" r="0.8" fill="currentColor"/>
 						</svg>
 					</span>
-					<p class="stat-number">{{ isset($criticalCount) ? $criticalCount : 0 }}</p>
+					<p class="stat-number" id="criticalCount">{{ isset($criticalCount) ? $criticalCount : 0 }}</p>
 					<p class="stat-label">Critical Alerts</p>
 				</div>
 			</div>
@@ -692,8 +904,8 @@
 						</thead>
 						<tbody>
 							@php $hasAlerts = count($alerts ?? []) > 0; @endphp
-							@foreach(($alerts ?? []) as $alert)
-								<tr style="border-bottom:1px solid #f1f5f9;" data-status="{{ strtolower($alert['status'] ?? 'unknown') }}">
+								@foreach(($alerts ?? []) as $alert)
+									<tr style="border-bottom:1px solid #f1f5f9;" data-status="{{ strtolower($alert['status'] ?? 'unknown') }}" data-alert-id="{{ $alert['alert_id'] ?? '' }}">
 									<td style="padding:10px 8px;">{{ $alert['alert_id'] ?? '' }}</td>
 									<td style="padding:10px 8px;">
 										@php $dt = isset($alert['created_at']) ? \Carbon\Carbon::parse($alert['created_at']) : null; @endphp
@@ -714,8 +926,8 @@
 									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['severity'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['status'] ?? '' }}</td>
-									<td style="padding:10px 8px;">
-										<button style="background:#4b5cd1;color:#fff;padding:6px 10px;border-radius:8px;border:0;">View</button>
+										<td style="padding:10px 8px;">
+										<button class="view-btn" data-alert-id="{{ $alert['alert_id'] ?? '' }}" style="background:#4b5cd1;color:#fff;padding:6px 10px;border-radius:8px;border:0;">View</button>
 									</td>
 								</tr>
 							@endforeach
@@ -774,11 +986,114 @@
 		</main>
 	</div>
 
+	<!-- Alert Details Modal -->
+	<div id="alertModal" class="alert-modal">
+		<div class="alert-modal-card" role="dialog" aria-modal="true" aria-labelledby="alertDetailsTitle">
+			<div class="alert-modal-header">
+				<h3 id="alertDetailsTitle" class="alert-modal-title">ALERT DETAILS</h3>
+				<button id="closeAlertBtn" class="alert-modal-close" type="button">Close</button>
+			</div>
+
+			<div class="alert-modal-body">
+				<div class="alert-grid">
+					<section>
+						<h4 class="modal-section-title">ALERT INFORMATION</h4>
+						<p class="modal-line">Alert ID: <span id="m_alert_id" class="value">-</span></p>
+						<p class="modal-line">Type: <span id="m_type" class="value">-</span> &nbsp; Severity: <span id="m_severity" class="value">-</span></p>
+						<p class="modal-line">Status: <span id="m_status" class="value">-</span></p>
+						<p class="modal-line">Message: <span id="m_message" class="value">-</span></p>
+						<p class="modal-line">Created At: <span id="m_created_at" class="value">-</span></p>
+					</section>
+
+					<section>
+						<h4 class="modal-section-title">VISITOR INFORMATION</h4>
+						<p class="modal-line">Name: <span id="m_visitor_name" class="value">-</span></p>
+						<p class="modal-line">Pass No: <span id="m_pass_no" class="value">-</span></p>
+						<p class="modal-line">Control No: <span id="m_control_no" class="value">-</span></p>
+						<p class="modal-line">Contact: <span id="m_contact">-</span></p>
+					</section>
+
+					<div class="alert-divider" aria-hidden="true"></div>
+
+					<section>
+						<h4 class="modal-section-title">VISIT INFORMATION</h4>
+						<p class="modal-line">Visit ID: <span id="m_visit_id">-</span></p>
+						<p class="modal-line">Visit Type: <span id="m_visit_type">-</span></p>
+						<p class="modal-line">Purpose: <span id="m_purpose">-</span></p>
+						<p class="modal-line">Entry Time: <span id="m_entry_time">-</span></p>
+						<p class="modal-line">Exit Time: <span id="m_exit_time">-</span></p>
+						<p class="modal-line">Duration: <span id="m_duration">-</span></p>
+						<p class="modal-line">Primary Office: <span id="m_primary_office" class="value">-</span></p>
+					</section>
+
+					<section>
+						<h4 class="modal-section-title">SCAN INFORMATION</h4>
+						<p class="modal-line">Scan ID: <span id="m_scan_id">-</span></p>
+						<p class="modal-line">Scanned Office: <span id="m_scanned_office" class="value">-</span></p>
+						<p class="modal-line">Scanned By: <span id="m_scanned_by">-</span></p>
+						<p class="modal-line">Scan Time: <span id="m_scan_time" class="value">-</span></p>
+						<p class="modal-line">Validation Status: <span id="m_validation_status" class="value">-</span></p>
+						<p class="modal-line">Remarks: <span id="m_remarks" class="value">-</span></p>
+					</section>
+				</div>
+
+				<section class="resolution-block">
+					<h4 class="modal-section-title">RESOLUTION INFORMATION</h4>
+					<p id="m_unresolved_text" class="modal-line">Not yet resolved</p>
+					<div id="m_resolved_details" style="display:none;">
+						<p class="modal-line">Resolved By: <span id="m_resolved_by">-</span></p>
+						<p class="modal-line">Resolved At: <span id="m_resolved_at">-</span></p>
+						<p class="modal-line">Resolution Notes: <span id="m_resolution_notes">-</span></p>
+					</div>
+				</section>
+			</div>
+
+			<div class="alert-modal-footer">
+				<button id="resolveAlertBtn" class="resolve-btn" type="button">Resolve Alert</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Resolve Alert Modal -->
+	<div id="resolveModal" class="resolve-flow-modal">
+		<div class="resolve-flow-card" role="dialog" aria-modal="true" aria-labelledby="resolveAlertTitle">
+			<div class="alert-modal-header">
+				<h3 id="resolveAlertTitle" class="alert-modal-title">RESOLVE ALERT</h3>
+				<button id="closeResolveModalBtn" class="alert-modal-close" type="button">Close</button>
+			</div>
+
+			<div class="resolve-flow-body">
+				<div class="resolve-summary">
+					<p class="modal-line">Alert ID: <span id="r_alert_id" class="value">-</span></p>
+					<p class="modal-line">Visitor: <span id="r_visitor" class="value">-</span></p>
+					<p class="modal-line">Alert Type: <span id="r_alert_type" class="value">-</span></p>
+					<p class="modal-line">Severity: <span id="r_severity" class="value">-</span></p>
+				</div>
+
+				<div class="resolve-notes-wrap">
+					<label for="resolveNotes" class="resolve-notes-label">Resolution Notes:</label>
+					<textarea id="resolveNotes" class="resolve-notes-input" placeholder="Describe how this alert was resolved..."></textarea>
+					<p class="resolve-warning">⚠️ Please describe how this alert was resolved.</p>
+				</div>
+			</div>
+
+			<div class="resolve-flow-footer">
+				<button id="cancelResolveBtn" class="btn-secondary" type="button">Cancel</button>
+				<button id="confirmResolveBtn" class="resolve-btn" type="button">Resolve</button>
+			</div>
+		</div>
+	</div>
+
 	<script>
+		// Export alerts to JS for modal/detail interactions
+		const ALERTS = @json($alerts ?? []);
+
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
 		const alertTabLinks = document.querySelectorAll('.panel-tabs .tab-link');
 		const emptySubtitle = document.getElementById('emptySubtitle');
+		const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+		let pendingResolveAlertId = null;
 
 		// Helpers for filtering rows by status
 		function applyFilter(filter) {
@@ -832,6 +1147,257 @@
 			const initFilter = initial ? (initial.dataset.filter || 'unresolved') : 'unresolved';
 			applyFilter(initFilter);
 		}
+
+		// Modal handling -------------------------------------------------
+		function formatDateTime(iso) {
+			if (!iso) return ['-', ''];
+			const d = new Date(iso);
+			const optsDate = { month: 'short', day: '2-digit', year: 'numeric' };
+			const date = d.toLocaleDateString(undefined, optsDate);
+			const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+			return [date, time];
+		}
+
+		function openAlertModal(alertId) {
+			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
+			if (!alert) return;
+
+			const modal = document.getElementById('alertModal');
+			if (!modal) return;
+
+			// Populate modal fields (use safe fallbacks)
+			const [date, time] = formatDateTime(alert.created_at);
+			modal.querySelector('#m_alert_id').textContent = alert.alert_id || '-';
+			modal.querySelector('#m_type').textContent = alert.alert_type || '-';
+			modal.querySelector('#m_severity').textContent = alert.severity || '-';
+			modal.querySelector('#m_status').textContent = alert.status || 'Unresolved';
+			modal.querySelector('#m_message').textContent = alert.message || (alert.alert_type ? 'Visitor scanned at wrong office' : '');
+			modal.querySelector('#m_created_at').textContent = date + ' ' + time;
+
+			// Visitor
+			modal.querySelector('#m_visitor_name').textContent = ((alert.visitor && (alert.visitor.first_name || alert.visitor.last_name)) ? ((alert.visitor.first_name || '') + ' ' + (alert.visitor.last_name || '')) : '-');
+			modal.querySelector('#m_pass_no').textContent = (alert.visitor && alert.visitor.pass_number) ? alert.visitor.pass_number : (alert.pass_number || '-');
+			modal.querySelector('#m_control_no').textContent = (alert.visitor && alert.visitor.control_number) ? alert.visitor.control_number : (alert.control_number || '-');
+			modal.querySelector('#m_contact').textContent = alert.visitor && alert.visitor.contact_no ? alert.visitor.contact_no : '-';
+
+			// Visit
+			const visitType = (alert.visit && alert.visit.visit_type)
+				? (Array.isArray(alert.visit.visit_type)
+					? (alert.visit.visit_type[0] && alert.visit.visit_type[0].visit_type_name)
+					: alert.visit.visit_type.visit_type_name)
+				: null;
+
+			const visitDuration = (alert.visit && alert.visit.duration_minutes !== undefined && alert.visit.duration_minutes !== null)
+				? `${alert.visit.duration_minutes} min`
+				: '-';
+
+			modal.querySelector('#m_visit_id').textContent = alert.visit && alert.visit.visit_id ? alert.visit.visit_id : (alert.visit_id || '-');
+			modal.querySelector('#m_visit_type').textContent = visitType || (alert.visit && alert.visit.type ? alert.visit.type : (alert.visit_type || '-'));
+			modal.querySelector('#m_purpose').textContent = alert.visit && alert.visit.purpose_reason ? alert.visit.purpose_reason : (alert.visit && alert.visit.purpose ? alert.visit.purpose : (alert.purpose || '-'));
+			// Format entry & exit times like Created At
+			const [entryDate, entryTime] = formatDateTime(alert.visit && alert.visit.entry_time ? alert.visit.entry_time : null);
+			modal.querySelector('#m_entry_time').textContent = entryDate === '-' ? '-' : (entryDate + ' ' + entryTime);
+
+			const [exitDate, exitTime] = formatDateTime(alert.visit && alert.visit.exit_time ? alert.visit.exit_time : null);
+			modal.querySelector('#m_exit_time').textContent = exitDate === '-' ? '-' : (exitDate + ' ' + exitTime);
+			modal.querySelector('#m_duration').textContent = visitDuration;
+			modal.querySelector('#m_primary_office').textContent = (alert.visit && alert.visit.office && alert.visit.office.office_name) ? alert.visit.office.office_name : (alert.visit && alert.visit.primary_office_id ? alert.visit.primary_office_id : '-');
+
+			// Scan
+			const scannedBy = (alert.office_scan && alert.office_scan.users)
+				? (Array.isArray(alert.office_scan.users)
+					? `${alert.office_scan.users[0]?.first_name || ''} ${alert.office_scan.users[0]?.last_name || ''}`.trim()
+					: `${alert.office_scan.users.first_name || ''} ${alert.office_scan.users.last_name || ''}`.trim())
+				: null;
+
+			const validationStatus = (alert.office_scan && alert.office_scan.validation_status)
+				? (Array.isArray(alert.office_scan.validation_status)
+					? (alert.office_scan.validation_status[0]?.status_name || null)
+					: (alert.office_scan.validation_status.status_name || alert.office_scan.validation_status))
+				: null;
+
+			modal.querySelector('#m_scan_id').textContent = alert.office_scan && alert.office_scan.scan_id ? alert.office_scan.scan_id : (alert.scan_id || '-');
+			modal.querySelector('#m_scanned_office').textContent = alert.office_scan && alert.office_scan.office && alert.office_scan.office.office_name ? alert.office_scan.office.office_name : (alert.scanned_office || '-');
+			modal.querySelector('#m_scanned_by').textContent = scannedBy || (alert.office_scan && alert.office_scan.scanned_by ? alert.office_scan.scanned_by : (alert.scanned_by || '-'));
+			modal.querySelector('#m_scan_time').textContent = alert.office_scan && alert.office_scan.scan_time ? alert.office_scan.scan_time : time;
+			modal.querySelector('#m_validation_status').textContent = validationStatus || (alert.validation_status || 'Invalid');
+			modal.querySelector('#m_remarks').textContent = alert.office_scan && alert.office_scan.remarks ? alert.office_scan.remarks : (alert.remarks || 'Visitor entered incorrect office');
+
+			// Resolution
+			const resolvedByObj = alert.resolved_by
+				? (Array.isArray(alert.resolved_by) ? alert.resolved_by[0] : alert.resolved_by)
+				: null;
+			const resolvedBy = (resolvedByObj && (resolvedByObj.first_name || resolvedByObj.last_name))
+				? `${resolvedByObj.first_name || ''} ${resolvedByObj.last_name || ''}`.trim()
+				: (alert.resolved_by_name || 'null');
+			const [resolvedDate, resolvedTime] = formatDateTime(alert.resolved_at || null);
+			const resolvedAtText = resolvedDate === '-' ? '-' : `${resolvedDate} ${resolvedTime}`;
+			const resolutionNotes = alert.resolution_notes || alert.resolution_note || alert.notes || 'Not yet resolved';
+			const resolutionStatus = (alert.status || '').toLowerCase();
+			const isResolved = resolutionStatus === 'resolved';
+
+			const unresolvedTextEl = modal.querySelector('#m_unresolved_text');
+			const resolvedDetailsEl = modal.querySelector('#m_resolved_details');
+			if (unresolvedTextEl && resolvedDetailsEl) {
+				unresolvedTextEl.style.display = isResolved ? 'none' : 'block';
+				resolvedDetailsEl.style.display = isResolved ? 'block' : 'none';
+			}
+
+			modal.querySelector('#m_resolved_by').textContent = resolvedBy;
+			modal.querySelector('#m_resolved_at').textContent = resolvedAtText;
+			modal.querySelector('#m_resolution_notes').textContent = isResolved ? resolutionNotes : '-';
+
+			// attach resolve button dataset
+			const resolveBtn = modal.querySelector('#resolveAlertBtn');
+			resolveBtn.dataset.alertId = alert.alert_id;
+
+			modal.style.display = 'block';
+		}
+
+		function closeAlertModal() {
+			const modal = document.getElementById('alertModal');
+			if (modal) modal.style.display = 'none';
+		}
+
+		function openResolveModal(alertId) {
+			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
+			if (!alert) return;
+
+			const resolveModal = document.getElementById('resolveModal');
+			if (!resolveModal) return;
+
+			const visitorName = ((alert.visitor && (alert.visitor.first_name || alert.visitor.last_name))
+				? `${alert.visitor.first_name || ''} ${alert.visitor.last_name || ''}`.trim()
+				: '-');
+
+			const severity = alert.severity ? String(alert.severity) : '-';
+			const severityIcon = severity.toLowerCase() === 'high' ? '🔶' : (severity.toLowerCase() === 'critical' ? '🔴' : (severity.toLowerCase() === 'medium' ? '🟠' : '🟡'));
+
+			resolveModal.querySelector('#r_alert_id').textContent = alert.alert_id || '-';
+			resolveModal.querySelector('#r_visitor').textContent = visitorName;
+			resolveModal.querySelector('#r_alert_type').textContent = alert.alert_type || '-';
+			resolveModal.querySelector('#r_severity').textContent = `${severityIcon} ${severity}`;
+			resolveModal.querySelector('#resolveNotes').value = '';
+
+			pendingResolveAlertId = alert.alert_id;
+			resolveModal.style.display = 'block';
+		}
+
+		function closeResolveModal() {
+			const resolveModal = document.getElementById('resolveModal');
+			if (resolveModal) resolveModal.style.display = 'none';
+			pendingResolveAlertId = null;
+		}
+
+		async function resolveAlertClient(alertId, notes) {
+			if (!notes) {
+				alert('Please add Resolution Notes before resolving this alert.');
+				return;
+			}
+
+			// update ALERTS array
+			const idx = ALERTS.findIndex(a => String(a.alert_id) === String(alertId));
+			if (idx === -1) return;
+			const previousStatus = String(ALERTS[idx].status || '').toLowerCase();
+
+			try {
+				const response = await fetch(`/admin/alerts/${encodeURIComponent(alertId)}/resolve`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+						'X-CSRF-TOKEN': csrfToken,
+					},
+					body: JSON.stringify({ resolution_notes: notes }),
+				});
+
+				const payload = await response.json().catch(() => ({}));
+				if (!response.ok) {
+					throw new Error(payload.message || 'Failed to resolve alert.');
+				}
+
+				const updated = payload.alert || {};
+				ALERTS[idx] = {
+					...ALERTS[idx],
+					...updated,
+					status: updated.status || 'Resolved',
+					resolved_at: updated.resolved_at || new Date().toISOString(),
+					resolution_notes: updated.resolution_notes || notes,
+				};
+
+				if (Object.prototype.hasOwnProperty.call(updated, 'resolved_by')) {
+					ALERTS[idx].resolved_by = updated.resolved_by;
+				}
+			} catch (error) {
+				alert(error.message || 'Unable to resolve alert at the moment.');
+				return;
+			}
+
+			// update DOM row
+			const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
+			if (row) {
+				row.dataset.status = 'resolved';
+				const statusTd = row.querySelector('td:nth-last-child(2)');
+				if (statusTd) statusTd.textContent = 'Resolved';
+			}
+
+			// update counts
+			const unresolvedEl = document.getElementById('unresolvedCount');
+			const resolvedEl = document.getElementById('resolvedCount');
+			const totalEl = document.getElementById('totalCount');
+			const criticalEl = document.getElementById('criticalCount');
+
+			const prevUn = parseInt(unresolvedEl.textContent || '0', 10);
+			const prevRes = parseInt(resolvedEl.textContent || '0', 10);
+			if (!isNaN(prevUn) && !isNaN(prevRes) && previousStatus !== 'resolved') {
+				unresolvedEl.textContent = Math.max(prevUn - 1, 0);
+				resolvedEl.textContent = prevRes + 1;
+			}
+
+			// update tab labels
+			const tabs = document.querySelectorAll('.panel-tabs .tab-link');
+			tabs.forEach(t => {
+				if (t.dataset.filter === 'unresolved') t.textContent = `Unresolved Alerts (${unresolvedEl.textContent})`;
+				if (t.dataset.filter === 'resolved') t.textContent = `Resolved (${resolvedEl.textContent})`;
+				if (t.dataset.filter === 'all') t.textContent = `All Alerts (${totalEl.textContent})`;
+			});
+
+			// reapply current filter so resolved row may hide if on unresolved tab
+			const active = document.querySelector('.panel-tabs .tab-link.active');
+			if (active) applyFilter(active.dataset.filter || 'all');
+
+			closeResolveModal();
+			closeAlertModal();
+		}
+
+		// Attach click handlers to dynamic buttons
+		document.addEventListener('click', async function (e) {
+			if (e.target && e.target.matches('.view-btn')) {
+				const id = e.target.dataset.alertId;
+				openAlertModal(id);
+			}
+			if (e.target && e.target.matches('#closeAlertBtn')) {
+				closeAlertModal();
+			}
+			if (e.target && e.target.matches('#resolveAlertBtn')) {
+				const id = e.target.dataset.alertId;
+				openResolveModal(id);
+			}
+			if (e.target && (e.target.matches('#closeResolveModalBtn') || e.target.matches('#cancelResolveBtn'))) {
+				closeResolveModal();
+			}
+			if (e.target && e.target.matches('#confirmResolveBtn')) {
+				if (!pendingResolveAlertId) return;
+				const notesEl = document.getElementById('resolveNotes');
+				const notes = notesEl ? notesEl.value.trim() : '';
+				const confirmBtn = e.target;
+				confirmBtn.disabled = true;
+				confirmBtn.textContent = 'Resolving...';
+				await resolveAlertClient(pendingResolveAlertId, notes);
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = 'Resolve';
+			}
+		});
 	</script>
 </body>
 </html>
