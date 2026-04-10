@@ -1015,7 +1015,7 @@
 
 		<main class="main">
 			@php($registerType = request('type', 'normal'))
-			@if (in_array($registerType, ['normal', 'contractor'], true))
+			@if (in_array($registerType, ['normal', 'contractor', 'enrollee'], true))
 				<h1 class="page-title">Register Visitor</h1>
 				<section class="register-flow">
 					<div class="flow-head">
@@ -1090,6 +1090,12 @@
 						</div>
 					</div>
 
+					@if ($registerType === 'enrollee')
+						<section class="type-placeholder visitor-step is-hidden" id="enrolleeStepPanel" aria-label="Enrollee registration">
+							<h2>Enrollee</h2>
+							<p>Enrollee registration form content can be placed here.</p>
+						</section>
+					@else
 					<div class="visitor-step is-hidden" id="visitorStepPanel">
 						<div class="visitor-card">
 							<span class="visitor-card-title">Visitor Details</span>
@@ -1162,12 +1168,7 @@
 
 						<button type="button" class="visitor-submit" id="generateQrBtn">Generate QR Ticket</button>
 					</div>
-				</section>
-			@elseif ($registerType === 'enrollee')
-				<h1 class="page-title">Register Visitor</h1>
-				<section class="type-placeholder" aria-label="Enrollee registration">
-					<h2>Enrollee</h2>
-					<p>Enrollee registration form content can be placed here.</p>
+					@endif
 				</section>
 			@endif
 		</main>
@@ -1196,14 +1197,16 @@
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
+		const enrolleeStepPanel = document.getElementById('enrolleeStepPanel');
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
 		const officeListNote = document.getElementById('officeListNote');
 		const registerType = @json($registerType);
+		const hasFinalStepPanel = Boolean(visitorStepPanel || enrolleeStepPanel);
 		const hasRegisterFlow = Boolean(
 			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
-			idTypesPanel && visitorStepPanel && scanAction && scanActionText &&
+			idTypesPanel && hasFinalStepPanel && scanAction && scanActionText &&
 			galleryAction && galleryHint && loadingOverlay && loadingText
 		);
 		let activeStream = null;
@@ -1225,13 +1228,22 @@
 
 			const isPictureStep = currentStep === 1;
 			const isIdStep = currentStep === 2;
-			const isVisitorInfoStep = currentStep === 3;
+			const isFinalStep = currentStep === 3;
+			const isVisitorInfoStep = isFinalStep && registerType !== 'enrollee';
+			const isEnrolleeInfoStep = isFinalStep && registerType === 'enrollee';
 
-			flowStepName.textContent = isPictureStep ? 'Face + ID' : (isIdStep ? 'ID Scan' : 'Visitor Information');
+			flowStepName.textContent = isPictureStep
+				? 'Face + ID'
+				: (isIdStep ? 'ID Scan' : (registerType === 'enrollee' ? 'Enrollee Information' : 'Visitor Information'));
 			flowStepCount.textContent = isPictureStep ? 'Step 1 of 3' : (isIdStep ? 'Step 2 of 3' : 'Step 3 of 3');
 
-			scannerCard.classList.toggle('is-hidden', isVisitorInfoStep);
-			visitorStepPanel.classList.toggle('is-hidden', !isVisitorInfoStep);
+			scannerCard.classList.toggle('is-hidden', isFinalStep);
+			if (visitorStepPanel) {
+				visitorStepPanel.classList.toggle('is-hidden', !isVisitorInfoStep);
+			}
+			if (enrolleeStepPanel) {
+				enrolleeStepPanel.classList.toggle('is-hidden', !isEnrolleeInfoStep);
+			}
 
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
 			idGuide.classList.toggle('is-hidden', !isIdStep);
@@ -1600,7 +1612,7 @@
 
 		if (hasRegisterFlow) {
 			updateStepUI();
-			if (registerType !== 'contractor') {
+			if (registerType === 'normal') {
 				fetchOffices();
 			}
 			startCamera();
