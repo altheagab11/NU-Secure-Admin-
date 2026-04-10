@@ -1015,7 +1015,7 @@
 
 		<main class="main">
 			@php($registerType = request('type', 'normal'))
-			@if ($registerType === 'normal')
+			@if (in_array($registerType, ['normal', 'contractor'], true))
 				<h1 class="page-title">Register Visitor</h1>
 				<section class="register-flow">
 					<div class="flow-head">
@@ -1160,12 +1160,6 @@
 					<h2>Enrollee</h2>
 					<p>Enrollee registration form content can be placed here.</p>
 				</section>
-			@elseif ($registerType === 'contractor')
-				<h1 class="page-title">Register Visitor</h1>
-				<section class="type-placeholder" aria-label="Contractor registration">
-					<h2>Contractor</h2>
-					<p>Contractor registration form content can be placed here.</p>
-				</section>
 			@endif
 		</main>
 	</div>
@@ -1195,6 +1189,11 @@
 		const generateQrBtn = document.getElementById('generateQrBtn');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const officeListNote = document.getElementById('officeListNote');
+		const hasRegisterFlow = Boolean(
+			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
+			idTypesPanel && visitorStepPanel && scanAction && scanActionText &&
+			galleryAction && galleryHint && loadingOverlay && loadingText
+		);
 		let activeStream = null;
 		let currentStep = 1;
 		let capturedPictureData = '';
@@ -1208,6 +1207,10 @@
 		}
 
 		const updateStepUI = () => {
+			if (!hasRegisterFlow) {
+				return;
+			}
+
 			const isPictureStep = currentStep === 1;
 			const isIdStep = currentStep === 2;
 			const isVisitorInfoStep = currentStep === 3;
@@ -1563,9 +1566,11 @@
 			releaseCamera();
 		});
 
-		updateStepUI();
-		fetchOffices();
-		startCamera();
+		if (hasRegisterFlow) {
+			updateStepUI();
+			fetchOffices();
+			startCamera();
+		}
 	</script>
 </body>
 </html>
