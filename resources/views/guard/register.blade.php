@@ -1131,9 +1131,13 @@
 
 						<div class="visitor-field">
 							<label class="visitor-label" for="destinationOffice">Destination Office <span class="required-mark">*</span></label>
-							<div class="office-list" id="destinationOffice">
-								<p class="office-list-note" id="officeListNote">Loading offices...</p>
-							</div>
+							@if ($registerType === 'contractor')
+								<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
+							@else
+								<div class="office-list" id="destinationOffice">
+									<p class="office-list-note" id="officeListNote">Loading offices...</p>
+								</div>
+							@endif
 						</div>
 
 						<div class="visitor-field">
@@ -1188,7 +1192,9 @@
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
 		const destinationOffice = document.getElementById('destinationOffice');
+		const destinationOfficeText = document.getElementById('destinationOfficeText');
 		const officeListNote = document.getElementById('officeListNote');
+		const registerType = @json($registerType);
 		const hasRegisterFlow = Boolean(
 			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
 			idTypesPanel && visitorStepPanel && scanAction && scanActionText &&
@@ -1493,7 +1499,13 @@
 				}
 			}
 
-			if (!selectedOfficeIds.length) {
+			if (registerType === 'contractor') {
+				if (!destinationOfficeText?.value.trim()) {
+					destinationOfficeText?.focus();
+					alert('Please enter Destination Office.');
+					return;
+				}
+			} else if (!selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				alert('Please select at least one Destination Office.');
 				return;
@@ -1568,7 +1580,9 @@
 
 		if (hasRegisterFlow) {
 			updateStepUI();
-			fetchOffices();
+			if (registerType !== 'contractor') {
+				fetchOffices();
+			}
 			startCamera();
 		}
 	</script>
