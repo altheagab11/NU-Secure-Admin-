@@ -144,6 +144,16 @@
             text-underline-offset: 3px;
         }
 
+        .alert {
+            margin-bottom: 14px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #d7a8a8;
+            background: #fbe4e4;
+            color: #8a3030;
+            font-size: 13px;
+        }
+
         @media (max-width: 560px) {
             .page-wrap {
                 max-width: 376px;
@@ -189,16 +199,19 @@
         <section class="panel">
             <img class="logo" src="{{ asset('picture/nu-logo.png') }}" alt="NU-Secure Logo">
 
-            <form class="form-box" method="POST" action="#">
+            <form class="form-box" method="POST" action="{{ route('login.submit') }}">
                 @csrf
+                @if ($errors->any())
+                    <div class="alert">{{ $errors->first() }}</div>
+                @endif
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" autocomplete="username">
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" autocomplete="username" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" autocomplete="current-password">
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
                 </div>
 
                 <button class="btn-submit" type="submit">Sign In</button>

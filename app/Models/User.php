@@ -39,4 +39,17 @@ class User extends Authenticatable
      * Allow mass assignment for common user columns.
      */
     protected $fillable = ['first_name', 'last_name', 'name', 'email', 'password', 'password_hash', 'role_id'];
+
+    /**
+     * Supabase users table has created_at but no updated_at.
+     */
+    const UPDATED_AT = null;
+
+    /**
+     * Use Supabase password_hash as the auth password field.
+     */
+    public function getAuthPassword(): string
+    {
+        return (string) $this->password_hash;
+    }
 }
