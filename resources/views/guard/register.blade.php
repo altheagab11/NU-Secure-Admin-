@@ -1130,6 +1130,11 @@
 						</div>
 
 						<div class="visitor-field">
+							<label class="visitor-label" for="visitorPhoneNumber">Phone Number <span class="required-mark">*</span></label>
+							<input class="visitor-input" id="visitorPhoneNumber" name="phone_number" type="tel" placeholder="09XXXXXXXXX" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
+						</div>
+
+						<div class="visitor-field">
 							<label class="visitor-label" for="destinationOffice">Destination Office <span class="required-mark">*</span></label>
 							@if ($registerType === 'contractor')
 								<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
@@ -1191,6 +1196,7 @@
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
+		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
 		const officeListNote = document.getElementById('officeListNote');
@@ -1499,6 +1505,13 @@
 				}
 			}
 
+			const cleanPhone = (visitorPhoneNumber?.value || '').replace(/\D/g, '');
+			if (visitorPhoneNumber && cleanPhone.length !== 11) {
+				visitorPhoneNumber.focus();
+				alert('Phone Number must be exactly 11 digits.');
+				return;
+			}
+
 			if (registerType === 'contractor') {
 				if (!destinationOfficeText?.value.trim()) {
 					destinationOfficeText?.focus();
@@ -1512,6 +1525,13 @@
 			}
 
 			alert('QR ticket generation will be connected to backend next.');
+		});
+
+		visitorPhoneNumber?.addEventListener('input', () => {
+			const digitsOnly = visitorPhoneNumber.value.replace(/\D/g, '').slice(0, 11);
+			if (visitorPhoneNumber.value !== digitsOnly) {
+				visitorPhoneNumber.value = digitsOnly;
+			}
 		});
 
 		const renderOfficeList = (offices) => {
