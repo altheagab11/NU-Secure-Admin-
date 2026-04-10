@@ -573,13 +573,16 @@
 				</div>
 
 				<div class="logout-wrap">
-					<button type="button" class="logout-btn">
+					<form method="POST" action="{{ route('logout') }}">
+						@csrf
+						<button type="submit" class="logout-btn">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path d="M15 7 20 12 15 17M20 12H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 							<path d="M11 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
 						</svg>
 						Logout
-					</button>
+						</button>
+					</form>
 				</div>
 			</div>
 		</aside>
