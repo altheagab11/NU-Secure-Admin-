@@ -1375,11 +1375,7 @@
 			captureCanvas.height = cameraFeed.videoHeight;
 			const context = captureCanvas.getContext('2d');
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.92);
-
-			freezeCurrentFrame();
-
-			// Show loading overlay
+			 capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.70);
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = 'Processing capture...';
 			scanAction.disabled = true;
@@ -1465,6 +1461,7 @@
 					throw new Error(data.message || 'Failed to save ID scan');
 				}
 
+				console.log('✓ Capture saved successfully');
 				releaseCamera();
 				if (!showFrozenAfterSuccess) {
 					clearFrozenFrame();
@@ -1474,6 +1471,12 @@
 				galleryAction.disabled = false;
 				currentStep = 3;
 				updateStepUI();
+
+				// Parse ID and auto-fill form
+				console.log('✓ Calling parseAndFillIdData with image size:', capturedIdData?.size || capturedIdData?.length || 0);
+				console.log('✓ capturedIdData type:', typeof capturedIdData);
+				parseAndFillIdData(capturedIdData);
+				console.log('✓ parseAndFillIdData called');
 			})
 			.catch(() => {
 				loadingText.textContent = 'Failed to save ID scan. Try again.';
@@ -1501,11 +1504,102 @@
 			captureCanvas.height = cameraFeed.videoHeight;
 			const context = captureCanvas.getContext('2d');
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-			const capturedIdData = captureCanvas.toDataURL('image/jpeg', 0.92);
 
 			freezeCurrentFrame();
 
-			saveIdScanAndProceed(capturedIdData, 'Saving ID scan...');
+			// Convert canvas to Blob and proceed (avoid base64 encoding)
+			captureCanvas.toBlob((blob) => {
+				if (!blob) {
+					console.error('❌ Failed to create blob from canvas');
+					return;
+				}
+				console.log('✓ Canvas blob created, size:', blob.size);
+				saveIdScanAndProceed(blob, 'Saving ID scan...');
+			}, 'image/jpeg', 0.85);
+		};
+
+		const parseAndFillIdData = (capturedIdData) => {
+			console.log('=== parseAndFillIdData START ===');
+			console.log('capturedIdData:', typeof capturedIdData, capturedIdData ? 'present' : 'MISSING');
+			
+			if (!capturedIdData) {
+				console.error('❌ FATAL: capturedIdData is missing!');
+				return;
+			}
+
+			const formData = new FormData();
+			formData.append('image', capturedIdData, 'id-scan.jpg');
+			formData.append('id_type', 'national');
+
+			console.log('✓ FormData prepared with Blob file, size:', capturedIdData.size);
+
+			fetch('/guard/parse-id', {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: formData
+			})
+			.then(response => {
+				console.log('✓ Got response, status:', response.status);
+				return response.json().then(data => ({ status: response.status, data }));
+			})
+			.then(({ status, data }) => {
+				console.log('✓ Response parsed, data:', data);
+
+				if (!data.success) {
+					console.warn('❌ OCR parse failed:', data.message);
+					console.warn('Raw OCR text:', data.raw_text);
+					return;
+				}
+
+				console.log('✓ OCR SUCCESS! Extracted:', data.extracted_data);
+				console.log('✓ Form data to fill:', data.form_data);
+
+				// Auto-fill form with extracted data
+				const fillData = data.form_data || {};
+				console.log('✓ About to call autofillVisitorForm...');
+				autofillVisitorForm(fillData);
+				console.log('✓ autofillVisitorForm complete');
+			})
+			.catch(error => {
+				console.error('❌ FATAL FETCH ERROR:', error);
+				console.error(error.stack);
+			});
+
+			console.log('=== parseAndFillIdData END (fetch started) ===');
+		};
+
+		const autofillVisitorForm = (formData) => {
+			if (!visitorStepPanel) {
+				console.warn('Visitor step panel not found');
+				return;
+			}
+
+			console.log('Autofilling form with:', formData);
+
+			// Map of form field IDs to data keys
+			const fieldMapping = {
+				'visitorFirstName': 'first_name',
+				'visitorLastName': 'last_name',
+				'visitorHouseNo': 'house_no',
+				'visitorStreet': 'street',
+				'visitorBarangay': 'barangay',
+				'visitorCity': 'city_municipality',
+				'visitorProvince': 'province',
+				'visitorRegion': 'region'
+			};
+
+			Object.entries(fieldMapping).forEach(([elementId, dataKey]) => {
+				const element = document.getElementById(elementId);
+				if (element && formData[dataKey]) {
+					console.log(`Filling ${elementId} with ${formData[dataKey]}`);
+					element.value = String(formData[dataKey]).trim();
+					element.dispatchEvent(new Event('change', { bubbles: true }));
+				} else if (!element) {
+					console.warn(`Element ${elementId} not found`);
+				}
+			});
 		};
 
 		const importIdFromGallery = (file) => {
@@ -1524,7 +1618,7 @@
 				freezeDataUrlFrame(reader.result)
 					.then(() => {
 						cameraStatus.textContent = 'Imported image ready. Uploading ID from gallery...';
-						saveIdScanAndProceed(reader.result, 'Uploading ID from gallery...', {
+						saveIdScanAndProceed(file, 'Uploading ID from gallery...', {
 							restartCameraOnError: false,
 							showFrozenAfterSuccess: true
 						});
@@ -1680,6 +1774,54 @@
 		window.addEventListener('beforeunload', () => {
 			releaseCamera();
 		});
+
+		// === DEBUG TEST FUNCTION ===
+		window.testOcrEndpoint = function() {
+			console.log('🧪 Testing OCR endpoint...');
+			
+			// Create a simple test image (tiny 1x1 pixel)
+			const canvas = document.createElement('canvas');
+			canvas.width = 1;
+			canvas.height = 1;
+			const ctx = canvas.getContext('2d');
+			ctx.fillStyle = 'blue';
+			ctx.fillRect(0, 0, 1, 1);
+			const testImage = canvas.toDataURL('image/jpeg');
+			
+			console.log('🧪 Sending test image to /guard/parse-id...');
+			
+			const formData = new FormData();
+			formData.append('image', testImage);
+			formData.append('id_type', 'national');
+			
+			fetch('/guard/parse-id', {
+				method: 'POST',
+				headers: {
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: formData
+			})
+			.then(response => {
+				console.log('🧪 Response status:', response.status);
+				return response.json();
+			})
+			.then(data => {
+				console.log('🧪 Response data:', data);
+				console.log('🧪 Success:', data.success);
+				console.log('🧪 Message:', data.message);
+				if (data.extracted_data) {
+					console.log('🧪 Extracted data:', data.extracted_data);
+				}
+				if (data.form_data) {
+					console.log('🧪 Form data:', data.form_data);
+				}
+			})
+			.catch(error => {
+				console.error('🧪 ERROR:', error);
+				console.error(error.stack);
+			});
+		};
+		console.log('💡 Tip: Open console and type: testOcrEndpoint()');
 
 		if (hasRegisterFlow) {
 			updateStepUI();
