@@ -1275,6 +1275,27 @@
 			cameraFeed.srcObject = null;
 		};
 
+		const freezeCurrentFrame = () => {
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				return false;
+			}
+
+			const frozenCtx = frozenFrame.getContext('2d');
+			frozenFrame.width = cameraFeed.videoWidth;
+			frozenFrame.height = cameraFeed.videoHeight;
+			frozenCtx.drawImage(cameraFeed, 0, 0);
+			frozenFrame.classList.add('visible');
+
+			cameraFeed.pause();
+			releaseCamera();
+
+			return true;
+		};
+
+		const clearFrozenFrame = () => {
+			frozenFrame.classList.remove('visible');
+		};
+
 		const startCamera = async () => {
 			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
 				setCameraState(false, 'Camera access is not supported in this browser.');
@@ -1323,18 +1344,7 @@
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
 			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.92);
 
-			// Freeze the frame by displaying it and stopping the video
-			const frozenCtx = frozenFrame.getContext('2d');
-			frozenFrame.width = cameraFeed.videoWidth;
-			frozenFrame.height = cameraFeed.videoHeight;
-			frozenCtx.drawImage(cameraFeed, 0, 0);
-			frozenFrame.classList.add('visible');
-
-			// Stop the video stream
-			cameraFeed.pause();
-			if (activeStream) {
-				activeStream.getTracks().forEach(track => track.stop());
-			}
+			freezeCurrentFrame();
 
 			// Show loading overlay
 			loadingOverlay.classList.remove('is-hidden');
@@ -1360,8 +1370,7 @@
 					setTimeout(() => {
 						currentStep = 2;
 						updateStepUI();
-						// Hide frozen frame when transitioning
-						frozenFrame.classList.remove('visible');
+						clearFrozenFrame();
 						cameraStatus.textContent = 'Face + ID captured. Now align the ID card and continue.';
 						
 						// Restart camera for ID scan
@@ -1375,7 +1384,7 @@
 					loadingText.textContent = 'Failed to save. Try again.';
 					setTimeout(() => {
 						loadingOverlay.classList.add('is-hidden');
-						frozenFrame.classList.remove('visible');
+						clearFrozenFrame();
 						scanAction.disabled = false;
 						// Restart camera on failure
 						startCamera();
@@ -1387,7 +1396,7 @@
 				loadingText.textContent = 'Error saving capture. Try again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
-					frozenFrame.classList.remove('visible');
+					clearFrozenFrame();
 					scanAction.disabled = false;
 					// Restart camera on error
 					startCamera();
@@ -1419,6 +1428,7 @@
 				}
 
 				releaseCamera();
+				clearFrozenFrame();
 				loadingOverlay.classList.add('is-hidden');
 				scanAction.disabled = false;
 				galleryAction.disabled = false;
@@ -1429,8 +1439,10 @@
 				loadingText.textContent = 'Failed to save ID scan. Try again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
+					clearFrozenFrame();
 					scanAction.disabled = false;
 					galleryAction.disabled = false;
+					startCamera();
 				}, 1500);
 			});
 		};
@@ -1446,6 +1458,8 @@
 			const context = captureCanvas.getContext('2d');
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
 			const capturedIdData = captureCanvas.toDataURL('image/jpeg', 0.92);
+
+			freezeCurrentFrame();
 
 			saveIdScanAndProceed(capturedIdData, 'Saving ID scan...');
 		};
