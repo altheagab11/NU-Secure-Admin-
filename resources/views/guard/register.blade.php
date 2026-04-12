@@ -1529,7 +1529,7 @@
 
 			const formData = new FormData();
 			formData.append('image', capturedIdData, 'id-scan.jpg');
-			formData.append('id_type', 'national');
+			formData.append('id_type', 'auto');
 
 			console.log('✓ FormData prepared with Blob file, size:', capturedIdData.size);
 
@@ -1792,7 +1792,7 @@
 			
 			const formData = new FormData();
 			formData.append('image', testImage);
-			formData.append('id_type', 'national');
+			formData.append('id_type', 'auto');
 			
 			fetch('/guard/parse-id', {
 				method: 'POST',
