@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AlertsController extends Controller
 {
@@ -18,16 +20,37 @@ class AlertsController extends Controller
      */
     public function index(Request $request)
     {
-    $supabaseUrl = env('SUPABASE_URL');
-    // prefer SERVICE_ROLE key if present , fall back to SUPABASE_KEY
-    $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
+        $supabaseUrl = env('SUPABASE_URL');
+        // prefer SERVICE_ROLE key if present , fall back to SUPABASE_KEY
+        $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
+
+        $search = trim((string) $request->query('search', ''));
+        $alertTypeFilter = trim((string) $request->query('alert_type', ''));
+        $severityFilter = trim((string) $request->query('severity', ''));
+        $statusFilter = trim((string) $request->query('status', ''));
+        $officeFilter = trim((string) $request->query('office', ''));
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        $hasActiveFilters = $search !== ''
+            || $alertTypeFilter !== ''
+            || $severityFilter !== ''
+            || $statusFilter !== ''
+            || $officeFilter !== ''
+            || $dateFrom !== ''
+            || $dateTo !== '';
 
         // Safe defaults for the view
+        $alertsRaw = [];
         $alerts = [];
         $total = 0;
         $resolvedCount = 0;
         $unresolvedCount = 0;
         $criticalCount = 0;
+        $alertTypeOptions = [];
+        $severityOptions = [];
+        $statusOptions = [];
+        $officeOptions = [];
 
         if ($supabaseUrl && $supabaseKey) {
             // Try to fetch alerts with related data. Adjust this select if your
@@ -53,16 +76,122 @@ class AlertsController extends Controller
                 ]);
 
                 if ($response->ok()) {
-                    $alerts = $response->json();
+                    $alertsRaw = is_array($response->json()) ? $response->json() : [];
 
-                    $total = count($alerts);
-                    $resolvedCount = count(array_filter($alerts, function ($a) {
+                    $total = count($alertsRaw);
+                    $resolvedCount = count(array_filter($alertsRaw, function ($a) {
                         return (isset($a['status']) && strtolower($a['status']) === 'resolved');
                     }));
                     $unresolvedCount = $total - $resolvedCount;
-                    $criticalCount = count(array_filter($alerts, function ($a) {
+                    $criticalCount = count(array_filter($alertsRaw, function ($a) {
                         return (isset($a['severity']) && strtolower($a['severity']) === 'critical');
                     }));
+
+                    $alertTypeOptions = collect($alertsRaw)
+                        ->pluck('alert_type')
+                        ->filter(fn ($x) => filled($x))
+                        ->map(fn ($x) => (string) $x)
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    $severityOptions = collect($alertsRaw)
+                        ->pluck('severity')
+                        ->filter(fn ($x) => filled($x))
+                        ->map(fn ($x) => (string) $x)
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    $statusOptions = collect($alertsRaw)
+                        ->pluck('status')
+                        ->filter(fn ($x) => filled($x))
+                        ->map(fn ($x) => (string) $x)
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    $officeOptions = collect($alertsRaw)
+                        ->flatMap(function ($alert) {
+                            $expectedOffice = $this->extractOfficeName($alert['visit']['office'] ?? null);
+                            $scannedOffice = $this->extractOfficeName($alert['office_scan']['office'] ?? null);
+                            return array_values(array_filter([$expectedOffice, $scannedOffice], fn ($x) => filled($x)));
+                        })
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                    $alerts = collect($alertsRaw)->filter(function ($alert) use (
+                        $search,
+                        $alertTypeFilter,
+                        $severityFilter,
+                        $statusFilter,
+                        $officeFilter,
+                        $dateFrom,
+                        $dateTo
+                    ) {
+                        $visitor = $this->firstRelation($alert['visitor'] ?? null);
+                        $visit = $this->firstRelation($alert['visit'] ?? null);
+                        $visitOffice = $this->extractOfficeName($visit['office'] ?? null);
+                        $scan = $this->firstRelation($alert['office_scan'] ?? null);
+                        $scanOffice = $this->extractOfficeName($scan['office'] ?? null);
+
+                        $visitorName = trim(((string) ($visitor['first_name'] ?? '')) . ' ' . ((string) ($visitor['last_name'] ?? '')));
+                        $passNumber = (string) ($visitor['pass_number'] ?? '');
+                        $controlNumber = (string) ($visitor['control_number'] ?? '');
+
+                        $matchesSearch = true;
+                        if ($search !== '') {
+                            $haystack = Str::lower(implode(' ', [
+                                $visitorName,
+                                $passNumber,
+                                $controlNumber,
+                            ]));
+                            $matchesSearch = Str::contains($haystack, Str::lower($search));
+                        }
+
+                        $matchesAlertType = $alertTypeFilter === '' || strcasecmp((string) ($alert['alert_type'] ?? ''), $alertTypeFilter) === 0;
+                        $matchesSeverity = $severityFilter === '' || strcasecmp((string) ($alert['severity'] ?? ''), $severityFilter) === 0;
+                        $matchesStatus = $statusFilter === '' || strcasecmp((string) ($alert['status'] ?? ''), $statusFilter) === 0;
+
+                        $matchesOffice = true;
+                        if ($officeFilter !== '') {
+                            $matchesOffice = strcasecmp((string) $visitOffice, $officeFilter) === 0
+                                || strcasecmp((string) $scanOffice, $officeFilter) === 0;
+                        }
+
+                        $createdAt = $alert['created_at'] ?? null;
+                        $createdDate = null;
+                        try {
+                            if ($createdAt) {
+                                $createdDate = Carbon::parse($createdAt)->toDateString();
+                            }
+                        } catch (\Throwable $e) {
+                            $createdDate = null;
+                        }
+
+                        $matchesDateFrom = true;
+                        if ($dateFrom !== '') {
+                            $matchesDateFrom = $createdDate !== null && $createdDate >= $dateFrom;
+                        }
+
+                        $matchesDateTo = true;
+                        if ($dateTo !== '') {
+                            $matchesDateTo = $createdDate !== null && $createdDate <= $dateTo;
+                        }
+
+                        return $matchesSearch
+                            && $matchesAlertType
+                            && $matchesSeverity
+                            && $matchesStatus
+                            && $matchesOffice
+                            && $matchesDateFrom
+                            && $matchesDateTo;
+                    })->values()->all();
                 } else {
                     // Log non-200 response to help debugging (will appear in storage/logs)
                     logger()->warning('Supabase alerts fetch returned non-OK status', [
@@ -82,7 +211,36 @@ class AlertsController extends Controller
             'resolvedCount' => $resolvedCount,
             'unresolvedCount' => $unresolvedCount,
             'criticalCount' => $criticalCount,
+            'alertTypeOptions' => $alertTypeOptions,
+            'severityOptions' => $severityOptions,
+            'statusOptions' => $statusOptions,
+            'officeOptions' => $officeOptions,
+            'filters' => [
+                'search' => $search,
+                'alert_type' => $alertTypeFilter,
+                'severity' => $severityFilter,
+                'status' => $statusFilter,
+                'office' => $officeFilter,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+            ],
+            'hasActiveFilters' => $hasActiveFilters,
         ]);
+    }
+
+    private function firstRelation($value): array
+    {
+        if (is_array($value) && isset($value[0]) && is_array($value[0])) {
+            return $value[0];
+        }
+
+        return is_array($value) ? $value : [];
+    }
+
+    private function extractOfficeName($officeRelation): string
+    {
+        $office = $this->firstRelation($officeRelation);
+        return trim((string) ($office['office_name'] ?? ''));
     }
 
     /**

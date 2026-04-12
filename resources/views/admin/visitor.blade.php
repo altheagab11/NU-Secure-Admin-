@@ -261,20 +261,39 @@
 
 		.filters-row {
 			display: grid;
-			grid-template-columns: 1.5fr 0.8fr 0.8fr;
-			gap: 12px;
+			grid-template-columns: 1.2fr repeat(5, minmax(0, 1fr)) auto;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.filters-label {
+			margin: 0 0 8px;
+			font-size: 18px;
+			font-weight: 700;
+			color: #111827;
 		}
 
 		.filter-input,
 		.filter-select {
-			height: 42px;
-			border: 0;
+			height: 38px;
+			border: 1px solid #d6dde8;
 			outline: none;
-			background: #e5e7eb;
-			border-radius: 6px;
-			padding: 0 14px;
+			background: #f3f4f6;
+			border-radius: 8px;
+			padding: 0 12px;
 			font-size: 14px;
-			color: #334155;
+			color: #1f2a44;
+		}
+
+		.filter-date {
+			height: 38px;
+			border: 1px solid #d6dde8;
+			outline: none;
+			background: #f3f4f6;
+			border-radius: 8px;
+			padding: 0 12px;
+			font-size: 14px;
+			color: #1f2a44;
 		}
 
 		.filter-input::placeholder {
@@ -303,6 +322,31 @@
 			margin: 12px 0 0;
 			font-size: 14px;
 			color: #111827;
+		}
+
+		.clear-filters-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 38px;
+			padding: 0 14px;
+			border-radius: 8px;
+			background: #eef2ff;
+			color: #334155;
+			border: 1px solid #d6deef;
+			font-size: 13px;
+			font-weight: 700;
+			text-decoration: none;
+			white-space: nowrap;
+		}
+
+		.clear-filters-btn:hover {
+			background: #e2e8f0;
+		}
+
+		.clear-filters-btn.disabled {
+			opacity: 0.5;
+			pointer-events: none;
 		}
 
 		.table-card {
@@ -777,6 +821,15 @@
 			@endif
 
 			<div class="filters-card">
+				<p class="filters-label">Filters:</p>
+				@php
+					$hasActiveFilters = !empty($filters['search'])
+						|| !empty($filters['status'])
+						|| !empty($filters['office'])
+						|| !empty($filters['visit_type'])
+						|| !empty($filters['date_from'])
+						|| !empty($filters['date_to']);
+				@endphp
 				<form method="GET" action="{{ route('admin.visitor') }}">
 					<div class="filters-row">
 						<div class="search-wrap">
@@ -784,20 +837,29 @@
 								<circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.5"/>
 								<path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
 							</svg>
-							<input class="filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search visitor, pass no, control no..." aria-label="Search visitor">
+							<input class="filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search Visitor" aria-label="Search visitor">
 						</div>
-						<select class="filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
-							<option value="">All offices</option>
-							@foreach(($officeOptions ?? []) as $officeOption)
-								<option value="{{ $officeOption }}" @selected(($filters['office'] ?? '') === $officeOption)>{{ $officeOption }}</option>
-							@endforeach
-						</select>
 						<select class="filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
-							<option value="">All status</option>
+							<option value="">Status ▼</option>
 							@foreach(($statusOptions ?? []) as $statusOption)
 								<option value="{{ $statusOption }}" @selected(($filters['status'] ?? '') === $statusOption)>{{ $statusOption }}</option>
 							@endforeach
 						</select>
+						<select class="filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
+							<option value="">Office ▼</option>
+							@foreach(($officeOptions ?? []) as $officeOption)
+								<option value="{{ $officeOption }}" @selected(($filters['office'] ?? '') === $officeOption)>{{ $officeOption }}</option>
+							@endforeach
+						</select>
+						<select class="filter-select" name="visit_type" aria-label="Filter by visit type" onchange="this.form.submit()">
+							<option value="">Visit Type ▼</option>
+							@foreach(($visitTypeOptions ?? []) as $visitTypeOption)
+								<option value="{{ $visitTypeOption }}" @selected(($filters['visit_type'] ?? '') === $visitTypeOption)>{{ $visitTypeOption }}</option>
+							@endforeach
+						</select>
+						<input class="filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
+						<input class="filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
+						<a href="{{ route('admin.visitor') }}" class="clear-filters-btn {{ $hasActiveFilters ? '' : 'disabled' }}" aria-label="Clear filters">Clear</a>
 					</div>
 				</form>
 				<p class="filters-count">Showing {{ ($rows ?? collect())->count() }} of {{ $filteredCount ?? 0 }} filtered visitors ({{ $totalRows ?? 0 }} total)</p>

@@ -336,6 +336,70 @@
 			overflow: hidden;
 		}
 
+		.alert-filters-card {
+			margin-top: 14px;
+			padding: 12px;
+			background: #ffffff;
+			border-radius: 12px;
+			border: 1px solid #e8ecf1;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		}
+
+		.alert-filters-row {
+			display: grid;
+			grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr)) 1fr 1fr auto;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.alert-filter-input,
+		.alert-filter-select,
+		.alert-filter-date {
+			height: 38px;
+			border: 1px solid #d6dde8;
+			outline: none;
+			background: #f3f4f6;
+			border-radius: 8px;
+			padding: 0 12px;
+			font-size: 14px;
+			color: #1f2a44;
+		}
+
+		.alert-filter-input::placeholder {
+			color: #64748b;
+		}
+
+		.alert-filter-clear {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 38px;
+			padding: 0 14px;
+			border-radius: 8px;
+			text-decoration: none;
+			font-size: 13px;
+			font-weight: 700;
+			color: #334155;
+			background: #eef2ff;
+			border: 1px solid #d6deef;
+			white-space: nowrap;
+		}
+
+		.alert-filter-clear:hover {
+			background: #e2e8f0;
+		}
+
+		.alert-filter-clear.disabled {
+			opacity: 0.55;
+			pointer-events: none;
+		}
+
+		.alert-filter-count {
+			margin: 8px 2px 0;
+			font-size: 13px;
+			color: #334155;
+		}
+
 		.panel-tabs {
 			display: flex;
 			gap: 30px;
@@ -459,6 +523,10 @@
 		@media (max-width: 1180px) {
 			.alert-stats {
 				grid-template-columns: 1fr;
+			}
+
+			.alert-filters-row {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 
 			.legend-grid {
@@ -882,10 +950,52 @@
 				</div>
 			</div>
 
+			<div class="alert-filters-card">
+				<form method="GET" action="{{ url('/admin/alerts') }}">
+					<div class="alert-filters-row">
+						<input class="alert-filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search visitor..." aria-label="Search visitor">
+
+						<select class="alert-filter-select" name="alert_type" aria-label="Filter by alert type" onchange="this.form.submit()">
+							<option value="">Alert Type</option>
+							@foreach(($alertTypeOptions ?? []) as $type)
+								<option value="{{ $type }}" @selected(($filters['alert_type'] ?? '') === $type)>{{ $type }}</option>
+							@endforeach
+						</select>
+
+						<select class="alert-filter-select" name="severity" aria-label="Filter by severity" onchange="this.form.submit()">
+							<option value="">Severity</option>
+							@foreach(($severityOptions ?? []) as $sev)
+								<option value="{{ $sev }}" @selected(($filters['severity'] ?? '') === $sev)>{{ $sev }}</option>
+							@endforeach
+						</select>
+
+						<select class="alert-filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
+							<option value="">Status</option>
+							@foreach(($statusOptions ?? []) as $st)
+								<option value="{{ $st }}" @selected(($filters['status'] ?? '') === $st)>{{ $st }}</option>
+							@endforeach
+						</select>
+
+						<select class="alert-filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
+							<option value="">Office</option>
+							@foreach(($officeOptions ?? []) as $office)
+								<option value="{{ $office }}" @selected(($filters['office'] ?? '') === $office)>{{ $office }}</option>
+							@endforeach
+						</select>
+
+						<input class="alert-filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
+						<input class="alert-filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
+
+						<a href="{{ url('/admin/alerts') }}" class="alert-filter-clear {{ !($hasActiveFilters ?? false) ? 'disabled' : '' }}">Clear</a>
+					</div>
+				</form>
+				<p class="alert-filter-count">Showing {{ count($alerts ?? []) }} filtered alerts ({{ $total ?? 0 }} total)</p>
+			</div>
+
 			<section class="alerts-panel">
 				<div class="panel-tabs">
-					<a href="#" class="tab-link active" data-filter="unresolved" data-empty-subtitle="All alerts have been resolved">Unresolved Alerts ({{ $unresolvedCount ?? 0 }})</a>
-					<a href="#" class="tab-link" data-filter="all" data-empty-subtitle="No security alerts to display">All Alerts ({{ $total ?? 0 }})</a>
+					<a href="#" class="tab-link {{ !($hasActiveFilters ?? false) ? 'active' : '' }}" data-filter="unresolved" data-empty-subtitle="All alerts have been resolved">Unresolved Alerts ({{ $unresolvedCount ?? 0 }})</a>
+					<a href="#" class="tab-link {{ ($hasActiveFilters ?? false) ? 'active' : '' }}" data-filter="all" data-empty-subtitle="No security alerts to display">All Alerts ({{ $total ?? 0 }})</a>
 					<a href="#" class="tab-link" data-filter="resolved" data-empty-subtitle="All alerts have been resolved">Resolved ({{ $resolvedCount ?? 0 }})</a>
 				</div>
 				<div class="table-wrap">

@@ -33,6 +33,9 @@ class VisitorMonitoringController extends Controller
         $search = trim((string) $request->query('search', ''));
         $officeFilter = trim((string) $request->query('office', ''));
         $statusFilter = trim((string) $request->query('status', ''));
+        $visitTypeFilter = trim((string) $request->query('visit_type', ''));
+        $dateFromFilter = trim((string) $request->query('date_from', ''));
+        $dateToFilter = trim((string) $request->query('date_to', ''));
 
         $officeOptions = $rows
             ->pluck('destination')
@@ -42,8 +45,14 @@ class VisitorMonitoringController extends Controller
             ->values();
 
         $statusOptions = collect(['Arrived', 'In Transit', 'Completed', 'Overstay']);
+        $visitTypeOptions = $rows
+            ->pluck('visit_type')
+            ->filter(fn ($v) => filled($v) && $v !== '—')
+            ->unique()
+            ->sort()
+            ->values();
 
-        $filteredRows = $rows->filter(function (array $row) use ($search, $officeFilter, $statusFilter) {
+        $filteredRows = $rows->filter(function (array $row) use ($search, $officeFilter, $statusFilter, $visitTypeFilter, $dateFromFilter, $dateToFilter) {
             $matchesSearch = true;
             if ($search !== '') {
                 $haystack = Str::lower(implode(' ', [
@@ -61,8 +70,17 @@ class VisitorMonitoringController extends Controller
 
             $matchesOffice = $officeFilter === '' || ($row['destination'] ?? '') === $officeFilter;
             $matchesStatus = $statusFilter === '' || ($row['status'] ?? '') === $statusFilter;
+            $matchesVisitType = $visitTypeFilter === '' || ($row['visit_type'] ?? '') === $visitTypeFilter;
+            $entryDate = (string) ($row['entry_date_value'] ?? '');
+            $matchesDateFrom = $dateFromFilter === '' || ($entryDate !== '' && $entryDate >= $dateFromFilter);
+            $matchesDateTo = $dateToFilter === '' || ($entryDate !== '' && $entryDate <= $dateToFilter);
 
-            return $matchesSearch && $matchesOffice && $matchesStatus;
+            return $matchesSearch
+                && $matchesOffice
+                && $matchesStatus
+                && $matchesVisitType
+                && $matchesDateFrom
+                && $matchesDateTo;
         })->values();
 
         $perPage = 10;
@@ -104,16 +122,28 @@ class VisitorMonitoringController extends Controller
                 'status_class' => $row['status_class'],
             ]);
 
-        $correctOfficeScans = $filteredRows
-            ->filter(fn ($row) => ! in_array($row['status'], ['In Transit', 'Overstay'], true))
-            ->take(3)
-            ->map(fn ($row) => [
-                'visitor_name' => $row['visitor_name'],
-                'destination' => $row['destination'],
-                'control_number' => $row['control_number'],
-                'time_label' => $row['entry_time_label_short'],
-                'result' => 'MATCHED',
-            ]);
+        $correctOfficeScans = collect([]);
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $correctOfficeScans = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey);
+            } catch (\Throwable $e) {
+                logger()->warning('Correct office scan fetch failed: ' . $e->getMessage());
+            }
+        }
+
+        if ($correctOfficeScans->isEmpty()) {
+            // Safe fallback so card does not go blank when source tables are unavailable.
+            $correctOfficeScans = $filteredRows
+                ->filter(fn ($row) => ! in_array($row['status'], ['In Transit', 'Overstay'], true))
+                ->take(3)
+                ->map(fn ($row) => [
+                    'visitor_name' => $row['visitor_name'],
+                    'destination' => $row['destination'],
+                    'control_number' => $row['control_number'],
+                    'time_label' => $row['entry_time_label_short'],
+                    'result' => 'MATCHED',
+                ]);
+        }
 
         return view('admin.visitor', [
             'rows' => $paginatedRows,
@@ -121,6 +151,7 @@ class VisitorMonitoringController extends Controller
             'filteredCount' => $filteredCount,
             'officeOptions' => $officeOptions,
             'statusOptions' => $statusOptions,
+            'visitTypeOptions' => $visitTypeOptions,
             'activeByOffice' => $activeByOffice,
             'maxOfficeCount' => $maxOfficeCount,
             'recentVisitors' => $recentVisitors,
@@ -129,6 +160,9 @@ class VisitorMonitoringController extends Controller
                 'search' => $search,
                 'office' => $officeFilter,
                 'status' => $statusFilter,
+                'visit_type' => $visitTypeFilter,
+                'date_from' => $dateFromFilter,
+                'date_to' => $dateToFilter,
             ],
             'fetchError' => $fetchError,
         ]);
@@ -202,6 +236,7 @@ class VisitorMonitoringController extends Controller
                 'entry_time_label_date' => $entry ? $entry->format('M d, Y') : '—',
                 'entry_time_label_time' => $entry ? $entry->format('h:i A') : '—',
                 'entry_time_label_short' => $entry ? $entry->format('h:i A') : '—',
+                'entry_date_value' => $entry ? $entry->toDateString() : null,
                 'duration_minutes' => $durationMinutes,
                 'duration_label' => $this->formatDurationLabel($durationMinutes),
                 'status' => $status,
@@ -210,6 +245,229 @@ class VisitorMonitoringController extends Controller
                 'raw_entry_time' => $entry ? $entry->toIso8601String() : null,
             ];
         })->values();
+    }
+
+    private function fetchCorrectOfficeScans(string $supabaseUrl, string $supabaseKey): Collection
+    {
+        $baseUrl = rtrim($supabaseUrl, '/');
+
+        $officeMap = $this->fetchOfficeMap($baseUrl, $supabaseKey);
+        $expectationMap = $this->fetchOfficeExpectationMap($baseUrl, $supabaseKey, $officeMap);
+
+        $scanRows = $this->fetchOfficeScansWithRelations($baseUrl, $supabaseKey);
+
+        return $scanRows
+            ->map(function (array $scan) use ($expectationMap, $officeMap) {
+                $visitId = $scan['visit_id'] ?? null;
+
+                $validation = $this->extractRelation($scan, 'validation_status');
+                $validationName = (string) ($validation['status_name'] ?? $scan['validation_status'] ?? '');
+
+                $scannedOfficeRel = $this->extractRelation($scan, 'office');
+                $scannedOfficeName = (string) ($scannedOfficeRel['office_name'] ?? '');
+
+                $scannedOfficeId = $scan['office_id'] ?? null;
+                $expected = $expectationMap->get((string) $visitId, null);
+                $expectedOfficeId = $expected['office_id'] ?? null;
+                $expectedOfficeName = (string) ($expected['office_name'] ?? '');
+
+                if ($scannedOfficeName === '' && $scannedOfficeId !== null) {
+                    $scannedOfficeName = (string) ($officeMap->get((string) $scannedOfficeId) ?? '');
+                }
+
+                $isMatchedByStatus = Str::contains(Str::lower($validationName), 'match');
+                $isMatchedByOffice = $expectedOfficeId !== null
+                    && (string) $expectedOfficeId !== ''
+                    && (string) $expectedOfficeId === (string) $scannedOfficeId;
+
+                if (! $isMatchedByStatus && ! $isMatchedByOffice) {
+                    return null;
+                }
+
+                $visitRel = $this->extractRelation($scan, 'visit');
+                $visitorRel = $this->extractRelation($visitRel, 'visitor');
+
+                $visitorName = trim(((string) ($visitorRel['first_name'] ?? '')) . ' ' . ((string) ($visitorRel['last_name'] ?? '')));
+                $controlNo = (string) ($visitorRel['control_number'] ?? '—');
+
+                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+
+                return [
+                    'visitor_name' => $visitorName !== '' ? $visitorName : 'Unknown Visitor',
+                    'destination' => $expectedOfficeName !== ''
+                        ? $expectedOfficeName
+                        : ($scannedOfficeName !== '' ? $scannedOfficeName : '—'),
+                    'control_number' => $controlNo,
+                    'time_label' => $scanTime ? $scanTime->format('h:i A') : '—',
+                    'result' => 'MATCHED',
+                    'raw_scan_time' => $scanTime ? $scanTime->getTimestamp() : 0,
+                ];
+            })
+            ->filter()
+            ->sortByDesc('raw_scan_time')
+            ->take(3)
+            ->values();
+    }
+
+    private function fetchOfficeMap(string $baseUrl, string $supabaseKey): Collection
+    {
+        $response = Http::withHeaders([
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Accept' => 'application/json',
+        ])->timeout(20)->get($baseUrl . '/rest/v1/office', [
+            'select' => 'office_id,office_name',
+            'limit' => 1000,
+        ]);
+
+        if (! $response->ok() || ! is_array($response->json())) {
+            return collect([]);
+        }
+
+        return collect($response->json())
+            ->filter(fn ($row) => is_array($row))
+            ->mapWithKeys(function (array $row) {
+                return [
+                    (string) ($row['office_id'] ?? '') => (string) ($row['office_name'] ?? ''),
+                ];
+            });
+    }
+
+    private function fetchOfficeExpectationMap(string $baseUrl, string $supabaseKey, Collection $officeMap): Collection
+    {
+        $response = Http::withHeaders([
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Accept' => 'application/json',
+        ])->timeout(20)->get($baseUrl . '/rest/v1/office_expectation', [
+            'select' => '*',
+            'limit' => 2000,
+        ]);
+
+        if (! $response->ok() || ! is_array($response->json())) {
+            return collect([]);
+        }
+
+        return collect($response->json())
+            ->filter(fn ($row) => is_array($row))
+            ->mapWithKeys(function (array $row) use ($officeMap) {
+                $visitId = $row['visit_id'] ?? null;
+                if ($visitId === null || $visitId === '') {
+                    return [];
+                }
+
+                $officeId = $this->firstFilled($row, [
+                    'expected_office_id',
+                    'office_id',
+                    'target_office_id',
+                    'destination_office_id',
+                ]);
+
+                $officeName = '';
+                if ($officeId !== null && $officeId !== '') {
+                    $officeName = (string) ($officeMap->get((string) $officeId) ?? '');
+                }
+
+                return [
+                    (string) $visitId => [
+                        'office_id' => $officeId,
+                        'office_name' => $officeName,
+                    ],
+                ];
+            });
+    }
+
+    private function fetchOfficeScansWithRelations(string $baseUrl, string $supabaseKey): Collection
+    {
+        $headers = [
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Accept' => 'application/json',
+        ];
+
+        $primary = Http::withHeaders($headers)->timeout(20)->get($baseUrl . '/rest/v1/office_scan', [
+            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name),office(office_name),visit(visit_id,visitor(first_name,last_name,control_number))',
+            'order' => 'scan_time.desc',
+            'limit' => 500,
+        ]);
+
+        if ($primary->ok() && is_array($primary->json())) {
+            return collect($primary->json())->filter(fn ($r) => is_array($r))->values();
+        }
+
+        // Fallback query when relation nesting varies in PostgREST metadata.
+        $fallback = Http::withHeaders($headers)->timeout(20)->get($baseUrl . '/rest/v1/office_scan', [
+            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name)',
+            'order' => 'scan_time.desc',
+            'limit' => 500,
+        ]);
+
+        if (! $fallback->ok() || ! is_array($fallback->json())) {
+            logger()->warning('office_scan fetch failed', [
+                'primary_status' => $primary->status(),
+                'primary_body' => $primary->body(),
+                'fallback_status' => $fallback->status(),
+                'fallback_body' => $fallback->body(),
+            ]);
+
+            return collect([]);
+        }
+
+        $fallbackRows = collect($fallback->json())->filter(fn ($r) => is_array($r))->values();
+
+        $visitIds = $fallbackRows->pluck('visit_id')->filter()->unique()->values();
+        if ($visitIds->isEmpty()) {
+            return $fallbackRows;
+        }
+
+        $visitResponse = Http::withHeaders($headers)->timeout(20)->get($baseUrl . '/rest/v1/visit', [
+            'select' => 'visit_id,visitor(first_name,last_name,control_number)',
+            'visit_id' => 'in.(' . $visitIds->implode(',') . ')',
+            'limit' => 1000,
+        ]);
+
+        if (! $visitResponse->ok() || ! is_array($visitResponse->json())) {
+            return $fallbackRows;
+        }
+
+        $visitMap = collect($visitResponse->json())
+            ->filter(fn ($v) => is_array($v) && isset($v['visit_id']))
+            ->mapWithKeys(fn ($v) => [(string) $v['visit_id'] => $v]);
+
+        return $fallbackRows->map(function (array $row) use ($visitMap) {
+            $visit = $visitMap->get((string) ($row['visit_id'] ?? ''), null);
+            if ($visit) {
+                $row['visit'] = $visit;
+            }
+
+            return $row;
+        });
+    }
+
+    private function extractRelation($source, string $key): array
+    {
+        if (! is_array($source)) {
+            return [];
+        }
+
+        $value = $source[$key] ?? null;
+
+        if (is_array($value) && array_key_exists(0, $value) && is_array($value[0])) {
+            return $value[0];
+        }
+
+        return is_array($value) ? $value : [];
+    }
+
+    private function firstFilled(array $source, array $keys)
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $source) && $source[$key] !== null && $source[$key] !== '') {
+                return $source[$key];
+            }
+        }
+
+        return null;
     }
 
     private function parseDateTime($value): ?Carbon
