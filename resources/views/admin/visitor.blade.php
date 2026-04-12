@@ -307,12 +307,13 @@
 
 		.table-card {
 			margin-top: 22px;
-			overflow: hidden;
+			overflow-x: auto;
 		}
 
 		.visitor-table {
 			width: 100%;
 			border-collapse: collapse;
+			min-width: 1450px;
 		}
 
 		.visitor-table th {
@@ -374,6 +375,71 @@
 			color: #0e7490;
 		}
 
+		.status-completed {
+			background: #e2e8f0;
+			color: #334155;
+		}
+
+		.status-overstay {
+			background: #fee2e2;
+			color: #b91c1c;
+		}
+
+		.fetch-error {
+			margin-top: 12px;
+			padding: 10px 14px;
+			border-radius: 8px;
+			background: #fef2f2;
+			border: 1px solid #fecaca;
+			color: #b91c1c;
+			font-size: 13px;
+		}
+
+		.empty-row {
+			text-align: center;
+			color: #64748b;
+			font-size: 13px;
+		}
+
+		.pagination-wrap {
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+			gap: 8px;
+			padding: 12px 16px 16px;
+		}
+
+		.page-link {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 34px;
+			height: 34px;
+			padding: 0 10px;
+			border: 1px solid #dbe1ea;
+			border-radius: 8px;
+			background: #fff;
+			color: #334155;
+			font-size: 13px;
+			font-weight: 600;
+			text-decoration: none;
+		}
+
+		.page-link:hover {
+			background: #f8fafc;
+		}
+
+		.page-link.active {
+			background: #4256b4;
+			color: #fff;
+			border-color: #4256b4;
+		}
+
+		.page-link.disabled {
+			opacity: 0.45;
+			pointer-events: none;
+		}
+
 		.action-link {
 			display: inline-flex;
 			align-items: center;
@@ -391,7 +457,7 @@
 
 		.bottom-grid {
 			display: grid;
-			grid-template-columns: 1.4fr 1fr;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 12px;
 			margin-top: 22px;
 			align-items: stretch;
@@ -403,6 +469,7 @@
 			grid-template-rows: 1fr 1fr;
 			gap: 12px;
 			height: 100%;
+			min-height: 360px;
 		}
 
 		.panel-card {
@@ -414,6 +481,10 @@
 			display: flex;
 			flex-direction: column;
 			height: 100%;
+		}
+
+		.recent-panel {
+			min-height: 360px;
 		}
 
 		.panel-title {
@@ -445,8 +516,8 @@
 			gap: 10px;
 			padding: 14px 16px;
 			border-bottom: 1px solid #d5d8de;
-			flex: 1;
-			min-height: 66px;
+			flex: 0 0 auto;
+			min-height: 74px;
 		}
 
 		.recent-item:last-child {
@@ -524,7 +595,7 @@
 		.correct-item {
 			padding: 12px 16px;
 			border-bottom: 1px solid #d5d8de;
-			flex: 1;
+			flex: 0 0 auto;
 			min-height: 70px;
 		}
 
@@ -701,24 +772,35 @@
 
 		<main class="main">
 			<h1 class="page-title">Visitor Monitoring</h1>
+			@if (!empty($fetchError))
+				<p class="fetch-error">{{ $fetchError }}</p>
+			@endif
 
 			<div class="filters-card">
-				<div class="filters-row">
-					<div class="search-wrap">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.5"/>
-							<path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-						</svg>
-						<input class="filter-input" type="text" placeholder="" aria-label="Search visitor">
+				<form method="GET" action="{{ route('admin.visitor') }}">
+					<div class="filters-row">
+						<div class="search-wrap">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.5"/>
+								<path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+							</svg>
+							<input class="filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search visitor, pass no, control no..." aria-label="Search visitor">
+						</div>
+						<select class="filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
+							<option value="">All offices</option>
+							@foreach(($officeOptions ?? []) as $officeOption)
+								<option value="{{ $officeOption }}" @selected(($filters['office'] ?? '') === $officeOption)>{{ $officeOption }}</option>
+							@endforeach
+						</select>
+						<select class="filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
+							<option value="">All status</option>
+							@foreach(($statusOptions ?? []) as $statusOption)
+								<option value="{{ $statusOption }}" @selected(($filters['status'] ?? '') === $statusOption)>{{ $statusOption }}</option>
+							@endforeach
+						</select>
 					</div>
-					<select class="filter-select" aria-label="Filter by office">
-						<option value=""></option>
-					</select>
-					<select class="filter-select" aria-label="Filter by status">
-						<option value=""></option>
-					</select>
-				</div>
-				<p class="filters-count">Showing 3 of 3 visitors</p>
+				</form>
+				<p class="filters-count">Showing {{ ($rows ?? collect())->count() }} of {{ $filteredCount ?? 0 }} filtered visitors ({{ $totalRows ?? 0 }} total)</p>
 			</div>
 
 			<div class="table-card">
@@ -726,140 +808,97 @@
 					<thead>
 						<tr>
 							<th>Visitor</th>
+							<th>Pass No.</th>
 							<th>Control #</th>
+							<th>Contact No.</th>
+							<th>Visit Type</th>
+							<th>Purpose</th>
 							<th>Destination</th>
 							<th>Time In</th>
+							<th>Duration</th>
 							<th>Status</th>
+							<th>Alert</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td>
-								<div class="visitor-cell">
-									<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-									</svg>
-									<div>
-										<div class="visitor-name">John Anderson</div>
-										<div class="visitor-id">ID123456</div>
+						@forelse(($rows ?? []) as $row)
+							<tr>
+								<td>
+									<div class="visitor-cell">
+										<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
+										</svg>
+										<div>
+											<div class="visitor-name">{{ $row['visitor_name'] }}</div>
+											<div class="visitor-id">{{ $row['pass_number'] }}</div>
+										</div>
 									</div>
-								</div>
-							</td>
-							<td>SVMS-250125-0001</td>
-							<td>Human Resources</td>
-							<td>Jan 25, 2026<br>10:26 AM</td>
-							<td><span class="status-pill status-arrived">Arrived</span></td>
-							<td>
-								<a href="#" class="action-link">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
-										<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-									</svg>
-									View
-								</a>
-							</td>
-						</tr>
-
-						<tr>
-							<td>
-								<div class="visitor-cell">
-									<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-									</svg>
-									<div>
-										<div class="visitor-name">Maria Garcia</div>
-										<div class="visitor-id">ID123467</div>
-									</div>
-								</div>
-							</td>
-							<td>SVMS-250125-0002</td>
-							<td>IT Department</td>
-							<td>Jan 25, 2026<br>11:56 AM</td>
-							<td><span class="status-pill status-transit">In Transit</span></td>
-							<td>
-								<a href="#" class="action-link">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
-										<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-									</svg>
-									View
-								</a>
-							</td>
-						</tr>
-
-						<tr>
-							<td>
-								<div class="visitor-cell">
-									<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-									</svg>
-									<div>
-										<div class="visitor-name">Robert Kim</div>
-										<div class="visitor-id">ID123489</div>
-									</div>
-								</div>
-							</td>
-							<td>SVMS-250125-0003</td>
-							<td>Finance Department</td>
-							<td>Jan 25, 2026<br>9:26 AM</td>
-							<td><span class="status-pill status-arrived">Arrived</span></td>
-							<td>
-								<a href="#" class="action-link">
-									<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-										<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
-										<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-									</svg>
-									View
-								</a>
-							</td>
-						</tr>
+								</td>
+								<td>{{ $row['pass_number'] }}</td>
+								<td>{{ $row['control_number'] }}</td>
+								<td>{{ $row['contact_no'] }}</td>
+								<td>{{ $row['visit_type'] }}</td>
+								<td>{{ $row['purpose'] }}</td>
+								<td>{{ $row['destination'] }}</td>
+								<td>{{ $row['entry_time_label_date'] }}<br>{{ $row['entry_time_label_time'] }}</td>
+								<td>{{ $row['duration_label'] }}</td>
+								<td><span class="status-pill {{ $row['status_class'] }}">{{ $row['status'] }}</span></td>
+								<td>{{ $row['alert'] }}</td>
+								<td>
+									<a href="#" class="action-link" aria-disabled="true">
+										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
+											<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+										</svg>
+										View
+									</a>
+								</td>
+							</tr>
+						@empty
+							<tr>
+								<td colspan="12" class="empty-row">No visitor records found.</td>
+							</tr>
+						@endforelse
 					</tbody>
 				</table>
+				@if(($rows ?? null) && method_exists($rows, 'lastPage') && $rows->lastPage() > 1)
+					<div class="pagination-wrap" aria-label="Visitor table pagination">
+						<a class="page-link {{ $rows->onFirstPage() ? 'disabled' : '' }}" href="{{ $rows->onFirstPage() ? '#' : $rows->previousPageUrl() }}">Prev</a>
+
+						@for($page = 1; $page <= $rows->lastPage(); $page++)
+							<a class="page-link {{ $rows->currentPage() === $page ? 'active' : '' }}" href="{{ $rows->url($page) }}">{{ $page }}</a>
+						@endfor
+
+						<a class="page-link {{ $rows->hasMorePages() ? '' : 'disabled' }}" href="{{ $rows->hasMorePages() ? $rows->nextPageUrl() : '#' }}">Next</a>
+					</div>
+				@endif
 			</div>
 
 			<div class="bottom-grid">
 				<section class="panel-card recent-panel">
 					<h2 class="panel-title">Recent Visitors</h2>
 					<ul class="recent-list">
-						<li class="recent-item">
-							<div class="recent-left">
-								<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-									<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-								</svg>
-								<div>
-									<div>Robert Kim</div>
-									<div class="recent-meta">Finance Department • 09:23 AM</div>
+						@forelse(($recentVisitors ?? []) as $recent)
+							<li class="recent-item">
+								<div class="recent-left">
+									<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
+									</svg>
+									<div>
+										<div>{{ $recent['visitor_name'] }}</div>
+										<div class="recent-meta">{{ $recent['destination'] }} • {{ $recent['time_label'] }}</div>
+									</div>
 								</div>
-							</div>
-							<span class="status-pill status-arrived">Arrived</span>
-						</li>
-
-						<li class="recent-item">
-							<div class="recent-left">
-								<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-									<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-								</svg>
-								<div>
-									<div>Maria Garcia</div>
-									<div class="recent-meta">IT Department • 11:53 AM</div>
+								<span class="status-pill {{ $recent['status_class'] }}">{{ $recent['status'] }}</span>
+							</li>
+						@empty
+							<li class="recent-item">
+								<div class="recent-left">
+									<div class="recent-meta">No recent visitor data.</div>
 								</div>
-							</div>
-							<span class="status-pill status-transit">In Transit</span>
-						</li>
-
-						<li class="recent-item">
-							<div class="recent-left">
-								<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-									<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-								</svg>
-								<div>
-									<div>John Anderson</div>
-									<div class="recent-meta">Human Resources • 10:23 AM</div>
-								</div>
-							</div>
-							<span class="status-pill status-arrived">Arrived</span>
-						</li>
+							</li>
+						@endforelse
 					</ul>
 				</section>
 
@@ -867,71 +906,50 @@
 					<section class="panel-card stack-panel">
 						<h2 class="panel-title">Active by Office</h2>
 						<ul class="office-list">
-							<li class="office-item">
-								<div class="office-row">
-									<span class="office-label">
-										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-										</svg>
-										Human Resources
-									</span>
-									<span>1</span>
-								</div>
-								<div class="bar-track"><div class="bar-fill w-33"></div></div>
-							</li>
-
-							<li class="office-item">
-								<div class="office-row">
-									<span class="office-label">
-										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-										</svg>
-										IT Department
-									</span>
-									<span>1</span>
-								</div>
-								<div class="bar-track"><div class="bar-fill w-33"></div></div>
-							</li>
-
-							<li class="office-item">
-								<div class="office-row">
-									<span class="office-label">
-										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-										</svg>
-										Finance Department
-									</span>
-									<span>1</span>
-								</div>
-								<div class="bar-track"><div class="bar-fill w-33"></div></div>
-							</li>
+							@forelse(($activeByOffice ?? []) as $officeActivity)
+								<li class="office-item">
+									<div class="office-row">
+										<span class="office-label">
+											<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+											</svg>
+											{{ $officeActivity['office_name'] }}
+										</span>
+										<span>{{ $officeActivity['count'] }}</span>
+									</div>
+									<div class="bar-track">
+										@php
+											$barWidth = (int) round((($officeActivity['count'] ?? 0) / max(1, ($maxOfficeCount ?? 1))) * 100);
+										@endphp
+										<div class="bar-fill" style="width: {{ max(8, $barWidth) }}%;"></div>
+									</div>
+								</li>
+							@empty
+								<li class="office-item">
+									<div class="office-row">
+										<span class="office-label">No active office data</span>
+									</div>
+								</li>
+							@endforelse
 						</ul>
 					</section>
 
 					<section class="panel-card stack-panel">
 						<h2 class="panel-title">Correct Office Scans</h2>
 						<ul class="correct-list" aria-label="Correct office scan results">
-							<li class="correct-item">
-								<div class="correct-head">
-									<span>John Anderson</span>
-									<span class="correct-pill">MATCHED</span>
-								</div>
-								<p class="correct-meta">Human Resources • SVMS-250125-0001 • 10:28 AM</p>
-							</li>
-							<li class="correct-item">
-								<div class="correct-head">
-									<span>Maria Garcia</span>
-									<span class="correct-pill">MATCHED</span>
-								</div>
-								<p class="correct-meta">IT Department • SVMS-250125-0002 • 11:58 AM</p>
-							</li>
-							<li class="correct-item">
-								<div class="correct-head">
-									<span>Robert Kim</span>
-									<span class="correct-pill">MATCHED</span>
-								</div>
-								<p class="correct-meta">Finance Department • SVMS-250125-0003 • 09:29 AM</p>
-							</li>
+							@forelse(($correctOfficeScans ?? []) as $scan)
+								<li class="correct-item">
+									<div class="correct-head">
+										<span>{{ $scan['visitor_name'] }}</span>
+										<span class="correct-pill">{{ $scan['result'] }}</span>
+									</div>
+									<p class="correct-meta">{{ $scan['destination'] }} • {{ $scan['control_number'] }} • {{ $scan['time_label'] }}</p>
+								</li>
+							@empty
+								<li class="correct-item">
+									<p class="correct-meta">No matched office scans yet.</p>
+								</li>
+							@endforelse
 						</ul>
 					</section>
 				</div>
