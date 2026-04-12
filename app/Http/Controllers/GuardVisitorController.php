@@ -364,6 +364,38 @@ class GuardVisitorController extends Controller
         }
 
         $normalizedAddress = $this->normalizeAddressForParsing($address);
+        $parts = array_values(array_filter(array_map('trim', explode(',', $normalizedAddress)), fn($part) => $part !== ''));
+
+        // Village-style pattern, e.g.:
+        // "ROAD 29, BLOCK 31, LOT 16, BULATI, STREET BANAYBANAY, LIPA CITY, BATANGAS"
+        $houseParts = [];
+        foreach ($parts as $idx => $part) {
+            if (preg_match('/^(ROAD|BLOCK|LOT)\s+[A-Z0-9-]+$/i', $part)) {
+                $houseParts[] = strtoupper($part);
+                continue;
+            }
+
+            if (preg_match('/^STREET\s+([A-Z\s]+?)(?:\s+[A-Z]+\s+CITY|\s+CITY|\s+MUNICIPALITY|$)/i', $part, $m)) {
+                if (empty($result['street']) && isset($parts[$idx - 1])) {
+                    $prevPart = trim((string)$parts[$idx - 1]);
+                    if (
+                        !empty($prevPart)
+                        && !preg_match('/^(ROAD|BLOCK|LOT)\s+/i', $prevPart)
+                        && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|BATANGAS)\b/i', $prevPart)
+                    ) {
+                        $result['street'] = ucwords(strtolower($prevPart));
+                    }
+                }
+
+                if (empty($result['barangay'])) {
+                    $result['barangay'] = ucwords(strtolower(trim($m[1])));
+                }
+            }
+        }
+
+        if (!empty($houseParts) && empty($result['house_no'])) {
+            $result['house_no'] = implode(', ', $houseParts);
+        }
 
         // Pattern seen in National ID OCR:
         // "0278 ROSAS ST MUNTING PULO, CITY OF LIPA, BATANGAS"
