@@ -1265,6 +1265,14 @@
 			scanAction.disabled = false;
 		};
 
+		const setScannerAspectRatio = (width, height) => {
+			if (!width || !height) {
+				return;
+			}
+
+			scannerZone.style.aspectRatio = `${width} / ${height}`;
+		};
+
 		const releaseCamera = () => {
 			if (!activeStream) {
 				return;
@@ -1290,6 +1298,33 @@
 			releaseCamera();
 
 			return true;
+		};
+
+		const freezeDataUrlFrame = (dataUrl, width, height) => {
+			const frameImage = new Image();
+
+			return new Promise((resolve, reject) => {
+				frameImage.onload = () => {
+					const drawWidth = width || frameImage.naturalWidth;
+					const drawHeight = height || frameImage.naturalHeight;
+
+					setScannerAspectRatio(drawWidth, drawHeight);
+					releaseCamera();
+
+					const frozenCtx = frozenFrame.getContext('2d');
+					frozenFrame.width = drawWidth;
+					frozenFrame.height = drawHeight;
+					frozenCtx.drawImage(frameImage, 0, 0, drawWidth, drawHeight);
+					frozenFrame.classList.add('visible');
+					resolve();
+				};
+
+				frameImage.onerror = () => {
+					reject(new Error('Failed to load selected image.'));
+				};
+
+				frameImage.src = dataUrl;
+			});
 		};
 
 		const clearFrozenFrame = () => {
@@ -1319,9 +1354,7 @@
 				cameraFeed.onloadedmetadata = () => {
 					const width = cameraFeed.videoWidth;
 					const height = cameraFeed.videoHeight;
-					if (width && height) {
-						scannerZone.style.aspectRatio = `${width} / ${height}`;
-					}
+					setScannerAspectRatio(width, height);
 				};
 
 				setCameraState(true, currentStep === 1
@@ -1404,7 +1437,12 @@
 			});
 		};
 
-		const saveIdScanAndProceed = (capturedIdData, progressText = 'Saving ID scan...') => {
+		const saveIdScanAndProceed = (capturedIdData, progressText = 'Saving ID scan...', options = {}) => {
+			const {
+				restartCameraOnError = true,
+				showFrozenAfterSuccess = false
+			} = options;
+
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = progressText;
 			scanAction.disabled = true;
@@ -1428,7 +1466,9 @@
 				}
 
 				releaseCamera();
-				clearFrozenFrame();
+				if (!showFrozenAfterSuccess) {
+					clearFrozenFrame();
+				}
 				loadingOverlay.classList.add('is-hidden');
 				scanAction.disabled = false;
 				galleryAction.disabled = false;
@@ -1439,10 +1479,14 @@
 				loadingText.textContent = 'Failed to save ID scan. Try again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
-					clearFrozenFrame();
+					if (!showFrozenAfterSuccess) {
+						clearFrozenFrame();
+					}
 					scanAction.disabled = false;
 					galleryAction.disabled = false;
-					startCamera();
+					if (restartCameraOnError) {
+						startCamera();
+					}
 				}, 1500);
 			});
 		};
@@ -1477,7 +1521,17 @@
 					return;
 				}
 
-				saveIdScanAndProceed(reader.result, 'Uploading ID from gallery...');
+				freezeDataUrlFrame(reader.result)
+					.then(() => {
+						cameraStatus.textContent = 'Imported image ready. Uploading ID from gallery...';
+						saveIdScanAndProceed(reader.result, 'Uploading ID from gallery...', {
+							restartCameraOnError: false,
+							showFrozenAfterSuccess: true
+						});
+					})
+					.catch(() => {
+						alert('Unable to preview selected image. Please try another file.');
+					});
 			};
 			reader.onerror = () => {
 				alert('Unable to read selected image. Please try another file.');
