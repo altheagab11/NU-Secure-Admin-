@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -49,8 +50,9 @@ class OCRService
                 ]);
             }
 
-            // Send to OCR.Space using multipart file upload (most reliable method)
-            $response = Http::timeout(60);
+            // Keep OCR request timeout below PHP max_execution_time to avoid fatal timeout.
+            $requestStartedAt = microtime(true);
+            $response = Http::connectTimeout(8)->timeout(20);
 
             if ($isFile) {
                 // Send actual file upload
@@ -88,6 +90,7 @@ class OCRService
             Log::info('OCR.Space API response', [
                 'status' => $response->status(),
                 'successful' => $response->successful(),
+                'duration_ms' => (int) ((microtime(true) - $requestStartedAt) * 1000),
             ]);
 
             if (!$response->successful()) {
@@ -162,6 +165,16 @@ class OCRService
                 'extracted_data' => $extractedData,
                 'raw_text' => $parsedText,
                 'confidence' => $result['Confidence'] ?? 0,
+            ];
+        } catch (ConnectionException $e) {
+            Log::warning('OCR.Space request timeout/connection error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'OCR request timed out. Please try again with a clearer image or retry in a few seconds.',
+                'raw_text' => null,
             ];
         } catch (\Exception $e) {
             Log::error('OCR Service exception', [

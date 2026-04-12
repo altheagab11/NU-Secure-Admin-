@@ -292,6 +292,14 @@ class GuardVisitorController extends Controller
 
         $normalizedAddress = $this->normalizeAddressForParsing($address);
 
+        // Pattern seen in National ID OCR:
+        // "0278 ROSAS ST MUNTING PULO, CITY OF LIPA, BATANGAS"
+        if (preg_match('/^\s*(\d+[A-Z0-9-]*)\s+([A-Z\s]+?\b(?:ST|STREET|RD|ROAD|AVE|AVENUE|BLVD|BOULEVARD|LN|LANE)\b)\s+([A-Z][A-Z\s]+?)(?:,|$)/i', $normalizedAddress, $m)) {
+            $result['house_no'] = trim($m[1]);
+            $result['street'] = ucwords(strtolower(trim($m[2])));
+            $result['barangay'] = ucwords(strtolower(trim($m[3])));
+        }
+
         // Common National ID compact format example:
         // "PUROK 5, MUNTING PULO CITY OF LIPA BATANGAS"
         if (preg_match('/\bPUROK\s*\d+\s*,?\s*([A-Z][A-Z\s]+?)\s+CITY\s+OF\b/i', $normalizedAddress, $m)) {
@@ -346,7 +354,7 @@ class GuardVisitorController extends Controller
             if (
                 empty($result['barangay'])
                 && preg_match('/^[A-Z\s]{3,}$/', $lineUpper)
-                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE)\b/', $lineUpper)
+                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL)\b/', $lineUpper)
             ) {
                 $result['barangay'] = ucwords(strtolower(trim($lineUpper)));
                 continue;
@@ -361,7 +369,21 @@ class GuardVisitorController extends Controller
             if (preg_match('/^(?:no\.?|house|#)\s*(\d+[a-z]?|\w+[\w\s]*)/i', $line, $m)) {
                 $result['house_no'] = trim($m[1]);
             } elseif (preg_match('/\b(st|street|ave|avenue|blvd|boulevard|lane|ln|road|rd)\b/i', $lineLower)) {
-                $result['street'] = trim($line);
+                if (preg_match('/^\s*(\d+[A-Z0-9-]*)\s+([A-Z\s]+?\b(?:ST|STREET|RD|ROAD|AVE|AVENUE|BLVD|BOULEVARD|LN|LANE)\b)\s+([A-Z][A-Z\s]+?)\s*$/i', $line, $m)) {
+                    if (empty($result['house_no'])) {
+                        $result['house_no'] = trim($m[1]);
+                    }
+
+                    if (empty($result['street'])) {
+                        $result['street'] = ucwords(strtolower(trim($m[2])));
+                    }
+
+                    if (empty($result['barangay'])) {
+                        $result['barangay'] = ucwords(strtolower(trim($m[3])));
+                    }
+                } elseif (empty($result['street'])) {
+                    $result['street'] = trim($line);
+                }
             } elseif (preg_match('/\bbarangay|brgy\b/i', $lineLower)) {
                 if (preg_match('/(?:barangay|brgy)[.:\s]+([^,]+)/i', $line, $m)) {
                     $result['barangay'] = trim($m[1]);
@@ -436,6 +458,8 @@ class GuardVisitorController extends Controller
         $normalized = preg_replace('/\bCITY\s+OE\s+IPA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCITY\s+O\s+IPA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCITY\s+OF\s+IPA\b/', 'CITY OF LIPA', $normalized);
+        $normalized = preg_replace('/\bCHY\s+OF\s+LIPA\b/', 'CITY OF LIPA', $normalized);
+        $normalized = preg_replace('/\bCHY\s+OF\b/', 'CITY OF', $normalized);
 
         return trim($normalized);
     }
