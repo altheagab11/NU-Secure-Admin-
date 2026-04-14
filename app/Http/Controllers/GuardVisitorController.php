@@ -222,6 +222,7 @@ class GuardVisitorController extends Controller
         // Prefer direct extracted name fields, fallback to full_name parsing
         $firstName = trim((string)($extracted['first_name'] ?? ''));
         $lastName = trim((string)($extracted['last_name'] ?? ''));
+        $documentType = strtolower(trim((string)($extracted['document_type'] ?? '')));
 
         if ((empty($firstName) || empty($lastName)) && !empty($extracted['full_name'])) {
             $parts = explode(',', $extracted['full_name']);
@@ -234,25 +235,62 @@ class GuardVisitorController extends Controller
                     $firstName = trim($parts[1]);
                 }
             } else {
-                // Try space-separated
-                $nameParts = explode(' ', trim($extracted['full_name']));
-                if (count($nameParts) > 1) {
-                    if (empty($firstName)) {
-                        $firstName = $nameParts[0];
-                    }
-                    if (empty($lastName)) {
-                        $lastName = implode(' ', array_slice($nameParts, 1));
-                    }
-                } else {
+                if ($documentType === 'passport') {
                     if (empty($firstName)) {
                         $firstName = trim($extracted['full_name']);
+                    }
+
+                    // For passports, do not guess a surname from a space-separated given name.
+                } else {
+                // Try space-separated
+                    $nameParts = explode(' ', trim($extracted['full_name']));
+                    if (count($nameParts) > 1) {
+                        if (empty($firstName)) {
+                            $firstName = $nameParts[0];
+                        }
+                        if (empty($lastName)) {
+                            $lastName = implode(' ', array_slice($nameParts, 1));
+                        }
+                    } else {
+                        if (empty($firstName)) {
+                            $firstName = trim($extracted['full_name']);
+                        }
                     }
                 }
             }
         }
 
         // Parse address into components
-        $addressData = $this->parseAddress($extracted['address'] ?? '');
+        $addressSource = trim((string)($extracted['address'] ?? ''));
+
+        if (
+            !empty($addressSource)
+            && (
+                (($extracted['document_type'] ?? '') === 'passport')
+                || preg_match('/\b(PLACE\s+OF\s+B|BIRTH\s+PLACE|POB|PLOCE)\b/i', $addressSource)
+            )
+        ) {
+            $addressSource = $this->normalizePassportPlaceOfBirthSource($addressSource);
+        }
+
+        if (empty($addressSource) && !empty($extracted['place_of_birth'])) {
+            $addressSource = $this->normalizePassportPlaceOfBirthSource((string)$extracted['place_of_birth']);
+        }
+
+        $addressData = $this->parseAddress($addressSource);
+
+        if (empty($addressData['city']) && !empty($extracted['place_of_birth'])) {
+            $birthplaceData = $this->parseAddress($this->normalizePassportPlaceOfBirthSource((string)$extracted['place_of_birth']));
+            if (!empty($birthplaceData['city'])) {
+                $addressData['city'] = $birthplaceData['city'];
+            }
+            if (empty($addressData['province']) && !empty($birthplaceData['province'])) {
+                $addressData['province'] = $birthplaceData['province'];
+            }
+            if (empty($addressData['region']) && !empty($birthplaceData['region'])) {
+                $addressData['region'] = $birthplaceData['region'];
+            }
+        }
 
         // Auto-infer PH region from extracted province when available
         if (empty($addressData['region']) && !empty($addressData['province'])) {
@@ -269,6 +307,41 @@ class GuardVisitorController extends Controller
             'province' => $addressData['province'],
             'region' => $addressData['region'],
         ];
+    }
+
+    /**
+     * Strip passport birthplace label noise so the city parser can work on the real municipality.
+     */
+    protected function normalizePassportPlaceOfBirthSource(string $placeOfBirth): string
+    {
+        $normalized = $this->normalizeAddressForParsing($placeOfBirth);
+
+        $normalized = preg_replace('/\b(PLACE\s+OF\s+B(?:IRTH|ERTE)|BIRTH\s+PLACE|PLACE\s+OF\s+BIRTH|POB)\b/i', ' ', $normalized);
+        $normalized = preg_replace('/\b[A-Z]\b/', ' ', $normalized);
+        $normalized = preg_replace('/\s+/', ' ', trim((string)$normalized));
+
+        if (preg_match('/\bCITY\s+OF\s+([A-Z\s]{2,40})\b/', $normalized, $m)) {
+            return 'CITY OF ' . trim($m[1]);
+        }
+
+        if (preg_match('/\b([A-Z\s]{2,40})\s+CITY\b/', $normalized, $m)) {
+            return trim($m[1]) . ' CITY';
+        }
+
+        if (preg_match('/\b(CALAPAN|LIPA|BATANGAS|MINDORO|PUERTO|ORIENTAL|OCCIDENTAL)\b/i', $normalized, $m)) {
+            $candidate = strtoupper(trim($m[1]));
+            if ($candidate === 'LIPA') {
+                return 'CITY OF LIPA';
+            }
+
+            if ($candidate === 'CALAPAN') {
+                return 'CALAPAN CITY';
+            }
+
+            return $candidate;
+        }
+
+        return trim((string)$normalized);
     }
 
     /**
@@ -291,6 +364,38 @@ class GuardVisitorController extends Controller
         }
 
         $normalizedAddress = $this->normalizeAddressForParsing($address);
+        $parts = array_values(array_filter(array_map('trim', explode(',', $normalizedAddress)), fn($part) => $part !== ''));
+
+        // Village-style pattern, e.g.:
+        // "ROAD 29, BLOCK 31, LOT 16, BULATI, STREET BANAYBANAY, LIPA CITY, BATANGAS"
+        $houseParts = [];
+        foreach ($parts as $idx => $part) {
+            if (preg_match('/^(ROAD|BLOCK|LOT)\s+[A-Z0-9-]+$/i', $part)) {
+                $houseParts[] = strtoupper($part);
+                continue;
+            }
+
+            if (preg_match('/^STREET\s+([A-Z\s]+?)(?:\s+[A-Z]+\s+CITY|\s+CITY|\s+MUNICIPALITY|$)/i', $part, $m)) {
+                if (empty($result['street']) && isset($parts[$idx - 1])) {
+                    $prevPart = trim((string)$parts[$idx - 1]);
+                    if (
+                        !empty($prevPart)
+                        && !preg_match('/^(ROAD|BLOCK|LOT)\s+/i', $prevPart)
+                        && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|BATANGAS)\b/i', $prevPart)
+                    ) {
+                        $result['street'] = ucwords(strtolower($prevPart));
+                    }
+                }
+
+                if (empty($result['barangay'])) {
+                    $result['barangay'] = ucwords(strtolower(trim($m[1])));
+                }
+            }
+        }
+
+        if (!empty($houseParts) && empty($result['house_no'])) {
+            $result['house_no'] = implode(', ', $houseParts);
+        }
 
         // Pattern seen in National ID OCR:
         // "0278 ROSAS ST MUNTING PULO, CITY OF LIPA, BATANGAS"

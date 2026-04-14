@@ -205,21 +205,25 @@ class OCRService
             fn($line) => !empty($line)
         );
 
+        $normalizedIdType = $this->normalizeIdType($idType);
+        $resolvedIdType = $this->resolveIdTypeFromText($lines, $normalizedIdType);
+
         $extracted = [
             'full_name' => '',
             'first_name' => '',
             'last_name' => '',
             'middle_name' => '',
             'document_number' => '',
-            'document_type' => $idType,
+            'document_type' => $resolvedIdType,
             'date_of_birth' => '',
             'expiration_date' => '',
             'gender' => '',
             'nationality' => '',
+            'place_of_birth' => '',
             'address' => '',
         ];
 
-        switch ($idType) {
+        switch ($resolvedIdType) {
             case 'national':
                 $extracted = $this->extractNationalIdData($lines, $extracted);
                 break;
@@ -228,6 +232,9 @@ class OCRService
                 break;
             case 'driver_license':
                 $extracted = $this->extractDriverLicenseData($lines, $extracted);
+                break;
+            default:
+                $extracted = $this->extractNationalIdData($lines, $extracted);
                 break;
         }
 
@@ -239,21 +246,6 @@ class OCRService
         $normalizedLines = array_values(array_filter(array_map(fn($line) => $this->normalizeOcrLine($line), $lines)));
         $fullText = implode(' ', $normalizedLines);
         $compactText = preg_replace('/\s+/', ' ', $fullText);
-
-        // 0) Deterministic rescue for known National ID structure when OCR is noisy.
-        if (preg_match('/\bREYES\b/i', $compactText)) {
-            $extracted['last_name'] = 'REYES';
-        }
-        if (preg_match('/\bALTHEA(?:\s+[A-Z]{3,15})?\b/i', $compactText, $m)) {
-            $extracted['first_name'] = strtoupper(trim($m[0]));
-        }
-        if (preg_match('/\bGONITO\b/i', $compactText)) {
-            $extracted['middle_name'] = 'GONITO';
-        }
-
-        if (preg_match('/\bPUROK\s*\d+\b.*?\bCITY(?:\s+OF)?\s+[A-Z\s]+.*?\bBATANGAS\b/i', $compactText, $m)) {
-            $extracted['address'] = strtoupper(trim($m[0]));
-        }
 
         // 0) Strongest path: capture values between known field labels
         $betweenLastName = $this->extractBetweenLabels($compactText, ['APELYIDO', 'LAST NAME'], ['MGA PANGALAN', 'GIVEN NAME']);
@@ -395,64 +387,719 @@ class OCRService
 
     protected function extractPassportData(array $lines, array $extracted): array
     {
-        $fullText = implode(' ', $lines);
+        $normalizedLines = array_values(array_filter(array_map(fn($line) => $this->normalizeOcrLine($line), $lines)));
+        $fullText = implode(' ', $normalizedLines);
 
-        // Passport number is usually alphanumeric
-        if (preg_match('/\b([A-Z]{1,2}\d{6,9})\b/', $fullText, $matches)) {
-            $extracted['document_number'] = $matches[1];
+        // Parse MRZ names when present: P<COUNTRY<SURNAME<<GIVEN<NAMES
+        foreach ($normalizedLines as $line) {
+            $mrzLine = preg_replace('/\s+/', '', strtoupper((string)$line));
+            if (!str_starts_with((string)$mrzLine, 'P<')) {
+                continue;
+            }
+
+            if (preg_match('/^P<[A-Z<]{3}([A-Z<]+)$/', (string)$mrzLine, $m)) {
+                $nameSection = trim((string)$m[1], '<');
+                $parts = explode('<<', $nameSection);
+                $surname = isset($parts[0]) ? str_replace('<', ' ', trim($parts[0])) : '';
+                $given = isset($parts[1]) ? str_replace('<', ' ', trim($parts[1])) : '';
+
+                if (!empty($surname) && empty($extracted['last_name'])) {
+                    $extracted['last_name'] = preg_replace('/\s+/', ' ', $surname);
+                }
+
+                if (!empty($given) && empty($extracted['first_name'])) {
+                    $extracted['first_name'] = preg_replace('/\s+/', ' ', $given);
+                }
+
+                break;
+            }
+
+            if (preg_match('/^P<[A-Z<]{3}([A-Z]{2,})(?:<<|<)([A-Z<]{2,})/i', (string)$mrzLine, $m)) {
+                $surname = preg_replace('/<+/', ' ', trim((string)$m[1]));
+                $given = preg_replace('/<+/', ' ', trim((string)$m[2]));
+
+                if (!empty($surname) && empty($extracted['last_name'])) {
+                    $extracted['last_name'] = trim((string)$surname);
+                }
+
+                if (!empty($given) && empty($extracted['first_name'])) {
+                    $extracted['first_name'] = trim((string)$given);
+                }
+
+                break;
+            }
         }
 
-        // Extract name (usually in first few lines)
-        foreach (array_slice($lines, 0, 3) as $line) {
-            if (preg_match('/^[A-Z\s]+$/', $line) && strlen($line) > 5) {
+        if (empty($extracted['last_name']) || empty($extracted['first_name']) || empty($extracted['middle_name'])) {
+            [$labelLastName, $labelFirstName, $labelMiddleName] = $this->extractPassportNamesFromLabels($normalizedLines);
+
+            if (empty($extracted['last_name']) && !empty($labelLastName)) {
+                $extracted['last_name'] = $labelLastName;
+            }
+
+            if (empty($extracted['first_name']) && !empty($labelFirstName)) {
+                $extracted['first_name'] = $labelFirstName;
+            }
+
+            if (empty($extracted['middle_name']) && !empty($labelMiddleName)) {
+                $extracted['middle_name'] = $labelMiddleName;
+            }
+        }
+
+        // Extract passport number from labels first.
+        if (preg_match('/\b(?:PASSPORT\s*(?:NO|NUMBER|#)?|DOCUMENT\s*NO|DOC\s*NO|NO)\s*[:\-]?\s*([A-Z0-9]{6,10})\b/i', $fullText, $matches)) {
+            $extracted['document_number'] = strtoupper(trim($matches[1]));
+        }
+
+        // MRZ second line starts with passport number (commonly 9 chars).
+        if (empty($extracted['document_number'])) {
+            foreach ($normalizedLines as $line) {
+                if (str_starts_with($line, 'P<')) {
+                    continue;
+                }
+
+                if (preg_match('/^([A-Z0-9<]{8,10})[A-Z<0-9]{20,}$/', $line, $m)) {
+                    $candidate = strtoupper(str_replace('<', '', $m[1]));
+                    if (
+                        !empty($candidate)
+                        && strlen($candidate) >= 7
+                        && !str_starts_with($candidate, 'PPHL')
+                        && !str_contains($candidate, 'PHL')
+                    ) {
+                        $extracted['document_number'] = $candidate;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Generic fallback for alphanumeric passport-like numbers.
+        if (empty($extracted['document_number']) && preg_match('/\b([A-Z]{1,2}\d{6,9}|\d{8,9})\b/', $fullText, $matches)) {
+            $extracted['document_number'] = strtoupper(trim($matches[1]));
+        }
+
+        // Extract name from top lines when MRZ parsing did not provide it.
+        foreach (array_slice($normalizedLines, 0, 6) as $line) {
+            if (
+                preg_match('/^[A-Z\s,]+$/', $line)
+                && strlen($line) > 5
+                && !preg_match('/\b(PASSPORT|REPUBLIC|PHILIPPINES|NATIONALITY|DATE|BIRTH|SEX|PLACE|AUTHORITY|TYPE)\b/', $line)
+            ) {
                 $extracted['full_name'] = trim($line);
                 break;
             }
         }
 
-        // Extract DOB
-        if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/', $fullText, $matches)) {
+        if (empty($extracted['last_name']) && empty($extracted['first_name']) && !empty($extracted['full_name'])) {
+            $parts = explode(',', $extracted['full_name']);
+            if (count($parts) >= 2) {
+                $extracted['last_name'] = trim((string)$parts[0]);
+                $extracted['first_name'] = trim((string)$parts[1]);
+            } else {
+                $tokens = preg_split('/\s+/', trim((string)$extracted['full_name']));
+                if (count($tokens) >= 2) {
+                    $extracted['first_name'] = trim((string)$tokens[0]);
+                    $extracted['last_name'] = trim((string)implode(' ', array_slice($tokens, 1)));
+                }
+            }
+        }
+
+        // Prefer the structured MRZ name over any noisy header line.
+        if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim($extracted['last_name'] . ', ' . $extracted['first_name']);
+        }
+
+        if (empty($extracted['full_name']) && (!empty($extracted['last_name']) || !empty($extracted['first_name']))) {
+            $extracted['full_name'] = trim($extracted['last_name'] . ', ' . $extracted['first_name'], ', ');
+        }
+
+        // Replace passport-header lines with structured name.
+        if (
+            !empty($extracted['full_name'])
+            && preg_match('/\bPASSPORT\b/i', $extracted['full_name'])
+            && (!empty($extracted['last_name']) || !empty($extracted['first_name']))
+        ) {
+            $extracted['full_name'] = trim($extracted['last_name'] . ', ' . $extracted['first_name'], ', ');
+        }
+
+        // Extract DOB from labels and generic numeric formats.
+        if (preg_match('/\b(?:DATE\s*OF\s*BIRTH|BIRTH\s*DATE|DOB)\b[^0-9A-Z]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})/i', $fullText, $matches)) {
+            $extracted['date_of_birth'] = $this->normalizeDate($matches[1]);
+        } elseif (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/', $fullText, $matches)) {
             $extracted['date_of_birth'] = $this->normalizeDate($matches[1]);
         }
 
-        // Extract expiration
-        if (preg_match('/expir[a-z]*.*?(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i', $fullText, $matches)) {
+        // Extract expiration from labels and generic numeric formats.
+        if (preg_match('/\b(?:DATE\s*OF\s*EXPIRY|DATE\s*OF\s*EXPIRATION|EXPIR(?:Y|ATION)?|VALID\s*UNTIL)\b[^0-9A-Z]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})/i', $fullText, $matches)) {
             $extracted['expiration_date'] = $this->normalizeDate($matches[1]);
+        } elseif (preg_match('/expir[a-z]*.*?(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i', $fullText, $matches)) {
+            $extracted['expiration_date'] = $this->normalizeDate($matches[1]);
+        }
+
+        if (preg_match('/\b(?:NATIONALITY|NAT)\s*[:\-]?\s*([A-Z]{3}|[A-Z\s]{4,})\b/i', $fullText, $matches)) {
+            $extracted['nationality'] = trim((string)$matches[1]);
+        }
+
+        $extracted['place_of_birth'] = $this->extractPassportPlaceOfBirth($normalizedLines, $fullText);
+        if (empty($extracted['address']) && !empty($extracted['place_of_birth'])) {
+            $extracted['address'] = $extracted['place_of_birth'];
         }
 
         return $extracted;
     }
 
-    protected function extractDriverLicenseData(array $lines, array $extracted): array
+    protected function extractPassportNamesFromLabels(array $lines): array
     {
-        $fullText = implode(' ', $lines);
+        $lastName = '';
+        $firstName = '';
+        $middleName = '';
 
-        // Extract license number
-        if (preg_match('/license[:\s]+([A-Z0-9\-]+)/i', $fullText, $matches)) {
-            $extracted['document_number'] = trim($matches[1]);
-        } elseif (preg_match('/\b([A-Z0-9]{6,12})\b/', $fullText, $matches)) {
-            $extracted['document_number'] = $matches[1];
-        }
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
 
-        // Extract name
-        foreach ($lines as $line) {
-            if (strlen($line) > 5 && preg_match('/^[A-Z\s,]+$/', $line)) {
-                $extracted['full_name'] = trim($line);
+            if (
+                empty($lastName)
+                && preg_match('/\b(APELYIDO|SURNAME)\b/i', $line)
+                && !preg_match('/\b(MIDDLE\s*NAME|PANGGITNANG)\b/i', $line)
+            ) {
+                $lastName = $this->extractLabeledPassportValue($lines, $i, ['APELYIDO', 'SURNAME']);
+            }
+
+            if (
+                empty($firstName)
+                && preg_match('/\b(PANGALAN|GIVEN\s*NAMES?|GIVENNAME)\b/i', $line)
+                && !preg_match('/\b(MIDDLE\s*NAME|PANGGITNANG)\b/i', $line)
+            ) {
+                $firstName = $this->extractLabeledPassportValue($lines, $i, ['PANGALAN', 'GIVEN NAMES', 'GIVEN NAME', 'GIVENNAME']);
+            }
+
+            if (empty($middleName) && preg_match('/\b(MIDDLE\s*NAME|PANGGITNANG\s+APELYIDO)\b/i', $line)) {
+                $middleName = $this->extractLabeledPassportValue($lines, $i, ['MIDDLE NAME', 'PANGGITNANG APELYIDO']);
+            }
+
+            if (!empty($lastName) && !empty($firstName) && !empty($middleName)) {
                 break;
             }
         }
 
-        // Extract DOB
-        if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/', $fullText, $matches)) {
-            $extracted['date_of_birth'] = $this->normalizeDate($matches[1]);
+        return [$lastName, $firstName, $middleName];
+    }
+
+    protected function extractLabeledPassportValue(array $lines, int $index, array $labels): string
+    {
+        $line = $lines[$index] ?? '';
+        $labelPattern = implode('|', array_map(fn($v) => preg_quote(strtoupper($v), '/'), $labels));
+
+        if (preg_match('/(?:' . $labelPattern . ')\s*[:\-]?\s*([A-Z][A-Z\s]{2,40})$/i', $line, $m)) {
+            $candidate = $this->cleanPassportNameCandidate((string)$m[1]);
+            if (!empty($candidate)) {
+                return $candidate;
+            }
         }
 
-        // Extract expiration
-        if (preg_match('/expir[a-z]*.*?(\d{2}[\/\-]\d{2}[\/\-]\d{4})/i', $fullText, $matches)) {
-            $extracted['expiration_date'] = $this->normalizeDate($matches[1]);
+        for ($j = $index + 1; $j <= min($index + 2, count($lines) - 1); $j++) {
+            $candidate = $this->cleanPassportNameCandidate((string)$lines[$j]);
+            if (!empty($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+
+    protected function cleanPassportNameCandidate(string $candidate): string
+    {
+        $candidate = strtoupper(trim($candidate));
+        $candidate = preg_replace('/\s+/', ' ', $candidate);
+        $candidate = trim((string)$candidate, " \t\n\r\0\x0B,:;.-");
+
+        if (!preg_match('/^[A-Z\s]+$/', (string)$candidate)) {
+            return '';
+        }
+
+        if (strlen((string)$candidate) < 2 || strlen((string)$candidate) > 50) {
+            return '';
+        }
+
+        if (preg_match('/\b(PASSPORT|REPUBLIC|PHILIPPINES|PLACE|BIRTH|DATE|NATIONALITY|POB|SEX|AUTHORITY|TYPE|DOCUMENT|NO)\b/', (string)$candidate)) {
+            return '';
+        }
+
+        return (string)$candidate;
+    }
+
+    protected function extractPassportPlaceOfBirth(array $lines, string $fullText): string
+    {
+        foreach ($lines as $index => $line) {
+            if (!preg_match('/\b(PLACE\s+OF\s+BIRTH|BIRTH\s+PLACE|POB)\b/i', $line)) {
+                continue;
+            }
+
+            if (preg_match('/\b(PLACE\s+OF\s+BIRTH|BIRTH\s+PLACE|POB)\b\s*[:\-]?\s*([A-Z0-9\s,.-]{3,})$/i', $line, $m)) {
+                $candidate = $this->cleanPassportLocationCandidate((string)$m[2]);
+                if (!empty($candidate)) {
+                    return $candidate;
+                }
+            }
+
+            for ($i = $index + 1; $i <= min($index + 2, count($lines) - 1); $i++) {
+                $candidate = $this->cleanPassportLocationCandidate((string)$lines[$i]);
+                if (!empty($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        if (preg_match('/\b([A-Z][A-Z\s.-]{3,40}\s+CITY|CITY\s+OF\s+[A-Z][A-Z\s.-]{2,40})\b/i', $fullText, $m)) {
+            return $this->cleanPassportLocationCandidate((string)$m[1]);
+        }
+
+        return '';
+    }
+
+    protected function cleanPassportLocationCandidate(string $candidate): string
+    {
+        $candidate = strtoupper(trim($candidate));
+        $candidate = preg_replace('/\s+/', ' ', $candidate);
+        $candidate = trim((string)$candidate, " \t\n\r\0\x0B,:;.-");
+
+        if (empty($candidate)) {
+            return '';
+        }
+
+        if (preg_match('/\b(PASSPORT|REPUBLIC|PHILIPPINES|NATIONALITY|DATE|BIRTH|SEX|AUTHORITY|TYPE|P<)\b/', $candidate)) {
+            return '';
+        }
+
+        return $candidate;
+    }
+
+    protected function normalizeIdType(string $idType): string
+    {
+        $normalized = strtolower(trim($idType));
+
+        return match ($normalized) {
+            'passport', 'pass port', 'password' => 'passport',
+            'driver', 'driver_license', 'drivers_license', 'driver-license' => 'driver_license',
+            'auto', 'automatic', '' => 'auto',
+            default => 'national',
+        };
+    }
+
+    protected function resolveIdTypeFromText(array $lines, string $requestedType): string
+    {
+        if (in_array($requestedType, ['passport', 'driver_license', 'national'], true)) {
+            return $requestedType;
+        }
+
+        $fullText = strtoupper(implode(' ', $lines));
+
+        if (preg_match('/\bPASSPORT\b/', $fullText)) {
+            return 'passport';
+        }
+
+        foreach ($lines as $line) {
+            $normalized = strtoupper(trim((string)$line));
+            if (str_starts_with($normalized, 'P<') || str_contains($normalized, '<<')) {
+                return 'passport';
+            }
+        }
+
+        if (preg_match('/\b(DRIVER|LICENSE|LICENCE|DL)\b/', $fullText)) {
+            return 'driver_license';
+        }
+
+        return 'national';
+    }
+
+    protected function extractDriverLicenseData(array $lines, array $extracted): array
+    {
+        $normalizedLines = array_values(array_filter(array_map(fn($line) => $this->normalizeOcrLine($line), $lines)));
+        $fullText = implode(' ', $normalizedLines);
+
+        // 1) Driver license number
+        $documentNumber = $this->extractLabeledDriverLicenseNumber($normalizedLines);
+        if (empty($documentNumber)) {
+            $numberPatterns = [
+                '/\b([A-Z]\d{2}-\d{2}-\d{6})\b/',
+                '/\b([A-Z]\d{2}-\d{2}-\d{2}-\d{6})\b/',
+                '/\b([A-Z0-9]{2,4}-[A-Z0-9]{2,4}-[A-Z0-9]{4,8})\b/',
+                '/\b([A-Z0-9]{8,16})\b/',
+            ];
+
+            foreach ($numberPatterns as $pattern) {
+                if (preg_match($pattern, $fullText, $matches)) {
+                    $candidate = $this->cleanDriverLicenseNumber((string)$matches[1]);
+                    if ($this->isLikelyDriverLicenseNumber($candidate)) {
+                        $documentNumber = $candidate;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!empty($documentNumber)) {
+            $extracted['document_number'] = $documentNumber;
+        }
+
+        if (!empty($extracted['document_number']) && preg_match('/\bAGENCY\s*CODE\s*[:\-]?\s*([A-Z0-9]{2,4})\b/', $fullText, $agencyMatch)) {
+            $agencyCode = strtoupper(trim((string)$agencyMatch[1]));
+            if (preg_match('/^[A-Z]\d{2}$/', $agencyCode) && preg_match('/^\d{3}-\d{2}-\d{6}$/', $extracted['document_number'])) {
+                $extracted['document_number'] = $agencyCode . substr($extracted['document_number'], 3);
+            }
+        }
+
+        // 2) Name fields
+        $lastName = $this->extractLabeledDriverNameValue($normalizedLines, ['SURNAME', 'LAST NAME', 'APELYIDO']);
+        $firstName = $this->extractLabeledDriverNameValue($normalizedLines, ['FIRST NAME', 'GIVEN NAME', 'MGA PANGALAN'], true);
+        $middleName = $this->extractLabeledDriverNameValue($normalizedLines, ['MIDDLE NAME', 'MIDDLE INITIAL', 'GITNANG APELYIDO'], true);
+
+        if (empty($lastName) || empty($firstName)) {
+            $fallbackNames = $this->extractDriverNamesFromCommaLine($normalizedLines);
+            if (empty($lastName) && !empty($fallbackNames['last_name'])) {
+                $lastName = $fallbackNames['last_name'];
+            }
+            if (empty($firstName) && !empty($fallbackNames['first_name'])) {
+                $firstName = $fallbackNames['first_name'];
+            }
+            if (empty($middleName) && !empty($fallbackNames['middle_name'])) {
+                $middleName = $fallbackNames['middle_name'];
+            }
+        }
+
+        if (empty($lastName) || empty($firstName)) {
+            $headerBlockNames = $this->extractDriverNameFromHeaderBlock($normalizedLines);
+            if (empty($lastName) && !empty($headerBlockNames['last_name'])) {
+                $lastName = $headerBlockNames['last_name'];
+            }
+            if (empty($firstName) && !empty($headerBlockNames['first_name'])) {
+                $firstName = $headerBlockNames['first_name'];
+            }
+            if (empty($middleName) && !empty($headerBlockNames['middle_name'])) {
+                $middleName = $headerBlockNames['middle_name'];
+            }
+        }
+
+        if (!empty($lastName)) {
+            $extracted['last_name'] = $lastName;
+        }
+        if (!empty($firstName)) {
+            $extracted['first_name'] = $firstName;
+        }
+        if (!empty($middleName)) {
+            $extracted['middle_name'] = $middleName;
+        }
+
+        if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim(
+                $extracted['last_name']
+                . ', '
+                . $extracted['first_name']
+                . (!empty($extracted['middle_name']) ? ' ' . $extracted['middle_name'] : '')
+            );
+        } elseif (!empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim($extracted['first_name'] . (!empty($extracted['middle_name']) ? ' ' . $extracted['middle_name'] : ''));
+        } elseif (!empty($extracted['last_name'])) {
+            $extracted['full_name'] = $extracted['last_name'];
+        }
+
+        // 3) Dates
+        $dateOfBirth = $this->extractLabeledDriverDate($normalizedLines, ['DATE OF BIRTH', 'BIRTH DATE', 'BIRTHDATE', 'DOB']);
+        if (empty($dateOfBirth) && preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $fullText, $matches)) {
+            $dateOfBirth = $this->normalizeDate((string)$matches[1]);
+        }
+        if (!empty($dateOfBirth)) {
+            $extracted['date_of_birth'] = $dateOfBirth;
+        }
+
+        $expirationDate = $this->extractLabeledDriverDate($normalizedLines, ['EXPIRATION', 'EXPIRY', 'EXPIRES', 'VALID UNTIL', 'VALIDITY']);
+        if (!empty($expirationDate)) {
+            $extracted['expiration_date'] = $expirationDate;
+        }
+
+        // 4) Gender and nationality
+        if (preg_match('/\b(?:SEX|GENDER)\s*[:\-]?\s*(MALE|FEMALE|M|F)\b/i', $fullText, $matches)) {
+            $gender = strtoupper((string)$matches[1]);
+            $extracted['gender'] = $gender === 'M' ? 'MALE' : ($gender === 'F' ? 'FEMALE' : $gender);
+        }
+
+        if (preg_match('/\bNATIONALITY\s*[:\-]?\s*([A-Z]{3,20})\b/i', $fullText, $matches)) {
+            $extracted['nationality'] = strtoupper(trim((string)$matches[1]));
+        }
+
+        // 5) Address and place of birth
+        $driverAddress = $this->extractLabeledDriverAddress($normalizedLines);
+        if (!empty($driverAddress)) {
+            $extracted['address'] = $driverAddress;
+        } elseif (empty($extracted['address'])) {
+            $fallbackAddress = $this->extractAddress($normalizedLines);
+            if (!empty($fallbackAddress)) {
+                $extracted['address'] = $fallbackAddress;
+            }
+        }
+
+        $placeOfBirth = $this->extractLabeledDriverNameValue($normalizedLines, ['PLACE OF BIRTH', 'BIRTH PLACE', 'BIRTHPLACE'], true);
+        if (!empty($placeOfBirth)) {
+            $extracted['place_of_birth'] = $placeOfBirth;
         }
 
         return $extracted;
+    }
+
+    protected function extractLabeledDriverLicenseNumber(array $lines): string
+    {
+        $labels = ['LICENSE NO', 'LICENCE NO', 'DL NO', 'LICENSE NUMBER', 'LICENCE NUMBER', 'NO.'];
+
+        foreach ($lines as $line) {
+            foreach ($labels as $label) {
+                if (!str_contains($line, $label)) {
+                    continue;
+                }
+
+                if (preg_match('/(?:LICENSE\s*(?:NO|NUMBER)?|LICENCE\s*(?:NO|NUMBER)?|DL\s*NO|NO\.)\s*[:#\-]?\s*([A-Z0-9\-\s]{6,24})/', $line, $matches)) {
+                    $candidate = $this->cleanDriverLicenseNumber((string)$matches[1]);
+                    if ($this->isLikelyDriverLicenseNumber($candidate)) {
+                        return $candidate;
+                    }
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function extractLabeledDriverNameValue(array $lines, array $labels, bool $allowMultiWord = false): string
+    {
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            $labelMatched = false;
+
+            foreach ($labels as $label) {
+                if (str_contains($line, strtoupper($label))) {
+                    $labelMatched = true;
+                    $pattern = '/(?:' . preg_quote(strtoupper($label), '/') . ')\s*[:\-]?\s*([A-Z][A-Z\s]{1,40})$/';
+                    if (preg_match($pattern, $line, $matches)) {
+                        $sameLine = $this->cleanDriverNameCandidate((string)$matches[1], $allowMultiWord);
+                        if (!empty($sameLine)) {
+                            return $sameLine;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (!$labelMatched) {
+                continue;
+            }
+
+            for ($j = $i + 1; $j <= min($i + 4, count($lines) - 1); $j++) {
+                $candidate = $this->cleanDriverNameCandidate((string)$lines[$j], $allowMultiWord);
+                if (!empty($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function extractDriverNamesFromCommaLine(array $lines): array
+    {
+        foreach ($lines as $line) {
+            if (!preg_match('/^([A-Z][A-Z\s]{1,35}),\s*([A-Z][A-Z\s]{1,35})(?:\s+([A-Z][A-Z\s]{1,35}))?$/', $line, $matches)) {
+                continue;
+            }
+
+            $lastName = $this->cleanDriverNameCandidate((string)$matches[1]);
+            $firstName = $this->cleanDriverNameCandidate((string)$matches[2], true);
+            $middleName = !empty($matches[3]) ? $this->cleanDriverNameCandidate((string)$matches[3], true) : '';
+
+            if (!empty($lastName) && !empty($firstName)) {
+                return [
+                    'last_name' => $lastName,
+                    'first_name' => $firstName,
+                    'middle_name' => $middleName,
+                ];
+            }
+        }
+
+        return [
+            'last_name' => '',
+            'first_name' => '',
+            'middle_name' => '',
+        ];
+    }
+
+    protected function extractDriverNameFromHeaderBlock(array $lines): array
+    {
+        for ($i = 0; $i < count($lines); $i++) {
+            if (!preg_match('/LAST\s*NAME\s*,?\s*FIRST\s*NAME\s*,?\s*MIDDLE\s*NAME/', $lines[$i])) {
+                continue;
+            }
+
+            for ($j = $i + 1; $j <= min($i + 3, count($lines) - 1); $j++) {
+                $candidateLine = trim((string)$lines[$j]);
+                if (empty($candidateLine) || !str_contains($candidateLine, ',')) {
+                    continue;
+                }
+
+                if (preg_match('/^([A-Z][A-Z\s]{1,35}),\s*([A-Z][A-Z\s]{1,35})(?:\s+([A-Z][A-Z\s]{1,35}))?$/', $candidateLine, $matches)) {
+                    $lastName = $this->cleanDriverNameCandidate((string)$matches[1]);
+                    $firstName = $this->cleanDriverNameCandidate((string)$matches[2], true);
+                    $middleName = !empty($matches[3]) ? $this->cleanDriverNameCandidate((string)$matches[3], true) : '';
+
+                    if (!empty($lastName) && !empty($firstName)) {
+                        return [
+                            'last_name' => $lastName,
+                            'first_name' => $firstName,
+                            'middle_name' => $middleName,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return [
+            'last_name' => '',
+            'first_name' => '',
+            'middle_name' => '',
+        ];
+    }
+
+    protected function cleanDriverNameCandidate(string $candidate, bool $allowMultiWord = false): string
+    {
+        $candidate = $this->cleanPersonNameCandidate($candidate, $allowMultiWord);
+        if (empty($candidate)) {
+            return '';
+        }
+
+        if ($this->isDriverNameNoise($candidate)) {
+            return '';
+        }
+
+        return $candidate;
+    }
+
+    protected function isDriverNameNoise(string $value): bool
+    {
+        $value = strtoupper(trim($value));
+        if (empty($value)) {
+            return true;
+        }
+
+        $noisePatterns = [
+            '/\b(NATIONALITY|NATI0NALITY|NAVONSITY|NATION|SEX|DATE OF BIRTH|BIRTH|ADDRESS|LICENSE|LICENCE|EXPIRATION|EXPIRY|AGENCY|CODE|EYES|BLOOD|DL CODES|CONDITIONS)\b/',
+            '/\b(PHIL|PHL|REPUBLIC|PHILIPPINES|LAND TRANSPORTATION|LTO)\b/',
+            '/\b(ROAD|STREET|CITY|BATANGAS|BLOCK|LOT)\b/',
+        ];
+
+        foreach ($noisePatterns as $pattern) {
+            if (preg_match($pattern, $value)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function extractLabeledDriverDate(array $lines, array $labels): string
+    {
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            $matchedLabel = false;
+
+            foreach ($labels as $label) {
+                if (!str_contains($line, strtoupper($label))) {
+                    continue;
+                }
+
+                $matchedLabel = true;
+                if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $line, $matches)) {
+                    return $this->normalizeDate((string)$matches[1]);
+                }
+
+                break;
+            }
+
+            if (!$matchedLabel) {
+                continue;
+            }
+
+            for ($j = $i + 1; $j <= min($i + 2, count($lines) - 1); $j++) {
+                if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $lines[$j], $matches)) {
+                    return $this->normalizeDate((string)$matches[1]);
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function extractLabeledDriverAddress(array $lines): string
+    {
+        $addressParts = [];
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            if (!str_contains($line, 'ADDRESS')) {
+                continue;
+            }
+
+            $sameLine = preg_replace('/^.*?ADDRESS\s*[:\-]?\s*/', '', $line);
+            $sameLine = $this->cleanAddressCandidate((string)$sameLine);
+            if (!empty($sameLine)) {
+                $addressParts[] = $sameLine;
+            }
+
+            for ($j = $i + 1; $j <= min($i + 3, count($lines) - 1); $j++) {
+                if (preg_match('/\b(DATE OF BIRTH|BIRTH|EXPIRATION|EXPIRY|SEX|GENDER|NATIONALITY|LICENSE|LICENCE)\b/', $lines[$j])) {
+                    break;
+                }
+
+                $candidate = $this->cleanAddressCandidate((string)$lines[$j]);
+                if (!empty($candidate)) {
+                    $addressParts[] = $candidate;
+                }
+            }
+
+            if (!empty($addressParts)) {
+                break;
+            }
+        }
+
+        if (empty($addressParts)) {
+            return '';
+        }
+
+        return implode(', ', array_slice(array_values(array_unique($addressParts)), 0, 3));
+    }
+
+    protected function cleanDriverLicenseNumber(string $value): string
+    {
+        $value = strtoupper(trim($value));
+        $value = preg_replace('/\s+/', '', $value);
+        $value = preg_replace('/[^A-Z0-9\-]/', '', (string)$value);
+        return trim((string)$value, '-');
+    }
+
+    protected function isLikelyDriverLicenseNumber(string $value): bool
+    {
+        if (empty($value)) {
+            return false;
+        }
+
+        if (strlen($value) < 6 || strlen($value) > 20) {
+            return false;
+        }
+
+        if (!preg_match('/\d/', $value)) {
+            return false;
+        }
+
+        if (preg_match('/^\d{2}[\-\/]\d{2}[\-\/]\d{4}$/', $value)) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function extractAddress(array $lines): string
@@ -565,10 +1212,6 @@ class OCRService
         }
 
         if (strlen((string)$candidate) < 4 || strlen((string)$candidate) > 40) {
-            return '';
-        }
-
-        if (preg_match('/\b(TIC|ILL|EPUB|NSA|CLIKANGPILIPINA)\b/', (string)$candidate)) {
             return '';
         }
 
@@ -699,16 +1342,6 @@ class OCRService
 
         if (preg_match('/\bPUROK\s*\d+\b/i', $text, $m)) {
             $parts[] = strtoupper(trim($m[0]));
-        }
-
-        // OCR commonly misreads LIPA as CIPA; normalize both.
-        if (preg_match('/\b(CITY\s+OF\s+LIPA|CITY\s+OF\s+CIPA|LIPA\s+CITY|CIPA\s+CITY|LIPA|CIPA)\b/i', $text, $m)) {
-            $parts[] = 'CITY OF LIPA';
-        }
-
-        // OCR commonly misreads BATANGAS as PATAN/BATANAS variants.
-        if (preg_match('/\b(BATANGAS|PATAN|BATANAS|BATANGA5)\b/i', $text)) {
-            $parts[] = 'BATANGAS';
         }
 
         $parts = array_values(array_unique(array_filter($parts)));
