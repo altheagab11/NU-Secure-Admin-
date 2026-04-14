@@ -87,6 +87,41 @@ class VisitorMonitoringController extends Controller
         $currentPage = max(1, (int) $request->query('page', 1));
         $filteredCount = $filteredRows->count();
 
+        $todayDate = Carbon::today()->toDateString();
+        $totalTodayCount = $filteredRows
+            ->filter(fn (array $row) => ($row['entry_date_value'] ?? null) === $todayDate)
+            ->count();
+
+        if ($totalTodayCount === 0) {
+            $latestEntryDate = $filteredRows
+                ->pluck('entry_date_value')
+                ->filter(fn ($value) => filled($value))
+                ->sortDesc()
+                ->first();
+
+            if (filled($latestEntryDate)) {
+                $totalTodayCount = $filteredRows
+                    ->filter(fn (array $row) => ($row['entry_date_value'] ?? null) === $latestEntryDate)
+                    ->count();
+            }
+        }
+
+        $activeCount = $filteredRows
+            ->filter(fn (array $row) => in_array(($row['status'] ?? ''), ['Arrived', 'In Transit', 'Overstay'], true))
+            ->count();
+
+        $completedCount = $filteredRows
+            ->filter(fn (array $row) => ($row['status'] ?? '') === 'Completed')
+            ->count();
+
+        $alertsCount = $filteredRows
+            ->filter(function (array $row) {
+                $alert = trim((string) ($row['alert'] ?? ''));
+
+                return $alert !== '' && Str::lower($alert) !== 'none';
+            })
+            ->count();
+
         $paginatedRows = new LengthAwarePaginator(
             $filteredRows->forPage($currentPage, $perPage)->values(),
             $filteredCount,
@@ -156,6 +191,28 @@ class VisitorMonitoringController extends Controller
             'maxOfficeCount' => $maxOfficeCount,
             'recentVisitors' => $recentVisitors,
             'correctOfficeScans' => $correctOfficeScans,
+            'summaryCards' => [
+                [
+                    'label' => 'Total Today',
+                    'value' => $totalTodayCount,
+                    'modifier' => 'total',
+                ],
+                [
+                    'label' => 'Active',
+                    'value' => $activeCount,
+                    'modifier' => 'active',
+                ],
+                [
+                    'label' => 'Completed',
+                    'value' => $completedCount,
+                    'modifier' => 'completed',
+                ],
+                [
+                    'label' => 'Alerts',
+                    'value' => $alertsCount,
+                    'modifier' => 'alerts',
+                ],
+            ],
             'filters' => [
                 'search' => $search,
                 'office' => $officeFilter,
