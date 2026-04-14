@@ -324,6 +324,57 @@
 			color: #111827;
 		}
 
+		.summary-cards {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 12px;
+			margin-top: 14px;
+		}
+
+		.summary-card {
+			background: #ffffff;
+			border: 1px solid #e2e8f0;
+			border-radius: 10px;
+			padding: 12px 14px;
+			min-height: 78px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+		}
+
+		.summary-card-label {
+			margin: 0;
+			font-size: 12px;
+			font-weight: 700;
+			color: #64748b;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+		}
+
+		.summary-card-value {
+			margin: 4px 0 0;
+			font-size: 28px;
+			line-height: 1;
+			font-weight: 800;
+			color: #0f172a;
+		}
+
+		.summary-card.total .summary-card-value {
+			color: #1d4ed8;
+		}
+
+		.summary-card.active .summary-card-value {
+			color: #0369a1;
+		}
+
+		.summary-card.completed .summary-card-value {
+			color: #15803d;
+		}
+
+		.summary-card.alerts .summary-card-value {
+			color: #b91c1c;
+		}
+
 		.clear-filters-btn {
 			display: inline-flex;
 			align-items: center;
@@ -680,6 +731,10 @@
 				grid-template-columns: 1fr;
 			}
 
+			.summary-cards {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
 			.bottom-grid {
 				grid-template-columns: 1fr;
 			}
@@ -707,6 +762,10 @@
 		}
 
 		@media (max-width: 480px) {
+			.summary-cards {
+				grid-template-columns: 1fr;
+			}
+
 			.menu-item,
 			.admin-row,
 			.logout-btn {
@@ -840,19 +899,19 @@
 							<input class="filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search Visitor" aria-label="Search visitor">
 						</div>
 						<select class="filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
-							<option value="">Status ▼</option>
+							<option value="">Status</option>
 							@foreach(($statusOptions ?? []) as $statusOption)
 								<option value="{{ $statusOption }}" @selected(($filters['status'] ?? '') === $statusOption)>{{ $statusOption }}</option>
 							@endforeach
 						</select>
 						<select class="filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
-							<option value="">Office ▼</option>
+							<option value="">Office</option>
 							@foreach(($officeOptions ?? []) as $officeOption)
 								<option value="{{ $officeOption }}" @selected(($filters['office'] ?? '') === $officeOption)>{{ $officeOption }}</option>
 							@endforeach
 						</select>
 						<select class="filter-select" name="visit_type" aria-label="Filter by visit type" onchange="this.form.submit()">
-							<option value="">Visit Type ▼</option>
+							<option value="">Visit Type</option>
 							@foreach(($visitTypeOptions ?? []) as $visitTypeOption)
 								<option value="{{ $visitTypeOption }}" @selected(($filters['visit_type'] ?? '') === $visitTypeOption)>{{ $visitTypeOption }}</option>
 							@endforeach
@@ -863,6 +922,15 @@
 					</div>
 				</form>
 				<p class="filters-count">Showing {{ ($rows ?? collect())->count() }} of {{ $filteredCount ?? 0 }} filtered visitors ({{ $totalRows ?? 0 }} total)</p>
+			</div>
+
+			<div class="summary-cards" aria-label="Visitor summary cards">
+				@foreach(($summaryCards ?? []) as $card)
+					<div class="summary-card {{ $card['modifier'] ?? '' }}">
+						<p class="summary-card-label">{{ $card['label'] ?? '' }}</p>
+						<p class="summary-card-value">{{ number_format((int) ($card['value'] ?? 0)) }}</p>
+					</div>
+				@endforeach
 			</div>
 
 			<div class="table-card">
