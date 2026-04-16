@@ -241,7 +241,7 @@
 
 		.dashboard-title {
 			margin: 0 0 14px 0;
-			font-size: 48px;
+			font-size: 28px;
 			font-weight: 700;
 			letter-spacing: -0.02em;
 			color: #0b111b;
@@ -469,7 +469,7 @@
 
 		@media (max-width: 1680px) {
 			.dashboard-title {
-				font-size: 40px;
+				font-size: 28px;
 			}
 
 			.insights-title {
@@ -497,7 +497,7 @@
 			}
 
 			.dashboard-title {
-				font-size: 32px;
+				font-size: 28px;
 			}
 
 			.chart-title {

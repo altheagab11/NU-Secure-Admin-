@@ -28,7 +28,7 @@
 
 		.layout {
 			display: flex;
-			min-height: 100vh;
+			height: 100vh; /* constrain to viewport so main can scroll internally */
 		}
 
 		.sidebar {
@@ -39,6 +39,11 @@
 			display: flex;
 			flex-direction: column;
 			border-right: 1px solid rgba(0, 0, 0, 0.05);
+			position: sticky; /* keep sidebar visible while main scrolls */
+			top: 0;
+			height: 100vh;
+			flex-shrink: 0;
+			overflow: auto; /* allow sidebar to scroll internally if its content grows */
 		}
 
 		.brand-row {
@@ -231,7 +236,8 @@
 			flex: 1;
 			background: #f7f8ff;
 			padding: 24px 32px;
-			overflow-y: auto;
+			overflow-y: auto; /* scrolls internally so body doesn't scroll */
+			height: 100vh;
 		}
 
 		.page-title {
@@ -1524,9 +1530,19 @@
 			modal.querySelector('#m_resolved_at').textContent = resolvedAtText;
 			modal.querySelector('#m_resolution_notes').textContent = isResolved ? resolutionNotes : '-';
 
-			// Attach resolve button dataset
+			// Attach resolve button dataset and hide it when alert is already resolved
 			const resolveBtn = modal.querySelector('#resolveAlertBtn');
-			resolveBtn.dataset.alertId = alert.alert_id;
+			if (resolveBtn) {
+				resolveBtn.dataset.alertId = alert.alert_id;
+				if (isResolved) {
+					// hide the resolve action if it's already resolved
+					resolveBtn.style.display = 'none';
+					resolveBtn.disabled = true;
+				} else {
+					resolveBtn.style.display = 'inline-block';
+					resolveBtn.disabled = false;
+				}
+			}
 
 			modal.style.display = 'block';
 		}
