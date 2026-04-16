@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-php	<title>Admin Dashboard</title>
+	<title>Admin Dashboard</title>
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -691,113 +691,28 @@ php	<title>Admin Dashboard</title>
 				<div class="chart-card">
 					<p class="chart-title">7-Day Visitor Trend</p>
 					<div class="chart-body" role="img" aria-label="Line chart showing 7-day visitor trend">
-						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
-							<line class="axis" x1="40" y1="15" x2="40" y2="185" />
-							<line class="axis" x1="40" y1="185" x2="385" y2="185" />
-							<line class="grid-line" x1="40" y1="45" x2="385" y2="45" />
-							<line class="grid-line" x1="40" y1="80" x2="385" y2="80" />
-							<line class="grid-line" x1="40" y1="115" x2="385" y2="115" />
-							<line class="grid-line" x1="40" y1="150" x2="385" y2="150" />
-							<text class="y-label" x="20" y="188">0</text>
-							<text class="y-label" x="15" y="152">20</text>
-							<text class="y-label" x="15" y="117">30</text>
-							<text class="y-label" x="15" y="82">40</text>
-							<text class="y-label" x="15" y="48">50</text>
-							<path class="plot-line" d="M48 58 C70 76 88 95 105 108 C124 120 146 131 165 121 C185 112 185 58 205 45 C220 35 236 45 245 60 C253 76 258 113 246 130 C232 149 219 152 200 150 C172 146 144 120 121 120 C98 120 73 130 48 140" opacity="0"/>
-							<polyline class="plot-line" points="48,62 108,105 168,120 228,45 288,135 385,88" />
-							<circle class="plot-dot" cx="48" cy="62" r="5" />
-							<circle class="plot-dot" cx="108" cy="105" r="5" />
-							<circle class="plot-dot" cx="168" cy="120" r="5" />
-							<circle class="plot-dot" cx="228" cy="45" r="5" />
-							<circle class="plot-dot" cx="288" cy="135" r="5" />
-							<circle class="plot-dot" cx="385" cy="88" r="5" />
-							<text class="x-label" x="29" y="212">Jan 19</text>
-							<text class="x-label" x="91" y="212">Jan 20</text>
-							<text class="x-label" x="152" y="212">Jan 25</text>
-							<text class="x-label" x="212" y="212">Jan 26</text>
-							<text class="x-label" x="272" y="212">Jan 27</text>
-							<text class="x-label" x="370" y="212">Jan 28</text>
-						</svg>
+						<canvas id="visitorTrendChart" aria-label="7-Day Visitor Trend"></canvas>
 					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Status</p>
 					<div class="chart-body" role="img" aria-label="Pie chart showing visitors by status">
-						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
-							<path d="M210 115 L210 45 A70 70 0 0 1 270.62 150 Z" fill="#343b8f" />
-							<path d="M210 115 L270.62 150 A70 70 0 1 1 210 45 Z" fill="#8d97d8" />
-							<circle cx="210" cy="115" r="70" fill="none" stroke="#f4f5f6" stroke-width="2" />
-							<text class="chart-note" x="45" y="118" fill="#6a79d8">Arrived: 33%</text>
-							<text class="chart-note" x="268" y="74" fill="#343b8f">In Transit: 33%</text>
-						</svg>
+						<canvas id="visitorStatusChart" aria-label="Visitors by Status"></canvas>
 					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Hour</p>
 					<div class="chart-body" role="img" aria-label="Vertical bar chart showing visitors by hour">
-						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
-							<line class="axis" x1="34" y1="14" x2="34" y2="186" />
-							<line class="axis" x1="34" y1="186" x2="392" y2="186" />
-							<line class="grid-line" x1="34" y1="40" x2="392" y2="40" />
-							<line class="grid-line" x1="34" y1="76" x2="392" y2="76" />
-							<line class="grid-line" x1="34" y1="112" x2="392" y2="112" />
-							<line class="grid-line" x1="34" y1="148" x2="392" y2="148" />
-							<text class="y-label" x="12" y="189">0</text>
-							<text class="y-label" x="8" y="151">5</text>
-							<text class="y-label" x="4" y="115">10</text>
-							<text class="y-label" x="4" y="79">15</text>
-							<text class="y-label" x="4" y="43">20</text>
-							<rect class="bar-vertical" x="50" y="74" width="20" height="112" />
-							<rect class="bar-vertical" x="80" y="86" width="20" height="100" />
-							<rect class="bar-vertical" x="110" y="50" width="20" height="136" />
-							<rect class="bar-vertical" x="140" y="74" width="20" height="112" />
-							<rect class="bar-vertical" x="170" y="130" width="20" height="56" />
-							<rect class="bar-vertical" x="200" y="92" width="20" height="94" />
-							<rect class="bar-vertical" x="230" y="130" width="20" height="56" />
-							<rect class="bar-vertical" x="260" y="106" width="20" height="80" />
-							<rect class="bar-vertical" x="290" y="50" width="20" height="136" />
-							<rect class="bar-vertical" x="320" y="74" width="20" height="112" />
-							<rect class="bar-vertical" x="350" y="122" width="20" height="64" />
-							<text class="x-label" x="48" y="208">8:00</text>
-							<text class="x-label" x="78" y="208">9:00</text>
-							<text class="x-label" x="108" y="208">10:00</text>
-							<text class="x-label" x="138" y="208">11:00</text>
-							<text class="x-label" x="168" y="208">12:00</text>
-							<text class="x-label" x="198" y="208">1:00</text>
-							<text class="x-label" x="228" y="208">2:00</text>
-							<text class="x-label" x="258" y="208">3:00</text>
-							<text class="x-label" x="288" y="208">4:00</text>
-							<text class="x-label" x="318" y="208">5:00</text>
-							<text class="x-label" x="348" y="208">6:00</text>
-							<text class="x-label" x="378" y="208">7:00</text>
-						</svg>
+						<canvas id="visitorHourChart" aria-label="Visitors by Hour"></canvas>
 					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Office</p>
 					<div class="chart-body" role="img" aria-label="Horizontal bar chart showing visitors by office">
-						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
-							<line class="axis" x1="78" y1="22" x2="78" y2="190" />
-							<line class="axis" x1="78" y1="190" x2="390" y2="190" />
-							<line class="grid-line" x1="156" y1="22" x2="156" y2="190" />
-							<line class="grid-line" x1="234" y1="22" x2="234" y2="190" />
-							<line class="grid-line" x1="312" y1="22" x2="312" y2="190" />
-							<text class="y-label" x="42" y="56">HR</text>
-							<text class="y-label" x="10" y="107">Finance</text>
-							<text class="y-label" x="18" y="121">Department</text>
-							<text class="y-label" x="18" y="162">IT Department</text>
-							<rect class="bar-horizontal" x="78" y="31" width="312" height="34" rx="8" />
-							<rect class="bar-horizontal" x="78" y="82" width="312" height="34" rx="8" />
-							<rect class="bar-horizontal" x="78" y="133" width="312" height="34" rx="8" />
-							<text class="x-label" x="74" y="209">0</text>
-							<text class="x-label" x="150" y="209">0.25</text>
-							<text class="x-label" x="228" y="209">0.5</text>
-							<text class="x-label" x="304" y="209">0.75</text>
-							<text class="x-label" x="387" y="209">1</text>
-						</svg>
+						<canvas id="visitorOfficeChart" aria-label="Visitors by Office"></canvas>
 					</div>
 				</div>
 			</div>
@@ -821,6 +736,7 @@ php	<title>Admin Dashboard</title>
 		</main>
 	</div>
 
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<script>
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
@@ -829,6 +745,122 @@ php	<title>Admin Dashboard</title>
 			userMenuToggle.addEventListener('click', () => {
 				const isOpen = userMenuGroup.classList.toggle('open');
 				userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+			});
+		}
+
+		const trendCtx = document.getElementById('visitorTrendChart')?.getContext('2d');
+		if (trendCtx) {
+			new Chart(trendCtx, {
+				type: 'line',
+				data: {
+					labels: ['Jan 19', 'Jan 20', 'Jan 25', 'Jan 26', 'Jan 27', 'Jan 28'],
+					datasets: [{
+						label: 'Visitors',
+						data: [45, 30, 25, 50, 22, 36],
+						borderColor: '#f4c400',
+						backgroundColor: '#f4c400',
+						tension: 0.4,
+						fill: false,
+						pointRadius: 5,
+						pointHoverRadius: 6
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false }
+					},
+					scales: {
+						y: {
+							beginAtZero: true
+						}
+					}
+				}
+			});
+		}
+
+		const statusCtx = document.getElementById('visitorStatusChart')?.getContext('2d');
+		if (statusCtx) {
+			new Chart(statusCtx, {
+				type: 'pie',
+				data: {
+					labels: ['In Transit', 'Arrived'],
+					datasets: [{
+						data: [33, 67],
+						backgroundColor: ['#3f4aa0', '#9aa3e5'],
+						borderWidth: 0
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							position: 'right'
+						}
+					}
+				}
+			});
+		}
+
+		const hourCtx = document.getElementById('visitorHourChart')?.getContext('2d');
+		if (hourCtx) {
+			new Chart(hourCtx, {
+				type: 'bar',
+				data: {
+					labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00'],
+					datasets: [{
+						label: 'Visitors',
+						data: [13, 12, 17, 13, 18, 5, 10, 5, 8, 18, 13, 6],
+						backgroundColor: '#3f4aa0',
+						borderRadius: 6
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false }
+					},
+					scales: {
+						y: {
+							beginAtZero: true
+						}
+					}
+				}
+			});
+		}
+
+		const officeCtx = document.getElementById('visitorOfficeChart')?.getContext('2d');
+		if (officeCtx) {
+			new Chart(officeCtx, {
+				type: 'bar',
+				data: {
+					labels: ['HR', 'Finance Department', 'IT Department'],
+					datasets: [{
+						label: 'Visitors',
+						data: [1, 1, 1],
+						backgroundColor: '#f4c400',
+						borderRadius: 6
+					}]
+				},
+				options: {
+					indexAxis: 'y',
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: { display: false }
+					},
+					scales: {
+						x: {
+							beginAtZero: true,
+							ticks: {
+								stepSize: 1
+							}
+						}
+					}
+				}
 			});
 		}
 	</script>
