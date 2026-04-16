@@ -597,7 +597,7 @@
 
 				.table-wrap { overflow-x: auto; }
 
-				/* Alert details modal - match reference UI */
+				/* Alert details modal - card layout (requested UI) */
 				.alert-modal {
 					display: none;
 					position: fixed;
@@ -605,15 +605,16 @@
 					z-index: 60;
 					background: rgba(15, 23, 42, 0.35);
 					overflow-y: auto;
+					padding: 14px;
 				}
 
 				.alert-modal-card {
-					width: 820px;
+					width: 940px;
 					max-width: calc(100% - 24px);
-					margin: 22px auto;
+					margin: 12px auto;
 					background: #ffffff;
-					border-radius: 14px;
-					box-shadow: 0 8px 30px rgba(2, 6, 23, 0.18);
+					border-radius: 16px;
+					box-shadow: 0 10px 30px rgba(2, 6, 23, 0.2);
 					overflow: hidden;
 				}
 
@@ -623,51 +624,109 @@
 					align-items: center;
 					padding: 16px 22px;
 					border-bottom: 1px solid #e9edf3;
+					background: #fff;
+				}
+
+				.alert-modal-title-wrap small {
+					color: #64748b;
+					font-size: 12px;
 				}
 
 				.alert-modal-title {
 					margin: 0;
-					font-size: 22px;
-					line-height: 1;
+					font-size: 24px;
+					line-height: 1.1;
 					font-weight: 700;
-					letter-spacing: 0.01em;
 					color: #0f172a;
 				}
 
 				.alert-modal-close {
-					background: transparent;
-					border: 0;
-					padding: 0;
-					font-size: 14px;
-					font-weight: 500;
+					background: #eef2f7;
+					border: 1px solid #d9e1ec;
+					width: 34px;
+					height: 34px;
+					border-radius: 999px;
+					font-size: 18px;
+					line-height: 1;
 					color: #64748b;
 					cursor: pointer;
 				}
 
 				.alert-modal-body {
-					padding: 18px 22px 0;
+					padding: 18px 22px;
+					background: #f8fafc;
+					max-height: calc(100vh - 170px);
+					overflow-y: auto;
 				}
 
-				.alert-grid {
-					display: grid;
-					grid-template-columns: 1fr 1fr;
-					gap: 18px 34px;
+				.alert-info-card {
+					background: #fff;
+					border: 0;
+					border-radius: 14px;
+					box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+					margin-bottom: 14px;
+					overflow: hidden;
 				}
 
-				.alert-divider {
-					grid-column: 1 / -1;
-					height: 1px;
-					background: #e9edf3;
-				}
-
-				.modal-section-title {
-					margin: 0 0 12px;
-					font-size: 14px;
+				.alert-info-card .card-title {
+					margin: 0;
+					font-size: 18px;
 					font-weight: 700;
-					line-height: 1.1;
-					text-transform: uppercase;
-					letter-spacing: 0.01em;
-					color: #0f2543;
+					padding: 14px 16px;
+					border-bottom: 1px solid #eef2f7;
+				}
+
+				.alert-info-card .card-content {
+					padding: 14px 16px;
+				}
+
+				.detail-grid {
+					display: grid;
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+					gap: 12px 16px;
+				}
+
+				.detail-grid .full {
+					grid-column: 1 / -1;
+				}
+
+				.detail-label {
+					font-size: 12px;
+					color: #64748b;
+					margin-bottom: 4px;
+				}
+
+				.detail-value {
+					font-size: 14px;
+					font-weight: 600;
+					color: #0f172a;
+					word-break: break-word;
+				}
+
+				.badge-pill {
+					display: inline-flex;
+					align-items: center;
+					padding: 6px 10px;
+					border-radius: 999px;
+					font-size: 12px;
+					font-weight: 700;
+				}
+
+				.badge-danger { background: #dc2626; color: #fff; }
+				.badge-success { background: #16a34a; color: #fff; }
+				.badge-warning { background: #f59e0b; color: #111827; }
+				.badge-high { background: #f97316; color: #fff; }
+				.badge-medium { background: #f59e0b; color: #111827; }
+				.badge-low { background: #64748b; color: #fff; }
+				.badge-critical { background: #dc2626; color: #fff; }
+
+				.alert-modal-footer {
+					padding: 14px 22px;
+					background: #fff;
+					display: flex;
+					justify-content: flex-end;
+					gap: 10px;
+					border-top: 1px solid #e9edf3;
 				}
 
 				.modal-line {
@@ -680,20 +739,6 @@
 				.modal-line span {
 					font-weight: 600;
 					color: #0f172a;
-				}
-
-				.resolution-block {
-					margin-top: 14px;
-					padding-top: 14px;
-					border-top: 1px solid #e9edf3;
-				}
-
-				.alert-modal-footer {
-					margin-top: 14px;
-					padding: 14px 22px;
-					background: #f5f6fa;
-					display: flex;
-					justify-content: flex-end;
 				}
 
 				.resolve-btn {
@@ -726,42 +771,51 @@
 					z-index: 70;
 					background: rgba(15, 23, 42, 0.4);
 					overflow-y: auto;
+					padding: 14px;
 				}
 
 				.resolve-flow-card {
-					width: 680px;
+					width: 620px;
 					max-width: calc(100% - 24px);
-					margin: 40px auto;
+					margin: 24px auto;
 					background: #ffffff;
-					border-radius: 14px;
-					box-shadow: 0 8px 30px rgba(2, 6, 23, 0.18);
+					border-radius: 16px;
+					box-shadow: 0 10px 30px rgba(2, 6, 23, 0.2);
 					overflow: hidden;
 				}
 
 				.resolve-flow-body {
-					padding: 18px 22px 0;
+					padding: 18px 22px;
 				}
 
 				.resolve-summary {
-					padding: 6px 0 10px;
+					padding: 0 0 8px;
 				}
 
 				.resolve-summary .modal-line {
-					margin-bottom: 8px;
+					margin-bottom: 6px;
+					font-size: 14px;
+				}
+
+				.resolve-divider {
+					border: 0;
+					height: 1px;
+					background: #e5e7eb;
+					margin: 14px 0;
 				}
 
 				.resolve-notes-wrap {
-					margin-top: 10px;
-					padding-top: 14px;
-					border-top: 1px solid #e9edf3;
+					margin-top: 0;
+					padding-top: 0;
+					border-top: 0;
 				}
 
 				.resolve-notes-label {
 					display: block;
 					font-size: 14px;
 					font-weight: 700;
-					color: #0f2543;
-					margin-bottom: 10px;
+					color: #111827;
+					margin-bottom: 8px;
 				}
 
 				.resolve-notes-input {
@@ -784,28 +838,60 @@
 				}
 
 				.resolve-warning {
-					margin: 10px 0 0;
-					font-size: 13px;
-					color: #b45309;
+					margin: 8px 0 0;
+					font-size: 12px;
+					color: #6b7280;
 				}
 
 				.resolve-flow-footer {
-					margin-top: 14px;
 					padding: 14px 22px;
-					background: #f5f6fa;
+					background: #ffffff;
 					display: flex;
-					justify-content: space-between;
+					justify-content: flex-end;
 					gap: 12px;
+					border-top: 1px solid #e9edf3;
+				}
+
+				.resolve-action-btn {
+					border-radius: 999px;
+					padding: 9px 18px;
+					font-size: 14px;
+					font-weight: 700;
+					border: 0;
+					cursor: pointer;
+				}
+
+				.resolve-action-btn.cancel {
+					background: #6b7280;
+					color: #fff;
+				}
+
+				.resolve-action-btn.confirm {
+					background: #16a34a;
+					color: #fff;
+				}
+
+				.resolve-severity-badge {
+					display: inline-flex;
+					align-items: center;
+					padding: 4px 10px;
+					border-radius: 999px;
+					font-size: 12px;
+					font-weight: 700;
+					color: #fff;
+					background: #f97316;
 				}
 
 				@media (max-width: 920px) {
 					.alert-modal-title { font-size: 20px; }
+					.alert-modal-card { width: 100%; max-width: calc(100% - 12px); }
+					.detail-grid { grid-template-columns: 1fr; }
 					.modal-section-title { font-size: 13px; }
 					.modal-line { font-size: 14px; }
 					.resolve-btn { font-size: 13px; padding: 9px 14px; }
 					.alert-grid { grid-template-columns: 1fr; gap: 18px; }
 					.alert-divider { display: none; }
-					.resolve-flow-footer { flex-direction: column-reverse; }
+					.resolve-flow-footer { flex-direction: column-reverse; align-items: stretch; }
 				}
 	</style>
 </head>
@@ -1103,65 +1189,108 @@
 	<div id="alertModal" class="alert-modal">
 		<div class="alert-modal-card" role="dialog" aria-modal="true" aria-labelledby="alertDetailsTitle">
 			<div class="alert-modal-header">
-				<h3 id="alertDetailsTitle" class="alert-modal-title">ALERT DETAILS</h3>
-				<button id="closeAlertBtn" class="alert-modal-close" type="button">Close</button>
+				<div class="alert-modal-title-wrap">
+					<h3 id="alertDetailsTitle" class="alert-modal-title">Alert Details</h3>
+					<small>View complete alert information</small>
+				</div>
+				<button id="closeAlertBtn" class="alert-modal-close" type="button" aria-label="Close">×</button>
 			</div>
 
 			<div class="alert-modal-body">
-				<div class="alert-grid">
-					<section>
-						<h4 class="modal-section-title">ALERT INFORMATION</h4>
-						<p class="modal-line">Alert ID: <span id="m_alert_id" class="value">-</span></p>
-						<p class="modal-line">Type: <span id="m_type" class="value">-</span> &nbsp; Severity: <span id="m_severity" class="value">-</span></p>
-						<p class="modal-line">Status: <span id="m_status" class="value">-</span></p>
-						<p class="modal-line">Message: <span id="m_message" class="value">-</span></p>
-						<p class="modal-line">Created At: <span id="m_created_at" class="value">-</span></p>
-					</section>
+				<section class="alert-info-card">
+					<h4 class="card-title">Alert Information</h4>
+					<div class="card-content detail-grid">
+						<div>
+							<div class="detail-label">Alert ID</div>
+							<div class="detail-value" id="m_alert_id">-</div>
+						</div>
+						<div>
+							<div class="detail-label">Alert Type</div>
+							<div class="detail-value" id="m_type">-</div>
+						</div>
+						<div>
+							<div class="detail-label">Severity</div>
+							<div><span id="m_severity" class="badge-pill badge-medium">Medium</span></div>
+						</div>
+						<div>
+							<div class="detail-label">Status</div>
+							<div><span id="m_status" class="badge-pill badge-danger">Unresolved</span></div>
+						</div>
+						<div class="full">
+							<div class="detail-label">Message</div>
+							<div class="detail-value" id="m_message">-</div>
+						</div>
+						<div class="full">
+							<div class="detail-label">Created At</div>
+							<div class="detail-value" id="m_created_at">-</div>
+						</div>
+					</div>
+				</section>
 
-					<section>
-						<h4 class="modal-section-title">VISITOR INFORMATION</h4>
-						<p class="modal-line">Name: <span id="m_visitor_name" class="value">-</span></p>
-						<p class="modal-line">Pass No: <span id="m_pass_no" class="value">-</span></p>
-						<p class="modal-line">Control No: <span id="m_control_no" class="value">-</span></p>
-						<p class="modal-line">Contact: <span id="m_contact">-</span></p>
-					</section>
+				<section class="alert-info-card">
+					<h4 class="card-title">Visitor Information</h4>
+					<div class="card-content detail-grid">
+						<div>
+							<div class="detail-label">Visitor Name</div>
+							<div class="detail-value" id="m_visitor_name">-</div>
+						</div>
+						<div>
+							<div class="detail-label">Pass Number</div>
+							<div class="detail-value" id="m_pass_no">-</div>
+						</div>
+						<div>
+							<div class="detail-label">Control Number</div>
+							<div class="detail-value" id="m_control_no">-</div>
+						</div>
+						<div>
+							<div class="detail-label">Contact Number</div>
+							<div class="detail-value" id="m_contact">-</div>
+						</div>
+					</div>
+				</section>
 
-					<div class="alert-divider" aria-hidden="true"></div>
+				<section class="alert-info-card">
+					<h4 class="card-title">Visit Information</h4>
+					<div class="card-content detail-grid">
+						<div><div class="detail-label">Visit ID</div><div class="detail-value" id="m_visit_id">-</div></div>
+						<div><div class="detail-label">Visit Type</div><div class="detail-value" id="m_visit_type">-</div></div>
+						<div><div class="detail-label">Purpose</div><div class="detail-value" id="m_purpose">-</div></div>
+						<div><div class="detail-label">Entry Time</div><div class="detail-value" id="m_entry_time">-</div></div>
+						<div><div class="detail-label">Exit Time</div><div class="detail-value" id="m_exit_time">-</div></div>
+						<div><div class="detail-label">Duration Minutes</div><div class="detail-value" id="m_duration">-</div></div>
+						<div class="full"><div class="detail-label">Assigned Primary Office</div><div class="detail-value" id="m_primary_office">-</div></div>
+					</div>
+				</section>
 
-					<section>
-						<h4 class="modal-section-title">VISIT INFORMATION</h4>
-						<p class="modal-line">Visit ID: <span id="m_visit_id">-</span></p>
-						<p class="modal-line">Visit Type: <span id="m_visit_type">-</span></p>
-						<p class="modal-line">Purpose: <span id="m_purpose">-</span></p>
-						<p class="modal-line">Entry Time: <span id="m_entry_time">-</span></p>
-						<p class="modal-line">Exit Time: <span id="m_exit_time">-</span></p>
-						<p class="modal-line">Duration: <span id="m_duration">-</span></p>
-						<p class="modal-line">Primary Office: <span id="m_primary_office" class="value">-</span></p>
-					</section>
+				<section class="alert-info-card">
+					<h4 class="card-title">Scan Information</h4>
+					<div class="card-content detail-grid">
+						<div><div class="detail-label">Scan ID</div><div class="detail-value" id="m_scan_id">-</div></div>
+						<div><div class="detail-label">Scanned Office</div><div class="detail-value" id="m_scanned_office">-</div></div>
+						<div><div class="detail-label">Scanned By Guard/Staff</div><div class="detail-value" id="m_scanned_by">-</div></div>
+						<div><div class="detail-label">Scan Time</div><div class="detail-value" id="m_scan_time">-</div></div>
+						<div><div class="detail-label">Validation Status</div><div class="detail-value" id="m_validation_status">-</div></div>
+						<div><div class="detail-label">Remarks</div><div class="detail-value" id="m_remarks">-</div></div>
+					</div>
+				</section>
 
-					<section>
-						<h4 class="modal-section-title">SCAN INFORMATION</h4>
-						<p class="modal-line">Scan ID: <span id="m_scan_id">-</span></p>
-						<p class="modal-line">Scanned Office: <span id="m_scanned_office" class="value">-</span></p>
-						<p class="modal-line">Scanned By: <span id="m_scanned_by">-</span></p>
-						<p class="modal-line">Scan Time: <span id="m_scan_time" class="value">-</span></p>
-						<p class="modal-line">Validation Status: <span id="m_validation_status" class="value">-</span></p>
-						<p class="modal-line">Remarks: <span id="m_remarks" class="value">-</span></p>
-					</section>
-				</div>
-
-				<section class="resolution-block">
-					<h4 class="modal-section-title">RESOLUTION INFORMATION</h4>
-					<p id="m_unresolved_text" class="modal-line">Not yet resolved</p>
-					<div id="m_resolved_details" style="display:none;">
-						<p class="modal-line">Resolved By: <span id="m_resolved_by">-</span></p>
-						<p class="modal-line">Resolved At: <span id="m_resolved_at">-</span></p>
-						<p class="modal-line">Resolution Notes: <span id="m_resolution_notes">-</span></p>
+				<section class="alert-info-card">
+					<h4 class="card-title">Resolution Information</h4>
+					<div class="card-content">
+						<div id="m_unresolved_text" class="detail-value" style="font-style: italic; color:#64748b;">Not yet resolved</div>
+						<div id="m_resolved_details" style="display:none;">
+							<div class="detail-grid">
+								<div><div class="detail-label">Resolved By</div><div class="detail-value" id="m_resolved_by">-</div></div>
+								<div><div class="detail-label">Resolved At</div><div class="detail-value" id="m_resolved_at">-</div></div>
+								<div class="full"><div class="detail-label">Resolution Notes</div><div class="detail-value" id="m_resolution_notes">-</div></div>
+							</div>
+						</div>
 					</div>
 				</section>
 			</div>
 
 			<div class="alert-modal-footer">
+				<button class="btn-secondary js-close-alert" type="button">Close</button>
 				<button id="resolveAlertBtn" class="resolve-btn" type="button">Resolve Alert</button>
 			</div>
 		</div>
@@ -1171,29 +1300,33 @@
 	<div id="resolveModal" class="resolve-flow-modal">
 		<div class="resolve-flow-card" role="dialog" aria-modal="true" aria-labelledby="resolveAlertTitle">
 			<div class="alert-modal-header">
-				<h3 id="resolveAlertTitle" class="alert-modal-title">RESOLVE ALERT</h3>
-				<button id="closeResolveModalBtn" class="alert-modal-close" type="button">Close</button>
+				<h3 id="resolveAlertTitle" class="alert-modal-title" style="font-size:22px;">Resolve Alert</h3>
+				<button id="closeResolveModalBtn" class="alert-modal-close" type="button" aria-label="Close">×</button>
 			</div>
 
-			<div class="resolve-flow-body">
-				<div class="resolve-summary">
-					<p class="modal-line">Alert ID: <span id="r_alert_id" class="value">-</span></p>
-					<p class="modal-line">Visitor: <span id="r_visitor" class="value">-</span></p>
-					<p class="modal-line">Alert Type: <span id="r_alert_type" class="value">-</span></p>
-					<p class="modal-line">Severity: <span id="r_severity" class="value">-</span></p>
+			<form onsubmit="return false;">
+				<div class="resolve-flow-body">
+					<div class="resolve-summary">
+						<p class="modal-line"><strong>Alert ID:</strong> <span id="r_alert_id" class="value">-</span></p>
+						<p class="modal-line"><strong>Visitor:</strong> <span id="r_visitor" class="value">-</span></p>
+						<p class="modal-line"><strong>Type:</strong> <span id="r_alert_type" class="value">-</span></p>
+						<p class="modal-line"><strong>Severity:</strong> <span id="r_severity" class="resolve-severity-badge">Medium</span></p>
+					</div>
+
+					<hr class="resolve-divider">
+
+					<div class="resolve-notes-wrap">
+						<label for="resolveNotes" class="resolve-notes-label">Resolution Notes</label>
+						<textarea id="resolveNotes" class="resolve-notes-input" rows="4" placeholder="Enter how the alert was resolved..."></textarea>
+						<p class="resolve-warning">⚠️ Please describe how this alert was resolved.</p>
+					</div>
 				</div>
 
-				<div class="resolve-notes-wrap">
-					<label for="resolveNotes" class="resolve-notes-label">Resolution Notes:</label>
-					<textarea id="resolveNotes" class="resolve-notes-input" placeholder="Describe how this alert was resolved..."></textarea>
-					<p class="resolve-warning">⚠️ Please describe how this alert was resolved.</p>
+				<div class="resolve-flow-footer">
+					<button id="cancelResolveBtn" class="resolve-action-btn cancel" type="button">Cancel</button>
+					<button id="confirmResolveBtn" class="resolve-action-btn confirm" type="button">Resolve</button>
 				</div>
-			</div>
-
-			<div class="resolve-flow-footer">
-				<button id="cancelResolveBtn" class="btn-secondary" type="button">Cancel</button>
-				<button id="confirmResolveBtn" class="resolve-btn" type="button">Resolve</button>
-			</div>
+			</form>
 		</div>
 	</div>
 
@@ -1271,6 +1404,30 @@
 			return [date, time];
 		}
 
+		function getSeverityClass(severity) {
+			const s = String(severity || '').toLowerCase();
+			if (s === 'critical') return 'badge-pill badge-critical';
+			if (s === 'high') return 'badge-pill badge-high';
+			if (s === 'medium') return 'badge-pill badge-medium';
+			if (s === 'low') return 'badge-pill badge-low';
+			return 'badge-pill badge-medium';
+		}
+
+		function getStatusClass(status) {
+			return String(status || '').toLowerCase() === 'resolved'
+				? 'badge-pill badge-success'
+				: 'badge-pill badge-danger';
+		}
+
+		function getResolveSeverityBg(severity) {
+			const s = String(severity || '').toLowerCase();
+			if (s === 'critical') return '#dc2626';
+			if (s === 'high') return '#f97316';
+			if (s === 'medium') return '#f59e0b';
+			if (s === 'low') return '#64748b';
+			return '#f59e0b';
+		}
+
 		function openAlertModal(alertId) {
 			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
 			if (!alert) return;
@@ -1278,17 +1435,25 @@
 			const modal = document.getElementById('alertModal');
 			if (!modal) return;
 
-			// Populate modal fields (use safe fallbacks)
+			// Populate alert information
 			const [date, time] = formatDateTime(alert.created_at);
 			modal.querySelector('#m_alert_id').textContent = alert.alert_id || '-';
 			modal.querySelector('#m_type').textContent = alert.alert_type || '-';
-			modal.querySelector('#m_severity').textContent = alert.severity || '-';
-			modal.querySelector('#m_status').textContent = alert.status || 'Unresolved';
-			modal.querySelector('#m_message').textContent = alert.message || (alert.alert_type ? 'Visitor scanned at wrong office' : '');
-			modal.querySelector('#m_created_at').textContent = date + ' ' + time;
+			modal.querySelector('#m_message').textContent = alert.message || 'Visitor scanned at wrong office';
+			modal.querySelector('#m_created_at').textContent = `${date} ${time}`.trim();
+
+			const severityValue = alert.severity || 'Medium';
+			const severityEl = modal.querySelector('#m_severity');
+			severityEl.textContent = severityValue;
+			severityEl.className = getSeverityClass(severityValue);
+
+			const statusValue = alert.status || 'Unresolved';
+			const statusEl = modal.querySelector('#m_status');
+			statusEl.textContent = statusValue;
+			statusEl.className = getStatusClass(statusValue);
 
 			// Visitor
-			modal.querySelector('#m_visitor_name').textContent = ((alert.visitor && (alert.visitor.first_name || alert.visitor.last_name)) ? ((alert.visitor.first_name || '') + ' ' + (alert.visitor.last_name || '')) : '-');
+			modal.querySelector('#m_visitor_name').textContent = ((alert.visitor && (alert.visitor.first_name || alert.visitor.last_name)) ? ((alert.visitor.first_name || '') + ' ' + (alert.visitor.last_name || '')).trim() : '-');
 			modal.querySelector('#m_pass_no').textContent = (alert.visitor && alert.visitor.pass_number) ? alert.visitor.pass_number : (alert.pass_number || '-');
 			modal.querySelector('#m_control_no').textContent = (alert.visitor && alert.visitor.control_number) ? alert.visitor.control_number : (alert.control_number || '-');
 			modal.querySelector('#m_contact').textContent = alert.visitor && alert.visitor.contact_no ? alert.visitor.contact_no : '-';
@@ -1301,18 +1466,18 @@
 				: null;
 
 			const visitDuration = (alert.visit && alert.visit.duration_minutes !== undefined && alert.visit.duration_minutes !== null)
-				? `${alert.visit.duration_minutes} min`
+				? `${alert.visit.duration_minutes} mins`
 				: '-';
 
 			modal.querySelector('#m_visit_id').textContent = alert.visit && alert.visit.visit_id ? alert.visit.visit_id : (alert.visit_id || '-');
 			modal.querySelector('#m_visit_type').textContent = visitType || (alert.visit && alert.visit.type ? alert.visit.type : (alert.visit_type || '-'));
 			modal.querySelector('#m_purpose').textContent = alert.visit && alert.visit.purpose_reason ? alert.visit.purpose_reason : (alert.visit && alert.visit.purpose ? alert.visit.purpose : (alert.purpose || '-'));
-			// Format entry & exit times like Created At
+
 			const [entryDate, entryTime] = formatDateTime(alert.visit && alert.visit.entry_time ? alert.visit.entry_time : null);
-			modal.querySelector('#m_entry_time').textContent = entryDate === '-' ? '-' : (entryDate + ' ' + entryTime);
+			modal.querySelector('#m_entry_time').textContent = entryDate === '-' ? '-' : `${entryDate} ${entryTime}`;
 
 			const [exitDate, exitTime] = formatDateTime(alert.visit && alert.visit.exit_time ? alert.visit.exit_time : null);
-			modal.querySelector('#m_exit_time').textContent = exitDate === '-' ? '-' : (exitDate + ' ' + exitTime);
+			modal.querySelector('#m_exit_time').textContent = exitDate === '-' ? '-' : `${exitDate} ${exitTime}`;
 			modal.querySelector('#m_duration').textContent = visitDuration;
 			modal.querySelector('#m_primary_office').textContent = (alert.visit && alert.visit.office && alert.visit.office.office_name) ? alert.visit.office.office_name : (alert.visit && alert.visit.primary_office_id ? alert.visit.primary_office_id : '-');
 
@@ -1342,12 +1507,11 @@
 				: null;
 			const resolvedBy = (resolvedByObj && (resolvedByObj.first_name || resolvedByObj.last_name))
 				? `${resolvedByObj.first_name || ''} ${resolvedByObj.last_name || ''}`.trim()
-				: (alert.resolved_by_name || 'null');
+				: (alert.resolved_by_name || '-');
 			const [resolvedDate, resolvedTime] = formatDateTime(alert.resolved_at || null);
 			const resolvedAtText = resolvedDate === '-' ? '-' : `${resolvedDate} ${resolvedTime}`;
 			const resolutionNotes = alert.resolution_notes || alert.resolution_note || alert.notes || 'Not yet resolved';
-			const resolutionStatus = (alert.status || '').toLowerCase();
-			const isResolved = resolutionStatus === 'resolved';
+			const isResolved = String(alert.status || '').toLowerCase() === 'resolved';
 
 			const unresolvedTextEl = modal.querySelector('#m_unresolved_text');
 			const resolvedDetailsEl = modal.querySelector('#m_resolved_details');
@@ -1360,7 +1524,7 @@
 			modal.querySelector('#m_resolved_at').textContent = resolvedAtText;
 			modal.querySelector('#m_resolution_notes').textContent = isResolved ? resolutionNotes : '-';
 
-			// attach resolve button dataset
+			// Attach resolve button dataset
 			const resolveBtn = modal.querySelector('#resolveAlertBtn');
 			resolveBtn.dataset.alertId = alert.alert_id;
 
@@ -1383,13 +1547,15 @@
 				? `${alert.visitor.first_name || ''} ${alert.visitor.last_name || ''}`.trim()
 				: '-');
 
-			const severity = alert.severity ? String(alert.severity) : '-';
-			const severityIcon = severity.toLowerCase() === 'high' ? '🔶' : (severity.toLowerCase() === 'critical' ? '🔴' : (severity.toLowerCase() === 'medium' ? '🟠' : '🟡'));
+			const severity = alert.severity ? String(alert.severity) : 'Medium';
 
 			resolveModal.querySelector('#r_alert_id').textContent = alert.alert_id || '-';
 			resolveModal.querySelector('#r_visitor').textContent = visitorName;
 			resolveModal.querySelector('#r_alert_type').textContent = alert.alert_type || '-';
-			resolveModal.querySelector('#r_severity').textContent = `${severityIcon} ${severity}`;
+			const severityEl = resolveModal.querySelector('#r_severity');
+			severityEl.textContent = severity;
+			severityEl.style.backgroundColor = getResolveSeverityBg(severity);
+			severityEl.style.color = severity.toLowerCase() === 'medium' ? '#111827' : '#ffffff';
 			resolveModal.querySelector('#resolveNotes').value = '';
 
 			pendingResolveAlertId = alert.alert_id;
@@ -1489,7 +1655,7 @@
 				const id = e.target.dataset.alertId;
 				openAlertModal(id);
 			}
-			if (e.target && e.target.matches('#closeAlertBtn')) {
+			if (e.target && (e.target.matches('#closeAlertBtn') || e.target.matches('.js-close-alert') || e.target.id === 'alertModal')) {
 				closeAlertModal();
 			}
 			if (e.target && e.target.matches('#resolveAlertBtn')) {
@@ -1497,6 +1663,9 @@
 				openResolveModal(id);
 			}
 			if (e.target && (e.target.matches('#closeResolveModalBtn') || e.target.matches('#cancelResolveBtn'))) {
+				closeResolveModal();
+			}
+			if (e.target && e.target.id === 'resolveModal') {
 				closeResolveModal();
 			}
 			if (e.target && e.target.matches('#confirmResolveBtn')) {

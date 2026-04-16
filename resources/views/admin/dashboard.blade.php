@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Admin Dashboard</title>
+php	<title>Admin Dashboard</title>
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -21,13 +21,16 @@
 
 		body {
 			margin: 0;
-			background: #eef2ff;
+			background: #e5e7eb;
 			color: #0f172a;
+			overflow-x: auto;
 		}
 
 		.layout {
-			display: flex;
+			display: grid;
+			grid-template-columns: 280px minmax(0, 1fr);
 			min-height: 100vh;
+			min-width: 1180px;
 		}
 
 		.sidebar {
@@ -38,6 +41,9 @@
 			display: flex;
 			flex-direction: column;
 			border-right: 1px solid rgba(0, 0, 0, 0.05);
+			position: sticky;
+			top: 0;
+			height: 100vh;
 		}
 
 		.brand-row {
@@ -228,32 +234,33 @@
 
 		.main {
 			flex: 1;
-			background: #f7f8ff;
-			padding: 24px 32px;
+			background: #ececec;
+			padding: 20px 22px 24px;
 			overflow-y: auto;
 		}
 
 		.dashboard-title {
-			margin: 0 0 24px 0;
-			font-size: 28px;
+			margin: 0 0 14px 0;
+			font-size: 48px;
 			font-weight: 700;
-			color: #0f172a;
+			letter-spacing: -0.02em;
+			color: #0b111b;
 		}
 
 		.stats-grid {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-			gap: 16px;
-			margin-bottom: 32px;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 14px;
+			margin-bottom: 16px;
 		}
 
 		.stat-card {
 			position: relative;
 			background: #ffffff;
-			border-radius: 12px;
-			padding: 20px;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-			border: 1px solid #e8ecf1;
+			border-radius: 10px;
+			padding: 14px 14px 10px;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+			border: 1px solid #cfd3d8;
 		}
 
 		.stat-card.visitors {
@@ -273,9 +280,9 @@
 		}
 
 		.stat-icon {
-			width: 28px;
-			height: 28px;
-			border-radius: 8px;
+			width: 24px;
+			height: 24px;
+			border-radius: 6px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -283,8 +290,8 @@
 		}
 
 		.stat-icon svg {
-			width: 16px;
-			height: 16px;
+			width: 14px;
+			height: 14px;
 		}
 
 		.stat-card.visitors .stat-icon {
@@ -308,101 +315,144 @@
 		}
 
 		.stat-number {
-			font-size: 28px;
-			font-weight: 700;
+			font-size: 34px;
+			font-weight: 500;
 			color: #0f172a;
-			margin: 8px 0;
+			margin: 4px 0 0;
+			line-height: 1.1;
 		}
 
 		.stat-label {
-			font-size: 14px;
-			color: #64748b;
-			margin: 0;
+			font-size: 13px;
+			color: #111827;
+			margin: 2px 0 0;
 		}
 
 		.stat-trend {
 			position: absolute;
-			right: 14px;
-			top: 10px;
+			right: 12px;
+			top: 8px;
 			color: #94a3b8;
 		}
 
 		.stat-trend svg {
-			width: 14px;
-			height: 14px;
+			width: 12px;
+			height: 12px;
 		}
 
 		.charts-grid {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-			gap: 16px;
-			margin-bottom: 32px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 16px 14px;
+			margin-bottom: 18px;
 		}
 
 		.chart-card {
 			background: #ffffff;
-			border-radius: 12px;
-			padding: 20px;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-			border: 1px solid #e8ecf1;
+			border-radius: 10px;
+			padding: 10px 12px 12px;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+			border: 1px solid #cfd3d8;
 		}
 
 		.chart-title {
-			font-size: 16px;
-			font-weight: 600;
+			font-size: 22px;
+			font-weight: 500;
 			color: #0f172a;
-			margin: 0 0 16px 0;
+			margin: 0 0 8px;
 			text-align: center;
 		}
 
-		.chart-placeholder {
+		.chart-body {
 			height: 230px;
-			background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+			background: #f4f5f6;
 			border-radius: 8px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			color: #9ca3af;
-			font-size: 14px;
+			padding: 10px;
+			border: 1px solid #e5e7eb;
+			overflow: hidden;
+		}
+
+		.chart-svg {
+			width: 100%;
+			height: 100%;
+			display: block;
+		}
+
+		.axis,
+		.grid-line {
+			stroke: #d6d7d9;
+			stroke-width: 1;
+		}
+
+		.x-label,
+		.y-label,
+		.chart-note {
+			font-size: 12px;
+			fill: #374151;
+			font-family: inherit;
+		}
+
+		.plot-line {
+			fill: none;
+			stroke: #f0c512;
+			stroke-width: 4;
+			stroke-linejoin: round;
+			stroke-linecap: round;
+		}
+
+		.plot-dot {
+			fill: #f0c512;
+			stroke: #f0c512;
+			stroke-width: 3;
+		}
+
+		.bar-vertical {
+			fill: #343b8f;
+			rx: 5;
+		}
+
+		.bar-horizontal {
+			fill: #f4cc17;
+			rx: 8;
 		}
 
 		.insights-card {
-			background: white;
-			border-radius: 12px;
-			padding: 20px;
-			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-			border: 1px solid #e8ecf1;
-			border-left: 4px solid #4b5cd1;
+			background: #d7d9e4;
+			border-radius: 10px;
+			padding: 14px 16px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			border: 1px solid #9aa3c5;
 		}
 
 		.insights-title {
-			font-size: 16px;
+			font-size: 30px;
 			font-weight: 600;
-			color: #0f172a;
-			margin: 0 0 16px 0;
+			color: #111827;
+			margin: 0 0 6px;
 			display: flex;
 			align-items: center;
 			gap: 8px;
 		}
 
 		.insights-title svg {
-			width: 20px;
-			height: 20px;
-			color: #4b5cd1;
+			width: 30px;
+			height: 30px;
+			color: #404c93;
 		}
 
 		.insights-list {
 			list-style: none;
 			margin: 0;
-			padding: 0;
+			padding: 0 0 0 2px;
 			display: flex;
 			flex-direction: column;
-			gap: 12px;
+			gap: 2px;
 		}
 
 		.insights-list li {
-			font-size: 14px;
-			color: #475569;
+			font-size: 33px;
+			line-height: 1.22;
+			color: #111827;
 			display: flex;
 			align-items: flex-start;
 			gap: 8px;
@@ -410,36 +460,87 @@
 
 		.insights-list li:before {
 			content: "•";
-			color: #ffe632;
+			color: #1f2937;
 			font-weight: bold;
 			margin-right: 4px;
 			flex-shrink: 0;
+			line-height: 1.1;
 		}
 
-		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
+		@media (max-width: 1680px) {
+			.dashboard-title {
+				font-size: 40px;
 			}
 
-			.main {
-				display: none;
-			}
-		}
-
-		@media (max-width: 480px) {
-			.menu-item,
-			.admin-row,
-			.logout-btn {
-				font-size: 16px;
-			}
-
-			.brand-title span:first-child {
+			.insights-title {
 				font-size: 22px;
 			}
 
-			.brand-title span:last-child {
+			.insights-title svg {
+				width: 22px;
+				height: 22px;
+			}
+
+			.insights-list li {
+				font-size: 28px;
+			}
+		}
+
+		@media (max-width: 1440px) {
+			.layout {
+				min-width: 1040px;
+				grid-template-columns: 254px minmax(0, 1fr);
+			}
+
+			.main {
+				padding: 18px;
+			}
+
+			.dashboard-title {
+				font-size: 32px;
+			}
+
+			.chart-title {
+				font-size: 18px;
+			}
+
+			.insights-list li {
+				font-size: 18px;
+			}
+		}
+
+		@media (max-width: 1200px) {
+			.stats-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.charts-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		@media (max-width: 720px) {
+			.menu-item,
+			.admin-row,
+			.logout-btn {
+				font-size: 14px;
+			}
+
+			.layout {
+				grid-template-columns: 220px minmax(0, 1fr);
+				min-width: 900px;
+			}
+
+			.sidebar {
+				padding: 10px 8px;
+			}
+
+			.brand-title span:first-child {
 				font-size: 20px;
+			}
+
+			.brand-title span:last-child {
+				font-size: 18px;
 			}
 		}
 	</style>
@@ -589,22 +690,115 @@
 			<div class="charts-grid">
 				<div class="chart-card">
 					<p class="chart-title">7-Day Visitor Trend</p>
-					<div class="chart-placeholder">Line Chart Slot</div>
+					<div class="chart-body" role="img" aria-label="Line chart showing 7-day visitor trend">
+						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+							<line class="axis" x1="40" y1="15" x2="40" y2="185" />
+							<line class="axis" x1="40" y1="185" x2="385" y2="185" />
+							<line class="grid-line" x1="40" y1="45" x2="385" y2="45" />
+							<line class="grid-line" x1="40" y1="80" x2="385" y2="80" />
+							<line class="grid-line" x1="40" y1="115" x2="385" y2="115" />
+							<line class="grid-line" x1="40" y1="150" x2="385" y2="150" />
+							<text class="y-label" x="20" y="188">0</text>
+							<text class="y-label" x="15" y="152">20</text>
+							<text class="y-label" x="15" y="117">30</text>
+							<text class="y-label" x="15" y="82">40</text>
+							<text class="y-label" x="15" y="48">50</text>
+							<path class="plot-line" d="M48 58 C70 76 88 95 105 108 C124 120 146 131 165 121 C185 112 185 58 205 45 C220 35 236 45 245 60 C253 76 258 113 246 130 C232 149 219 152 200 150 C172 146 144 120 121 120 C98 120 73 130 48 140" opacity="0"/>
+							<polyline class="plot-line" points="48,62 108,105 168,120 228,45 288,135 385,88" />
+							<circle class="plot-dot" cx="48" cy="62" r="5" />
+							<circle class="plot-dot" cx="108" cy="105" r="5" />
+							<circle class="plot-dot" cx="168" cy="120" r="5" />
+							<circle class="plot-dot" cx="228" cy="45" r="5" />
+							<circle class="plot-dot" cx="288" cy="135" r="5" />
+							<circle class="plot-dot" cx="385" cy="88" r="5" />
+							<text class="x-label" x="29" y="212">Jan 19</text>
+							<text class="x-label" x="91" y="212">Jan 20</text>
+							<text class="x-label" x="152" y="212">Jan 25</text>
+							<text class="x-label" x="212" y="212">Jan 26</text>
+							<text class="x-label" x="272" y="212">Jan 27</text>
+							<text class="x-label" x="370" y="212">Jan 28</text>
+						</svg>
+					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Status</p>
-					<div class="chart-placeholder">Pie Chart Slot</div>
+					<div class="chart-body" role="img" aria-label="Pie chart showing visitors by status">
+						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+							<path d="M210 115 L210 45 A70 70 0 0 1 270.62 150 Z" fill="#343b8f" />
+							<path d="M210 115 L270.62 150 A70 70 0 1 1 210 45 Z" fill="#8d97d8" />
+							<circle cx="210" cy="115" r="70" fill="none" stroke="#f4f5f6" stroke-width="2" />
+							<text class="chart-note" x="45" y="118" fill="#6a79d8">Arrived: 33%</text>
+							<text class="chart-note" x="268" y="74" fill="#343b8f">In Transit: 33%</text>
+						</svg>
+					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Hour</p>
-					<div class="chart-placeholder">Bar Chart Slot</div>
+					<div class="chart-body" role="img" aria-label="Vertical bar chart showing visitors by hour">
+						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+							<line class="axis" x1="34" y1="14" x2="34" y2="186" />
+							<line class="axis" x1="34" y1="186" x2="392" y2="186" />
+							<line class="grid-line" x1="34" y1="40" x2="392" y2="40" />
+							<line class="grid-line" x1="34" y1="76" x2="392" y2="76" />
+							<line class="grid-line" x1="34" y1="112" x2="392" y2="112" />
+							<line class="grid-line" x1="34" y1="148" x2="392" y2="148" />
+							<text class="y-label" x="12" y="189">0</text>
+							<text class="y-label" x="8" y="151">5</text>
+							<text class="y-label" x="4" y="115">10</text>
+							<text class="y-label" x="4" y="79">15</text>
+							<text class="y-label" x="4" y="43">20</text>
+							<rect class="bar-vertical" x="50" y="74" width="20" height="112" />
+							<rect class="bar-vertical" x="80" y="86" width="20" height="100" />
+							<rect class="bar-vertical" x="110" y="50" width="20" height="136" />
+							<rect class="bar-vertical" x="140" y="74" width="20" height="112" />
+							<rect class="bar-vertical" x="170" y="130" width="20" height="56" />
+							<rect class="bar-vertical" x="200" y="92" width="20" height="94" />
+							<rect class="bar-vertical" x="230" y="130" width="20" height="56" />
+							<rect class="bar-vertical" x="260" y="106" width="20" height="80" />
+							<rect class="bar-vertical" x="290" y="50" width="20" height="136" />
+							<rect class="bar-vertical" x="320" y="74" width="20" height="112" />
+							<rect class="bar-vertical" x="350" y="122" width="20" height="64" />
+							<text class="x-label" x="48" y="208">8:00</text>
+							<text class="x-label" x="78" y="208">9:00</text>
+							<text class="x-label" x="108" y="208">10:00</text>
+							<text class="x-label" x="138" y="208">11:00</text>
+							<text class="x-label" x="168" y="208">12:00</text>
+							<text class="x-label" x="198" y="208">1:00</text>
+							<text class="x-label" x="228" y="208">2:00</text>
+							<text class="x-label" x="258" y="208">3:00</text>
+							<text class="x-label" x="288" y="208">4:00</text>
+							<text class="x-label" x="318" y="208">5:00</text>
+							<text class="x-label" x="348" y="208">6:00</text>
+							<text class="x-label" x="378" y="208">7:00</text>
+						</svg>
+					</div>
 				</div>
 
 				<div class="chart-card">
 					<p class="chart-title">Visitors by Office</p>
-					<div class="chart-placeholder">Horizontal Bar Chart Slot</div>
+					<div class="chart-body" role="img" aria-label="Horizontal bar chart showing visitors by office">
+						<svg class="chart-svg" viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg">
+							<line class="axis" x1="78" y1="22" x2="78" y2="190" />
+							<line class="axis" x1="78" y1="190" x2="390" y2="190" />
+							<line class="grid-line" x1="156" y1="22" x2="156" y2="190" />
+							<line class="grid-line" x1="234" y1="22" x2="234" y2="190" />
+							<line class="grid-line" x1="312" y1="22" x2="312" y2="190" />
+							<text class="y-label" x="42" y="56">HR</text>
+							<text class="y-label" x="10" y="107">Finance</text>
+							<text class="y-label" x="18" y="121">Department</text>
+							<text class="y-label" x="18" y="162">IT Department</text>
+							<rect class="bar-horizontal" x="78" y="31" width="312" height="34" rx="8" />
+							<rect class="bar-horizontal" x="78" y="82" width="312" height="34" rx="8" />
+							<rect class="bar-horizontal" x="78" y="133" width="312" height="34" rx="8" />
+							<text class="x-label" x="74" y="209">0</text>
+							<text class="x-label" x="150" y="209">0.25</text>
+							<text class="x-label" x="228" y="209">0.5</text>
+							<text class="x-label" x="304" y="209">0.75</text>
+							<text class="x-label" x="387" y="209">1</text>
+						</svg>
+					</div>
 				</div>
 			</div>
 
@@ -612,10 +806,8 @@
 			<div class="insights-card">
 				<h3 class="insights-title">
 					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						<polyline points="13 2 13 9 20 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						<line x1="9" y1="13" x2="15" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						<line x1="9" y1="17" x2="15" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<path d="M4 18L10 12L14 15L20 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+						<path d="M14 8H20V14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
 					Key Insights
 				</h3>

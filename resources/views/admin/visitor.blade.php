@@ -550,6 +550,192 @@
 			height: 16px;
 		}
 
+		/* Visitor details modal (based on provided example UI) */
+		.visitor-detail-modal {
+			display: none;
+			position: fixed;
+			inset: 0;
+			z-index: 100;
+			background: rgba(15, 23, 42, 0.45);
+			overflow-y: auto;
+			padding: 18px;
+		}
+
+		.visitor-detail-modal.open {
+			display: block;
+		}
+
+		.visitor-detail-dialog {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: #fff;
+			border-radius: 12px;
+			box-shadow: 0 12px 32px rgba(2, 6, 23, 0.24);
+			overflow: hidden;
+		}
+
+		.vd-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 14px;
+			padding: 16px 20px;
+			border-bottom: 1px solid #e5e7eb;
+		}
+
+		.vd-header-left h2 {
+			margin: 0;
+			font-size: 28px;
+			line-height: 1.1;
+		}
+
+		.vd-header-meta {
+			margin-top: 4px;
+			font-size: 13px;
+			color: #64748b;
+		}
+
+		.vd-close {
+			border: 0;
+			background: #f1f5f9;
+			color: #334155;
+			padding: 8px 12px;
+			border-radius: 8px;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		.vd-status-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 6px 10px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.vd-status-arrived { background: #dcfce7; color: #166534; }
+		.vd-status-transit { background: #dbeafe; color: #1d4ed8; }
+		.vd-status-completed { background: #e2e8f0; color: #334155; }
+		.vd-status-overstay { background: #fee2e2; color: #b91c1c; }
+		.vd-status-pending { background: #fef3c7; color: #92400e; }
+
+		.vd-body {
+			padding: 18px 20px 20px;
+			max-height: calc(100vh - 90px);
+			overflow-y: auto;
+		}
+
+		.vd-grid {
+			display: grid;
+			grid-template-columns: minmax(280px, 1fr) minmax(400px, 2fr);
+			gap: 16px;
+		}
+
+		.vd-card {
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			overflow: hidden;
+			background: #fff;
+		}
+
+		.vd-card-title {
+			margin: 0;
+			padding: 12px 14px;
+			font-size: 14px;
+			font-weight: 700;
+			background: #f8fafc;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.vd-card-body {
+			padding: 14px;
+		}
+
+		.vd-photo {
+			height: 180px;
+			border: 1px dashed #cbd5e1;
+			border-radius: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 13px;
+			color: #64748b;
+			margin-bottom: 12px;
+			background: #f8fafc;
+		}
+
+		.vd-table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		.vd-table th,
+		.vd-table td {
+			font-size: 13px;
+			padding: 8px 6px;
+			border-bottom: 1px solid #e2e8f0;
+			text-align: left;
+			vertical-align: top;
+		}
+
+		.vd-table th {
+			width: 40%;
+			color: #334155;
+			font-weight: 700;
+		}
+
+		.vd-table-sm th,
+		.vd-table-sm td {
+			font-size: 12px;
+			padding: 7px 6px;
+		}
+
+		.vd-stack {
+			display: grid;
+			gap: 16px;
+		}
+
+		.vd-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 4px 8px;
+			border-radius: 999px;
+			font-size: 11px;
+			font-weight: 700;
+		}
+
+		.vd-badge-success { background: #dcfce7; color: #166534; }
+		.vd-badge-warning { background: #fef3c7; color: #92400e; }
+		.vd-badge-danger { background: #fee2e2; color: #991b1b; }
+		.vd-badge-secondary { background: #e2e8f0; color: #334155; }
+
+		.vd-alert-box {
+			border: 1px solid #e2e8f0;
+			border-radius: 10px;
+			padding: 10px;
+		}
+
+		.vd-alert-box p {
+			margin: 0 0 6px;
+			font-size: 12px;
+			line-height: 1.45;
+		}
+
+		.vd-alert-box p:last-child {
+			margin-bottom: 0;
+		}
+
+		@media (max-width: 980px) {
+			.vd-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.vd-header {
+				flex-wrap: wrap;
+			}
+		}
+
 		.bottom-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -976,7 +1162,25 @@
 								<td><span class="status-pill {{ $row['status_class'] }}">{{ $row['status'] }}</span></td>
 								<td>{{ $row['alert'] }}</td>
 								<td>
-									<a href="#" class="action-link" aria-disabled="true">
+									<a
+										href="#"
+										class="action-link js-open-visitor-modal"
+										data-visitor-id="{{ $row['visitor_id'] ?? '—' }}"
+										data-visitor-name="{{ $row['visitor_name'] ?? '—' }}"
+										data-pass-number="{{ $row['pass_number'] ?? '—' }}"
+										data-control-number="{{ $row['control_number'] ?? '—' }}"
+										data-contact-no="{{ $row['contact_no'] ?? '—' }}"
+										data-address="{{ $row['address'] ?? '—' }}"
+										data-visit-id="{{ $row['visit_id'] ?? '—' }}"
+										data-visit-type="{{ $row['visit_type'] ?? '—' }}"
+										data-purpose="{{ $row['purpose'] ?? '—' }}"
+										data-primary-office="{{ $row['destination'] ?? '—' }}"
+										data-entry-time="{{ trim(($row['entry_time_label_date'] ?? '') . ' ' . ($row['entry_time_label_time'] ?? '')) }}"
+										data-exit-time="{{ $row['exit_time_label'] ?? '—' }}"
+										data-duration="{{ $row['duration_label'] ?? '—' }}"
+										data-status="{{ $row['status'] ?? 'Pending' }}"
+										data-alert="{{ $row['alert'] ?? 'None' }}"
+									>
 										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
 											<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
@@ -1087,9 +1291,274 @@
 		</main>
 	</div>
 
+	<div id="visitorDetailModal" class="visitor-detail-modal" aria-hidden="true">
+		<div class="visitor-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="vdTitle">
+			<div class="vd-header">
+				<div class="vd-header-left">
+					<h2 id="vdTitle">Visitor Details</h2>
+					<div class="vd-header-meta"><span id="vdHeaderName">—</span> | <span id="vdHeaderControl">—</span></div>
+				</div>
+				<div>
+					<span id="vdStatusBadge" class="vd-status-badge vd-status-pending">Pending</span>
+				</div>
+				<button type="button" id="vdClose" class="vd-close">Close</button>
+			</div>
+
+			<div class="vd-body">
+				<div class="vd-grid">
+					<div class="vd-stack">
+						<section class="vd-card">
+							<h3 class="vd-card-title">Visitor Information</h3>
+							<div class="vd-card-body">
+								<div class="vd-photo">No Photo Available</div>
+								<table class="vd-table">
+									<tbody>
+										<tr><th>Visitor ID</th><td id="vdVisitorId">—</td></tr>
+										<tr><th>Full Name</th><td id="vdVisitorName">—</td></tr>
+										<tr><th>Pass Number</th><td id="vdPassNumber">—</td></tr>
+										<tr><th>Control Number</th><td id="vdControlNumber">—</td></tr>
+										<tr><th>Contact Number</th><td id="vdContactNo">—</td></tr>
+										<tr><th>Address</th><td id="vdAddress">—</td></tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+
+						<section class="vd-card">
+							<h3 class="vd-card-title">Alert Information</h3>
+							<div class="vd-card-body">
+								<div id="vdNoAlertsBox" class="vd-badge vd-badge-success">No alerts found.</div>
+								<div id="vdAlertBox" class="vd-alert-box" style="display:none; margin-top:10px;">
+									<p><strong>Alert #</strong><span id="vdAlertId">3001</span></p>
+									<p><strong>Status:</strong> <span id="vdAlertStatusBadge" class="vd-badge vd-badge-danger">Unresolved</span></p>
+									<p><strong>Type:</strong> <span id="vdAlertType">Wrong Office</span></p>
+									<p><strong>Severity:</strong> <span id="vdAlertSeverityBadge" class="vd-badge vd-badge-warning">Medium</span></p>
+									<p><strong>Message:</strong> <span id="vdAlertMessage">Visitor scanned at wrong office.</span></p>
+									<p><strong>Created At:</strong> <span id="vdAlertCreatedAt">—</span></p>
+									<p><strong>Resolved At:</strong> <span id="vdResolvedAt">—</span></p>
+									<p><strong>Resolved By:</strong> <span id="vdResolvedBy">—</span></p>
+									<p><strong>Resolution Notes:</strong> <span id="vdResolutionNotes">—</span></p>
+								</div>
+							</div>
+						</section>
+					</div>
+
+					<div class="vd-stack">
+						<section class="vd-card">
+							<h3 class="vd-card-title">Visit Information</h3>
+							<div class="vd-card-body">
+								<table class="vd-table">
+									<tbody>
+										<tr><th>Visit ID</th><td id="vdVisitId">—</td></tr>
+										<tr><th>Visit Type</th><td id="vdVisitType">—</td></tr>
+										<tr><th>Purpose</th><td id="vdPurpose">—</td></tr>
+										<tr><th>Primary Office</th><td id="vdPrimaryOffice">—</td></tr>
+										<tr><th>Entry Time</th><td id="vdEntryTime">—</td></tr>
+										<tr><th>Exit Time</th><td id="vdExitTime">—</td></tr>
+										<tr><th>Duration</th><td id="vdDuration">—</td></tr>
+										<tr><th>Exit Status</th><td id="vdExitStatus">Still Inside</td></tr>
+										<tr><th>Registered By Guard</th><td>Admin Reyes</td></tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+
+						<section class="vd-card">
+							<h3 class="vd-card-title">Office Route / Expected Offices</h3>
+							<div class="vd-card-body">
+								<table class="vd-table vd-table-sm">
+									<thead>
+										<tr>
+											<th>Expected Office</th>
+											<th>Order</th>
+											<th>Status</th>
+											<th>Arrived At</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td id="vdExpectedOffice">—</td>
+											<td>1</td>
+											<td><span id="vdExpectedStatus" class="vd-badge vd-badge-warning">Pending</span></td>
+											<td id="vdArrivedAt">—</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+
+						<section class="vd-card">
+							<h3 class="vd-card-title">Scan Information</h3>
+							<div class="vd-card-body">
+								<table class="vd-table vd-table-sm">
+									<thead>
+										<tr>
+											<th>Scan ID</th>
+											<th>Scanned Office</th>
+											<th>Scanned By</th>
+											<th>Scan Time</th>
+											<th>Validation</th>
+											<th>Remarks</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td id="vdScanId">—</td>
+											<td id="vdScannedOffice">—</td>
+											<td id="vdScannedBy">Admin Reyes</td>
+											<td id="vdScanTime">—</td>
+											<td><span id="vdValidationBadge" class="vd-badge vd-badge-secondary">Unknown</span></td>
+											<td id="vdRemarks">—</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script>
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
+		const visitorDetailModal = document.getElementById('visitorDetailModal');
+		const vdClose = document.getElementById('vdClose');
+
+		const getText = (value, fallback = '—') => {
+			if (value === null || value === undefined) return fallback;
+			const v = String(value).trim();
+			return v.length ? v : fallback;
+		};
+
+		const setTextById = (id, value, fallback = '—') => {
+			const el = document.getElementById(id);
+			if (!el) return;
+			el.textContent = getText(value, fallback);
+		};
+
+		const setBadgeClass = (el, className) => {
+			if (!el) return;
+			el.className = className;
+		};
+
+		const statusClassFromText = (status) => {
+			const s = getText(status, 'Pending').toLowerCase();
+			if (s.includes('arrived')) return 'vd-status-badge vd-status-arrived';
+			if (s.includes('transit')) return 'vd-status-badge vd-status-transit';
+			if (s.includes('completed')) return 'vd-status-badge vd-status-completed';
+			if (s.includes('overstay')) return 'vd-status-badge vd-status-overstay';
+			return 'vd-status-badge vd-status-pending';
+		};
+
+		const severityBadgeClass = (severity) => {
+			const s = getText(severity, 'Medium').toLowerCase();
+			if (s === 'critical' || s === 'high') return 'vd-badge vd-badge-danger';
+			if (s === 'medium') return 'vd-badge vd-badge-warning';
+			if (s === 'low') return 'vd-badge vd-badge-secondary';
+			return 'vd-badge vd-badge-secondary';
+		};
+
+		const openVisitorDetailModal = (trigger) => {
+			if (!visitorDetailModal || !trigger) return;
+
+			const status = getText(trigger.dataset.status, 'Pending');
+			const alertText = getText(trigger.dataset.alert, 'None');
+
+			setTextById('vdHeaderName', trigger.dataset.visitorName);
+			setTextById('vdHeaderControl', trigger.dataset.controlNumber);
+
+			setTextById('vdVisitorId', trigger.dataset.visitorId);
+			setTextById('vdVisitorName', trigger.dataset.visitorName);
+			setTextById('vdPassNumber', trigger.dataset.passNumber);
+			setTextById('vdControlNumber', trigger.dataset.controlNumber);
+			setTextById('vdContactNo', trigger.dataset.contactNo);
+			setTextById('vdAddress', trigger.dataset.address, 'Address not available');
+
+			setTextById('vdVisitId', trigger.dataset.visitId);
+			setTextById('vdVisitType', trigger.dataset.visitType);
+			setTextById('vdPurpose', trigger.dataset.purpose);
+			setTextById('vdPrimaryOffice', trigger.dataset.primaryOffice);
+			setTextById('vdEntryTime', trigger.dataset.entryTime);
+			setTextById('vdExitTime', trigger.dataset.exitTime);
+			setTextById('vdDuration', trigger.dataset.duration);
+			setTextById('vdExitStatus', status, 'Still Inside');
+
+			setTextById('vdExpectedOffice', trigger.dataset.primaryOffice);
+			setTextById('vdArrivedAt', trigger.dataset.entryTime);
+
+			const expectedStatusEl = document.getElementById('vdExpectedStatus');
+			if (expectedStatusEl) {
+				expectedStatusEl.textContent = status;
+				expectedStatusEl.className = status.toLowerCase().includes('arrived')
+					? 'vd-badge vd-badge-success'
+					: (status.toLowerCase().includes('completed') ? 'vd-badge vd-badge-secondary' : 'vd-badge vd-badge-warning');
+			}
+
+			setTextById('vdScanId', trigger.dataset.visitId ? `SCAN-${trigger.dataset.visitId}` : '—');
+			setTextById('vdScannedOffice', trigger.dataset.primaryOffice);
+			setTextById('vdScanTime', trigger.dataset.entryTime);
+			setTextById('vdRemarks', alertText === 'None' ? 'Correct destination' : alertText);
+
+			const validationEl = document.getElementById('vdValidationBadge');
+			if (validationEl) {
+				if (alertText === 'None') {
+					validationEl.textContent = 'Matched';
+					validationEl.className = 'vd-badge vd-badge-success';
+				} else {
+					validationEl.textContent = 'Requires Review';
+					validationEl.className = 'vd-badge vd-badge-warning';
+				}
+			}
+
+			const noAlertsBox = document.getElementById('vdNoAlertsBox');
+			const alertBox = document.getElementById('vdAlertBox');
+			if (alertText === 'None') {
+				if (noAlertsBox) noAlertsBox.style.display = 'inline-flex';
+				if (alertBox) alertBox.style.display = 'none';
+			} else {
+				if (noAlertsBox) noAlertsBox.style.display = 'none';
+				if (alertBox) alertBox.style.display = 'block';
+
+				setTextById('vdAlertId', trigger.dataset.visitId ? `${trigger.dataset.visitId}01` : '3001');
+				setTextById('vdAlertType', alertText, 'Wrong Office');
+				setTextById('vdAlertMessage', `Visitor flagged with ${alertText}.`, 'Visitor scanned at wrong office.');
+				setTextById('vdAlertCreatedAt', trigger.dataset.entryTime);
+				setTextById('vdResolvedAt', '—');
+				setTextById('vdResolvedBy', '—');
+				setTextById('vdResolutionNotes', '—');
+
+				const alertStatusBadge = document.getElementById('vdAlertStatusBadge');
+				if (alertStatusBadge) {
+					alertStatusBadge.textContent = 'Unresolved';
+					setBadgeClass(alertStatusBadge, 'vd-badge vd-badge-danger');
+				}
+
+				const severityEl = document.getElementById('vdAlertSeverityBadge');
+				if (severityEl) {
+					severityEl.textContent = 'Medium';
+					setBadgeClass(severityEl, severityBadgeClass('Medium'));
+				}
+			}
+
+			const headerStatus = document.getElementById('vdStatusBadge');
+			if (headerStatus) {
+				headerStatus.textContent = status;
+				setBadgeClass(headerStatus, statusClassFromText(status));
+			}
+
+			visitorDetailModal.classList.add('open');
+			visitorDetailModal.setAttribute('aria-hidden', 'false');
+			document.body.style.overflow = 'hidden';
+		};
+
+		const closeVisitorDetailModal = () => {
+			if (!visitorDetailModal) return;
+			visitorDetailModal.classList.remove('open');
+			visitorDetailModal.setAttribute('aria-hidden', 'true');
+			document.body.style.overflow = '';
+		};
 
 		if (userMenuGroup && userMenuToggle) {
 			userMenuToggle.addEventListener('click', () => {
@@ -1097,6 +1566,25 @@
 				userMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 			});
 		}
+
+		document.addEventListener('click', (event) => {
+			const trigger = event.target.closest('.js-open-visitor-modal');
+			if (trigger) {
+				event.preventDefault();
+				openVisitorDetailModal(trigger);
+				return;
+			}
+
+			if (event.target === visitorDetailModal || event.target === vdClose) {
+				closeVisitorDetailModal();
+			}
+		});
+
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') {
+				closeVisitorDetailModal();
+			}
+		});
 	</script>
 </body>
 </html>
