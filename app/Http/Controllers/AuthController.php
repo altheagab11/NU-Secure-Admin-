@@ -6,7 +6,10 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -23,6 +26,10 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        if (Auth::check()) {
+            return $this->redirectByRole((int) Auth::user()->role_id);
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -63,6 +70,64 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function showPasswordSetupForm(Request $request, string $token): View
+    {
+        return view('auth.password-setup', [
+            'token' => $token,
+            'email' => (string) $request->query('email', ''),
+        ]);
+    }
+
+    public function setupPassword(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $tokenRow = DB::table('password_reset_tokens')->where('email', $data['email'])->first();
+
+        if (! $tokenRow || ! Hash::check($data['token'], (string) $tokenRow->token)) {
+            return back()->withErrors(['email' => 'Invalid or expired password setup link.'])->withInput($request->except('password', 'password_confirmation'));
+        }
+
+        $expiresInMinutes = (int) config('auth.passwords.users.expire', 60);
+        $createdAt = isset($tokenRow->created_at) ? strtotime((string) $tokenRow->created_at) : null;
+        if ($createdAt && (time() - $createdAt) > ($expiresInMinutes * 60)) {
+            return back()->withErrors(['email' => 'This password setup link has expired.'])->withInput($request->except('password', 'password_confirmation'));
+        }
+
+        $user = User::query()->where('email', $data['email'])->first();
+        if (! $user) {
+            return back()->withErrors(['email' => 'User account not found.'])->withInput($request->except('password', 'password_confirmation'));
+        }
+
+        $newPasswordHash = Hash::make($data['password']);
+        $user->password_hash = $newPasswordHash;
+
+        if (Schema::hasColumn('users', 'password')) {
+            $user->password = $newPasswordHash;
+        }
+
+        if (Schema::hasColumn('users', 'remember_token')) {
+            $user->remember_token = Str::random(60);
+        }
+
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $data['email'])->delete();
+
+        // Ensure clean auth/session state before sending user back to login page.
+        if (Auth::check()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return redirect()->route('login')->with('status', 'Password has been set successfully. You can now log in.');
     }
 
     private function redirectByRole(int $roleId): RedirectResponse

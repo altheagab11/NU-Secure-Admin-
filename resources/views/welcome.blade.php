@@ -201,6 +201,9 @@
 
             <form class="form-box" method="POST" action="{{ route('login.submit') }}">
                 @csrf
+                @if (session('status'))
+                    <div class="alert" style="background:#ecfdf5;border-color:#a7f3d0;color:#065f46;">{{ session('status') }}</div>
+                @endif
                 @if ($errors->any())
                     <div class="alert">{{ $errors->first() }}</div>
                 @endif

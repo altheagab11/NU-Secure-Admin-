@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserMail;
 use App\Models\User;
 use App\Models\Guard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class GuardController extends Controller
@@ -127,11 +129,31 @@ class GuardController extends Controller
                 'station' => $data['station'] ?? null,
             ]);
 
+            // create password setup/reset token and send onboarding email
+            $resetToken = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'token' => Hash::make($resetToken),
+                    'created_at' => now(),
+                ]
+            );
+
+            $setupUrl = route('password.setup.form', [
+                'token' => $resetToken,
+                'email' => $user->email,
+            ]);
+
+            Mail::to($user->email)->send(new UserMail(
+                $fullName,
+                $user->email,
+                $passwordPlain,
+                $setupUrl
+            ));
+
             DB::commit();
 
-            // Optionally, you may want to notify the guard with the generated password.
-
-            return redirect()->back()->with('success', 'Guard account created successfully.');
+            return redirect()->back()->with('success', 'Guard account created successfully. Login details and password setup link were sent by email.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'Failed to create guard: ' . $e->getMessage()]);

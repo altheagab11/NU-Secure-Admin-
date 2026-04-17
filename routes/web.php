@@ -8,10 +8,11 @@ use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
  
-Route::middleware('guest')->group(function () {
-    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-});
+Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+
+Route::get('/password/setup/{token}', [AuthController::class, 'showPasswordSetupForm'])->name('password.setup.form');
+Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('password.setup.submit');
  
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
  
