@@ -1028,7 +1028,7 @@
 				<section class="register-flow">
 					<div class="flow-head">
 						<div class="flow-step-meta">
-							<p class="flow-step-name" id="flowStepName">Face + ID</p>
+							<p class="flow-step-name" id="flowStepName">ID Scan</p>
 							<p class="flow-step-count" id="flowStepCount">Step 1 of 3</p>
 						</div>
 					</div>
@@ -1080,7 +1080,7 @@
 									<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 									<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
 								</svg>
-								<span id="scanActionText">Capture Face + ID</span>
+								<span id="scanActionText">Scan ID Card</span>
 							</button>
 
 							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
@@ -1174,7 +1174,7 @@
 							<textarea class="visitor-textarea" id="visitReason" required></textarea>
 						</div>
 
-						<button type="button" class="visitor-submit" id="generateQrBtn">Generate QR Ticket</button>
+						<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
 					</div>
 					@endif
 				</section>
@@ -1234,18 +1234,18 @@
 				return;
 			}
 
-			const isPictureStep = currentStep === 1;
-			const isIdStep = currentStep === 2;
-			const isFinalStep = currentStep === 3;
-			const isVisitorInfoStep = isFinalStep && registerType !== 'enrollee';
-			const isEnrolleeInfoStep = isFinalStep && registerType === 'enrollee';
+			const isIdStep = currentStep === 1;
+			const isFormStep = currentStep === 2;
+			const isPictureStep = currentStep === 3;
+			const isVisitorInfoStep = isFormStep && registerType !== 'enrollee';
+			const isEnrolleeInfoStep = isFormStep && registerType === 'enrollee';
 
-			flowStepName.textContent = isPictureStep
-				? 'Face + ID'
-				: (isIdStep ? 'ID Scan' : (registerType === 'enrollee' ? 'Enrollee Information' : 'Visitor Information'));
-			flowStepCount.textContent = isPictureStep ? 'Step 1 of 3' : (isIdStep ? 'Step 2 of 3' : 'Step 3 of 3');
+			flowStepName.textContent = isIdStep
+				? 'ID Scan'
+				: (isFormStep ? (registerType === 'enrollee' ? 'Enrollee Information' : 'Visitor Information') : 'Face + ID');
+			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : 'Step 3 of 3');
 
-			scannerCard.classList.toggle('is-hidden', isFinalStep);
+			scannerCard.classList.toggle('is-hidden', isFormStep);
 			if (visitorStepPanel) {
 				visitorStepPanel.classList.toggle('is-hidden', !isVisitorInfoStep);
 			}
@@ -1362,7 +1362,7 @@
 					setScannerAspectRatio(width, height);
 				};
 
-				setCameraState(true, currentStep === 1
+				setCameraState(true, currentStep === 3
 					? 'Camera is ready. Center your face and hold your ID beside it.'
 					: 'Camera is ready. Position the ID inside the frame.');
 			} catch (error) {
@@ -1388,7 +1388,7 @@
 			// Send image to server for saving
 			const formData = new FormData();
 			formData.append('image', capturedPictureData);
-			formData.append('step', 1);
+			formData.append('step', 3);
 
 			fetch('/guard/capture', {
 				method: 'POST',
@@ -1400,19 +1400,11 @@
 			.then(response => response.json())
 			.then(data => {
 				if (data.success) {
-					loadingText.textContent = 'Capture saved! Moving to Step 2...';
+					loadingText.textContent = 'Face + ID captured successfully.';
 					setTimeout(() => {
-						currentStep = 2;
-						updateStepUI();
-						clearFrozenFrame();
-						cameraStatus.textContent = 'Face + ID captured. Now align the ID card and continue.';
-						
-						// Restart camera for ID scan
-						startCamera();
-						
-						// Hide loading overlay
 						loadingOverlay.classList.add('is-hidden');
 						scanAction.disabled = false;
+						cameraStatus.textContent = 'Final capture complete. You may recapture if needed.';
 					}, 1000);
 				} else {
 					loadingText.textContent = 'Failed to save. Try again.';
@@ -1451,7 +1443,7 @@
 
 			const formData = new FormData();
 			formData.append('image', capturedIdData);
-			formData.append('step', 2);
+			formData.append('step', 1);
 
 			fetch('/guard/capture', {
 				method: 'POST',
@@ -1474,7 +1466,7 @@
 				loadingOverlay.classList.add('is-hidden');
 				scanAction.disabled = false;
 				galleryAction.disabled = false;
-				currentStep = 3;
+				currentStep = 2;
 				updateStepUI();
 
 				// Parse ID and auto-fill form
@@ -1645,17 +1637,17 @@
 			}
 
 			if (currentStep === 1) {
-				capturePicture();
+				captureIdAndProceed();
 				return;
 			}
 
-			if (currentStep === 2) {
-				captureIdAndProceed();
+			if (currentStep === 3) {
+				capturePicture();
 			}
 		});
 
 		galleryAction?.addEventListener('click', () => {
-			if (currentStep !== 2) {
+			if (currentStep !== 1) {
 				return;
 			}
 
@@ -1663,7 +1655,7 @@
 		});
 
 		idGalleryInput?.addEventListener('change', (event) => {
-			if (currentStep !== 2) {
+			if (currentStep !== 1) {
 				return;
 			}
 
@@ -1706,7 +1698,11 @@
 				return;
 			}
 
-			alert('QR ticket generation will be connected to backend next.');
+			currentStep = 3;
+			updateStepUI();
+			clearFrozenFrame();
+			cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
+			startCamera();
 		});
 
 		visitorPhoneNumber?.addEventListener('input', () => {
