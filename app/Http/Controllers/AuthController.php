@@ -49,7 +49,7 @@ class AuthController extends Controller
 
         $roleId = (int) $user->role_id;
 
-        if (! in_array($roleId, [1, 2], true)) {
+        if (! in_array($roleId, [1, 2, 4], true)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -134,6 +134,10 @@ class AuthController extends Controller
     {
         if ($roleId === 1) {
             return redirect()->to('/admin/dashboard');
+        }
+
+        if ($roleId === 4) {
+            return redirect()->to('/guard/register?type=normal');
         }
 
         return redirect()->to('/guard/dashboard');

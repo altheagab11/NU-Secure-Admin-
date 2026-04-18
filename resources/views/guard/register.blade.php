@@ -924,6 +924,7 @@
 </head>
 <body>
 	<div class="layout">
+		@php($isSelfRegisteredRole = (int) optional(auth()->user())->role_id === 4)
 		<aside class="sidebar">
 			<div class="brand-row">
 				<div class="brand-icon" aria-hidden="true">
@@ -938,6 +939,7 @@
 			</div>
 
 			<nav class="menu" aria-label="Sidebar Navigation">
+				@if (! $isSelfRegisteredRole)
 				<a href="/guard/dashboard" class="menu-item">
 					<span class="inner">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -949,6 +951,7 @@
 						Dashboard
 					</span>
 				</a>
+				@endif
 
 				<div class="menu-group open" id="registerMenuGroup">
 					<button type="button" class="menu-item menu-toggle active" id="registerMenuToggle" aria-expanded="true" aria-controls="registerSubmenu">
@@ -970,6 +973,7 @@
 					</div>
 				</div>
 
+				@if (! $isSelfRegisteredRole)
 				<a href="/guard/exit" class="menu-item">
 					<span class="inner">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -989,6 +993,7 @@
 						Active Alerts
 					</span>
 				</a>
+				@endif
 			</nav>
 
 			<div class="spacer" aria-hidden="true"></div>

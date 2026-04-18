@@ -42,10 +42,6 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
         return view('guard.dashboard');
     });
  
-    Route::get('/register', function () {
-        return view('guard.register');
-    });
- 
     Route::get('/exit', function () {
         return view('guard.exit');
     });
@@ -53,7 +49,14 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
     Route::get('/alert', function () {
         return view('guard.alert');
     });
+
+});
  
+Route::middleware(['auth', 'role:2,4'])->prefix('guard')->group(function () {
+    Route::get('/register', function () {
+        return view('guard.register');
+    });
+
     Route::get('/offices', [GuardVisitorController::class, 'getOffices']);
     Route::post('/capture', [GuardVisitorController::class, 'saveCapture']);
     Route::post('/parse-id', [GuardVisitorController::class, 'parseId']);
