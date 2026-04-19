@@ -10,6 +10,136 @@ use Illuminate\Support\Facades\DB;
 class GuardVisitorController extends Controller
 {
     /**
+     * Persist visitor registration data (visitor + visit + optional visit_route).
+     */
+    public function storeVisitorRegistration(Request $request)
+    {
+        $validated = $request->validate([
+            'register_type' => ['required', 'string'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'house_no' => ['required', 'string', 'max:255'],
+            'street' => ['required', 'string', 'max:255'],
+            'barangay' => ['required', 'string', 'max:255'],
+            'city_municipality' => ['required', 'string', 'max:255'],
+            'province' => ['required', 'string', 'max:255'],
+            'region' => ['required', 'string', 'max:255'],
+            'contact_no' => ['required', 'string', 'max:20'],
+            'pass_number' => ['required', 'string', 'max:255'],
+            'control_number' => ['required', 'string', 'max:255'],
+            'purpose_reason' => ['required', 'string', 'max:2000'],
+            'office_ids' => ['required', 'array', 'min:1'],
+            'office_ids.*' => ['integer'],
+            'visitor_photo_with_id_url' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if (strtolower((string) $validated['register_type']) !== 'normal') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only Normal Visitor save flow is enabled right now.',
+            ], 422);
+        }
+
+        $officeIds = array_values(array_unique(array_map('intval', $validated['office_ids'])));
+        if (empty($officeIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select at least one destination office.',
+            ], 422);
+        }
+
+        $activeExitStatusId = $this->resolveExitStatusId();
+        $visitorVisitTypeId = $this->resolveVisitTypeId('Visitor');
+        $pendingRouteStatusId = $this->resolveRouteStatusId('PENDING');
+
+        if (! $activeExitStatusId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Exit status "Active" is not configured.',
+            ], 500);
+        }
+
+        if (! $visitorVisitTypeId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Visit type "Visitor" is not configured.',
+            ], 500);
+        }
+
+        try {
+            $result = DB::transaction(function () use ($validated, $officeIds, $activeExitStatusId, $visitorVisitTypeId, $pendingRouteStatusId) {
+                $addressId = DB::table('address')->insertGetId([
+                    'house_no' => $validated['house_no'],
+                    'street' => $validated['street'],
+                    'barangay' => $validated['barangay'],
+                    'city_municipality' => $validated['city_municipality'],
+                    'province' => $validated['province'],
+                    'region' => $validated['region'],
+                ], 'address_id');
+
+                $visitorId = DB::table('visitor')->insertGetId([
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'address_id' => $addressId,
+                    'contact_no' => $validated['contact_no'],
+                    'pass_number' => $validated['pass_number'],
+                    'control_number' => $validated['control_number'],
+                    'visitor_photo_with_id_url' => $validated['visitor_photo_with_id_url'] ?? null,
+                    'created_at' => now(),
+                ], 'visitor_id');
+
+                $visitId = DB::table('visit')->insertGetId([
+                    'visitor_id' => $visitorId,
+                    'guard_user_id' => optional(request()->user())->id,
+                    'visit_type_id' => $visitorVisitTypeId,
+                    'purpose_reason' => $validated['purpose_reason'],
+                    'primary_office_id' => $officeIds[0],
+                    'qr_token' => strtoupper(Str::random(12)),
+                    'entry_time' => now(),
+                    'exit_status_id' => $activeExitStatusId,
+                ], 'visit_id');
+
+                if (count($officeIds) > 1) {
+                    $routeRows = [];
+                    foreach ($officeIds as $index => $officeId) {
+                        $routeRows[] = [
+                            'visit_id' => $visitId,
+                            'step_id' => $officeId,
+                            'step_order' => $index + 1,
+                            'route_status_id' => $pendingRouteStatusId,
+                        ];
+                    }
+
+                    DB::table('visit_route')->insert($routeRows);
+                }
+
+                return [
+                    'address_id' => $addressId,
+                    'visitor_id' => $visitorId,
+                    'visit_id' => $visitId,
+                    'primary_office_id' => $officeIds[0],
+                    'saved_route_count' => count($officeIds) > 1 ? count($officeIds) : 0,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Visitor details saved successfully.',
+                'data' => $result,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('storeVisitorRegistration failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save visitor details.',
+            ], 500);
+        }
+    }
+
+    /**
      * Return active offices for guard visitor step.
      */
     public function getOffices()
@@ -725,5 +855,52 @@ class GuardVisitorController extends Controller
         ];
 
         return $map[$normalized] ?? '';
+    }
+
+    protected function resolveVisitTypeId(string $visitTypeName): ?int
+    {
+        $exact = DB::table('visit_type')
+            ->whereRaw('LOWER(visit_type_name) = ?', [strtolower($visitTypeName)])
+            ->value('visit_type_id');
+
+        if ($exact) {
+            return (int) $exact;
+        }
+
+        return null;
+    }
+
+    protected function resolveExitStatusId(): ?int
+    {
+        $exact = DB::table('exit_status')
+            ->whereRaw('LOWER(exit_status_name) = ?', ['active'])
+            ->value('exit_status_id');
+
+        if ($exact) {
+            return (int) $exact;
+        }
+
+        $fallback = DB::table('exit_status')
+            ->whereRaw('LOWER(exit_status_name) like ?', ['%active%'])
+            ->value('exit_status_id');
+
+        return $fallback ? (int) $fallback : 3;
+    }
+
+    protected function resolveRouteStatusId(string $statusName): ?int
+    {
+        $exact = DB::table('route_status')
+            ->whereRaw('LOWER(route_status_name) = ?', [strtolower($statusName)])
+            ->value('route_status_id');
+
+        if ($exact) {
+            return (int) $exact;
+        }
+
+        $fallback = DB::table('route_status')
+            ->orderBy('route_status_id')
+            ->value('route_status_id');
+
+        return $fallback ? (int) $fallback : null;
     }
 }

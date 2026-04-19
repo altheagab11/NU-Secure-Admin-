@@ -1210,6 +1210,17 @@
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
 		const officeListNote = document.getElementById('officeListNote');
+		const visitorFirstName = document.getElementById('visitorFirstName');
+		const visitorLastName = document.getElementById('visitorLastName');
+		const visitorHouseNo = document.getElementById('visitorHouseNo');
+		const visitorStreet = document.getElementById('visitorStreet');
+		const visitorBarangay = document.getElementById('visitorBarangay');
+		const visitorCity = document.getElementById('visitorCity');
+		const visitorProvince = document.getElementById('visitorProvince');
+		const visitorRegion = document.getElementById('visitorRegion');
+		const visitorIdPassNumber = document.getElementById('visitorIdPassNumber');
+		const visitorControlNumber = document.getElementById('visitorControlNumber');
+		const visitReason = document.getElementById('visitReason');
 		const registerType = @json($registerType);
 		const hasFinalStepPanel = Boolean(visitorStepPanel || enrolleeStepPanel);
 		const hasRegisterFlow = Boolean(
@@ -1221,6 +1232,7 @@
 		let currentStep = 1;
 		let capturedPictureData = '';
 		let selectedOfficeIds = [];
+		let idScanPublicPath = '';
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -1459,6 +1471,9 @@
 				}
 
 				console.log('✓ Capture saved successfully');
+				if (data.filename) {
+					idScanPublicPath = `/storage/captures/${data.filename}`;
+				}
 				releaseCamera();
 				if (!showFrozenAfterSuccess) {
 					clearFrozenFrame();
@@ -1698,11 +1713,64 @@
 				return;
 			}
 
-			currentStep = 3;
-			updateStepUI();
-			clearFrozenFrame();
-			cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
-			startCamera();
+			if (registerType !== 'normal') {
+				currentStep = 3;
+				updateStepUI();
+				clearFrozenFrame();
+				cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
+				startCamera();
+				return;
+			}
+
+			const payload = {
+				register_type: registerType,
+				first_name: visitorFirstName?.value.trim() || '',
+				last_name: visitorLastName?.value.trim() || '',
+				house_no: visitorHouseNo?.value.trim() || '',
+				street: visitorStreet?.value.trim() || '',
+				barangay: visitorBarangay?.value.trim() || '',
+				city_municipality: visitorCity?.value.trim() || '',
+				province: visitorProvince?.value.trim() || '',
+				region: visitorRegion?.value.trim() || '',
+				contact_no: visitorPhoneNumber?.value.trim() || '',
+				pass_number: visitorIdPassNumber?.value.trim() || '',
+				control_number: visitorControlNumber?.value.trim() || '',
+				purpose_reason: visitReason?.value.trim() || '',
+				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
+				visitor_photo_with_id_url: idScanPublicPath || null,
+			};
+
+			generateQrBtn.disabled = true;
+			const originalBtnText = generateQrBtn.textContent;
+			generateQrBtn.textContent = 'Saving visitor details...';
+
+			fetch('/guard/register/visitor', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: JSON.stringify(payload)
+			})
+				.then(async (response) => {
+					const data = await response.json().catch(() => ({}));
+					if (!response.ok || !data.success) {
+						throw new Error(data.message || 'Failed to save visitor details.');
+					}
+
+					currentStep = 3;
+					updateStepUI();
+					clearFrozenFrame();
+					cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
+					startCamera();
+				})
+				.catch((error) => {
+					alert(error.message || 'Failed to save visitor details.');
+				})
+				.finally(() => {
+					generateQrBtn.disabled = false;
+					generateQrBtn.textContent = originalBtnText;
+				});
 		});
 
 		visitorPhoneNumber?.addEventListener('input', () => {
