@@ -1232,7 +1232,7 @@
 										data-scanned-office="{{ $row['scanned_office'] ?? '—' }}"
 										data-scanned-by="{{ $row['scanned_by'] ?? '—' }}"
 										data-validation-status="{{ $row['validation_status'] ?? 'Unknown' }}"
-										data-office-route="{{ e(json_encode($row['office_route'] ?? [])) }}"
+										data-office-route='@json($row['office_route'] ?? [])'
 									>
 										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
@@ -1545,16 +1545,19 @@
 				routeRows = [];
 			}
 
+			tbody.innerHTML = '';
+
 			if (!routeRows.length) {
-				routeRows = [{
-					expected_office: getText(trigger.dataset.primaryOffice, '—'),
-					expected_order: '—',
-					expectation_status: 'Pending',
-					arrived_at: '—'
-				}];
+				const tr = document.createElement('tr');
+				const td = document.createElement('td');
+				td.colSpan = 4;
+				td.textContent = 'No expected office route found.';
+				td.style.color = '#64748b';
+				tr.appendChild(td);
+				tbody.appendChild(tr);
+				return;
 			}
 
-			tbody.innerHTML = '';
 			routeRows.forEach((row) => {
 				const tr = document.createElement('tr');
 

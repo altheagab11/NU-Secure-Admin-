@@ -534,36 +534,107 @@ class VisitorMonitoringController extends Controller
             return collect([]);
         }
 
-        $response = Http::withHeaders([
+        $headers = [
             'apikey' => $supabaseKey,
             'Authorization' => 'Bearer '.$supabaseKey,
             'Accept' => 'application/json',
-        ])->timeout(20)->get($baseUrl.'/rest/v1/office_expectation', [
-            'select' => 'visit_id,expected_order,arrived_at,office:office!office_expectation_office_id_fkey(office_name),expectation_status:expectation_status!office_expectation_expectation_status_id_fkey(status_name)',
+        ];
+
+        $response = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_expectation', [
+            'select' => 'visit_id,expected_order,arrived_at,office(office_name),expectation_status(status_name)',
             'visit_id' => 'in.('.$visitIds->implode(',').')',
             'order' => 'expected_order.asc',
             'limit' => 5000,
         ]);
 
-        if (! $response->ok() || ! is_array($response->json())) {
-            return collect([]);
+        $primaryRows = $response->json();
+
+        if ($response->ok() && is_array($primaryRows) && count($primaryRows) > 0) {
+            return collect($primaryRows)
+                ->filter(fn ($row) => is_array($row) && isset($row['visit_id']))
+                ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''))
+                ->map(function (Collection $rows) {
+                    return $rows
+                        ->map(function (array $expectation) {
+                            $expectedOfficeRel = $this->extractRelation($expectation, 'office');
+                            $expectationStatusRel = $this->extractRelation($expectation, 'expectation_status');
+                            $arrivedAt = $this->parseDateTime($expectation['arrived_at'] ?? null);
+
+                            $expectedOffice = trim((string) ($expectedOfficeRel['office_name'] ?? ''));
+                            $statusName = trim((string) ($expectationStatusRel['status_name'] ?? ''));
+
+                            return [
+                                'expected_office' => $expectedOffice !== '' ? $expectedOffice : '—',
+                                'expected_order' => isset($expectation['expected_order']) ? (string) $expectation['expected_order'] : '—',
+                                'expectation_status' => $statusName !== '' ? $statusName : 'Pending',
+                                'arrived_at' => $arrivedAt ? $arrivedAt->format('M d, Y h:i A') : '—',
+                            ];
+                        })
+                        ->values()
+                        ->all();
+                });
         }
 
-        return collect($response->json())
+        $fallback = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_expectation', [
+            'select' => 'visit_id,expected_order,arrived_at,office_id,expectation_status_id',
+            'visit_id' => 'in.('.$visitIds->implode(',').')',
+            'order' => 'expected_order.asc',
+            'limit' => 5000,
+        ]);
+
+        $fallbackRows = $fallback->json();
+
+        if (! $fallback->ok() || ! is_array($fallbackRows)) {
+            logger()->warning('office_expectation fetch failed', [
+                'primary_status' => $response->status(),
+                'primary_body' => $response->body(),
+                'fallback_status' => $fallback->status(),
+                'fallback_body' => $fallback->body(),
+            ]);
+
+            return $this->fetchOfficeRouteMapFromDatabase($visitIds);
+        }
+
+        if (count($fallbackRows) === 0) {
+            return $this->fetchOfficeRouteMapFromDatabase($visitIds);
+        }
+
+        $officeMap = $this->fetchOfficeMap($baseUrl, $supabaseKey);
+
+        $statusResponse = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/expectation_status', [
+            'select' => 'expectation_status_id,status_name',
+            'limit' => 200,
+        ]);
+
+        $expectationStatusMap = collect([]);
+        if ($statusResponse->ok() && is_array($statusResponse->json())) {
+            $expectationStatusMap = collect($statusResponse->json())
+                ->filter(fn ($row) => is_array($row) && isset($row['expectation_status_id']))
+                ->mapWithKeys(fn (array $row) => [
+                    (string) ($row['expectation_status_id'] ?? '') => (string) ($row['status_name'] ?? ''),
+                ]);
+        }
+
+        return collect($fallbackRows)
             ->filter(fn ($row) => is_array($row) && isset($row['visit_id']))
             ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''))
             ->map(function (Collection $rows) {
                 return $rows
                     ->map(function (array $expectation) {
-                        $expectedOfficeRel = $this->extractRelation($expectation, 'office');
-                        $expectationStatusRel = $this->extractRelation($expectation, 'expectation_status');
+                        return $expectation;
+                    })
+                    ->values()
+                    ->all();
+            })
+            ->map(function (array $groupRows) use ($officeMap, $expectationStatusMap) {
+                return collect($groupRows)
+                    ->map(function (array $expectation) use ($officeMap, $expectationStatusMap) {
                         $arrivedAt = $this->parseDateTime($expectation['arrived_at'] ?? null);
-
-                        $expectedOffice = trim((string) ($expectedOfficeRel['office_name'] ?? ''));
-                        $statusName = trim((string) ($expectationStatusRel['status_name'] ?? ''));
+                        $officeName = (string) ($officeMap->get((string) ($expectation['office_id'] ?? '')) ?? '');
+                        $statusName = (string) ($expectationStatusMap->get((string) ($expectation['expectation_status_id'] ?? '')) ?? '');
 
                         return [
-                            'expected_office' => $expectedOffice !== '' ? $expectedOffice : '—',
+                            'expected_office' => $officeName !== '' ? $officeName : '—',
                             'expected_order' => isset($expectation['expected_order']) ? (string) $expectation['expected_order'] : '—',
                             'expectation_status' => $statusName !== '' ? $statusName : 'Pending',
                             'arrived_at' => $arrivedAt ? $arrivedAt->format('M d, Y h:i A') : '—',
@@ -572,6 +643,55 @@ class VisitorMonitoringController extends Controller
                     ->values()
                     ->all();
             });
+    }
+
+    private function fetchOfficeRouteMapFromDatabase(Collection $visitIds): Collection
+    {
+        if ($visitIds->isEmpty()) {
+            return collect([]);
+        }
+
+        try {
+            $rows = DB::table('office_expectation as oe')
+                ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
+                ->leftJoin('expectation_status as es', 'es.expectation_status_id', '=', 'oe.expectation_status_id')
+                ->select([
+                    'oe.visit_id',
+                    'oe.expected_order',
+                    'oe.arrived_at',
+                    'o.office_name as expected_office_name',
+                    'es.status_name as expectation_status_name',
+                ])
+                ->whereIn('oe.visit_id', $visitIds->values()->all())
+                ->orderBy('oe.visit_id')
+                ->orderBy('oe.expected_order')
+                ->get();
+
+            return collect($rows)
+                ->map(fn ($row) => (array) $row)
+                ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''))
+                ->map(function (Collection $groupRows) {
+                    return $groupRows
+                        ->map(function (array $expectation) {
+                            $arrivedAt = $this->parseDateTime($expectation['arrived_at'] ?? null);
+                            $expectedOffice = trim((string) ($expectation['expected_office_name'] ?? ''));
+                            $statusName = trim((string) ($expectation['expectation_status_name'] ?? ''));
+
+                            return [
+                                'expected_office' => $expectedOffice !== '' ? $expectedOffice : '—',
+                                'expected_order' => isset($expectation['expected_order']) ? (string) $expectation['expected_order'] : '—',
+                                'expectation_status' => $statusName !== '' ? $statusName : 'Pending',
+                                'arrived_at' => $arrivedAt ? $arrivedAt->format('M d, Y h:i A') : '—',
+                            ];
+                        })
+                        ->values()
+                        ->all();
+                });
+        } catch (\Throwable $e) {
+            logger()->warning('office route DB fallback failed: '.$e->getMessage());
+
+            return collect([]);
+        }
     }
 
     private function fetchLatestOfficeScanMapFromRest(string $baseUrl, string $supabaseKey, Collection $visitIds): Collection
