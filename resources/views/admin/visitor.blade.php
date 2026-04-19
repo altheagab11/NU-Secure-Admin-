@@ -400,6 +400,32 @@
 			pointer-events: none;
 		}
 
+		.filter-actions {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.export-excel-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 38px;
+			padding: 0 14px;
+			border-radius: 8px;
+			background: #1d4ed8;
+			color: #ffffff;
+			border: 1px solid #1e40af;
+			font-size: 13px;
+			font-weight: 700;
+			text-decoration: none;
+			white-space: nowrap;
+		}
+
+		.export-excel-btn:hover {
+			background: #1e40af;
+		}
+
 		.table-card {
 			margin-top: 22px;
 			overflow-x: auto;
@@ -663,6 +689,12 @@
 			color: #64748b;
 			margin-bottom: 12px;
 			background: #f8fafc;
+		}
+		.vd-photo img {
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain;
+			border-radius: 8px;
 		}
 
 		.vd-table {
@@ -1074,6 +1106,7 @@
 						|| !empty($filters['visit_type'])
 						|| !empty($filters['date_from'])
 						|| !empty($filters['date_to']);
+					$exportQuery = array_filter($filters ?? [], fn ($value) => $value !== null && $value !== '');
 				@endphp
 				<form method="GET" action="{{ route('admin.visitor') }}">
 					<div class="filters-row">
@@ -1104,7 +1137,10 @@
 						</select>
 						<input class="filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
 						<input class="filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
-						<a href="{{ route('admin.visitor') }}" class="clear-filters-btn {{ $hasActiveFilters ? '' : 'disabled' }}" aria-label="Clear filters">Clear</a>
+						<div class="filter-actions">
+							<a href="{{ route('admin.visitor.export', $exportQuery) }}" class="export-excel-btn" aria-label="Export visitors to Excel">Export Excel</a>
+							<a href="{{ route('admin.visitor') }}" class="clear-filters-btn {{ $hasActiveFilters ? '' : 'disabled' }}" aria-label="Clear filters">Clear</a>
+						</div>
 					</div>
 				</form>
 				<p class="filters-count">Showing {{ ($rows ?? collect())->count() }} of {{ $filteredCount ?? 0 }} filtered visitors ({{ $totalRows ?? 0 }} total)</p>
@@ -1124,7 +1160,6 @@
 					<thead>
 						<tr>
 							<th>Visitor</th>
-							<th>Pass No.</th>
 							<th>Control #</th>
 							<th>Contact No.</th>
 							<th>Visit Type</th>
@@ -1151,7 +1186,6 @@
 										</div>
 									</div>
 								</td>
-								<td>{{ $row['pass_number'] }}</td>
 								<td>{{ $row['control_number'] }}</td>
 								<td>{{ $row['contact_no'] }}</td>
 								<td>{{ $row['visit_type'] }}</td>
@@ -1171,6 +1205,7 @@
 										data-control-number="{{ $row['control_number'] ?? '—' }}"
 										data-contact-no="{{ $row['contact_no'] ?? '—' }}"
 										data-address="{{ $row['address'] ?? '—' }}"
+										data-photo-url="{{ $row['visitor_photo_with_id_url'] ?? '' }}"
 										data-visit-id="{{ $row['visit_id'] ?? '—' }}"
 										data-visit-type="{{ $row['visit_type'] ?? '—' }}"
 										data-purpose="{{ $row['purpose'] ?? '—' }}"
@@ -1178,8 +1213,26 @@
 										data-entry-time="{{ trim(($row['entry_time_label_date'] ?? '') . ' ' . ($row['entry_time_label_time'] ?? '')) }}"
 										data-exit-time="{{ $row['exit_time_label'] ?? '—' }}"
 										data-duration="{{ $row['duration_label'] ?? '—' }}"
+										data-exit-status="{{ $row['exit_status'] ?? '—' }}"
+										data-registered-by="{{ $row['registered_by_guard'] ?? '—' }}"
 										data-status="{{ $row['status'] ?? 'Pending' }}"
 										data-alert="{{ $row['alert'] ?? 'None' }}"
+										data-alert-id="{{ $row['alert_id'] ?? '' }}"
+										data-alert-type="{{ $row['alert_type'] ?? 'None' }}"
+										data-alert-severity="{{ $row['alert_severity'] ?? '—' }}"
+										data-alert-message="{{ $row['alert_message'] ?? '—' }}"
+										data-alert-status="{{ $row['alert_status'] ?? '—' }}"
+										data-alert-created-at="{{ $row['alert_created_at'] ?? '—' }}"
+										data-alert-resolved-at="{{ $row['alert_resolved_at'] ?? '—' }}"
+										data-alert-resolved-by="{{ $row['alert_resolved_by'] ?? '—' }}"
+										data-alert-resolution-notes="{{ $row['alert_resolution_notes'] ?? '—' }}"
+										data-scan-id="{{ $row['scan_id'] ?? '—' }}"
+										data-scan-time="{{ $row['scan_time_label'] ?? '—' }}"
+										data-scan-remarks="{{ $row['scan_remarks'] ?? '—' }}"
+										data-scanned-office="{{ $row['scanned_office'] ?? '—' }}"
+										data-scanned-by="{{ $row['scanned_by'] ?? '—' }}"
+										data-validation-status="{{ $row['validation_status'] ?? 'Unknown' }}"
+										data-office-route="{{ e(json_encode($row['office_route'] ?? [])) }}"
 									>
 										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
@@ -1191,7 +1244,7 @@
 							</tr>
 						@empty
 							<tr>
-								<td colspan="12" class="empty-row">No visitor records found.</td>
+								<td colspan="11" class="empty-row">No visitor records found.</td>
 							</tr>
 						@endforelse
 					</tbody>
@@ -1310,7 +1363,7 @@
 						<section class="vd-card">
 							<h3 class="vd-card-title">Visitor Information</h3>
 							<div class="vd-card-body">
-								<div class="vd-photo">No Photo Available</div>
+								<div class="vd-photo" id="vdPhoto">No Photo Available</div>
 								<table class="vd-table">
 									<tbody>
 										<tr><th>Visitor ID</th><td id="vdVisitorId">—</td></tr>
@@ -1357,7 +1410,7 @@
 										<tr><th>Exit Time</th><td id="vdExitTime">—</td></tr>
 										<tr><th>Duration</th><td id="vdDuration">—</td></tr>
 										<tr><th>Exit Status</th><td id="vdExitStatus">Still Inside</td></tr>
-										<tr><th>Registered By Guard</th><td>Admin Reyes</td></tr>
+										<tr><th>Registered By Guard</th><td id="vdRegisteredByGuard">—</td></tr>
 									</tbody>
 								</table>
 							</div>
@@ -1375,14 +1428,7 @@
 											<th>Arrived At</th>
 										</tr>
 									</thead>
-									<tbody>
-										<tr>
-											<td id="vdExpectedOffice">—</td>
-											<td>1</td>
-											<td><span id="vdExpectedStatus" class="vd-badge vd-badge-warning">Pending</span></td>
-											<td id="vdArrivedAt">—</td>
-										</tr>
-									</tbody>
+									<tbody id="vdOfficeRouteBody"></tbody>
 								</table>
 							</div>
 						</section>
@@ -1460,6 +1506,112 @@
 			return 'vd-badge vd-badge-secondary';
 		};
 
+		const expectationBadgeClass = (status) => {
+			const s = getText(status, 'Pending').toLowerCase();
+			if (s.includes('arrived') || s.includes('completed') || s.includes('matched') || s.includes('done')) {
+				return 'vd-badge vd-badge-success';
+			}
+			if (s.includes('overstay') || s.includes('missed') || s.includes('failed')) {
+				return 'vd-badge vd-badge-danger';
+			}
+			return 'vd-badge vd-badge-warning';
+		};
+
+		const validationBadgeClass = (status) => {
+			const s = getText(status, 'Unknown').toLowerCase();
+			if (s.includes('match') || s.includes('valid') || s.includes('approved')) {
+				return 'vd-badge vd-badge-success';
+			}
+			if (s.includes('review') || s.includes('pending') || s.includes('unknown')) {
+				return 'vd-badge vd-badge-warning';
+			}
+			if (s.includes('unauthor') || s.includes('wrong') || s.includes('fail') || s.includes('invalid') || s.includes('overstay')) {
+				return 'vd-badge vd-badge-danger';
+			}
+
+			return 'vd-badge vd-badge-secondary';
+		};
+
+		const renderOfficeRouteRows = (trigger, status) => {
+			const tbody = document.getElementById('vdOfficeRouteBody');
+			if (!tbody) return;
+
+			let routeRows = [];
+			const raw = getText(trigger.dataset.officeRoute, '[]');
+			try {
+				routeRows = JSON.parse(raw);
+				if (!Array.isArray(routeRows)) routeRows = [];
+			} catch (error) {
+				routeRows = [];
+			}
+
+			if (!routeRows.length) {
+				routeRows = [{
+					expected_office: getText(trigger.dataset.primaryOffice, '—'),
+					expected_order: '—',
+					expectation_status: 'Pending',
+					arrived_at: '—'
+				}];
+			}
+
+			tbody.innerHTML = '';
+			routeRows.forEach((row) => {
+				const tr = document.createElement('tr');
+
+				const officeTd = document.createElement('td');
+				officeTd.textContent = getText(row.expected_office, '—');
+
+				const orderTd = document.createElement('td');
+				orderTd.textContent = getText(row.expected_order, '—');
+
+				const statusTd = document.createElement('td');
+				const statusBadge = document.createElement('span');
+				const expectationStatus = getText(row.expectation_status, 'Pending');
+				statusBadge.textContent = expectationStatus;
+				statusBadge.className = expectationBadgeClass(expectationStatus);
+				statusTd.appendChild(statusBadge);
+
+				const arrivedTd = document.createElement('td');
+				arrivedTd.textContent = getText(row.arrived_at, '—');
+
+				tr.appendChild(officeTd);
+				tr.appendChild(orderTd);
+				tr.appendChild(statusTd);
+				tr.appendChild(arrivedTd);
+
+				tbody.appendChild(tr);
+			});
+		};
+
+		const SUPABASE_URL = @json(rtrim((string) env('SUPABASE_URL', ''), '/'));
+
+		const normalizePhotoUrl = (rawValue) => {
+			const value = getText(rawValue, '');
+			if (!value || value === '—') return '';
+
+			if (/^https?:\/\//i.test(value)) {
+				return value;
+			}
+
+			if (!SUPABASE_URL) {
+				return value;
+			}
+
+			if (value.startsWith('/storage/v1/object/public/')) {
+				return `${SUPABASE_URL}${value}`;
+			}
+
+			if (value.startsWith('storage/v1/object/public/')) {
+				return `${SUPABASE_URL}/${value}`;
+			}
+
+			if (value.startsWith('http')) {
+				return value;
+			}
+
+			return `${SUPABASE_URL}/storage/v1/object/public/${value.replace(/^\/+/, '')}`;
+		};
+
 		const openVisitorDetailModal = (trigger) => {
 			if (!visitorDetailModal || !trigger) return;
 
@@ -1475,6 +1627,25 @@
 			setTextById('vdControlNumber', trigger.dataset.controlNumber);
 			setTextById('vdContactNo', trigger.dataset.contactNo);
 			setTextById('vdAddress', trigger.dataset.address, 'Address not available');
+			const photoContainer = document.getElementById('vdPhoto');
+			if (photoContainer) {
+				const photoUrl = normalizePhotoUrl(trigger.dataset.photoUrl);
+				photoContainer.innerHTML = '';
+				if (photoUrl && photoUrl !== '—') {
+					const img = document.createElement('img');
+					img.src = photoUrl;
+					img.alt = 'Visitor photo with ID';
+					img.loading = 'lazy';
+					img.referrerPolicy = 'no-referrer';
+					img.onerror = () => {
+						photoContainer.innerHTML = '';
+						photoContainer.textContent = 'No Photo Available';
+					};
+					photoContainer.appendChild(img);
+				} else {
+					photoContainer.textContent = 'No Photo Available';
+				}
+			}
 
 			setTextById('vdVisitId', trigger.dataset.visitId);
 			setTextById('vdVisitType', trigger.dataset.visitType);
@@ -1483,62 +1654,62 @@
 			setTextById('vdEntryTime', trigger.dataset.entryTime);
 			setTextById('vdExitTime', trigger.dataset.exitTime);
 			setTextById('vdDuration', trigger.dataset.duration);
-			setTextById('vdExitStatus', status, 'Still Inside');
+			setTextById('vdExitStatus', trigger.dataset.exitStatus, status);
+			setTextById('vdRegisteredByGuard', trigger.dataset.registeredBy, '—');
 
-			setTextById('vdExpectedOffice', trigger.dataset.primaryOffice);
-			setTextById('vdArrivedAt', trigger.dataset.entryTime);
+			renderOfficeRouteRows(trigger, status);
 
-			const expectedStatusEl = document.getElementById('vdExpectedStatus');
-			if (expectedStatusEl) {
-				expectedStatusEl.textContent = status;
-				expectedStatusEl.className = status.toLowerCase().includes('arrived')
-					? 'vd-badge vd-badge-success'
-					: (status.toLowerCase().includes('completed') ? 'vd-badge vd-badge-secondary' : 'vd-badge vd-badge-warning');
-			}
+			const scanId = getText(trigger.dataset.scanId, '—');
+			const scannedOffice = getText(trigger.dataset.scannedOffice, getText(trigger.dataset.primaryOffice, '—'));
+			const scannedBy = getText(trigger.dataset.scannedBy, getText(trigger.dataset.registeredBy, '—'));
+			const scanTime = getText(trigger.dataset.scanTime, getText(trigger.dataset.entryTime, '—'));
+			const scanRemarks = getText(trigger.dataset.scanRemarks, alertText === 'None' ? '—' : alertText);
+			const validationStatus = getText(trigger.dataset.validationStatus, alertText === 'None' ? 'Matched' : 'Requires Review');
 
-			setTextById('vdScanId', trigger.dataset.visitId ? `SCAN-${trigger.dataset.visitId}` : '—');
-			setTextById('vdScannedOffice', trigger.dataset.primaryOffice);
-			setTextById('vdScanTime', trigger.dataset.entryTime);
-			setTextById('vdRemarks', alertText === 'None' ? 'Correct destination' : alertText);
+			setTextById('vdScanId', scanId);
+			setTextById('vdScannedOffice', scannedOffice);
+			setTextById('vdScannedBy', scannedBy);
+			setTextById('vdScanTime', scanTime);
+			setTextById('vdRemarks', scanRemarks);
 
 			const validationEl = document.getElementById('vdValidationBadge');
 			if (validationEl) {
-				if (alertText === 'None') {
-					validationEl.textContent = 'Matched';
-					validationEl.className = 'vd-badge vd-badge-success';
-				} else {
-					validationEl.textContent = 'Requires Review';
-					validationEl.className = 'vd-badge vd-badge-warning';
-				}
+				validationEl.textContent = validationStatus;
+				validationEl.className = validationBadgeClass(validationStatus);
 			}
 
 			const noAlertsBox = document.getElementById('vdNoAlertsBox');
 			const alertBox = document.getElementById('vdAlertBox');
-			if (alertText === 'None') {
+			const hasAlert = getText(trigger.dataset.alertId, '') !== '' && getText(trigger.dataset.alertId, '') !== '—';
+
+			if (!hasAlert) {
 				if (noAlertsBox) noAlertsBox.style.display = 'inline-flex';
 				if (alertBox) alertBox.style.display = 'none';
 			} else {
 				if (noAlertsBox) noAlertsBox.style.display = 'none';
 				if (alertBox) alertBox.style.display = 'block';
 
-				setTextById('vdAlertId', trigger.dataset.visitId ? `${trigger.dataset.visitId}01` : '3001');
-				setTextById('vdAlertType', alertText, 'Wrong Office');
-				setTextById('vdAlertMessage', `Visitor flagged with ${alertText}.`, 'Visitor scanned at wrong office.');
-				setTextById('vdAlertCreatedAt', trigger.dataset.entryTime);
-				setTextById('vdResolvedAt', '—');
-				setTextById('vdResolvedBy', '—');
-				setTextById('vdResolutionNotes', '—');
+				setTextById('vdAlertId', trigger.dataset.alertId, '—');
+				setTextById('vdAlertType', trigger.dataset.alertType, '—');
+				setTextById('vdAlertMessage', trigger.dataset.alertMessage, '—');
+				setTextById('vdAlertCreatedAt', trigger.dataset.alertCreatedAt, '—');
+				setTextById('vdResolvedAt', trigger.dataset.alertResolvedAt, '—');
+				setTextById('vdResolvedBy', trigger.dataset.alertResolvedBy, '—');
+				setTextById('vdResolutionNotes', trigger.dataset.alertResolutionNotes, '—');
 
 				const alertStatusBadge = document.getElementById('vdAlertStatusBadge');
 				if (alertStatusBadge) {
-					alertStatusBadge.textContent = 'Unresolved';
-					setBadgeClass(alertStatusBadge, 'vd-badge vd-badge-danger');
+					const alertStatusText = getText(trigger.dataset.alertStatus, 'Unresolved');
+					alertStatusBadge.textContent = alertStatusText;
+					const isResolved = alertStatusText.toLowerCase().includes('resolved');
+					setBadgeClass(alertStatusBadge, isResolved ? 'vd-badge vd-badge-success' : 'vd-badge vd-badge-danger');
 				}
 
 				const severityEl = document.getElementById('vdAlertSeverityBadge');
 				if (severityEl) {
-					severityEl.textContent = 'Medium';
-					setBadgeClass(severityEl, severityBadgeClass('Medium'));
+					const severityText = getText(trigger.dataset.alertSeverity, 'Medium');
+					severityEl.textContent = severityText;
+					setBadgeClass(severityEl, severityBadgeClass(severityText));
 				}
 			}
 

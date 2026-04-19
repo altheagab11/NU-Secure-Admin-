@@ -779,9 +779,10 @@
 		}
 
 		.registration-complete {
-			margin-top: 16px;
+			margin: 12px auto 0;
+			max-width: 760px;
 			display: grid;
-			gap: 14px;
+			gap: 16px;
 		}
 
 		.complete-head {
@@ -804,9 +805,11 @@
 
 		.complete-title {
 			margin: 0;
-			font-size: 34px;
+			font-size: 46px;
 			font-weight: 700;
 			color: #121212;
+			line-height: 1.05;
+			letter-spacing: -0.02em;
 		}
 
 		.complete-subtitle {
@@ -819,8 +822,8 @@
 			background: #fff;
 			border: 1px solid #d9dde4;
 			border-radius: 12px;
-			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-			padding: 20px;
+			box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+			padding: 20px 20px 16px;
 		}
 
 		.ticket-qr-area {
@@ -851,9 +854,11 @@
 
 		.ticket-control-value {
 			margin: 0;
-			font-size: 34px;
+			font-size: 46px;
 			font-weight: 800;
 			color: #121212;
+			line-height: 1;
+			letter-spacing: -0.01em;
 		}
 
 		.ticket-separator {
@@ -865,9 +870,9 @@
 
 		.ticket-info-grid {
 			display: grid;
-			grid-template-columns: 120px 1fr 1fr;
-			gap: 16px;
-			align-items: center;
+			grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr);
+			gap: 14px 18px;
+			align-items: start;
 		}
 
 		.ticket-photo-wrap {
@@ -899,15 +904,25 @@
 
 		.ticket-meta-value {
 			margin: 2px 0 10px;
-			font-size: 22px;
+			font-size: 36px;
 			font-weight: 700;
 			color: #111827;
+			line-height: 1.25;
+			word-break: break-word;
+		}
+
+		#ticketVisitorName,
+		#ticketPassNumber,
+		#ticketPurpose,
+		#ticketDestination {
+			font-size: 16px;
+			margin-bottom: 8px;
 		}
 
 		.ticket-footer {
-			margin: 6px 0 0;
+			margin: 4px 0 0;
 			text-align: center;
-			font-size: 13px;
+			font-size: 12px;
 			color: #6b7280;
 		}
 
@@ -926,7 +941,7 @@
 		.ticket-actions {
 			display: flex;
 			justify-content: center;
-			gap: 12px;
+			gap: 10px;
 		}
 
 		.ticket-btn {
@@ -938,6 +953,12 @@
 			color: #111827;
 			font-weight: 600;
 			cursor: pointer;
+			transition: all 0.15s ease;
+		}
+
+		.ticket-btn:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 3px 8px rgba(15, 23, 42, 0.16);
 		}
 
 		.ticket-btn.primary {
@@ -1081,16 +1102,17 @@
 			}
 
 			.complete-title {
-				font-size: 26px;
+				font-size: 32px;
 			}
 
 			.ticket-control-value {
-				font-size: 24px;
+				font-size: 30px;
 			}
 
 			.ticket-info-grid {
 				grid-template-columns: 1fr;
 				justify-items: center;
+				text-align: center;
 			}
 
 			.ticket-actions {
@@ -1421,6 +1443,7 @@
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
 		const flowStepName = document.getElementById('flowStepName');
 		const flowStepCount = document.getElementById('flowStepCount');
+		const flowHead = document.querySelector('.flow-head');
 		const scannerZone = document.querySelector('.scanner-zone');
 		const cameraFeed = document.getElementById('cameraFeed');
 		const pictureGuide = document.getElementById('pictureGuide');
@@ -1515,6 +1538,9 @@
 			}
 			if (registrationCompletePanel) {
 				registrationCompletePanel.classList.toggle('is-hidden', !isCompleteStep);
+			}
+			if (flowHead) {
+				flowHead.classList.toggle('is-hidden', isCompleteStep);
 			}
 
 			if (isFormStep && registerType === 'normal') {

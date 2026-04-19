@@ -100,18 +100,20 @@ class GuardVisitorController extends Controller
                     'exit_status_id' => $activeExitStatusId,
                 ], 'visit_id');
 
+                $savedOfficeCount = 0;
+
+                // For multi-office visitors, use office_expectation table (not visit_route which is for enrollee steps)
                 if (count($officeIds) > 1) {
-                    $routeRows = [];
-                    foreach ($officeIds as $index => $officeId) {
-                        $routeRows[] = [
+                    $expectationRows = [];
+                    foreach ($officeIds as $officeId) {
+                        $expectationRows[] = [
                             'visit_id' => $visitId,
-                            'step_id' => $officeId,
-                            'step_order' => $index + 1,
-                            'route_status_id' => $pendingRouteStatusId,
+                            'office_id' => $officeId,
                         ];
                     }
 
-                    DB::table('visit_route')->insert($routeRows);
+                    DB::table('office_expectation')->insert($expectationRows);
+                    $savedOfficeCount = count($expectationRows);
                 }
 
                 return [
@@ -119,7 +121,7 @@ class GuardVisitorController extends Controller
                     'visitor_id' => $visitorId,
                     'visit_id' => $visitId,
                     'primary_office_id' => $officeIds[0],
-                    'saved_route_count' => count($officeIds) > 1 ? count($officeIds) : 0,
+                    'saved_office_count' => $savedOfficeCount,
                 ];
             });
 

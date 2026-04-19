@@ -22,6 +22,7 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     });
  
     Route::get('/visitor', [VisitorMonitoringController::class, 'index'])->name('admin.visitor');
+    Route::get('/visitor/export', [VisitorMonitoringController::class, 'export'])->name('admin.visitor.export');
  
     Route::get('/alerts', [AlertsController::class, 'index']);
     Route::post('/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
