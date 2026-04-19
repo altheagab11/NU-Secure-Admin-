@@ -778,6 +778,174 @@
 			display: block;
 		}
 
+		.registration-complete {
+			margin-top: 16px;
+			display: grid;
+			gap: 14px;
+		}
+
+		.complete-head {
+			display: grid;
+			justify-items: center;
+			gap: 6px;
+		}
+
+		.complete-icon {
+			width: 72px;
+			height: 72px;
+			border-radius: 999px;
+			background: #d4f5dd;
+			color: #0a8d3d;
+			display: grid;
+			place-items: center;
+			font-size: 36px;
+			font-weight: 700;
+		}
+
+		.complete-title {
+			margin: 0;
+			font-size: 34px;
+			font-weight: 700;
+			color: #121212;
+		}
+
+		.complete-subtitle {
+			margin: 0;
+			color: #666;
+			font-size: 14px;
+		}
+
+		.ticket-card {
+			background: #fff;
+			border: 1px solid #d9dde4;
+			border-radius: 12px;
+			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+			padding: 20px;
+		}
+
+		.ticket-qr-area {
+			display: grid;
+			justify-items: center;
+			gap: 8px;
+		}
+
+		.qr-box {
+			width: 128px;
+			height: 128px;
+			background: #fff;
+			display: grid;
+			place-items: center;
+		}
+
+		.qr-box canvas,
+		.qr-box img {
+			width: 128px !important;
+			height: 128px !important;
+		}
+
+		.ticket-control-label {
+			margin: 0;
+			font-size: 14px;
+			color: #4b5563;
+		}
+
+		.ticket-control-value {
+			margin: 0;
+			font-size: 34px;
+			font-weight: 800;
+			color: #121212;
+		}
+
+		.ticket-separator {
+			margin: 16px 0;
+			border: 0;
+			height: 3px;
+			background: #d5d9e0;
+		}
+
+		.ticket-info-grid {
+			display: grid;
+			grid-template-columns: 120px 1fr 1fr;
+			gap: 16px;
+			align-items: center;
+		}
+
+		.ticket-photo-wrap {
+			width: 110px;
+			height: 110px;
+			border-radius: 12px;
+			border: 1px solid #d9dde4;
+			background: #f1f5f9;
+			overflow: hidden;
+			display: grid;
+			place-items: center;
+		}
+
+		.ticket-photo-image {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.ticket-photo-fallback {
+			font-size: 42px;
+		}
+
+		.ticket-meta-label {
+			margin: 0;
+			font-size: 12px;
+			color: #6b7280;
+		}
+
+		.ticket-meta-value {
+			margin: 2px 0 10px;
+			font-size: 22px;
+			font-weight: 700;
+			color: #111827;
+		}
+
+		.ticket-footer {
+			margin: 6px 0 0;
+			text-align: center;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.ticket-status {
+			margin: 0;
+			text-align: center;
+			font-size: 13px;
+			font-weight: 600;
+			color: #0a8d3d;
+		}
+
+		.ticket-status.error {
+			color: #b91c1c;
+		}
+
+		.ticket-actions {
+			display: flex;
+			justify-content: center;
+			gap: 12px;
+		}
+
+		.ticket-btn {
+			height: 44px;
+			border-radius: 10px;
+			padding: 0 18px;
+			border: 1px solid #d1d5db;
+			background: #fff;
+			color: #111827;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		.ticket-btn.primary {
+			background: #3e4ba0;
+			border-color: #3e4ba0;
+			color: #fff;
+		}
+
 		.type-placeholder {
 			max-width: 760px;
 			margin: 16px auto 0;
@@ -910,6 +1078,23 @@
 
 			.visitor-details-grid {
 				grid-template-columns: 1fr;
+			}
+
+			.complete-title {
+				font-size: 26px;
+			}
+
+			.ticket-control-value {
+				font-size: 24px;
+			}
+
+			.ticket-info-grid {
+				grid-template-columns: 1fr;
+				justify-items: center;
+			}
+
+			.ticket-actions {
+				flex-wrap: wrap;
 			}
 
 			.brand-title span:first-child {
@@ -1177,11 +1362,60 @@
 						<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
 					</div>
 					@endif
+
+					<div class="registration-complete is-hidden" id="registrationCompletePanel">
+						<div class="complete-head">
+							<div class="complete-icon" aria-hidden="true">✓</div>
+							<p class="complete-title">Registration Complete!</p>
+							<p class="complete-subtitle">QR Ticket Generated Successfully</p>
+						</div>
+
+						<div class="ticket-card" id="registrationTicketCard">
+							<div class="ticket-qr-area">
+								<div class="qr-box" id="qrCodeContainer"></div>
+								<p class="ticket-control-label">Control Number</p>
+								<p class="ticket-control-value" id="ticketControlNumber">-</p>
+							</div>
+
+							<hr class="ticket-separator">
+
+							<div class="ticket-info-grid">
+								<div class="ticket-photo-wrap">
+									<img id="ticketPhoto" class="ticket-photo-image is-hidden" alt="Visitor face and ID">
+									<div id="ticketPhotoFallback" class="ticket-photo-fallback">👤</div>
+								</div>
+
+								<div>
+									<p class="ticket-meta-label">Full Name</p>
+									<p class="ticket-meta-value" id="ticketVisitorName">-</p>
+									<p class="ticket-meta-label">ID Number</p>
+									<p class="ticket-meta-value" id="ticketPassNumber">-</p>
+								</div>
+
+								<div>
+									<p class="ticket-meta-label">Purpose</p>
+									<p class="ticket-meta-value" id="ticketPurpose">-</p>
+									<p class="ticket-meta-label">Destination</p>
+									<p class="ticket-meta-value" id="ticketDestination">-</p>
+								</div>
+							</div>
+
+							<p class="ticket-footer">Registered by Officer Martinez</p>
+						</div>
+
+						<p class="ticket-status" id="ticketSaveStatus">Generating QR and saving details...</p>
+
+						<div class="ticket-actions">
+							<button type="button" class="ticket-btn" id="downloadQrBtn">Download QR</button>
+							<button type="button" class="ticket-btn primary" id="printTicketBtn">Print Ticket</button>
+						</div>
+					</div>
 				</section>
 			@endif
 		</main>
 	</div>
 
+	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script>
 		const registerMenuGroup = document.getElementById('registerMenuGroup');
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
@@ -1206,6 +1440,18 @@
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
 		const enrolleeStepPanel = document.getElementById('enrolleeStepPanel');
+		const registrationCompletePanel = document.getElementById('registrationCompletePanel');
+		const qrCodeContainer = document.getElementById('qrCodeContainer');
+		const ticketControlNumber = document.getElementById('ticketControlNumber');
+		const ticketVisitorName = document.getElementById('ticketVisitorName');
+		const ticketPassNumber = document.getElementById('ticketPassNumber');
+		const ticketPurpose = document.getElementById('ticketPurpose');
+		const ticketDestination = document.getElementById('ticketDestination');
+		const ticketPhoto = document.getElementById('ticketPhoto');
+		const ticketPhotoFallback = document.getElementById('ticketPhotoFallback');
+		const ticketSaveStatus = document.getElementById('ticketSaveStatus');
+		const downloadQrBtn = document.getElementById('downloadQrBtn');
+		const printTicketBtn = document.getElementById('printTicketBtn');
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
@@ -1232,7 +1478,9 @@
 		let currentStep = 1;
 		let capturedPictureData = '';
 		let selectedOfficeIds = [];
-		let idScanPublicPath = '';
+		let faceIdCapturePublicPath = '';
+		let faceIdCapturePreviewUrl = '';
+		let hasSavedRegistration = false;
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -1249,20 +1497,24 @@
 			const isIdStep = currentStep === 1;
 			const isFormStep = currentStep === 2;
 			const isPictureStep = currentStep === 3;
+			const isCompleteStep = currentStep === 4;
 			const isVisitorInfoStep = isFormStep && registerType !== 'enrollee';
 			const isEnrolleeInfoStep = isFormStep && registerType === 'enrollee';
 
 			flowStepName.textContent = isIdStep
 				? 'ID Scan'
-				: (isFormStep ? (registerType === 'enrollee' ? 'Enrollee Information' : 'Visitor Information') : 'Face + ID');
-			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : 'Step 3 of 3');
+				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Registration Complete'));
+			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : (isPictureStep ? 'Step 3 of 3' : 'Completed'));
 
-			scannerCard.classList.toggle('is-hidden', isFormStep);
+			scannerCard.classList.toggle('is-hidden', isFormStep || isCompleteStep);
 			if (visitorStepPanel) {
 				visitorStepPanel.classList.toggle('is-hidden', !isVisitorInfoStep);
 			}
 			if (enrolleeStepPanel) {
 				enrolleeStepPanel.classList.toggle('is-hidden', !isEnrolleeInfoStep);
+			}
+			if (registrationCompletePanel) {
+				registrationCompletePanel.classList.toggle('is-hidden', !isCompleteStep);
 			}
 
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
@@ -1271,6 +1523,56 @@
 			galleryAction.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
+		};
+
+		const getSelectedDestinationText = () => {
+			if (registerType === 'contractor') {
+				return (destinationOfficeText?.value || '').trim() || '-';
+			}
+
+			const labels = Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
+				const text = cb?.parentElement?.textContent || '';
+				return text.trim();
+			}).filter(Boolean);
+
+			return labels.length ? labels.join(', ') : '-';
+		};
+
+		const renderQrTicket = (qrMeta) => {
+			if (!qrMeta || !qrCodeContainer || typeof QRCode === 'undefined') {
+				return false;
+			}
+
+			qrCodeContainer.innerHTML = '';
+			new QRCode(qrCodeContainer, {
+				text: qrMeta.qr_payload,
+				width: 128,
+				height: 128,
+				colorDark: '#000000',
+				colorLight: '#ffffff',
+				correctLevel: QRCode.CorrectLevel.M,
+			});
+
+			ticketControlNumber.textContent = qrMeta.control_number || '-';
+			ticketVisitorName.textContent = `${(visitorFirstName?.value || '').trim()} ${(visitorLastName?.value || '').trim()}`.trim() || '-';
+			ticketPassNumber.textContent = (visitorIdPassNumber?.value || '').trim() || '-';
+			ticketPurpose.textContent = (visitReason?.value || '').trim() || '-';
+			ticketDestination.textContent = getSelectedDestinationText();
+
+			if (ticketPhoto && faceIdCapturePreviewUrl) {
+				ticketPhoto.src = faceIdCapturePreviewUrl;
+				ticketPhoto.classList.remove('is-hidden');
+				ticketPhotoFallback?.classList.add('is-hidden');
+				ticketPhoto.onerror = () => {
+					ticketPhoto.classList.add('is-hidden');
+					ticketPhotoFallback?.classList.remove('is-hidden');
+				};
+			} else {
+				ticketPhoto?.classList.add('is-hidden');
+				ticketPhotoFallback?.classList.remove('is-hidden');
+			}
+
+			return true;
 		};
 
 		const setCameraState = (isOn, message) => {
@@ -1383,6 +1685,11 @@
 		};
 
 		const capturePicture = () => {
+			if (hasSavedRegistration) {
+				cameraStatus.textContent = 'Registration is already completed.';
+				return;
+			}
+
 			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
 				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
 				return;
@@ -1412,12 +1719,59 @@
 			.then(response => response.json())
 			.then(data => {
 				if (data.success) {
-					loadingText.textContent = 'Face + ID captured successfully.';
-					setTimeout(() => {
-						loadingOverlay.classList.add('is-hidden');
-						scanAction.disabled = false;
-						cameraStatus.textContent = 'Final capture complete. You may recapture if needed.';
-					}, 1000);
+					faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
+					faceIdCapturePreviewUrl = data.public_url || data.path || '';
+
+					if (registerType !== 'normal') {
+						loadingText.textContent = 'Face + ID captured successfully.';
+						setTimeout(() => {
+							loadingOverlay.classList.add('is-hidden');
+							scanAction.disabled = false;
+							cameraStatus.textContent = 'Final capture complete. You may recapture if needed.';
+						}, 1000);
+						return;
+					}
+
+					loadingText.textContent = 'Generating QR ticket...';
+					const qrMeta = createQrMeta();
+
+					if (!qrMeta) {
+						throw new Error('Failed to generate QR data. Please try again.');
+					}
+
+					if (!renderQrTicket(qrMeta)) {
+						throw new Error('Failed to generate QR ticket. Please try again.');
+					}
+
+					currentStep = 4;
+					updateStepUI();
+					releaseCamera();
+					clearFrozenFrame();
+					ticketSaveStatus.textContent = 'Saving visitor details...';
+					ticketSaveStatus.classList.remove('error');
+
+					loadingText.textContent = 'Saving visitor details...';
+					saveNormalVisitorRegistration(qrMeta)
+						.then(() => {
+							hasSavedRegistration = true;
+							ticketSaveStatus.textContent = 'Visitor details saved successfully.';
+							ticketSaveStatus.classList.remove('error');
+							loadingText.textContent = 'QR generated and visitor saved successfully.';
+							setTimeout(() => {
+								loadingOverlay.classList.add('is-hidden');
+								scanAction.disabled = true;
+								cameraStatus.textContent = 'Registration completed successfully.';
+							}, 1000);
+						})
+						.catch((error) => {
+							ticketSaveStatus.textContent = error.message || 'Failed to save visitor details.';
+							ticketSaveStatus.classList.add('error');
+							loadingText.textContent = error.message || 'Failed to save visitor details. Try again.';
+							setTimeout(() => {
+								loadingOverlay.classList.add('is-hidden');
+								scanAction.disabled = true;
+							}, 1500);
+						});
 				} else {
 					loadingText.textContent = 'Failed to save. Try again.';
 					setTimeout(() => {
@@ -1442,7 +1796,70 @@
 			});
 		};
 
-		const saveIdScanAndProceed = (capturedIdData, progressText = 'Saving ID scan...', options = {}) => {
+		const createQrMeta = () => {
+			const now = new Date();
+			const year = String(now.getFullYear()).slice(-2);
+			const month = String(now.getMonth() + 1).padStart(2, '0');
+			const day = String(now.getDate()).padStart(2, '0');
+			const random = Math.floor(Math.random() * 9000 + 1000);
+			const generatedControlNumber = `SVMS-${year}${month}${day}-${random}`;
+
+			const controlNumber = (visitorControlNumber?.value || '').trim() || generatedControlNumber;
+			if (!controlNumber) {
+				return null;
+			}
+
+			if (visitorControlNumber && !visitorControlNumber.value.trim()) {
+				visitorControlNumber.value = controlNumber;
+			}
+
+			const qrToken = `QR-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+			return {
+				control_number: controlNumber,
+				qr_token: qrToken,
+				qr_payload: `${controlNumber}|${qrToken}`,
+			};
+		};
+
+		const saveNormalVisitorRegistration = async (qrMeta) => {
+			const payload = {
+				register_type: registerType,
+				first_name: visitorFirstName?.value.trim() || '',
+				last_name: visitorLastName?.value.trim() || '',
+				house_no: visitorHouseNo?.value.trim() || '',
+				street: visitorStreet?.value.trim() || '',
+				barangay: visitorBarangay?.value.trim() || '',
+				city_municipality: visitorCity?.value.trim() || '',
+				province: visitorProvince?.value.trim() || '',
+				region: visitorRegion?.value.trim() || '',
+				contact_no: visitorPhoneNumber?.value.trim() || '',
+				pass_number: visitorIdPassNumber?.value.trim() || '',
+				control_number: qrMeta?.control_number || (visitorControlNumber?.value.trim() || ''),
+				purpose_reason: visitReason?.value.trim() || '',
+				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
+				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
+				qr_payload: qrMeta?.qr_payload || null,
+			};
+
+			const response = await fetch('/guard/register/visitor', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok || !data.success) {
+				throw new Error(data.message || 'Failed to save visitor details.');
+			}
+
+			return data;
+		};
+
+		const parseIdOnlyAndProceed = (capturedIdData, progressText = 'Parsing ID scan...', options = {}) => {
 			const {
 				restartCameraOnError = true,
 				showFrozenAfterSuccess = false
@@ -1453,57 +1870,38 @@
 			scanAction.disabled = true;
 			galleryAction.disabled = true;
 
-			const formData = new FormData();
-			formData.append('image', capturedIdData);
-			formData.append('step', 1);
-
-			fetch('/guard/capture', {
-				method: 'POST',
-				headers: {
-					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-				},
-				body: formData
-			})
-			.then(response => response.json())
-			.then(data => {
-				if (!data.success) {
-					throw new Error(data.message || 'Failed to save ID scan');
-				}
-
-				console.log('✓ Capture saved successfully');
-				if (data.filename) {
-					idScanPublicPath = `/storage/captures/${data.filename}`;
-				}
-				releaseCamera();
-				if (!showFrozenAfterSuccess) {
-					clearFrozenFrame();
-				}
-				loadingOverlay.classList.add('is-hidden');
-				scanAction.disabled = false;
-				galleryAction.disabled = false;
-				currentStep = 2;
-				updateStepUI();
-
-				// Parse ID and auto-fill form
-				console.log('✓ Calling parseAndFillIdData with image size:', capturedIdData?.size || capturedIdData?.length || 0);
-				console.log('✓ capturedIdData type:', typeof capturedIdData);
-				parseAndFillIdData(capturedIdData);
-				console.log('✓ parseAndFillIdData called');
-			})
-			.catch(() => {
-				loadingText.textContent = 'Failed to save ID scan. Try again.';
-				setTimeout(() => {
-					loadingOverlay.classList.add('is-hidden');
+			Promise.resolve()
+				.then(() => parseAndFillIdData(capturedIdData))
+				.then((parsedSuccessfully) => {
+					releaseCamera();
 					if (!showFrozenAfterSuccess) {
 						clearFrozenFrame();
 					}
+					loadingOverlay.classList.add('is-hidden');
 					scanAction.disabled = false;
 					galleryAction.disabled = false;
-					if (restartCameraOnError) {
-						startCamera();
-					}
-				}, 1500);
-			});
+					currentStep = 2;
+					updateStepUI();
+					cameraStatus.textContent = parsedSuccessfully
+						? 'ID parsed successfully. Verify details before proceeding.'
+						: 'ID parsed with limited data. Please complete missing details manually.';
+				})
+				.catch(() => {
+					loadingText.textContent = 'Failed to parse ID. You can fill details manually.';
+					setTimeout(() => {
+						loadingOverlay.classList.add('is-hidden');
+						if (!showFrozenAfterSuccess) {
+							clearFrozenFrame();
+						}
+						scanAction.disabled = false;
+						galleryAction.disabled = false;
+						currentStep = 2;
+						updateStepUI();
+						if (restartCameraOnError) {
+							releaseCamera();
+						}
+					}, 1200);
+				});
 		};
 
 		const captureIdAndProceed = () => {
@@ -1526,7 +1924,7 @@
 					return;
 				}
 				console.log('✓ Canvas blob created, size:', blob.size);
-				saveIdScanAndProceed(blob, 'Saving ID scan...');
+				parseIdOnlyAndProceed(blob, 'Parsing ID scan...');
 			}, 'image/jpeg', 0.85);
 		};
 
@@ -1536,7 +1934,7 @@
 			
 			if (!capturedIdData) {
 				console.error('❌ FATAL: capturedIdData is missing!');
-				return;
+				return Promise.reject(new Error('Missing ID scan image'));
 			}
 
 			const formData = new FormData();
@@ -1545,7 +1943,7 @@
 
 			console.log('✓ FormData prepared with Blob file, size:', capturedIdData.size);
 
-			fetch('/guard/parse-id', {
+			return fetch('/guard/parse-id', {
 				method: 'POST',
 				headers: {
 					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
@@ -1562,7 +1960,7 @@
 				if (!data.success) {
 					console.warn('❌ OCR parse failed:', data.message);
 					console.warn('Raw OCR text:', data.raw_text);
-					return;
+					return false;
 				}
 
 				console.log('✓ OCR SUCCESS! Extracted:', data.extracted_data);
@@ -1573,13 +1971,13 @@
 				console.log('✓ About to call autofillVisitorForm...');
 				autofillVisitorForm(fillData);
 				console.log('✓ autofillVisitorForm complete');
+				return true;
 			})
 			.catch(error => {
 				console.error('❌ FATAL FETCH ERROR:', error);
 				console.error(error.stack);
+				throw error;
 			});
-
-			console.log('=== parseAndFillIdData END (fetch started) ===');
 		};
 
 		const autofillVisitorForm = (formData) => {
@@ -1629,8 +2027,8 @@
 
 				freezeDataUrlFrame(reader.result)
 					.then(() => {
-						cameraStatus.textContent = 'Imported image ready. Uploading ID from gallery...';
-						saveIdScanAndProceed(file, 'Uploading ID from gallery...', {
+						cameraStatus.textContent = 'Imported image ready. Parsing ID from gallery...';
+						parseIdOnlyAndProceed(file, 'Parsing ID from gallery...', {
 							restartCameraOnError: false,
 							showFrozenAfterSuccess: true
 						});
@@ -1661,6 +2059,24 @@
 			}
 		});
 
+		downloadQrBtn?.addEventListener('click', () => {
+			const qrCanvas = qrCodeContainer?.querySelector('canvas');
+			if (!qrCanvas) {
+				alert('QR code is not ready yet.');
+				return;
+			}
+
+			const link = document.createElement('a');
+			const controlNo = (ticketControlNumber?.textContent || 'visitor-ticket').trim();
+			link.href = qrCanvas.toDataURL('image/png');
+			link.download = `${controlNo}.png`;
+			link.click();
+		});
+
+		printTicketBtn?.addEventListener('click', () => {
+			window.print();
+		});
+
 		galleryAction?.addEventListener('click', () => {
 			if (currentStep !== 1) {
 				return;
@@ -1684,6 +2100,11 @@
 		});
 
 		generateQrBtn?.addEventListener('click', () => {
+			if (hasSavedRegistration) {
+				alert('Registration has already been completed.');
+				return;
+			}
+
 			const requiredFields = Array.from(visitorStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
 
 			for (const field of requiredFields) {
@@ -1722,55 +2143,11 @@
 				return;
 			}
 
-			const payload = {
-				register_type: registerType,
-				first_name: visitorFirstName?.value.trim() || '',
-				last_name: visitorLastName?.value.trim() || '',
-				house_no: visitorHouseNo?.value.trim() || '',
-				street: visitorStreet?.value.trim() || '',
-				barangay: visitorBarangay?.value.trim() || '',
-				city_municipality: visitorCity?.value.trim() || '',
-				province: visitorProvince?.value.trim() || '',
-				region: visitorRegion?.value.trim() || '',
-				contact_no: visitorPhoneNumber?.value.trim() || '',
-				pass_number: visitorIdPassNumber?.value.trim() || '',
-				control_number: visitorControlNumber?.value.trim() || '',
-				purpose_reason: visitReason?.value.trim() || '',
-				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
-				visitor_photo_with_id_url: idScanPublicPath || null,
-			};
-
-			generateQrBtn.disabled = true;
-			const originalBtnText = generateQrBtn.textContent;
-			generateQrBtn.textContent = 'Saving visitor details...';
-
-			fetch('/guard/register/visitor', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-				},
-				body: JSON.stringify(payload)
-			})
-				.then(async (response) => {
-					const data = await response.json().catch(() => ({}));
-					if (!response.ok || !data.success) {
-						throw new Error(data.message || 'Failed to save visitor details.');
-					}
-
-					currentStep = 3;
-					updateStepUI();
-					clearFrozenFrame();
-					cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
-					startCamera();
-				})
-				.catch((error) => {
-					alert(error.message || 'Failed to save visitor details.');
-				})
-				.finally(() => {
-					generateQrBtn.disabled = false;
-					generateQrBtn.textContent = originalBtnText;
-				});
+			currentStep = 3;
+			updateStepUI();
+			clearFrozenFrame();
+			cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
+			startCamera();
 		});
 
 		visitorPhoneNumber?.addEventListener('input', () => {

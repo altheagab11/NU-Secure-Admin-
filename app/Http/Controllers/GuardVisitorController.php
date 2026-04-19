@@ -6,6 +6,7 @@ use App\Services\OCRService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class GuardVisitorController extends Controller
 {
@@ -169,7 +170,7 @@ class GuardVisitorController extends Controller
     public function saveCapture(Request $request)
     {
         try {
-            $step = $request->input('step', 1);
+            $step = (int) $request->input('step', 1);
 
             $type = 'jpg';
             $binaryImage = null;
@@ -225,31 +226,165 @@ class GuardVisitorController extends Controller
                 $type = 'jpg';
             }
 
-            // Create picture directory if it doesn't exist
-            $pictureDir = storage_path('app/public/captures');
-            if (! is_dir($pictureDir)) {
-                mkdir($pictureDir, 0755, true);
+            // Keep ID scan (step 1) local so OCR flow remains reliable even when storage RLS is strict.
+            if ($step !== 3) {
+                $localResult = $this->saveCaptureLocally($binaryImage, $type);
+
+                if (! $localResult['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $localResult['message'] ?? 'Failed to save ID scan image',
+                    ], 500);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Capture saved successfully',
+                    'filename' => $localResult['filename'],
+                    'path' => $localResult['public_path'],
+                    'public_url' => $localResult['public_path'],
+                    'bucket' => null,
+                    'bucket_file_path' => null,
+                    'step' => $step,
+                ]);
             }
 
-            // Generate unique filename with timestamp
-            $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $type;
-            $filePath = $pictureDir . '/' . $filename;
+            $uploadResult = $this->uploadCaptureToSupabase($binaryImage, $type, $step);
+            if (! $uploadResult['success']) {
+                // Fallback: do not block registration when Supabase Storage key/policy is misconfigured.
+                $localResult = $this->saveCaptureLocally($binaryImage, $type);
 
-            // Save image to file
-            if (file_put_contents($filePath, $binaryImage) === false) {
-                return response()->json(['success' => false, 'message' => 'Failed to save image'], 500);
+                if (! $localResult['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => ($uploadResult['message'] ?? 'Failed to upload image to Supabase') . ' Also failed local fallback save.',
+                    ], 500);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Capture saved locally. Supabase upload is currently blocked.',
+                    'filename' => $localResult['filename'],
+                    'path' => $localResult['public_path'],
+                    'public_url' => $localResult['public_path'],
+                    'bucket' => null,
+                    'bucket_file_path' => null,
+                    'warning' => $uploadResult['message'] ?? 'Supabase upload failed',
+                    'step' => $step,
+                ]);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Capture saved successfully',
-                'filename' => $filename,
-                'path' => $filePath,
+                'message' => 'Capture uploaded successfully',
+                'filename' => $uploadResult['filename'],
+                'path' => $uploadResult['object_path'],
+                'public_url' => $uploadResult['public_url'],
+                'bucket' => $uploadResult['bucket'],
+                'bucket_file_path' => $uploadResult['bucket_file_path'],
                 'step' => $step,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Save capture to local public storage and return file metadata.
+     */
+    protected function saveCaptureLocally(string $binaryImage, string $extension): array
+    {
+        $pictureDir = storage_path('app/public/captures');
+        if (! is_dir($pictureDir) && ! mkdir($pictureDir, 0755, true) && ! is_dir($pictureDir)) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create local capture directory.',
+            ];
+        }
+
+        $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $extension;
+        $filePath = $pictureDir . '/' . $filename;
+
+        if (file_put_contents($filePath, $binaryImage) === false) {
+            return [
+                'success' => false,
+                'message' => 'Failed to write local capture file.',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'filename' => $filename,
+            'absolute_path' => $filePath,
+            'public_path' => '/storage/captures/' . $filename,
+        ];
+    }
+
+    /**
+     * Upload capture to Supabase Storage and return stored object details.
+     */
+    protected function uploadCaptureToSupabase(string $binaryImage, string $extension, int $step): array
+    {
+        $supabaseUrl = rtrim((string) env('SUPABASE_URL', ''), '/');
+        $supabaseKey = (string) (env('SUPABASE_STORAGE_KEY') ?: env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY'));
+
+        if ($supabaseUrl === '' || $supabaseKey === '') {
+            return [
+                'success' => false,
+                'message' => 'Supabase configuration is missing.',
+            ];
+        }
+
+        $bucket = (string) env('SUPABASE_STORAGE_BUCKET', 'visitor-files');
+        $defaultFolder = $step === 3 ? 'Face_ID_picture' : 'ID_scan';
+        $folder = trim((string) env('SUPABASE_STORAGE_FACE_ID_FOLDER', $defaultFolder), '/');
+
+        $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $extension;
+        $objectPath = $folder !== '' ? ($folder . '/' . $filename) : $filename;
+
+        $contentType = match ($extension) {
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            default => 'image/jpeg',
+        };
+
+        $encodedPath = collect(explode('/', $objectPath))
+            ->filter(fn ($segment) => $segment !== '')
+            ->map(fn ($segment) => rawurlencode($segment))
+            ->implode('/');
+
+        $uploadUrl = $supabaseUrl . '/storage/v1/object/' . rawurlencode($bucket) . '/' . $encodedPath;
+
+        $response = Http::withHeaders([
+            'apikey' => $supabaseKey,
+            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Content-Type' => $contentType,
+            'x-upsert' => 'true',
+        ])->withBody($binaryImage, $contentType)->post($uploadUrl);
+
+        if (! $response->successful()) {
+            \Log::error('Supabase capture upload failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'bucket' => $bucket,
+                'object_path' => $objectPath,
+                'step' => $step,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to upload capture to Supabase Storage (check bucket RLS policy or service role key).',
+            ];
+        }
+
+        return [
+            'success' => true,
+            'bucket' => $bucket,
+            'filename' => $filename,
+            'object_path' => $objectPath,
+            'public_url' => $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath,
+            'bucket_file_path' => $bucket . '/' . $objectPath,
+        ];
     }
 
     /**
