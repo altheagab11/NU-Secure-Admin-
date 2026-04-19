@@ -1388,7 +1388,7 @@
 								<div>
 									<p class="ticket-meta-label">Full Name</p>
 									<p class="ticket-meta-value" id="ticketVisitorName">-</p>
-									<p class="ticket-meta-label">ID Number</p>
+									<p class="ticket-meta-label">ID Pass Number</p>
 									<p class="ticket-meta-value" id="ticketPassNumber">-</p>
 								</div>
 
@@ -1517,6 +1517,10 @@
 				registrationCompletePanel.classList.toggle('is-hidden', !isCompleteStep);
 			}
 
+			if (isFormStep && registerType === 'normal') {
+				ensureAutoControlNumber();
+			}
+
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
 			idGuide.classList.toggle('is-hidden', !isIdStep);
 			idTypesPanel.classList.toggle('is-hidden', !isIdStep);
@@ -1538,6 +1542,36 @@
 			return labels.length ? labels.join(', ') : '-';
 		};
 
+		const toTitleCase = (value) => {
+			const raw = String(value || '').trim();
+			if (!raw) {
+				return '';
+			}
+
+			return raw
+				.toLowerCase()
+				.replace(/\b([a-z])/g, (match) => match.toUpperCase());
+		};
+
+		const generateControlNumber = () => {
+			const year = new Date().getFullYear();
+			const serial = String(Date.now()).slice(-6);
+			return `${year}-${serial}`;
+		};
+
+		const ensureAutoControlNumber = () => {
+			if (!visitorControlNumber) {
+				return '';
+			}
+
+			visitorControlNumber.readOnly = true;
+			if (!visitorControlNumber.value.trim()) {
+				visitorControlNumber.value = generateControlNumber();
+			}
+
+			return visitorControlNumber.value.trim();
+		};
+
 		const renderQrTicket = (qrMeta) => {
 			if (!qrMeta || !qrCodeContainer || typeof QRCode === 'undefined') {
 				return false;
@@ -1554,7 +1588,7 @@
 			});
 
 			ticketControlNumber.textContent = qrMeta.control_number || '-';
-			ticketVisitorName.textContent = `${(visitorFirstName?.value || '').trim()} ${(visitorLastName?.value || '').trim()}`.trim() || '-';
+			ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
 			ticketPassNumber.textContent = (visitorIdPassNumber?.value || '').trim() || '-';
 			ticketPurpose.textContent = (visitReason?.value || '').trim() || '-';
 			ticketDestination.textContent = getSelectedDestinationText();
@@ -1797,20 +1831,9 @@
 		};
 
 		const createQrMeta = () => {
-			const now = new Date();
-			const year = String(now.getFullYear()).slice(-2);
-			const month = String(now.getMonth() + 1).padStart(2, '0');
-			const day = String(now.getDate()).padStart(2, '0');
-			const random = Math.floor(Math.random() * 9000 + 1000);
-			const generatedControlNumber = `SVMS-${year}${month}${day}-${random}`;
-
-			const controlNumber = (visitorControlNumber?.value || '').trim() || generatedControlNumber;
+			const controlNumber = ensureAutoControlNumber();
 			if (!controlNumber) {
 				return null;
-			}
-
-			if (visitorControlNumber && !visitorControlNumber.value.trim()) {
-				visitorControlNumber.value = controlNumber;
 			}
 
 			const qrToken = `QR-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -1825,8 +1848,8 @@
 		const saveNormalVisitorRegistration = async (qrMeta) => {
 			const payload = {
 				register_type: registerType,
-				first_name: visitorFirstName?.value.trim() || '',
-				last_name: visitorLastName?.value.trim() || '',
+				first_name: toTitleCase(visitorFirstName?.value),
+				last_name: toTitleCase(visitorLastName?.value),
 				house_no: visitorHouseNo?.value.trim() || '',
 				street: visitorStreet?.value.trim() || '',
 				barangay: visitorBarangay?.value.trim() || '',
@@ -1835,7 +1858,7 @@
 				region: visitorRegion?.value.trim() || '',
 				contact_no: visitorPhoneNumber?.value.trim() || '',
 				pass_number: visitorIdPassNumber?.value.trim() || '',
-				control_number: qrMeta?.control_number || (visitorControlNumber?.value.trim() || ''),
+				control_number: qrMeta?.control_number || ensureAutoControlNumber(),
 				purpose_reason: visitReason?.value.trim() || '',
 				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
@@ -2004,7 +2027,10 @@
 				const element = document.getElementById(elementId);
 				if (element && formData[dataKey]) {
 					console.log(`Filling ${elementId} with ${formData[dataKey]}`);
-					element.value = String(formData[dataKey]).trim();
+					const normalizedValue = (dataKey === 'first_name' || dataKey === 'last_name')
+						? toTitleCase(formData[dataKey])
+						: String(formData[dataKey]).trim();
+					element.value = normalizedValue;
 					element.dispatchEvent(new Event('change', { bubbles: true }));
 				} else if (!element) {
 					console.warn(`Element ${elementId} not found`);
@@ -2105,6 +2131,8 @@
 				return;
 			}
 
+			ensureAutoControlNumber();
+
 			const requiredFields = Array.from(visitorStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
 
 			for (const field of requiredFields) {
@@ -2148,6 +2176,14 @@
 			clearFrozenFrame();
 			cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
 			startCamera();
+		});
+
+		visitorControlNumber?.addEventListener('focus', () => {
+			ensureAutoControlNumber();
+		});
+
+		visitorControlNumber?.addEventListener('blur', () => {
+			ensureAutoControlNumber();
 		});
 
 		visitorPhoneNumber?.addEventListener('input', () => {
@@ -2271,6 +2307,9 @@
 
 		if (hasRegisterFlow) {
 			updateStepUI();
+			if (registerType === 'normal') {
+				ensureAutoControlNumber();
+			}
 			if (registerType === 'normal') {
 				fetchOffices();
 			}
