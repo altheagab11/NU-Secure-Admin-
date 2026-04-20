@@ -1504,6 +1504,7 @@
 		let faceIdCapturePublicPath = '';
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
+		let shouldResetAfterPrint = false;
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -2126,6 +2127,7 @@
 		});
 
 		printTicketBtn?.addEventListener('click', () => {
+			shouldResetAfterPrint = true;
 			window.print();
 		});
 
@@ -2278,6 +2280,64 @@
 				}
 			}
 		};
+
+		const resetRegistrationFlowToStepOne = () => {
+			releaseCamera();
+			clearFrozenFrame();
+			loadingOverlay.classList.add('is-hidden');
+
+			currentStep = 1;
+			capturedPictureData = '';
+			faceIdCapturePublicPath = '';
+			faceIdCapturePreviewUrl = '';
+			hasSavedRegistration = false;
+			selectedOfficeIds = [];
+
+			if (visitorStepPanel) {
+				const fields = visitorStepPanel.querySelectorAll('input, textarea');
+				fields.forEach((field) => {
+					if (field.type === 'checkbox' || field.type === 'radio') {
+						field.checked = false;
+						return;
+					}
+
+					field.value = '';
+				});
+			}
+
+			if (qrCodeContainer) {
+				qrCodeContainer.innerHTML = '';
+			}
+
+			ticketControlNumber.textContent = '-';
+			ticketVisitorName.textContent = '-';
+			ticketPassNumber.textContent = '-';
+			ticketPurpose.textContent = '-';
+			ticketDestination.textContent = '-';
+
+			if (ticketPhoto) {
+				ticketPhoto.src = '';
+				ticketPhoto.classList.add('is-hidden');
+			}
+			ticketPhotoFallback?.classList.remove('is-hidden');
+
+			ticketSaveStatus.textContent = 'Generating QR and saving details...';
+			ticketSaveStatus.classList.remove('error');
+
+			ensureAutoControlNumber();
+			updateStepUI();
+			cameraStatus.textContent = 'Starting camera...';
+			startCamera();
+		};
+
+		window.addEventListener('afterprint', () => {
+			if (!shouldResetAfterPrint) {
+				return;
+			}
+
+			shouldResetAfterPrint = false;
+			resetRegistrationFlowToStepOne();
+		});
 
 		window.addEventListener('beforeunload', () => {
 			releaseCamera();
