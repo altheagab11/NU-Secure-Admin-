@@ -351,6 +351,13 @@
 			justify-content: flex-end;
 		}
 
+		.action-card-link,
+		.alert-strip-link {
+			display: block;
+			text-decoration: none;
+			color: inherit;
+		}
+
 		.action-card.primary {
 			background: #3b4497;
 			border-color: #3b4497;
@@ -769,6 +776,7 @@
 			</section>
 
 			<section class="action-grid" aria-label="Primary Actions">
+				<a href="/guard/register?type=normal" class="action-card-link" aria-label="Open Normal Visitor registration">
 				<article class="action-card primary">
 					<div class="action-icon" aria-hidden="true">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -786,7 +794,9 @@
 						<p class="action-card-subtitle">Scan face and ID, fill form, generate QR ticket</p>
 					</div>
 				</article>
+				</a>
 
+				<a href="/guard/exit" class="action-card-link" aria-label="Open Exit Scan">
 				<article class="action-card secondary">
 					<div class="action-icon" aria-hidden="true">
 						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -804,8 +814,10 @@
 						<p class="action-card-subtitle">Scan visitor QR code to process exit</p>
 					</div>
 				</article>
+				</a>
 			</section>
 
+			<a href="/guard/alert" class="alert-strip-link" aria-label="Open Active Alerts">
 			<section class="alert-strip" aria-label="Active Alert Banner">
 				<div class="action-icon" aria-hidden="true">
 					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -823,6 +835,7 @@
 					</svg>
 				</div>
 			</section>
+			</a>
 
 			<section class="active-visitor-card" aria-label="Active Visitors Inside Campus">
 				<div class="active-visitor-header">Active Visitors Inside Campus</div>
