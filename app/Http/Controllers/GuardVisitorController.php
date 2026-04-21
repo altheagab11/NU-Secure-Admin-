@@ -69,25 +69,53 @@ class GuardVisitorController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validated, $officeIds, $activeExitStatusId, $visitorVisitTypeId, $pendingRouteStatusId) {
-                $addressId = DB::table('address')->insertGetId([
+                $matchedVisitor = $this->findVisitorForRegistration($validated);
+
+                $addressPayload = [
                     'house_no' => $validated['house_no'],
                     'street' => $validated['street'],
                     'barangay' => $validated['barangay'],
                     'city_municipality' => $validated['city_municipality'],
                     'province' => $validated['province'],
                     'region' => $validated['region'],
-                ], 'address_id');
+                ];
 
-                $visitorId = DB::table('visitor')->insertGetId([
-                    'first_name' => $validated['first_name'],
-                    'last_name' => $validated['last_name'],
-                    'address_id' => $addressId,
-                    'contact_no' => $validated['contact_no'],
-                    'pass_number' => $validated['pass_number'],
-                    'control_number' => $validated['control_number'],
-                    'visitor_photo_with_id_url' => $validated['visitor_photo_with_id_url'] ?? null,
-                    'created_at' => now(),
-                ], 'visitor_id');
+                $addressId = $this->resolveAddressIdForRegistration($addressPayload);
+
+                $visitorAction = 'created_new';
+
+                if ($matchedVisitor) {
+                    $visitorId = (int) $matchedVisitor->visitor_id;
+
+                    $photoPath = trim((string) ($validated['visitor_photo_with_id_url'] ?? ''));
+
+                    DB::table('visitor')
+                        ->where('visitor_id', $visitorId)
+                        ->update([
+                            'first_name' => $validated['first_name'],
+                            'last_name' => $validated['last_name'],
+                            'address_id' => $addressId,
+                            'contact_no' => $validated['contact_no'],
+                            'pass_number' => $validated['pass_number'],
+                            'control_number' => $validated['control_number'],
+                            'visitor_photo_with_id_url' => $photoPath !== ''
+                                ? $photoPath
+                                : ($matchedVisitor->visitor_photo_with_id_url ?? null),
+                        ]);
+
+                    $visitorAction = 'updated_existing';
+                } else {
+                    $visitorId = DB::table('visitor')->insertGetId([
+                        'first_name' => $validated['first_name'],
+                        'last_name' => $validated['last_name'],
+                        'address_id' => $addressId,
+                        'contact_no' => $validated['contact_no'],
+                        'pass_number' => $validated['pass_number'],
+                        'control_number' => $validated['control_number'],
+                        'visitor_photo_with_id_url' => $validated['visitor_photo_with_id_url'] ?? null,
+                        'created_at' => now(),
+                    ], 'visitor_id');
+                }
 
                 $visitId = DB::table('visit')->insertGetId([
                     'visitor_id' => $visitorId,
@@ -119,6 +147,7 @@ class GuardVisitorController extends Controller
                 return [
                     'address_id' => $addressId,
                     'visitor_id' => $visitorId,
+                    'visitor_action' => $visitorAction,
                     'visit_id' => $visitId,
                     'primary_office_id' => $officeIds[0],
                     'saved_office_count' => $savedOfficeCount,
@@ -140,6 +169,62 @@ class GuardVisitorController extends Controller
                 'message' => 'Failed to save visitor details.',
             ], 500);
         }
+    }
+
+    /**
+     * Resolve existing address row by exact normalized fields or create a new one.
+     */
+    protected function resolveAddressIdForRegistration(array $addressPayload): int
+    {
+        $normalized = [
+            'house_no' => trim((string) ($addressPayload['house_no'] ?? '')),
+            'street' => trim((string) ($addressPayload['street'] ?? '')),
+            'barangay' => trim((string) ($addressPayload['barangay'] ?? '')),
+            'city_municipality' => trim((string) ($addressPayload['city_municipality'] ?? '')),
+            'province' => trim((string) ($addressPayload['province'] ?? '')),
+            'region' => trim((string) ($addressPayload['region'] ?? '')),
+        ];
+
+        $existing = DB::table('address')
+            ->select('address_id')
+            ->whereRaw("LOWER(TRIM(COALESCE(house_no, ''))) = ?", [Str::lower($normalized['house_no'])])
+            ->whereRaw("LOWER(TRIM(COALESCE(street, ''))) = ?", [Str::lower($normalized['street'])])
+            ->whereRaw("LOWER(TRIM(COALESCE(barangay, ''))) = ?", [Str::lower($normalized['barangay'])])
+            ->whereRaw("LOWER(TRIM(COALESCE(city_municipality, ''))) = ?", [Str::lower($normalized['city_municipality'])])
+            ->whereRaw("LOWER(TRIM(COALESCE(province, ''))) = ?", [Str::lower($normalized['province'])])
+            ->whereRaw("LOWER(TRIM(COALESCE(region, ''))) = ?", [Str::lower($normalized['region'])])
+            ->orderByDesc('address_id')
+            ->first();
+
+        if ($existing) {
+            return (int) $existing->address_id;
+        }
+
+        return (int) DB::table('address')->insertGetId($normalized, 'address_id');
+    }
+
+    /**
+     * Find existing visitor for registration dedup by exact first+last name.
+     */
+    protected function findVisitorForRegistration(array $validated): ?object
+    {
+        $firstName = trim((string) ($validated['first_name'] ?? ''));
+        $lastName = trim((string) ($validated['last_name'] ?? ''));
+
+        $baseQuery = static function () {
+            return DB::table('visitor')
+                ->select('visitor_id', 'address_id', 'visitor_photo_with_id_url')
+                ->orderByDesc('visitor_id');
+        };
+
+        if ($firstName === '' || $lastName === '') {
+            return null;
+        }
+
+        return $baseQuery()
+            ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
+            ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
+            ->first();
     }
 
     /**
