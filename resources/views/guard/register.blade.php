@@ -128,6 +128,188 @@
 			color: var(--text-yellow);
 		}
 
+		.confirmation-modal {
+			position: fixed;
+			inset: 0;
+			z-index: 1200;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			background: rgba(15, 23, 42, 0.62);
+			backdrop-filter: blur(4px);
+		}
+
+		.confirmation-modal.is-hidden {
+			display: none;
+		}
+
+		.confirmation-modal-card {
+			width: min(100%, 520px);
+			background: #ffffff;
+			border-radius: 18px;
+			box-shadow: 0 24px 80px rgba(15, 23, 42, 0.3);
+			overflow: hidden;
+			border: 1px solid rgba(148, 163, 184, 0.22);
+		}
+
+		.confirmation-modal-header {
+			padding: 20px 24px 10px;
+			border-bottom: 1px solid #e5e7eb;
+		}
+
+		.confirmation-modal-title {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		.confirmation-modal-subtitle {
+			margin: 8px 0 0;
+			font-size: 14px;
+			line-height: 1.5;
+			color: #475569;
+		}
+
+		.confirmation-modal-body {
+			padding: 18px 24px 8px;
+		}
+
+		.confirmation-photo-panel {
+			display: grid;
+			grid-template-columns: 132px 1fr;
+			gap: 16px;
+			align-items: center;
+			padding: 14px;
+			border-radius: 14px;
+			background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+			border: 1px solid #dbe4ff;
+		}
+
+		.confirmation-photo-frame {
+			width: 132px;
+			height: 132px;
+			border-radius: 16px;
+			overflow: hidden;
+			background: #0f172a;
+			border: 1px solid rgba(148, 163, 184, 0.28);
+		}
+
+		.confirmation-photo-frame img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+
+		.confirmation-photo-frame.is-hidden,
+		.confirmation-photo-placeholder.is-hidden {
+			display: none;
+		}
+
+		.confirmation-photo-placeholder {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			height: 100%;
+			padding: 12px;
+			text-align: center;
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.4;
+			color: #e2e8f0;
+			background: linear-gradient(145deg, #111827 0%, #1e293b 100%);
+		}
+
+		.confirmation-photo-copy {
+			display: grid;
+			gap: 8px;
+		}
+
+		.confirmation-photo-badge {
+			display: inline-flex;
+			align-items: center;
+			width: fit-content;
+			padding: 6px 10px;
+			border-radius: 999px;
+			background: rgba(59, 68, 151, 0.12);
+			color: #3b4497;
+			font-size: 12px;
+			font-weight: 700;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+		}
+
+		.confirmation-photo-note {
+			margin: 0;
+			font-size: 13px;
+			line-height: 1.5;
+			color: #334155;
+		}
+
+		.confirmation-summary {
+			display: grid;
+			gap: 10px;
+			margin: 14px 0 0;
+			padding: 14px;
+			border-radius: 14px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+		}
+
+		.confirmation-summary-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 12px;
+			font-size: 14px;
+			line-height: 1.4;
+		}
+
+		.confirmation-summary-label {
+			color: #64748b;
+			font-weight: 600;
+			flex-shrink: 0;
+		}
+
+		.confirmation-summary-value {
+			color: #0f172a;
+			font-weight: 600;
+			text-align: right;
+		}
+
+		.confirmation-modal-footer {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			padding: 18px 24px 24px;
+		}
+
+		.confirmation-modal-btn {
+			border: 0;
+			border-radius: 12px;
+			padding: 11px 18px;
+			font-size: 14px;
+			font-weight: 700;
+			cursor: pointer;
+			min-width: 118px;
+		}
+
+		.confirmation-modal-btn.secondary {
+			background: #e2e8f0;
+			color: #0f172a;
+		}
+
+		.confirmation-modal-btn.primary {
+			background: #3b4497;
+			color: #ffffff;
+		}
+
+		.confirmation-modal-btn:hover {
+			filter: brightness(0.97);
+		}
+
 		.menu-item:hover {
 			background: rgba(255, 255, 255, 0.08);
 		}
@@ -1127,6 +1309,84 @@
 				font-size: 20px;
 			}
 		}
+
+		@media print {
+			@page {
+				size: auto;
+				margin: 10mm;
+			}
+
+			body.print-ticket-mode {
+				background: #ffffff !important;
+			}
+
+			body.print-ticket-mode .layout {
+				display: block !important;
+				height: auto !important;
+				overflow: visible !important;
+			}
+
+			body.print-ticket-mode .sidebar,
+			body.print-ticket-mode .page-title,
+			body.print-ticket-mode .flow-head,
+			body.print-ticket-mode .scanner-card,
+			body.print-ticket-mode .visitor-step,
+			body.print-ticket-mode .ticket-status,
+			body.print-ticket-mode .ticket-actions,
+			body.print-ticket-mode .confirmation-modal {
+				display: none !important;
+			}
+
+			body.print-ticket-mode .main {
+				display: block !important;
+				padding: 0 !important;
+				margin: 0 !important;
+				background: #ffffff !important;
+			}
+
+			body.print-ticket-mode .register-flow {
+				max-width: none !important;
+				margin: 0 !important;
+			}
+
+			body.print-ticket-mode #registrationCompletePanel {
+				display: grid !important;
+				visibility: visible !important;
+				gap: 0 !important;
+				justify-items: center !important;
+				margin: 0 !important;
+				padding: 0 !important;
+			}
+
+			body.print-ticket-mode #registrationCompletePanel .complete-header,
+			body.print-ticket-mode #registrationCompletePanel #ticketSaveStatus,
+			body.print-ticket-mode #registrationCompletePanel .ticket-actions {
+				display: none !important;
+			}
+
+			body.print-ticket-mode #registrationTicketCard {
+				display: block !important;
+				position: static !important;
+				transform: none !important;
+				width: 180mm;
+				max-width: 100% !important;
+				margin: 0 auto !important;
+				box-shadow: none;
+				border: 1px solid #d1d5db;
+				page-break-inside: avoid;
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+
+			body.print-ticket-mode .ticket-photo-wrap,
+			body.print-ticket-mode .ticket-photo-image,
+			body.print-ticket-mode .qr-box,
+			body.print-ticket-mode .qr-box canvas,
+			body.print-ticket-mode .qr-box img {
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+		}
 	</style>
 </head>
 <body>
@@ -1144,6 +1404,46 @@
 					<p class="brand-subtitle">Smart Visitor Monitoring System</p>
 				</div>
 			</div>
+
+	<div class="confirmation-modal is-hidden" id="existingVisitorModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="existingVisitorModalTitle">
+		<div class="confirmation-modal-card">
+			<div class="confirmation-modal-header">
+				<h2 class="confirmation-modal-title" id="existingVisitorModalTitle">Existing Visitor Found</h2>
+				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor record. Please confirm whether this is the same person before continuing.</p>
+			</div>
+			<div class="confirmation-modal-body">
+				<div class="confirmation-photo-panel">
+					<div class="confirmation-photo-frame" id="existingVisitorModalPhotoFrame">
+						<img id="existingVisitorModalPhoto" alt="Saved visitor photo">
+						<div class="confirmation-photo-placeholder is-hidden" id="existingVisitorModalPhotoPlaceholder">No saved photo available for validation.</div>
+					</div>
+					<div class="confirmation-photo-copy">
+						<span class="confirmation-photo-badge">Validation Photo</span>
+						<p class="confirmation-photo-note" id="existingVisitorModalValidationNote">Compare this saved photo with the person in front of you before continuing.</p>
+					</div>
+				</div>
+
+				<div class="confirmation-summary">
+					<div class="confirmation-summary-row">
+						<span class="confirmation-summary-label">Visitor Name</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalName">-</span>
+					</div>
+					<div class="confirmation-summary-row">
+						<span class="confirmation-summary-label">Contact Number</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalContact">-</span>
+					</div>
+					<div class="confirmation-summary-row">
+						<span class="confirmation-summary-label">Saved Address</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalAddressState">-</span>
+					</div>
+				</div>
+			</div>
+			<div class="confirmation-modal-footer">
+				<button type="button" class="confirmation-modal-btn secondary" id="existingVisitorModalCancel">Cancel</button>
+				<button type="button" class="confirmation-modal-btn primary" id="existingVisitorModalConfirm">Yes, Continue</button>
+			</div>
+		</div>
+	</div>
 
 			<nav class="menu" aria-label="Sidebar Navigation">
 				@if (! $isSelfRegisteredRole)
@@ -1464,6 +1764,7 @@
 		const generateQrBtn = document.getElementById('generateQrBtn');
 		const enrolleeStepPanel = document.getElementById('enrolleeStepPanel');
 		const registrationCompletePanel = document.getElementById('registrationCompletePanel');
+		const registrationTicketCard = document.getElementById('registrationTicketCard');
 		const qrCodeContainer = document.getElementById('qrCodeContainer');
 		const ticketControlNumber = document.getElementById('ticketControlNumber');
 		const ticketVisitorName = document.getElementById('ticketVisitorName');
@@ -1475,6 +1776,16 @@
 		const ticketSaveStatus = document.getElementById('ticketSaveStatus');
 		const downloadQrBtn = document.getElementById('downloadQrBtn');
 		const printTicketBtn = document.getElementById('printTicketBtn');
+		const existingVisitorModal = document.getElementById('existingVisitorModal');
+		const existingVisitorModalPhotoFrame = document.getElementById('existingVisitorModalPhotoFrame');
+		const existingVisitorModalPhoto = document.getElementById('existingVisitorModalPhoto');
+		const existingVisitorModalPhotoPlaceholder = document.getElementById('existingVisitorModalPhotoPlaceholder');
+		const existingVisitorModalValidationNote = document.getElementById('existingVisitorModalValidationNote');
+		const existingVisitorModalName = document.getElementById('existingVisitorModalName');
+		const existingVisitorModalContact = document.getElementById('existingVisitorModalContact');
+		const existingVisitorModalAddressState = document.getElementById('existingVisitorModalAddressState');
+		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
+		const existingVisitorModalCancel = document.getElementById('existingVisitorModalCancel');
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
@@ -1505,6 +1816,26 @@
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
 		let shouldResetAfterPrint = false;
+		let existingVisitorMatch = null;
+		let existingVisitorConfirmed = false;
+		let existingVisitorModalResolver = null;
+
+		const formatVisitorAddress = (visitor) => {
+			if (!visitor) {
+				return '-';
+			}
+
+			const addressLines = [
+				visitor.house_no,
+				visitor.street,
+				visitor.barangay,
+				visitor.city_municipality,
+				visitor.province,
+				visitor.region,
+			].map((value) => String(value || '').trim()).filter(Boolean);
+
+			return addressLines.length ? addressLines.join(', ') : '-';
+		};
 
 		if (registerMenuGroup && registerMenuToggle) {
 			registerMenuToggle.addEventListener('click', () => {
@@ -1909,6 +2240,148 @@
 			return data;
 		};
 
+		const applyExistingVisitorData = (existingVisitor) => {
+			if (!existingVisitor) {
+				return;
+			}
+
+			if (visitorFirstName && existingVisitor.first_name) {
+				visitorFirstName.value = toTitleCase(existingVisitor.first_name);
+			}
+			if (visitorLastName && existingVisitor.last_name) {
+				visitorLastName.value = toTitleCase(existingVisitor.last_name);
+			}
+			if (visitorHouseNo && existingVisitor.house_no) {
+				visitorHouseNo.value = String(existingVisitor.house_no).trim();
+			}
+			if (visitorStreet && existingVisitor.street) {
+				visitorStreet.value = String(existingVisitor.street).trim();
+			}
+			if (visitorBarangay && existingVisitor.barangay) {
+				visitorBarangay.value = String(existingVisitor.barangay).trim();
+			}
+			if (visitorCity && existingVisitor.city_municipality) {
+				visitorCity.value = String(existingVisitor.city_municipality).trim();
+			}
+			if (visitorProvince && existingVisitor.province) {
+				visitorProvince.value = String(existingVisitor.province).trim();
+			}
+			if (visitorRegion && existingVisitor.region) {
+				visitorRegion.value = String(existingVisitor.region).trim();
+			}
+			if (visitorPhoneNumber && existingVisitor.contact_no) {
+				visitorPhoneNumber.value = String(existingVisitor.contact_no).replace(/\D/g, '').slice(0, 11);
+			}
+		};
+
+		const closeExistingVisitorModal = (result) => {
+			if (existingVisitorModal) {
+				existingVisitorModal.classList.add('is-hidden');
+				existingVisitorModal.setAttribute('aria-hidden', 'true');
+			}
+			if (existingVisitorModalPhoto) {
+				existingVisitorModalPhoto.removeAttribute('src');
+				existingVisitorModalPhoto.classList.add('is-hidden');
+			}
+			if (existingVisitorModalPhotoPlaceholder) {
+				existingVisitorModalPhotoPlaceholder.classList.add('is-hidden');
+			}
+
+			if (existingVisitorModalResolver) {
+				existingVisitorModalResolver(result);
+				existingVisitorModalResolver = null;
+			}
+		};
+
+		const openExistingVisitorModal = (existingVisitor) => {
+			if (!existingVisitor || !existingVisitor.exists || !existingVisitorModal) {
+				return Promise.resolve(false);
+			}
+
+			const fullName = `${toTitleCase(existingVisitor.first_name)} ${toTitleCase(existingVisitor.last_name)}`.trim() || 'Unknown visitor';
+			const contactNo = String(existingVisitor.contact_no || '-').trim() || '-';
+			const addressText = formatVisitorAddress(existingVisitor);
+			const previewUrl = String(existingVisitor.photo_preview_url || existingVisitor.photo_path || '').trim();
+			const hasPreviewPhoto = Boolean(previewUrl);
+
+			if (existingVisitorModalName) {
+				existingVisitorModalName.textContent = fullName;
+			}
+			if (existingVisitorModalContact) {
+				existingVisitorModalContact.textContent = contactNo;
+			}
+			if (existingVisitorModalAddressState) {
+				existingVisitorModalAddressState.textContent = addressText;
+			}
+			if (existingVisitorModalValidationNote) {
+				existingVisitorModalValidationNote.textContent = hasPreviewPhoto
+					? 'Compare this saved photo with the person in front of you before continuing.'
+					: 'No saved photo was found, so validation is limited to the visitor details.';
+			}
+			if (existingVisitorModalPhotoFrame) {
+				existingVisitorModalPhotoFrame.classList.remove('is-hidden');
+			}
+			if (existingVisitorModalPhotoPlaceholder) {
+				existingVisitorModalPhotoPlaceholder.classList.toggle('is-hidden', hasPreviewPhoto);
+			}
+			if (existingVisitorModalPhoto) {
+				existingVisitorModalPhoto.classList.toggle('is-hidden', !hasPreviewPhoto);
+				existingVisitorModalPhoto.onload = () => {
+					if (existingVisitorModalPhotoFrame) {
+						existingVisitorModalPhotoFrame.classList.remove('is-hidden');
+					}
+					if (existingVisitorModalPhotoPlaceholder) {
+						existingVisitorModalPhotoPlaceholder.classList.add('is-hidden');
+					}
+					existingVisitorModalPhoto.classList.remove('is-hidden');
+				};
+				existingVisitorModalPhoto.onerror = () => {
+					if (existingVisitorModalPhotoPlaceholder) {
+						existingVisitorModalPhotoPlaceholder.classList.remove('is-hidden');
+					}
+					existingVisitorModalPhoto.classList.add('is-hidden');
+					if (existingVisitorModalPhotoFrame) {
+						existingVisitorModalPhotoFrame.classList.remove('is-hidden');
+					}
+				};
+				existingVisitorModalPhoto.src = hasPreviewPhoto ? previewUrl : '';
+			}
+			if (existingVisitorModalConfirm) {
+				existingVisitorModalConfirm.disabled = false;
+				existingVisitorModalConfirm.title = hasPreviewPhoto
+					? 'Continue after visually validating the saved photo.'
+					: 'Continue with limited validation because no saved photo is available.';
+			}
+
+			existingVisitorModal.classList.remove('is-hidden');
+			existingVisitorModal.setAttribute('aria-hidden', 'false');
+
+			return new Promise((resolve) => {
+				existingVisitorModalResolver = resolve;
+			});
+		};
+
+		const completeNormalVisitorRegistration = async (qrMeta) => {
+			if (!renderQrTicket(qrMeta)) {
+				throw new Error('Failed to generate QR ticket. Please try again.');
+			}
+
+			currentStep = 4;
+			updateStepUI();
+			releaseCamera();
+			clearFrozenFrame();
+			ticketSaveStatus.textContent = 'Saving visitor details...';
+			ticketSaveStatus.classList.remove('error');
+
+			loadingText.textContent = 'Saving visitor details...';
+			await saveNormalVisitorRegistration(qrMeta);
+
+			hasSavedRegistration = true;
+			ticketSaveStatus.textContent = 'Visitor details saved successfully.';
+			ticketSaveStatus.classList.remove('error');
+			loadingText.textContent = 'QR generated and visitor saved successfully.';
+		};
+
 		const parseIdOnlyAndProceed = (capturedIdData, progressText = 'Parsing ID scan...', options = {}) => {
 			const {
 				restartCameraOnError = true,
@@ -1922,7 +2395,19 @@
 
 			Promise.resolve()
 				.then(() => parseAndFillIdData(capturedIdData))
-				.then((parsedSuccessfully) => {
+				.then(async (parseResult) => {
+					const parsedSuccessfully = Boolean(parseResult?.parsedSuccessfully);
+					existingVisitorMatch = parseResult?.existingVisitor || null;
+					existingVisitorConfirmed = false;
+
+					if (existingVisitorMatch && existingVisitorMatch.exists) {
+						applyExistingVisitorData(existingVisitorMatch);
+						existingVisitorConfirmed = await openExistingVisitorModal(existingVisitorMatch);
+						if (!existingVisitorConfirmed) {
+							existingVisitorMatch = null;
+						}
+					}
+
 					releaseCamera();
 					if (!showFrozenAfterSuccess) {
 						clearFrozenFrame();
@@ -1932,11 +2417,17 @@
 					galleryAction.disabled = false;
 					currentStep = 2;
 					updateStepUI();
-					cameraStatus.textContent = parsedSuccessfully
-						? 'ID parsed successfully. Verify details before proceeding.'
-						: 'ID parsed with limited data. Please complete missing details manually.';
+					if (existingVisitorConfirmed) {
+						cameraStatus.textContent = 'Existing visitor confirmed. Review the details and generate the QR ticket.';
+					} else {
+						cameraStatus.textContent = parsedSuccessfully
+							? 'ID parsed successfully. Verify details before proceeding.'
+							: 'ID parsed with limited data. Please complete missing details manually.';
+					}
 				})
 				.catch(() => {
+					existingVisitorMatch = null;
+					existingVisitorConfirmed = false;
 					loadingText.textContent = 'Failed to parse ID. You can fill details manually.';
 					setTimeout(() => {
 						loadingOverlay.classList.add('is-hidden');
@@ -2010,7 +2501,10 @@
 				if (!data.success) {
 					console.warn('❌ OCR parse failed:', data.message);
 					console.warn('Raw OCR text:', data.raw_text);
-					return false;
+					return {
+						parsedSuccessfully: false,
+						existingVisitor: null,
+					};
 				}
 
 				console.log('✓ OCR SUCCESS! Extracted:', data.extracted_data);
@@ -2021,7 +2515,15 @@
 				console.log('✓ About to call autofillVisitorForm...');
 				autofillVisitorForm(fillData);
 				console.log('✓ autofillVisitorForm complete');
-				return true;
+
+				const existingVisitor = data.existing_visitor && data.existing_visitor.exists
+					? data.existing_visitor
+					: null;
+
+				return {
+					parsedSuccessfully: true,
+					existingVisitor,
+				};
 			})
 			.catch(error => {
 				console.error('❌ FATAL FETCH ERROR:', error);
@@ -2126,9 +2628,84 @@
 			link.click();
 		});
 
+		const printTicketInNewWindow = () => {
+			if (!registrationTicketCard) {
+				alert('Ticket is not ready to print yet.');
+				return;
+			}
+
+			const sourceStyle = document.querySelector('style')?.textContent || '';
+			const ticketMarkup = registrationTicketCard.outerHTML;
+			const printWindow = window.open('', '_blank', 'width=980,height=1200');
+
+			if (!printWindow) {
+				alert('Unable to open print window. Please allow pop-ups for this site.');
+				return;
+			}
+
+			printWindow.document.open();
+			printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Ticket</title>
+<style>
+${sourceStyle}
+body {
+	margin: 0;
+	padding: 10mm;
+	background: #ffffff;
+	font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+.ticket-card {
+	width: 180mm;
+	max-width: 100%;
+	margin: 0 auto;
+	box-shadow: none;
+	border: 1px solid #d1d5db;
+}
+@media print {
+	@page { margin: 10mm; }
+	body { padding: 0; }
+	.ticket-card {
+		width: 180mm;
+		max-width: 100%;
+		page-break-inside: avoid;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}
+</style>
+</head>
+<body>
+${ticketMarkup}
+</body>
+</html>`);
+			printWindow.document.close();
+
+			const tryPrint = () => {
+				printWindow.focus();
+				printWindow.print();
+				printWindow.onafterprint = () => {
+					if (shouldResetAfterPrint) {
+						shouldResetAfterPrint = false;
+						resetRegistrationFlowToStepOne();
+					}
+					printWindow.close();
+				};
+			};
+
+			if (printWindow.document.readyState === 'complete') {
+				setTimeout(tryPrint, 80);
+			} else {
+				printWindow.addEventListener('load', () => setTimeout(tryPrint, 80), { once: true });
+			}
+		};
+
 		printTicketBtn?.addEventListener('click', () => {
 			shouldResetAfterPrint = true;
-			window.print();
+			printTicketInNewWindow();
 		});
 
 		galleryAction?.addEventListener('click', () => {
@@ -2197,6 +2774,50 @@
 				cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
 				startCamera();
 				return;
+			}
+
+			if (existingVisitorConfirmed && existingVisitorMatch?.exists) {
+				const previewUrl = String(existingVisitorMatch.photo_preview_url || existingVisitorMatch.photo_path || '').trim();
+				const storagePath = String(existingVisitorMatch.photo_path || existingVisitorMatch.photo_preview_url || '').trim();
+
+				if (!previewUrl) {
+					alert('Existing visitor has no saved photo. Please continue to Face + ID capture.');
+					existingVisitorConfirmed = false;
+					existingVisitorMatch = null;
+				} else {
+					faceIdCapturePreviewUrl = previewUrl;
+					faceIdCapturePublicPath = storagePath;
+
+					loadingOverlay.classList.remove('is-hidden');
+					loadingText.textContent = 'Generating QR ticket...';
+
+					const qrMeta = createQrMeta();
+					if (!qrMeta) {
+						loadingOverlay.classList.add('is-hidden');
+						alert('Failed to generate QR data. Please try again.');
+						return;
+					}
+
+					completeNormalVisitorRegistration(qrMeta)
+						.then(() => {
+							setTimeout(() => {
+								loadingOverlay.classList.add('is-hidden');
+								scanAction.disabled = true;
+								cameraStatus.textContent = 'Registration completed successfully using existing visitor photo.';
+							}, 1000);
+						})
+						.catch((error) => {
+							ticketSaveStatus.textContent = error.message || 'Failed to save visitor details.';
+							ticketSaveStatus.classList.add('error');
+							loadingText.textContent = error.message || 'Failed to save visitor details. Try again.';
+							setTimeout(() => {
+								loadingOverlay.classList.add('is-hidden');
+								scanAction.disabled = true;
+							}, 1500);
+						});
+
+					return;
+				}
 			}
 
 			currentStep = 3;
@@ -2291,6 +2912,8 @@
 			faceIdCapturePublicPath = '';
 			faceIdCapturePreviewUrl = '';
 			hasSavedRegistration = false;
+			existingVisitorMatch = null;
+			existingVisitorConfirmed = false;
 			selectedOfficeIds = [];
 
 			if (visitorStepPanel) {
@@ -2331,6 +2954,8 @@
 		};
 
 		window.addEventListener('afterprint', () => {
+			document.body.classList.remove('print-ticket-mode');
+
 			if (!shouldResetAfterPrint) {
 				return;
 			}
@@ -2341,6 +2966,26 @@
 
 		window.addEventListener('beforeunload', () => {
 			releaseCamera();
+		});
+
+		existingVisitorModalConfirm?.addEventListener('click', () => {
+			closeExistingVisitorModal(true);
+		});
+
+		existingVisitorModalCancel?.addEventListener('click', () => {
+			closeExistingVisitorModal(false);
+		});
+
+		existingVisitorModal?.addEventListener('click', (event) => {
+			if (event.target === existingVisitorModal) {
+				closeExistingVisitorModal(false);
+			}
+		});
+
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape' && existingVisitorModal && !existingVisitorModal.classList.contains('is-hidden')) {
+				closeExistingVisitorModal(false);
+			}
 		});
 
 		// === DEBUG TEST FUNCTION ===

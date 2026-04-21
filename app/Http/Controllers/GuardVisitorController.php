@@ -449,6 +449,7 @@ class GuardVisitorController extends Controller
 
             // Map OCR extracted fields to form field names
             $formData = $this->mapOcrDataToFormFields($extracted);
+            $existingVisitor = $this->findExistingVisitorRecord($formData, $extracted);
 
             \Log::info('Mapped form data', [
                 'first_name' => $formData['first_name'] ?? '',
@@ -465,6 +466,7 @@ class GuardVisitorController extends Controller
                 'success' => true,
                 'extracted_data' => $extracted,
                 'form_data' => $formData,
+                'existing_visitor' => $existingVisitor,
                 'raw_text' => $ocrResult['raw_text'],
                 'confidence' => $ocrResult['confidence'] ?? 0,
             ]);
@@ -479,6 +481,106 @@ class GuardVisitorController extends Controller
                 'message' => 'Error parsing ID: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Try to find an existing visitor by exact first+last name.
+     */
+    protected function findExistingVisitorRecord(array $formData, array $extracted): array
+    {
+        $firstName = trim((string) ($formData['first_name'] ?? ''));
+        $lastName = trim((string) ($formData['last_name'] ?? ''));
+
+        $baseQuery = static function () {
+            return DB::table('visitor as v')
+                ->leftJoin('address as a', 'a.address_id', '=', 'v.address_id')
+                ->select([
+                    'v.visitor_id',
+                    'v.first_name',
+                    'v.last_name',
+                    'v.contact_no',
+                    'v.pass_number',
+                    'v.visitor_photo_with_id_url',
+                    'a.house_no',
+                    'a.street',
+                    'a.barangay',
+                    'a.city_municipality',
+                    'a.province',
+                    'a.region',
+                    'v.created_at',
+                ]);
+        };
+
+        if ($firstName === '' || $lastName === '') {
+            return ['exists' => false];
+        }
+
+        $record = $baseQuery()
+            ->whereRaw("LOWER(TRIM(COALESCE(v.first_name, ''))) = ?", [Str::lower($firstName)])
+            ->whereRaw("LOWER(TRIM(COALESCE(v.last_name, ''))) = ?", [Str::lower($lastName)])
+            ->orderByDesc('v.created_at')
+            ->orderByDesc('v.visitor_id')
+            ->first();
+
+        if (! $record) {
+            return ['exists' => false];
+        }
+
+        $photoPath = trim((string) ($record->visitor_photo_with_id_url ?? ''));
+
+        return [
+            'exists' => true,
+            'match_basis' => 'name',
+            'visitor_id' => (int) $record->visitor_id,
+            'first_name' => (string) ($record->first_name ?? ''),
+            'last_name' => (string) ($record->last_name ?? ''),
+            'contact_no' => (string) ($record->contact_no ?? ''),
+            'pass_number' => (string) ($record->pass_number ?? ''),
+            'house_no' => (string) ($record->house_no ?? ''),
+            'street' => (string) ($record->street ?? ''),
+            'barangay' => (string) ($record->barangay ?? ''),
+            'city_municipality' => (string) ($record->city_municipality ?? ''),
+            'province' => (string) ($record->province ?? ''),
+            'region' => (string) ($record->region ?? ''),
+            'photo_path' => $photoPath,
+            'photo_preview_url' => $this->resolveVisitorPhotoUrl($photoPath),
+        ];
+    }
+
+    /**
+     * Resolve stored visitor photo path to a browser-displayable URL when possible.
+     */
+    protected function resolveVisitorPhotoUrl(string $photoPath): ?string
+    {
+        $cleanPath = trim($photoPath);
+        if ($cleanPath === '') {
+            return null;
+        }
+
+        if (Str::startsWith($cleanPath, ['http://', 'https://'])) {
+            return $cleanPath;
+        }
+
+        if (! str_contains($cleanPath, '/')) {
+            return null;
+        }
+
+        [$bucket, $objectPath] = array_pad(explode('/', $cleanPath, 2), 2, '');
+        $bucket = trim($bucket);
+        $objectPath = trim($objectPath);
+
+        if ($bucket === '' || $objectPath === '') {
+            return null;
+        }
+
+        $supabaseUrl = rtrim((string) env('SUPABASE_URL', ''), '/');
+        if ($supabaseUrl === '') {
+            return null;
+        }
+
+        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $objectPath)));
+
+        return $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
     }
 
     /**
