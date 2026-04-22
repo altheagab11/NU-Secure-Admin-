@@ -2636,6 +2636,7 @@
 		const printTicketInNewWindow = () => {
 			if (!registrationTicketCard) {
 				alert('Ticket is not ready to print yet.');
+				shouldResetAfterPrint = false;
 				return;
 			}
 
@@ -2645,6 +2646,7 @@
 
 			if (!printWindow) {
 				alert('Unable to open print window. Please allow pop-ups for this site.');
+				shouldResetAfterPrint = false;
 				return;
 			}
 
@@ -2689,16 +2691,42 @@ ${ticketMarkup}
 </html>`);
 			printWindow.document.close();
 
+			let resetHandled = false;
+			const finalizeAfterPrint = () => {
+				if (resetHandled) {
+					return;
+				}
+
+				resetHandled = true;
+				window.removeEventListener('focus', fallbackOnFocus);
+
+				if (shouldResetAfterPrint) {
+					shouldResetAfterPrint = false;
+					resetRegistrationFlowToStepOne();
+				}
+
+				if (!printWindow.closed) {
+					printWindow.close();
+				}
+			};
+
+			const fallbackOnFocus = () => {
+				if (!shouldResetAfterPrint) {
+					return;
+				}
+
+				setTimeout(() => {
+					if (shouldResetAfterPrint) {
+						finalizeAfterPrint();
+					}
+				}, 120);
+			};
+
 			const tryPrint = () => {
+				printWindow.onafterprint = finalizeAfterPrint;
+				window.addEventListener('focus', fallbackOnFocus, { once: true });
 				printWindow.focus();
 				printWindow.print();
-				printWindow.onafterprint = () => {
-					if (shouldResetAfterPrint) {
-						shouldResetAfterPrint = false;
-						resetRegistrationFlowToStepOne();
-					}
-					printWindow.close();
-				};
 			};
 
 			if (printWindow.document.readyState === 'complete') {
