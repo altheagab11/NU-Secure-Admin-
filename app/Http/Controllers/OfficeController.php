@@ -35,9 +35,88 @@ class OfficeController extends Controller
         // Use a resilient approach: load office_staff rows then fetch related user and office per-row.
         $officeUsers = collect([]);
         try {
-            $staffRows = DB::table('office_staff')->get();
+            // Prepare a query for office_staff with optional joins to users and office
+            $sTable = 'office_staff';
+            $staffQuery = DB::table($sTable . ' as s');
 
-            $officeUsers = $staffRows->map(function ($r) {
+            // decide user join key
+            $userJoinColumn = Schema::hasColumn('users', 'user_id') ? 'user_id' : 'id';
+            $staffUserColumn = Schema::hasColumn($sTable, 'user_id') ? 's.user_id' : (Schema::hasColumn($sTable, 'user') ? 's.user' : 's.users_user_id');
+
+            // join users if possible
+            if (Schema::hasTable('users')) {
+                $staffQuery->leftJoin('users as u', "u.{$userJoinColumn}", '=', DB::raw($staffUserColumn));
+            }
+
+            // join office table for office name
+            $officeJoinColumn = Schema::hasColumn('office', 'office_id') ? 'office_id' : 'id';
+            $staffOfficeColumn = Schema::hasColumn($sTable, 'office_id') ? 's.office_id' : (Schema::hasColumn($sTable, 'office') ? 's.office' : null);
+            if ($staffOfficeColumn) {
+                $staffQuery->leftJoin('office as o', "o.{$officeJoinColumn}", '=', DB::raw($staffOfficeColumn));
+            }
+
+            // select columns we need (use aliases to ensure consistent access)
+            $selects = ['s.*'];
+            if (Schema::hasTable('users')) {
+                if (Schema::hasColumn('users', 'first_name')) $selects[] = 'u.first_name';
+                if (Schema::hasColumn('users', 'last_name')) $selects[] = 'u.last_name';
+                if (Schema::hasColumn('users', 'name')) $selects[] = 'u.name';
+                if (Schema::hasColumn('users', 'email')) $selects[] = 'u.email';
+                // include the user's primary id (either user_id or id) so the view can perform edits
+                $selects[] = "u.{$userJoinColumn} as u_id";
+            }
+            if ($staffOfficeColumn) {
+                if (Schema::hasColumn('office', 'office_name')) $selects[] = 'o.office_name';
+                if (Schema::hasColumn('office', 'name')) $selects[] = 'o.name as office_name_alt';
+            }
+
+            $staffQuery->select($selects);
+
+            // Apply filters from request: office, position, search
+            $filterOffice = $request->query('office');
+            $filterPosition = $request->query('position');
+            $filterSearch = trim((string) $request->query('search', ''));
+
+            if ($filterOffice) {
+                // apply to s.office_id or s.office depending on column
+                if (Str::contains($staffOfficeColumn, 'office_id')) {
+                    $staffQuery->where('s.office_id', $filterOffice);
+                } else {
+                    $staffQuery->where(DB::raw($staffOfficeColumn), $filterOffice);
+                }
+            }
+
+            if ($filterPosition) {
+                $staffQuery->where('s.position', $filterPosition);
+            }
+
+            if ($filterSearch !== '') {
+                // build search across available user columns
+                $staffQuery->where(function ($q) use ($filterSearch) {
+                    if (Schema::hasColumn('users', 'first_name')) {
+                        $q->orWhere('u.first_name', 'ilike', "%{$filterSearch}%");
+                    }
+                    if (Schema::hasColumn('users', 'last_name')) {
+                        $q->orWhere('u.last_name', 'ilike', "%{$filterSearch}%");
+                    }
+                    if (Schema::hasColumn('users', 'name')) {
+                        $q->orWhere('u.name', 'ilike', "%{$filterSearch}%");
+                    }
+                    if (Schema::hasColumn('users', 'email')) {
+                        $q->orWhere('u.email', 'ilike', "%{$filterSearch}%");
+                    }
+                    // fallback: search in office_staff email column if exists
+                    if (Schema::hasColumn('office_staff', 'email')) {
+                        $q->orWhere('s.email', 'ilike', "%{$filterSearch}%");
+                    }
+                });
+            }
+
+            // paginate with current query string so filters persist on links
+            $staffRows = $staffQuery->orderBy('s.office_id')->paginate(10)->withQueryString();
+
+            // map over the paginator's collection and then set it back on the paginator
+            $mapped = $staffRows->getCollection()->map(function ($r) {
                 // determine user id prop name
                 $userId = $r->user_id ?? $r->user ?? $r->users_user_id ?? null;
 
@@ -51,11 +130,18 @@ class OfficeController extends Controller
                 }
 
                 $office = null;
-                $officeId = $r->office_id ?? $r->office ?? null;
-                if ($officeId) {
-                    $office = DB::table('office')->where('office_id', $officeId)->first();
-                    if (! $office) {
-                        $office = DB::table('office')->where('id', $officeId)->first();
+                // try to use joined columns first
+                if (isset($r->office_name) && $r->office_name) {
+                    $office = (object) ['office_name' => $r->office_name];
+                } elseif (isset($r->office_name_alt) && $r->office_name_alt) {
+                    $office = (object) ['office_name' => $r->office_name_alt];
+                } else {
+                    $officeId = $r->office_id ?? $r->office ?? null;
+                    if ($officeId) {
+                        $office = DB::table('office')->where('office_id', $officeId)->first();
+                        if (! $office) {
+                            $office = DB::table('office')->where('id', $officeId)->first();
+                        }
                     }
                 }
 
@@ -73,23 +159,43 @@ class OfficeController extends Controller
                 }
 
                 return (object) [
+                    'user_id' => $userId ?? ($r->u_id ?? null),
                     'name' => $name,
                     'email' => $user->email ?? ($r->email ?? ''),
+                    'office_id' => $r->office_id ?? $r->office ?? null,
                     'office_name' => $office->office_name ?? ($office->name ?? ($r->office_name ?? '—')),
                     'position' => $r->position ?? '—',
                 ];
-            })->filter(function ($x) {
+            });
+
+            $mapped = $mapped->filter(function ($x) {
                 // filter out rows without any identifying data
                 return ! empty($x->email) || ! empty($x->name);
             })->values();
+
+            // set the transformed collection back to the paginator and use that as officeUsers
+            $staffRows->setCollection($mapped);
+            $officeUsers = $staffRows;
         } catch (\Exception $e) {
             logger()->error('Failed to load office users for OfficeController@index: ' . $e->getMessage());
             $officeUsers = collect([]);
         }
 
+        // fetch distinct positions for filter dropdown
+        try {
+            $positions = DB::table('office_staff')->distinct()->pluck('position')->filter()->values();
+        } catch (\Exception $e) {
+            $positions = collect([]);
+        }
+
         // Compute totals for display: number of office users and number of offices.
         // Use collection count for office users (we always make $officeUsers a collection).
-        $totalUsers = is_countable($officeUsers) ? count($officeUsers) : (method_exists($officeUsers, 'count') ? $officeUsers->count() : 0);
+        // If we have a paginator, use its total() for the overall count; otherwise fallback to previous behaviour
+        if ($officeUsers instanceof \Illuminate\Pagination\LengthAwarePaginator || $officeUsers instanceof \Illuminate\Contracts\Pagination\Paginator) {
+            $totalUsers = method_exists($officeUsers, 'total') ? $officeUsers->total() : ($officeUsers->count() ?? 0);
+        } else {
+            $totalUsers = is_countable($officeUsers) ? count($officeUsers) : (method_exists($officeUsers, 'count') ? $officeUsers->count() : 0);
+        }
 
         // Try a direct DB count for offices (more reliable and avoids potential analyzer complaints).
         try {
@@ -99,12 +205,37 @@ class OfficeController extends Controller
             $totalOffices = 0;
         }
 
+        // Build overall office summaries (counts per office) for the summary cards.
+        try {
+            $summaryRows = DB::table('office_staff as s')
+                ->select('s.office_id', DB::raw('count(*) as cnt'))
+                ->groupBy('s.office_id')
+                ->get();
+
+            $officeSummaries = $summaryRows->map(function ($r) {
+                $office = DB::table('office')->where('office_id', $r->office_id)->first();
+                if (! $office) {
+                    $office = DB::table('office')->where('id', $r->office_id)->first();
+                }
+
+                $name = $office->office_name ?? $office->name ?? 'Unknown Office';
+                return ['name' => $name, 'count' => (int) ($r->cnt ?? 0)];
+            })->values();
+        } catch (\Exception $e) {
+            logger()->debug('Failed to build office summaries: ' . $e->getMessage());
+            $officeSummaries = collect([]);
+        }
+
         return view('admin.user', [
             'section' => 'offices',
             // pass officeOptions for dropdown
             'officeOptions' => $offices,
             // pass officeUsers to populate the main table
             'offices' => $officeUsers,
+            // overall office summaries (counts across all users)
+            'officeSummaries' => $officeSummaries,
+            // filter dropdown options
+            'positions' => $positions,
             // totals for header display
             'totalUsers' => $totalUsers,
             'totalOffices' => $totalOffices,
@@ -187,6 +318,79 @@ class OfficeController extends Controller
             DB::rollBack();
             logger()->error('Failed to create office user: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Failed to create office user: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Update an existing office user (name, office assignment, position).
+     * Email is intentionally not editable in update flow.
+     */
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'office_id' => ['required', 'integer'],
+            'position' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Try to locate the user model by common PKs
+            $userModel = \App\Models\User::where('user_id', $id)->first();
+            if (! $userModel) {
+                $userModel = \App\Models\User::find($id);
+            }
+
+            if (! $userModel) {
+                return redirect()->back()->withErrors(['error' => 'User not found.']);
+            }
+
+            // Update name fields depending on schema
+            if (Schema::hasColumn('users', 'first_name') && Schema::hasColumn('users', 'last_name')) {
+                $userModel->first_name = $data['first_name'];
+                $userModel->last_name = $data['last_name'];
+            } elseif (Schema::hasColumn('users', 'name')) {
+                $userModel->name = trim($data['first_name'] . ' ' . $data['last_name']);
+            } else {
+                // Fallback
+                $userModel->name = trim($data['first_name'] . ' ' . $data['last_name']);
+            }
+
+            $userModel->save();
+
+            // Update or insert office_staff row
+            $uId = $userModel->user_id ?? $userModel->id ?? null;
+            if ($uId) {
+                $updated = DB::table('office_staff')->where('user_id', $uId)->update([
+                    'office_id' => $data['office_id'],
+                    'position' => $data['position'] ?? null,
+                ]);
+
+                if (! $updated) {
+                    // try other possible column names
+                    $updated = DB::table('office_staff')->where('user', $uId)->update([
+                        'office_id' => $data['office_id'],
+                        'position' => $data['position'] ?? null,
+                    ]);
+                }
+
+                if (! $updated) {
+                    // insert if no existing row
+                    DB::table('office_staff')->insert([
+                        'user_id' => $uId,
+                        'office_id' => $data['office_id'],
+                        'position' => $data['position'] ?? null,
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Office user updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger()->error('Failed to update office user: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to update office user: ' . $e->getMessage()]);
         }
     }
 }

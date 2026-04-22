@@ -337,6 +337,70 @@
 			border-bottom: 0;
 		}
 
+		.pagination-wrap {
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+			gap: 8px;
+			padding: 12px 16px 16px;
+		}
+
+		/* Filters card (copied-simplified from visitor view) */
+		.filters-card {
+			background: #ffffff;
+			border-radius: 12px;
+			border: 1px solid #e8ecf1;
+			padding: 12px 14px;
+			margin-bottom: 12px;
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.filter-input, .filter-select {
+			padding: 8px 10px;
+			border-radius: 8px;
+			border: 1px solid #e6edf7;
+			font-size: 14px;
+			min-width: 160px;
+		}
+
+		.search-wrap { display:flex; align-items:center; gap:8px; }
+
+		.clear-filters-btn { color:#64748b; text-decoration:none; padding:6px 10px; border-radius:8px; border:1px solid transparent; }
+
+
+		.page-link {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 34px;
+			height: 34px;
+			padding: 0 10px;
+			border: 1px solid #dbe1ea;
+			border-radius: 8px;
+			background: #fff;
+			color: #334155;
+			font-size: 13px;
+			font-weight: 600;
+			text-decoration: none;
+		}
+
+		.page-link:hover {
+			background: #f8fafc;
+		}
+
+		.page-link.active {
+			background: #4256b4;
+			color: #fff;
+			border-color: #4256b4;
+		}
+
+		.page-link.disabled {
+			opacity: 0.45;
+			pointer-events: none;
+		}
+
 		.email-cell {
 			display: inline-flex;
 			align-items: center;
@@ -631,7 +695,7 @@
 							</svg>
 							Guard Accounts
 						</h2>
-						<p class="guard-total">Total Guards: {{ isset($guards) ? count($guards) : 0 }}</p>
+						<p class="guard-total">Total Guards: {{ (isset($guards) && method_exists($guards, 'total')) ? $guards->total() : count($guards ?? []) }}</p>
 					</div>
 
 					<table class="guard-table" aria-label="Guard accounts table">
@@ -673,6 +737,18 @@
 							@endforelse
 						</tbody>
 					</table>
+
+					@if(isset($guards) && method_exists($guards, 'lastPage') && $guards->lastPage() > 1)
+						<div class="pagination-wrap" aria-label="Guard table pagination">
+							<a class="page-link {{ $guards->onFirstPage() ? 'disabled' : '' }}" href="{{ $guards->onFirstPage() ? '#' : $guards->previousPageUrl() }}">Prev</a>
+
+							@for($page = 1; $page <= $guards->lastPage(); $page++)
+								<a class="page-link {{ $guards->currentPage() === $page ? 'active' : '' }}" href="{{ $guards->url($page) }}">{{ $page }}</a>
+							@endfor
+
+							<a class="page-link {{ $guards->hasMorePages() ? '' : 'disabled' }}" href="{{ $guards->hasMorePages() ? $guards->nextPageUrl() : '#' }}">Next</a>
+						</div>
+					@endif
 				</section>
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
@@ -686,6 +762,36 @@
 						Add Office User
 					</button>
 				</div>
+
+				{{-- Filters for offices (placed between page title and Office User Accounts) --}}
+				<form method="GET" action="" style="margin:12px 0 18px;">
+					<div class="filters-card" role="search" aria-label="Office filters">
+						<div class="search-wrap">
+							<input class="filter-input" type="text" name="search" value="{{ request('search', '') }}" placeholder="Search name or email" aria-label="Search users">
+						</div>
+
+						<select name="office" class="filter-select" aria-label="Filter by office" onchange="this.form.submit()">
+							<option value="">All offices</option>
+							@foreach($officeOptions ?? [] as $opt)
+								<option value="{{ $opt->office_id ?? $opt->id }}" @selected(request('office') == ($opt->office_id ?? $opt->id))>{{ $opt->office_name ?? $opt->name }}</option>
+							@endforeach
+						</select>
+
+						<select name="position" class="filter-select" aria-label="Filter by position" onchange="this.form.submit()">
+							<option value="">All positions</option>
+							@foreach($positions ?? [] as $pos)
+								@if(!empty($pos))
+									<option value="{{ $pos }}" @selected(request('position') === (string) $pos)>{{ $pos }}</option>
+								@endif
+							@endforeach
+						</select>
+
+						<div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+							<button type="submit" class="add-guard-btn" style="background:#39459a;padding:8px 12px;">Apply</button>
+							<a href="/admin/user/offices" class="clear-filters-btn">Clear</a>
+						</div>
+					</div>
+				</form>
 
 				@if(session('success'))
 					<div id="officeSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
@@ -749,7 +855,13 @@
 									<td>{{ $office->position ?? '—' }}</td>
 									<td>
 										<span class="action-icons">
-											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" style="width:14px;height:14px;" />
+											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-office-btn" style="width:14px;height:14px;cursor:pointer;" 
+												 data-user-id="{{ $office->user_id ?? '' }}"
+												 data-name="{{ $office->name ?? '' }}"
+												 data-email="{{ $office->email ?? '' }}"
+												 data-office-id="{{ $office->office_id ?? '' }}"
+												 data-position="{{ $office->position ?? '' }}"
+											/>
 											<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
 										</span>
 									</td>
@@ -763,14 +875,32 @@
 					</table>
 				</section>
 
+				@if(isset($offices) && method_exists($offices, 'lastPage') && $offices->lastPage() > 1)
+					<div class="pagination-wrap" aria-label="Office table pagination">
+						<a class="page-link {{ $offices->onFirstPage() ? 'disabled' : '' }}" href="{{ $offices->onFirstPage() ? '#' : $offices->previousPageUrl() }}">Prev</a>
+
+						@for($page = 1; $page <= $offices->lastPage(); $page++)
+							<a class="page-link {{ $offices->currentPage() === $page ? 'active' : '' }}" href="{{ $offices->url($page) }}">{{ $page }}</a>
+						@endfor
+
+						<a class="page-link {{ $offices->hasMorePages() ? '' : 'disabled' }}" href="{{ $offices->hasMorePages() ? $offices->nextPageUrl() : '#' }}">Next</a>
+					</div>
+				@endif
+
 				<div class="office-summary-grid">
 					@php
-						// Build office summary (group by office name and count users). Works when $offices is a collection or array of objects.
-						$officeSummaries = collect($offices ?? [])->groupBy(function($item) {
-							return data_get($item, 'office_name') ?? data_get($item, 'office') ?? 'Unknown Office';
-						})->map(function($group, $name) {
-							return ['name' => $name, 'count' => count($group)];
-						})->values();
+						// Prefer pre-computed $officeSummaries from controller (total counts across all users).
+						if (isset($officeSummaries)) {
+							$officeSummaries = collect($officeSummaries);
+						} else {
+							// Fallback: build office summary from current $offices (may be paginated - this will reflect current page only)
+							$collectionForSummary = (isset($offices) && method_exists($offices, 'items')) ? collect($offices->items()) : collect($offices ?? []);
+							$officeSummaries = $collectionForSummary->groupBy(function($item) {
+								return data_get($item, 'office_name') ?? data_get($item, 'office') ?? 'Unknown Office';
+							})->map(function($group, $name) {
+								return ['name' => $name, 'count' => count($group)];
+							})->values();
+						}
 					@endphp
 
 					@forelse($officeSummaries as $os)
@@ -787,6 +917,7 @@
 						</div>
 					@endforelse
 				</div>
+
 			@else
 				<h1 class="page-title">
 					User Management
@@ -795,6 +926,8 @@
 					Manage user accounts from this section.
 				</p>
 			@endif
+
+
 		</main>
 	</div>
 
@@ -1000,6 +1133,97 @@
 				});
 			} catch (err) { console && console.error && console.error('Office modal init error:', err); }
 		})();
+
+			// Edit button: reuse Add Office modal to perform edits
+			(function(){
+				function cleanupEditState() {
+					const form = document.getElementById('addOfficeForm');
+					if (!form) return;
+					const methodInput = form.querySelector('input[name="_method"][data-edit-added]');
+					if (methodInput) methodInput.remove();
+					const uidInput = form.querySelector('input[name="user_id"][data-edit-added]');
+					if (uidInput) uidInput.remove();
+					if (form.dataset.originalAction) form.setAttribute('action', form.dataset.originalAction);
+					const emailInput = form.querySelector('input[name="email"]');
+					if (emailInput) {
+						emailInput.readOnly = false;
+						emailInput.removeAttribute('aria-readonly');
+						emailInput.style.background = '';
+						emailInput.style.cursor = '';
+					}
+					const title = document.getElementById('addOfficeTitle'); if (title) title.textContent = 'Add Office User Account';
+					const submitBtn = form.querySelector('button[type=submit]'); if (submitBtn) submitBtn.textContent = 'Add User';
+				}
+
+				document.querySelectorAll('.edit-office-btn').forEach(function(btn){
+					btn.addEventListener('click', function(e){
+						e.preventDefault();
+						const ds = btn.dataset || {};
+						const userId = ds.userId || ds.user_id || ds.userid;
+						if (!userId) return;
+
+						const modal = document.getElementById('addOfficeModal'); if (!modal) return; modal.style.display = 'flex';
+						const form = document.getElementById('addOfficeForm'); if (!form) return;
+
+						// store original action so we can restore later
+						if (!form.dataset.originalAction) form.dataset.originalAction = form.getAttribute('action');
+
+						// fill fields (split name into first/last)
+						const fullName = ds.name || '';
+						const parts = fullName.trim().split(/\s+/);
+						const first = parts.shift() || '';
+						const last = parts.join(' ') || '';
+						form.querySelector('input[name="first_name"]').value = first;
+						form.querySelector('input[name="last_name"]').value = last;
+						const emailInput = form.querySelector('input[name="email"]');
+						if (emailInput) {
+							emailInput.value = ds.email || '';
+							emailInput.readOnly = true;
+							emailInput.setAttribute('aria-readonly', 'true');
+							emailInput.style.background = '#f8fafc';
+							emailInput.style.cursor = 'not-allowed';
+						}
+						const sel = form.querySelector('select[name="office_id"]'); if (sel) sel.value = ds.officeId || ds.office_id || '';
+						form.querySelector('input[name="position"]').value = ds.position || '';
+
+						// add method override _method = PUT
+						if (!form.querySelector('input[name="_method"][data-edit-added]')){
+							const methodInput = document.createElement('input');
+							methodInput.type = 'hidden'; methodInput.name = '_method'; methodInput.value = 'PUT'; methodInput.setAttribute('data-edit-added','1');
+							form.appendChild(methodInput);
+						}
+
+						// add hidden user_id
+						if (!form.querySelector('input[name="user_id"][data-edit-added]')){
+							const uidInput = document.createElement('input');
+							uidInput.type = 'hidden'; uidInput.name = 'user_id'; uidInput.value = userId; uidInput.setAttribute('data-edit-added','1');
+							form.appendChild(uidInput);
+						}
+
+						// set form action to update URL
+						form.setAttribute('action', '/admin/user/offices/' + encodeURIComponent(userId));
+
+						// update modal title and submit text
+						const title = document.getElementById('addOfficeTitle'); if (title) title.textContent = 'Edit Office User';
+						const submitBtn = form.querySelector('button[type=submit]'); if (submitBtn) submitBtn.textContent = 'Save Changes';
+					});
+				});
+
+				// cleanup when modal closed via close or cancel buttons
+				document.addEventListener('click', function(e){
+					if (e.target && (e.target.id === 'closeAddOffice' || e.target.id === 'cancelAddOffice')) {
+						cleanupEditState();
+					}
+				});
+
+				// cleanup on backdrop click as well
+				const modal = document.getElementById('addOfficeModal');
+				if (modal) {
+					modal.addEventListener('click', function(e){
+						if (e.target === modal) cleanupEditState();
+					});
+				}
+			})();
 	</script>
 
 	</body>

@@ -72,7 +72,7 @@ class AlertsController extends Controller
                     'Accept' => 'application/json',
                 ])->get(rtrim($supabaseUrl, '/') . '/rest/v1/alerts', [
                     'select' => $select,
-                    'order' => 'created_at.desc',
+                    'order' => 'alert_id.desc,created_at.desc',
                 ]);
 
                 if ($response->ok()) {
@@ -191,7 +191,9 @@ class AlertsController extends Controller
                             && $matchesOffice
                             && $matchesDateFrom
                             && $matchesDateTo;
-                    })->values()->all();
+                    })->sortByDesc(fn ($alert) => (int) ($alert['alert_id'] ?? 0))
+                        ->values()
+                        ->all();
                 } else {
                     // Log non-200 response to help debugging (will appear in storage/logs)
                     logger()->warning('Supabase alerts fetch returned non-OK status', [

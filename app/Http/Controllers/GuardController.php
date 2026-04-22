@@ -19,31 +19,35 @@ class GuardController extends Controller
      */
     public function index()
     {
-        // load guard rows with their related user accounts
-        $guards = Guard::with('user')->get()->map(function ($g) {
-            $user = $g->user;
+        // load guard rows with related user accounts, 10 per page
+        $guards = Guard::with('user')
+            ->orderByDesc('guard_id')
+            ->paginate(10)
+            ->withQueryString()
+            ->through(function ($g) {
+                $user = $g->user;
 
-            // derive a display name from available user columns
-            $name = null;
-            if ($user) {
-                $first = $user->first_name ?? null;
-                $last = $user->last_name ?? null;
-                if ($first || $last) {
-                    $name = trim(($first ?: '') . ' ' . ($last ?: ''));
-                } elseif (! empty($user->name)) {
-                    $name = $user->name;
-                } else {
-                    $name = $user->email ?? '';
+                // derive a display name from available user columns
+                $name = null;
+                if ($user) {
+                    $first = $user->first_name ?? null;
+                    $last = $user->last_name ?? null;
+                    if ($first || $last) {
+                        $name = trim(($first ?: '') . ' ' . ($last ?: ''));
+                    } elseif (! empty($user->name)) {
+                        $name = $user->name;
+                    } else {
+                        $name = $user->email ?? '';
+                    }
                 }
-            }
 
-            return (object) [
-                'name' => $name,
-                'email' => $user->email ?? '',
-                'badge_number' => $g->badge_number ?? $g->badge ?? null,
-                'station' => $g->station ?? null,
-            ];
-        });
+                return (object) [
+                    'name' => $name,
+                    'email' => $user->email ?? '',
+                    'badge_number' => $g->badge_number ?? $g->badge ?? null,
+                    'station' => $g->station ?? null,
+                ];
+            });
 
         return view('admin.user', ['section' => 'guards', 'guards' => $guards]);
     }

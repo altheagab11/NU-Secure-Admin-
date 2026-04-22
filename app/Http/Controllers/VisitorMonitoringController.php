@@ -183,49 +183,91 @@ class VisitorMonitoringController extends Controller
     {
         [$rows] = $this->loadRowsAndFetchError();
         $filters = $this->extractFilters($request);
-        $filteredRows = $this->applyFilters($rows, $filters)->values();
+        $filteredRows = $this->applyFilters($rows, $filters)
+            ->sortByDesc(function (array $row) {
+                $visitId = (int) ($row['visit_id'] ?? 0);
+                $entry = (string) ($row['raw_entry_time'] ?? '');
+
+                return $entry !== '' ? $entry.'|'.$visitId : (string) $visitId;
+            })
+            ->values();
 
         $filename = 'visitor-monitoring-'.now()->format('Ymd_His').'.xls';
-        $headers = [
-            'Visitor',
-            'Pass No.',
-            'Control #',
-            'Contact No.',
-            'Visit Type',
-            'Purpose',
-            'Destination',
-            'Time In Date',
-            'Time In',
-            'Duration',
-            'Status',
-            'Alert',
-        ];
 
-        return response()->streamDownload(function () use ($filteredRows, $headers) {
+        return response()->streamDownload(function () use ($filteredRows, $filters) {
             $stream = fopen('php://output', 'wb');
             if (! $stream) {
                 return;
             }
 
-            fwrite($stream, "\xEF\xBB\xBF");
-            fputcsv($stream, $headers, "\t");
+            $escape = static fn ($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+            $activeFilters = collect([
+                'Search' => $filters['search'] ?? '',
+                'Office' => $filters['office'] ?? '',
+                'Status' => $filters['status'] ?? '',
+                'Visit Type' => $filters['visit_type'] ?? '',
+                'Date From' => $filters['date_from'] ?? '',
+                'Date To' => $filters['date_to'] ?? '',
+            ])->filter(fn ($value) => trim((string) $value) !== '');
 
-            foreach ($filteredRows as $row) {
-                fputcsv($stream, [
-                    $row['visitor_name'] ?? '—',
-                    $row['pass_number'] ?? '—',
-                    $row['control_number'] ?? '—',
-                    $row['contact_no'] ?? '—',
-                    $row['visit_type'] ?? '—',
-                    $row['purpose'] ?? '—',
-                    $row['destination'] ?? '—',
-                    $row['entry_time_label_date'] ?? '—',
-                    $row['entry_time_label_time'] ?? '—',
-                    $row['duration_label'] ?? '—',
-                    $row['status'] ?? '—',
-                    $row['alert'] ?? 'None',
-                ], "\t");
+            $html = '<html><head><meta charset="UTF-8"></head><body>';
+            $html .= '<table border="0" cellpadding="4" cellspacing="0">';
+            $html .= '<tr><td colspan="14" style="font-size:18px;font-weight:bold;">Visitor Monitoring</td></tr>';
+            $html .= '<tr><td colspan="14">Generated At: '.$escape(now()->format('M d, Y h:i A')).'</td></tr>';
+            $html .= '<tr><td colspan="14">Total Rows: '.$escape($filteredRows->count()).'</td></tr>';
+
+            if ($activeFilters->isNotEmpty()) {
+                $html .= '<tr><td colspan="14">Filters: '.$escape($activeFilters->map(fn ($value, $key) => $key.': '.$value)->implode(' | ')).'</td></tr>';
+            } else {
+                $html .= '<tr><td colspan="14">Filters: None</td></tr>';
             }
+
+            $html .= '</table>';
+            $html .= '<br/>';
+
+            $html .= '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">';
+            $html .= '<thead><tr style="background:#f1f5f9;font-weight:bold;">';
+            $html .= '<th>#</th>';
+            $html .= '<th>Visit ID</th>';
+            $html .= '<th>Visitor Name</th>';
+            $html .= '<th>Pass No.</th>';
+            $html .= '<th>Control #</th>';
+            $html .= '<th>Contact No.</th>';
+            $html .= '<th>Visit Type</th>';
+            $html .= '<th>Purpose</th>';
+            $html .= '<th>Destination</th>';
+            $html .= '<th>Entry Time</th>';
+            $html .= '<th>Exit Time</th>';
+            $html .= '<th>Duration</th>';
+            $html .= '<th>Status</th>';
+            $html .= '<th>Alert</th>';
+            $html .= '</tr></thead><tbody>';
+
+            foreach ($filteredRows as $index => $row) {
+                $entryTime = trim((string) (($row['entry_time_label_date'] ?? '—').' '.($row['entry_time_label_time'] ?? '')));
+
+                $html .= '<tr>';
+                $html .= '<td>'.$escape($index + 1).'</td>';
+                $html .= '<td>'.$escape($row['visit_id'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['visitor_name'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['pass_number'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['control_number'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['contact_no'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['visit_type'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['purpose'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['destination'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($entryTime !== '' ? $entryTime : '—').'</td>';
+                $html .= '<td>'.$escape($row['exit_time_label'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['duration_label'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['status'] ?? '—').'</td>';
+                $html .= '<td>'.$escape($row['alert'] ?? 'None').'</td>';
+                $html .= '</tr>';
+            }
+
+            $html .= '</tbody></table></body></html>';
+
+            fwrite($stream, "\xEF\xBB\xBF");
+            fwrite($stream, $html);
 
             fclose($stream);
         }, $filename, [

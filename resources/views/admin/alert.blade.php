@@ -601,6 +601,25 @@
 					padding: 8px 6px !important;
 				}
 
+				.alert-pill {
+					display: inline-flex;
+					align-items: center;
+					padding: 4px 10px;
+					border-radius: 999px;
+					font-size: 11px;
+					font-weight: 700;
+					line-height: 1.15;
+					white-space: nowrap;
+				}
+
+				.severity-low { background: #e5e7eb; color: #374151; }
+				.severity-medium { background: #fef3c7; color: #92400e; }
+				.severity-high { background: #ffedd5; color: #c2410c; }
+				.severity-critical { background: #fee2e2; color: #b91c1c; }
+
+				.status-unresolved { background: #fee2e2; color: #b91c1c; }
+				.status-resolved { background: #dcfce7; color: #166534; }
+
 				.table-wrap { overflow-x: auto; }
 
 				/* Alert details modal - card layout (requested UI) */
@@ -718,13 +737,13 @@
 					font-weight: 700;
 				}
 
-				.badge-danger { background: #dc2626; color: #fff; }
-				.badge-success { background: #16a34a; color: #fff; }
-				.badge-warning { background: #f59e0b; color: #111827; }
-				.badge-high { background: #f97316; color: #fff; }
-				.badge-medium { background: #f59e0b; color: #111827; }
-				.badge-low { background: #64748b; color: #fff; }
-				.badge-critical { background: #dc2626; color: #fff; }
+				.badge-danger { background: #fee2e2; color: #b91c1c; }
+				.badge-success { background: #dcfce7; color: #166534; }
+				.badge-warning { background: #fef3c7; color: #92400e; }
+				.badge-high { background: #ffedd5; color: #c2410c; }
+				.badge-medium { background: #fef3c7; color: #92400e; }
+				.badge-low { background: #e5e7eb; color: #374151; }
+				.badge-critical { background: #fee2e2; color: #b91c1c; }
 
 				.alert-modal-footer {
 					padding: 14px 22px;
@@ -884,8 +903,8 @@
 					border-radius: 999px;
 					font-size: 12px;
 					font-weight: 700;
-					color: #fff;
-					background: #f97316;
+					color: #92400e;
+					background: #fef3c7;
 				}
 
 				@media (max-width: 920px) {
@@ -1129,8 +1148,20 @@
 									<td style="padding:10px 8px;">{{ $alert['visit']['office']['office_name'] ?? ($alert['visit']['primary_office_id'] ?? '') }}</td>
 									<td style="padding:10px 8px;">{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['severity'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['status'] ?? '' }}</td>
+									@php
+										$severityText = (string) ($alert['severity'] ?? 'Medium');
+										$severityClass = match (strtolower(trim($severityText))) {
+											'critical' => 'severity-critical',
+											'high' => 'severity-high',
+											'low' => 'severity-low',
+											default => 'severity-medium',
+										};
+
+										$statusText = (string) ($alert['status'] ?? 'Unresolved');
+										$statusClass = strtolower(trim($statusText)) === 'resolved' ? 'status-resolved' : 'status-unresolved';
+									@endphp
+									<td style="padding:10px 8px;"><span class="alert-pill {{ $severityClass }}">{{ $severityText }}</span></td>
+									<td style="padding:10px 8px;"><span class="alert-pill {{ $statusClass }}">{{ $statusText }}</span></td>
 										<td style="padding:10px 8px;">
 										<button class="view-btn" data-alert-id="{{ $alert['alert_id'] ?? '' }}" style="background:#4b5cd1;color:#fff;padding:6px 10px;border-radius:8px;border:0;">View</button>
 									</td>
@@ -1425,13 +1456,13 @@
 				: 'badge-pill badge-danger';
 		}
 
-		function getResolveSeverityBg(severity) {
+		function getResolveSeverityStyle(severity) {
 			const s = String(severity || '').toLowerCase();
-			if (s === 'critical') return '#dc2626';
-			if (s === 'high') return '#f97316';
-			if (s === 'medium') return '#f59e0b';
-			if (s === 'low') return '#64748b';
-			return '#f59e0b';
+			if (s === 'critical') return { background: '#fee2e2', color: '#b91c1c' };
+			if (s === 'high') return { background: '#ffedd5', color: '#c2410c' };
+			if (s === 'medium') return { background: '#fef3c7', color: '#92400e' };
+			if (s === 'low') return { background: '#e5e7eb', color: '#374151' };
+			return { background: '#fef3c7', color: '#92400e' };
 		}
 
 		function openAlertModal(alertId) {
@@ -1570,8 +1601,9 @@
 			resolveModal.querySelector('#r_alert_type').textContent = alert.alert_type || '-';
 			const severityEl = resolveModal.querySelector('#r_severity');
 			severityEl.textContent = severity;
-			severityEl.style.backgroundColor = getResolveSeverityBg(severity);
-			severityEl.style.color = severity.toLowerCase() === 'medium' ? '#111827' : '#ffffff';
+			const severityStyle = getResolveSeverityStyle(severity);
+			severityEl.style.backgroundColor = severityStyle.background;
+			severityEl.style.color = severityStyle.color;
 			resolveModal.querySelector('#resolveNotes').value = '';
 
 			pendingResolveAlertId = alert.alert_id;
@@ -1633,7 +1665,7 @@
 			if (row) {
 				row.dataset.status = 'resolved';
 				const statusTd = row.querySelector('td:nth-last-child(2)');
-				if (statusTd) statusTd.textContent = 'Resolved';
+				if (statusTd) statusTd.innerHTML = '<span class="alert-pill status-resolved">Resolved</span>';
 			}
 
 			// update counts
