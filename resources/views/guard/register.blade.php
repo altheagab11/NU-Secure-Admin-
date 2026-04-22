@@ -2800,15 +2800,6 @@ ${ticketMarkup}
 				return;
 			}
 
-			if (registerType !== 'normal') {
-				currentStep = 3;
-				updateStepUI();
-				clearFrozenFrame();
-				cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
-				startCamera();
-				return;
-			}
-
 			if (existingVisitorConfirmed && existingVisitorMatch?.exists) {
 				const previewUrl = String(existingVisitorMatch.photo_preview_url || existingVisitorMatch.photo_path || '').trim();
 				const storagePath = String(existingVisitorMatch.photo_path || existingVisitorMatch.photo_preview_url || '').trim();
@@ -2851,6 +2842,15 @@ ${ticketMarkup}
 
 					return;
 				}
+			}
+
+			if (registerType !== 'normal') {
+				currentStep = 3;
+				updateStepUI();
+				clearFrozenFrame();
+				cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
+				startCamera();
+				return;
 			}
 
 			currentStep = 3;

@@ -86,7 +86,7 @@ class GuardVisitorController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $activeExitStatusId, $visitorVisitTypeId) {
-                $matchedVisitor = $this->findVisitorForRegistration($validated, $registerType);
+                $matchedVisitor = $this->findVisitorForRegistration($validated);
 
                 $addressPayload = [
                     'house_no' => $validated['house_no'],
@@ -140,6 +140,9 @@ class GuardVisitorController extends Controller
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
                     'primary_office_id' => $registerType === 'normal' ? $officeIds[0] : null,
+                    'destination_text' => $registerType === 'contractor'
+                        ? trim((string) ($validated['destination_office_text'] ?? ''))
+                        : null,
                     'qr_token' => strtoupper(Str::random(12)),
                     'entry_time' => now(),
                     'exit_status_id' => $activeExitStatusId,
@@ -163,13 +166,9 @@ class GuardVisitorController extends Controller
 
                 if ($registerType === 'contractor') {
                     DB::table('contractor')->updateOrInsert(
-                        ['visitor_id' => $visitorId],
+                        ['visit_id' => $visitId],
                         [
-                            'company_name' => trim((string) ($validated['destination_office_text'] ?? '')) ?: null,
-                            'purpose' => $validated['purpose_reason'],
                             'contact_person' => trim((string) ($validated['contact_person'] ?? '')),
-                            'status' => 'active',
-                            'created_at' => now(),
                         ]
                     );
                 }
@@ -236,11 +235,10 @@ class GuardVisitorController extends Controller
     /**
      * Find existing visitor for registration dedup by exact first+last name.
      */
-    protected function findVisitorForRegistration(array $validated, string $registerType = 'normal'): ?object
+    protected function findVisitorForRegistration(array $validated): ?object
     {
         $firstName = trim((string) ($validated['first_name'] ?? ''));
         $lastName = trim((string) ($validated['last_name'] ?? ''));
-        $visitTypeName = $this->resolveVisitTypeNameForRegisterType($registerType);
 
         $baseQuery = static function () {
             return DB::table('visitor')
@@ -255,12 +253,10 @@ class GuardVisitorController extends Controller
         return $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
-            ->whereExists(function ($query) use ($visitTypeName) {
+            ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
-                    ->join('visit_type as vt', 'vt.visit_type_id', '=', 'vi.visit_type_id')
-                    ->whereColumn('vi.visitor_id', 'visitor.visitor_id')
-                    ->whereRaw('LOWER(vt.visit_type_name) = ?', [strtolower($visitTypeName)]);
+                    ->whereColumn('vi.visitor_id', 'visitor.visitor_id');
             })
             ->first();
     }
@@ -617,7 +613,6 @@ class GuardVisitorController extends Controller
     {
         $firstName = trim((string) ($formData['first_name'] ?? ''));
         $lastName = trim((string) ($formData['last_name'] ?? ''));
-        $visitTypeName = $this->resolveVisitTypeNameForRegisterType($registerType);
 
         $baseQuery = static function () {
             return DB::table('visitor as v')
@@ -646,12 +641,10 @@ class GuardVisitorController extends Controller
         $record = $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(v.first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(v.last_name, ''))) = ?", [Str::lower($lastName)])
-            ->whereExists(function ($query) use ($visitTypeName) {
+            ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
-                    ->join('visit_type as vt', 'vt.visit_type_id', '=', 'vi.visit_type_id')
-                    ->whereColumn('vi.visitor_id', 'v.visitor_id')
-                    ->whereRaw('LOWER(vt.visit_type_name) = ?', [strtolower($visitTypeName)]);
+                    ->whereColumn('vi.visitor_id', 'v.visitor_id');
             })
             ->orderByDesc('v.created_at')
             ->orderByDesc('v.visitor_id')
