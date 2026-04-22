@@ -2276,6 +2276,9 @@
 			if (visitorPhoneNumber && existingVisitor.contact_no) {
 				visitorPhoneNumber.value = String(existingVisitor.contact_no).replace(/\D/g, '').slice(0, 11);
 			}
+			if (visitorControlNumber && existingVisitor.control_number) {
+				visitorControlNumber.value = String(existingVisitor.control_number).trim();
+			}
 		};
 
 		const closeExistingVisitorModal = (result) => {

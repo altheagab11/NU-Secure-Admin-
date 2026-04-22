@@ -114,7 +114,6 @@ class GuardVisitorController extends Controller
                             'address_id' => $addressId,
                             'contact_no' => $validated['contact_no'],
                             'pass_number' => $validated['pass_number'],
-                            'control_number' => $validated['control_number'],
                             'visitor_photo_with_id_url' => $photoPath !== ''
                                 ? $photoPath
                                 : ($matchedVisitor->visitor_photo_with_id_url ?? null),
@@ -621,6 +620,7 @@ class GuardVisitorController extends Controller
                     'v.visitor_id',
                     'v.first_name',
                     'v.last_name',
+                    'v.control_number',
                     'v.contact_no',
                     'v.pass_number',
                     'v.visitor_photo_with_id_url',
@@ -662,6 +662,7 @@ class GuardVisitorController extends Controller
             'visitor_id' => (int) $record->visitor_id,
             'first_name' => (string) ($record->first_name ?? ''),
             'last_name' => (string) ($record->last_name ?? ''),
+            'control_number' => (string) ($record->control_number ?? ''),
             'contact_no' => (string) ($record->contact_no ?? ''),
             'pass_number' => (string) ($record->pass_number ?? ''),
             'house_no' => (string) ($record->house_no ?? ''),
