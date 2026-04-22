@@ -442,6 +442,14 @@
 			color: #ef4444;
 		}
 
+		.icon-btn {
+			border: 0;
+			background: transparent;
+			padding: 0;
+			line-height: 0;
+			cursor: pointer;
+		}
+
 		.office-card {
 			background: #ffffff;
 			border-radius: 12px;
@@ -753,14 +761,22 @@
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
 					<h1 class="page-title">Office User Management</h1>
-					<button type="button" id="openAddOfficeBtn" class="add-guard-btn" onclick="document.getElementById('addOfficeModal') && (document.getElementById('addOfficeModal').style.display = 'flex')">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-							<path d="M22 8h-6M19 5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						</svg>
-						Add Office User
-					</button>
+					<div style="display:flex;gap:8px;align-items:center;">
+						<button type="button" id="openRecycleBinBtn" class="add-guard-btn" style="background:#334155;">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							Recycle Bin ({{ isset($recycledOffices) ? count($recycledOffices) : 0 }})
+						</button>
+						<button type="button" id="openAddOfficeBtn" class="add-guard-btn" onclick="document.getElementById('addOfficeModal') && (document.getElementById('addOfficeModal').style.display = 'flex')">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+								<path d="M22 8h-6M19 5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+							Add Office User
+						</button>
+					</div>
 				</div>
 
 				{{-- Filters for offices (placed between page title and Office User Accounts) --}}
@@ -862,7 +878,13 @@
 												 data-office-id="{{ $office->office_id ?? '' }}"
 												 data-position="{{ $office->position ?? '' }}"
 											/>
-											<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
+											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" style="display:inline;" onsubmit="return confirm('Move this office user to recycle bin?');">
+												@csrf
+												@method('DELETE')
+												<button type="submit" class="icon-btn" aria-label="Delete">
+													<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
+												</button>
+											</form>
 										</span>
 									</td>
 								</tr>
@@ -1104,6 +1126,56 @@
 		</div>
 	</div>
 
+	<!-- Office Recycle Bin Modal -->
+	<div id="officeRecycleBinModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:85;">
+		<div role="dialog" aria-modal="true" aria-labelledby="officeRecycleBinTitle" style="background:#fff;border-radius:10px; width:760px; max-width:96%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
+			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+				<h3 id="officeRecycleBinTitle" style="margin:0; font-size:18px;">Office Recycle Bin</h3>
+				<button id="closeOfficeRecycleBin" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+			</div>
+
+			<p style="color:#6b7280;margin:4px 0 14px;">Deleted office users are stored here. You can restore them anytime.</p>
+
+			<div style="max-height:420px; overflow:auto; border:1px solid #e5e7eb; border-radius:8px;">
+				<table class="office-table" aria-label="Office recycle bin table" style="margin:0;">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Office</th>
+							<th>Position</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						@forelse(($recycledOffices ?? collect([])) as $recycled)
+							<tr>
+								<td>{{ $recycled->name ?? '—' }}</td>
+								<td>{{ $recycled->email ?? '—' }}</td>
+								<td>{{ $recycled->office_name ?? '—' }}</td>
+								<td>{{ $recycled->position ?? '—' }}</td>
+								<td>
+									<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/restore" style="display:inline;">
+										@csrf
+										<button type="submit" class="add-guard-btn" style="padding:6px 10px;font-size:12px;">Restore</button>
+									</form>
+								</td>
+							</tr>
+						@empty
+							<tr>
+								<td colspan="5" style="text-align:center;color:#64748b;padding:18px;">Recycle bin is empty.</td>
+							</tr>
+						@endforelse
+					</tbody>
+				</table>
+			</div>
+
+			<div style="display:flex; justify-content:flex-end; margin-top:14px;">
+				<button type="button" id="cancelOfficeRecycleBin" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Close</button>
+			</div>
+		</div>
+	</div>
+
 	<script>
 		// Modal open/close and form handling for Add Office User
 		(function() {
@@ -1132,6 +1204,31 @@
 					}
 				});
 			} catch (err) { console && console.error && console.error('Office modal init error:', err); }
+		})();
+
+		// Recycle bin modal open/close
+		(function() {
+			try {
+				const openBtn = document.getElementById('openRecycleBinBtn');
+				const modal = document.getElementById('officeRecycleBinModal');
+
+				function openModal() { if (modal) modal.style.display = 'flex'; }
+				function closeModal() { if (modal) modal.style.display = 'none'; }
+
+				if (openBtn) openBtn.addEventListener('click', openModal);
+				document.addEventListener('click', function(e){
+					if (!e.target) return;
+					if (e.target.id === 'closeOfficeRecycleBin' || e.target.id === 'cancelOfficeRecycleBin') closeModal();
+				});
+
+				if (modal) {
+					modal.addEventListener('click', function(e){
+						if (e.target === modal) closeModal();
+					});
+				}
+			} catch (err) {
+				console && console.error && console.error('Recycle bin modal init error:', err);
+			}
 		})();
 
 			// Edit button: reuse Add Office modal to perform edits

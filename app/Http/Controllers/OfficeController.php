@@ -46,6 +46,15 @@ class OfficeController extends Controller
             // join users if possible
             if (Schema::hasTable('users')) {
                 $staffQuery->leftJoin('users as u', "u.{$userJoinColumn}", '=', DB::raw($staffUserColumn));
+
+                // show only active/non-recycled office users in main table
+                if (Schema::hasColumn('users', 'status')) {
+                    $staffQuery->where(function ($q) {
+                        $q->whereNull('u.status')->orWhere('u.status', '!=', 'recycle_bin');
+                    });
+                } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                    $staffQuery->whereNull('u.deleted_at');
+                }
             }
 
             // join office table for office name
@@ -181,9 +190,24 @@ class OfficeController extends Controller
             $officeUsers = collect([]);
         }
 
-        // fetch distinct positions for filter dropdown
+        // fetch distinct positions for filter dropdown (non-recycled users only)
         try {
-            $positions = DB::table('office_staff')->distinct()->pluck('position')->filter()->values();
+            $positionsQuery = DB::table('office_staff as s');
+            if (Schema::hasTable('users')) {
+                $userJoinColumn = Schema::hasColumn('users', 'user_id') ? 'user_id' : 'id';
+                $staffUserColumn = Schema::hasColumn('office_staff', 'user_id') ? 's.user_id' : (Schema::hasColumn('office_staff', 'user') ? 's.user' : 's.users_user_id');
+                $positionsQuery->leftJoin('users as u', "u.{$userJoinColumn}", '=', DB::raw($staffUserColumn));
+
+                if (Schema::hasColumn('users', 'status')) {
+                    $positionsQuery->where(function ($q) {
+                        $q->whereNull('u.status')->orWhere('u.status', '!=', 'recycle_bin');
+                    });
+                } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                    $positionsQuery->whereNull('u.deleted_at');
+                }
+            }
+
+            $positions = $positionsQuery->distinct()->pluck('s.position')->filter()->values();
         } catch (\Exception $e) {
             $positions = collect([]);
         }
@@ -205,12 +229,27 @@ class OfficeController extends Controller
             $totalOffices = 0;
         }
 
-        // Build overall office summaries (counts per office) for the summary cards.
+        // Build overall office summaries (counts per office) for the summary cards (non-recycled users only).
         try {
-            $summaryRows = DB::table('office_staff as s')
+            $summaryRowsQuery = DB::table('office_staff as s')
                 ->select('s.office_id', DB::raw('count(*) as cnt'))
-                ->groupBy('s.office_id')
-                ->get();
+                ->groupBy('s.office_id');
+
+            if (Schema::hasTable('users')) {
+                $userJoinColumn = Schema::hasColumn('users', 'user_id') ? 'user_id' : 'id';
+                $staffUserColumn = Schema::hasColumn('office_staff', 'user_id') ? 's.user_id' : (Schema::hasColumn('office_staff', 'user') ? 's.user' : 's.users_user_id');
+                $summaryRowsQuery->leftJoin('users as u', "u.{$userJoinColumn}", '=', DB::raw($staffUserColumn));
+
+                if (Schema::hasColumn('users', 'status')) {
+                    $summaryRowsQuery->where(function ($q) {
+                        $q->whereNull('u.status')->orWhere('u.status', '!=', 'recycle_bin');
+                    });
+                } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                    $summaryRowsQuery->whereNull('u.deleted_at');
+                }
+            }
+
+            $summaryRows = $summaryRowsQuery->get();
 
             $officeSummaries = $summaryRows->map(function ($r) {
                 $office = DB::table('office')->where('office_id', $r->office_id)->first();
@@ -226,6 +265,83 @@ class OfficeController extends Controller
             $officeSummaries = collect([]);
         }
 
+        // Build recycle bin listing for office users.
+        try {
+            $recycledQuery = DB::table('office_staff as s');
+            $userJoinColumn = Schema::hasColumn('users', 'user_id') ? 'user_id' : 'id';
+            $staffUserColumn = Schema::hasColumn('office_staff', 'user_id') ? 's.user_id' : (Schema::hasColumn('office_staff', 'user') ? 's.user' : 's.users_user_id');
+            $recycledQuery->leftJoin('users as u', "u.{$userJoinColumn}", '=', DB::raw($staffUserColumn));
+
+            $officeJoinColumn = Schema::hasColumn('office', 'office_id') ? 'office_id' : 'id';
+            $staffOfficeColumn = Schema::hasColumn('office_staff', 'office_id') ? 's.office_id' : (Schema::hasColumn('office_staff', 'office') ? 's.office' : null);
+            if ($staffOfficeColumn) {
+                $recycledQuery->leftJoin('office as o', "o.{$officeJoinColumn}", '=', DB::raw($staffOfficeColumn));
+            }
+
+            if (Schema::hasColumn('users', 'status')) {
+                $recycledQuery->where('u.status', 'recycle_bin');
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $recycledQuery->whereNotNull('u.deleted_at');
+            } else {
+                $recycledQuery->whereRaw('1 = 0');
+            }
+
+            $officeNameCandidates = [];
+            if (Schema::hasColumn('office', 'office_name')) {
+                $officeNameCandidates[] = 'o.office_name';
+            }
+            if (Schema::hasColumn('office', 'name')) {
+                $officeNameCandidates[] = 'o.name';
+            }
+            $officeNameExpr = count($officeNameCandidates) > 0
+                ? ('COALESCE(' . implode(', ', $officeNameCandidates) . ", '—')")
+                : "'—'";
+
+            $recycleSelects = [
+                DB::raw("u.{$userJoinColumn} as user_id"),
+                DB::raw("{$officeNameExpr} as office_name"),
+            ];
+
+            if (Schema::hasColumn('users', 'first_name')) {
+                $recycleSelects[] = 'u.first_name';
+            }
+            if (Schema::hasColumn('users', 'last_name')) {
+                $recycleSelects[] = 'u.last_name';
+            }
+            if (Schema::hasColumn('users', 'name')) {
+                $recycleSelects[] = 'u.name';
+            }
+            if (Schema::hasColumn('users', 'email')) {
+                $recycleSelects[] = 'u.email';
+            }
+            if (Schema::hasColumn('office_staff', 'position')) {
+                $recycleSelects[] = 's.position';
+            }
+
+            $recycledRows = $recycledQuery
+                ->select($recycleSelects)
+                ->orderBy('u.email')
+                ->get();
+
+            $recycledOffices = $recycledRows->map(function ($r) {
+                $fullName = trim((($r->first_name ?? '') . ' ' . ($r->last_name ?? '')));
+                if ($fullName === '') {
+                    $fullName = $r->name ?? ($r->email ?? '');
+                }
+
+                return (object) [
+                    'user_id' => $r->user_id,
+                    'name' => $fullName,
+                    'email' => $r->email ?? '',
+                    'office_name' => $r->office_name ?? '—',
+                    'position' => $r->position ?? '—',
+                ];
+            })->values();
+        } catch (\Exception $e) {
+            logger()->debug('Failed to load recycle bin office users: ' . $e->getMessage());
+            $recycledOffices = collect([]);
+        }
+
         return view('admin.user', [
             'section' => 'offices',
             // pass officeOptions for dropdown
@@ -239,6 +355,8 @@ class OfficeController extends Controller
             // totals for header display
             'totalUsers' => $totalUsers,
             'totalOffices' => $totalOffices,
+            // recycle bin data
+            'recycledOffices' => $recycledOffices,
         ]);
     }
 
@@ -391,6 +509,76 @@ class OfficeController extends Controller
             DB::rollBack();
             logger()->error('Failed to update office user: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Failed to update office user: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Move an office user to recycle bin (soft delete style).
+     */
+    public function recycle($id)
+    {
+        DB::beginTransaction();
+        try {
+            $userModel = \App\Models\User::where('user_id', $id)->first();
+            if (! $userModel) {
+                $userModel = \App\Models\User::find($id);
+            }
+
+            if (! $userModel) {
+                return redirect()->back()->withErrors(['error' => 'User not found.']);
+            }
+
+            if (Schema::hasColumn('users', 'status')) {
+                $userModel->status = 'recycle_bin';
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $userModel->deleted_at = now();
+            } else {
+                return redirect()->back()->withErrors(['error' => 'Recycle bin is not supported by current users table schema.']);
+            }
+
+            $userModel->save();
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Office user moved to recycle bin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger()->error('Failed to recycle office user: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to recycle office user: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Restore an office user from recycle bin.
+     */
+    public function restore($id)
+    {
+        DB::beginTransaction();
+        try {
+            $userModel = \App\Models\User::where('user_id', $id)->first();
+            if (! $userModel) {
+                $userModel = \App\Models\User::find($id);
+            }
+
+            if (! $userModel) {
+                return redirect()->back()->withErrors(['error' => 'User not found.']);
+            }
+
+            if (Schema::hasColumn('users', 'status')) {
+                $userModel->status = 'active';
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $userModel->deleted_at = null;
+            } else {
+                return redirect()->back()->withErrors(['error' => 'Recycle bin is not supported by current users table schema.']);
+            }
+
+            $userModel->save();
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Office user restored from recycle bin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger()->error('Failed to restore office user: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Failed to restore office user: ' . $e->getMessage()]);
         }
     }
 }
