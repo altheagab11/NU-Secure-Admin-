@@ -37,6 +37,8 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/user/offices', [OfficeController::class, 'index']);
     Route::post('/user/offices', [OfficeController::class, 'store']);
     Route::put('/user/offices/{id}', [OfficeController::class, 'update']);
+    Route::delete('/user/offices/{id}', [OfficeController::class, 'recycle']);
+    Route::post('/user/offices/{id}/restore', [OfficeController::class, 'restore']);
 });
  
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
