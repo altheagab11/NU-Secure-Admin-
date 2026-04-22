@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class GuardVisitorController extends Controller
 {
@@ -16,7 +17,7 @@ class GuardVisitorController extends Controller
     public function storeVisitorRegistration(Request $request)
     {
         $validated = $request->validate([
-            'register_type' => ['required', 'string'],
+            'register_type' => ['required', 'string', Rule::in(['normal', 'contractor'])],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'house_no' => ['required', 'string', 'max:255'],
@@ -29,29 +30,45 @@ class GuardVisitorController extends Controller
             'pass_number' => ['required', 'string', 'max:255'],
             'control_number' => ['required', 'string', 'max:255'],
             'purpose_reason' => ['required', 'string', 'max:2000'],
-            'office_ids' => ['required', 'array', 'min:1'],
+            'destination_office_text' => ['nullable', 'string', 'max:255'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'office_ids' => ['nullable', 'array'],
             'office_ids.*' => ['integer'],
             'visitor_photo_with_id_url' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        if (strtolower((string) $validated['register_type']) !== 'normal') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only Normal Visitor save flow is enabled right now.',
-            ], 422);
-        }
+        $registerType = strtolower((string) $validated['register_type']);
+        $officeIds = array_values(array_unique(array_map('intval', $validated['office_ids'] ?? [])));
 
-        $officeIds = array_values(array_unique(array_map('intval', $validated['office_ids'])));
-        if (empty($officeIds)) {
+        if ($registerType === 'normal' && empty($officeIds)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please select at least one destination office.',
             ], 422);
         }
 
+        if ($registerType === 'contractor') {
+            $destinationOfficeText = trim((string) ($validated['destination_office_text'] ?? ''));
+            $contactPerson = trim((string) ($validated['contact_person'] ?? ''));
+
+            if ($destinationOfficeText === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please enter Destination Office.',
+                ], 422);
+            }
+
+            if ($contactPerson === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please enter Contact Person.',
+                ], 422);
+            }
+        }
+
         $activeExitStatusId = $this->resolveExitStatusId();
-        $visitorVisitTypeId = $this->resolveVisitTypeId('Visitor');
-        $pendingRouteStatusId = $this->resolveRouteStatusId('PENDING');
+        $visitTypeName = $registerType === 'contractor' ? 'Contractor' : 'Visitor';
+        $visitorVisitTypeId = $this->resolveVisitTypeId($visitTypeName) ?: $this->resolveVisitTypeId('Visitor');
 
         if (! $activeExitStatusId) {
             return response()->json([
@@ -68,8 +85,8 @@ class GuardVisitorController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($validated, $officeIds, $activeExitStatusId, $visitorVisitTypeId, $pendingRouteStatusId) {
-                $matchedVisitor = $this->findVisitorForRegistration($validated);
+            $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $activeExitStatusId, $visitorVisitTypeId) {
+                $matchedVisitor = $this->findVisitorForRegistration($validated, $registerType);
 
                 $addressPayload = [
                     'house_no' => $validated['house_no'],
@@ -122,7 +139,7 @@ class GuardVisitorController extends Controller
                     'guard_user_id' => optional(request()->user())->id,
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
-                    'primary_office_id' => $officeIds[0],
+                    'primary_office_id' => $registerType === 'normal' ? $officeIds[0] : null,
                     'qr_token' => strtoupper(Str::random(12)),
                     'entry_time' => now(),
                     'exit_status_id' => $activeExitStatusId,
@@ -131,7 +148,7 @@ class GuardVisitorController extends Controller
                 $savedOfficeCount = 0;
 
                 // For multi-office visitors, use office_expectation table (not visit_route which is for enrollee steps)
-                if (count($officeIds) > 1) {
+                if ($registerType === 'normal' && count($officeIds) > 1) {
                     $expectationRows = [];
                     foreach ($officeIds as $officeId) {
                         $expectationRows[] = [
@@ -144,12 +161,25 @@ class GuardVisitorController extends Controller
                     $savedOfficeCount = count($expectationRows);
                 }
 
+                if ($registerType === 'contractor') {
+                    DB::table('contractor')->updateOrInsert(
+                        ['visitor_id' => $visitorId],
+                        [
+                            'company_name' => trim((string) ($validated['destination_office_text'] ?? '')) ?: null,
+                            'purpose' => $validated['purpose_reason'],
+                            'contact_person' => trim((string) ($validated['contact_person'] ?? '')),
+                            'status' => 'active',
+                            'created_at' => now(),
+                        ]
+                    );
+                }
+
                 return [
                     'address_id' => $addressId,
                     'visitor_id' => $visitorId,
                     'visitor_action' => $visitorAction,
                     'visit_id' => $visitId,
-                    'primary_office_id' => $officeIds[0],
+                    'primary_office_id' => $registerType === 'normal' ? $officeIds[0] : null,
                     'saved_office_count' => $savedOfficeCount,
                 ];
             });
@@ -206,10 +236,11 @@ class GuardVisitorController extends Controller
     /**
      * Find existing visitor for registration dedup by exact first+last name.
      */
-    protected function findVisitorForRegistration(array $validated): ?object
+    protected function findVisitorForRegistration(array $validated, string $registerType = 'normal'): ?object
     {
         $firstName = trim((string) ($validated['first_name'] ?? ''));
         $lastName = trim((string) ($validated['last_name'] ?? ''));
+        $visitTypeName = $this->resolveVisitTypeNameForRegisterType($registerType);
 
         $baseQuery = static function () {
             return DB::table('visitor')
@@ -224,6 +255,13 @@ class GuardVisitorController extends Controller
         return $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
+            ->whereExists(function ($query) use ($visitTypeName) {
+                $query->select(DB::raw(1))
+                    ->from('visit as vi')
+                    ->join('visit_type as vt', 'vt.visit_type_id', '=', 'vi.visit_type_id')
+                    ->whereColumn('vi.visitor_id', 'visitor.visitor_id')
+                    ->whereRaw('LOWER(vt.visit_type_name) = ?', [strtolower($visitTypeName)]);
+            })
             ->first();
     }
 
@@ -534,7 +572,11 @@ class GuardVisitorController extends Controller
 
             // Map OCR extracted fields to form field names
             $formData = $this->mapOcrDataToFormFields($extracted);
-            $existingVisitor = $this->findExistingVisitorRecord($formData, $extracted);
+            $existingVisitor = $this->findExistingVisitorRecord(
+                $formData,
+                $extracted,
+                (string) $request->input('register_type', 'normal')
+            );
 
             \Log::info('Mapped form data', [
                 'first_name' => $formData['first_name'] ?? '',
@@ -571,10 +613,11 @@ class GuardVisitorController extends Controller
     /**
      * Try to find an existing visitor by exact first+last name.
      */
-    protected function findExistingVisitorRecord(array $formData, array $extracted): array
+    protected function findExistingVisitorRecord(array $formData, array $extracted, string $registerType = 'normal'): array
     {
         $firstName = trim((string) ($formData['first_name'] ?? ''));
         $lastName = trim((string) ($formData['last_name'] ?? ''));
+        $visitTypeName = $this->resolveVisitTypeNameForRegisterType($registerType);
 
         $baseQuery = static function () {
             return DB::table('visitor as v')
@@ -603,6 +646,13 @@ class GuardVisitorController extends Controller
         $record = $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(v.first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(v.last_name, ''))) = ?", [Str::lower($lastName)])
+            ->whereExists(function ($query) use ($visitTypeName) {
+                $query->select(DB::raw(1))
+                    ->from('visit as vi')
+                    ->join('visit_type as vt', 'vt.visit_type_id', '=', 'vi.visit_type_id')
+                    ->whereColumn('vi.visitor_id', 'v.visitor_id')
+                    ->whereRaw('LOWER(vt.visit_type_name) = ?', [strtolower($visitTypeName)]);
+            })
             ->orderByDesc('v.created_at')
             ->orderByDesc('v.visitor_id')
             ->first();
@@ -1192,6 +1242,21 @@ class GuardVisitorController extends Controller
         }
 
         return null;
+    }
+
+    protected function resolveVisitTypeNameForRegisterType(string $registerType): string
+    {
+        $normalized = strtolower(trim($registerType));
+
+        if ($normalized === 'contractor') {
+            return 'Contractor';
+        }
+
+        if ($normalized === 'enrollee') {
+            return 'Enrollee';
+        }
+
+        return 'Visitor';
     }
 
     protected function resolveExitStatusId(): ?int

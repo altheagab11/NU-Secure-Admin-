@@ -1666,6 +1666,13 @@
 							@endif
 						</div>
 
+						@if ($registerType === 'contractor')
+							<div class="visitor-field">
+								<label class="visitor-label" for="contactPerson">Contact Person <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="contactPerson" name="contact_person" type="text" placeholder="Enter contact person" required>
+							</div>
+						@endif
+
 						<div class="visitor-field">
 							<label class="visitor-label" for="visitorIdPassNumber">ID Pass Number <span class="required-mark">*</span></label>
 							<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
@@ -1789,6 +1796,7 @@
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
+		const contactPerson = document.getElementById('contactPerson');
 		const officeListNote = document.getElementById('officeListNote');
 		const visitorFirstName = document.getElementById('visitorFirstName');
 		const visitorLastName = document.getElementById('visitorLastName');
@@ -1875,7 +1883,7 @@
 				flowHead.classList.toggle('is-hidden', isCompleteStep);
 			}
 
-			if (isFormStep && registerType === 'normal') {
+			if (isFormStep && registerType !== 'enrollee') {
 				ensureAutoControlNumber();
 			}
 
@@ -2114,16 +2122,6 @@
 					faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
 					faceIdCapturePreviewUrl = data.public_url || data.path || '';
 
-					if (registerType !== 'normal') {
-						loadingText.textContent = 'Face + ID captured successfully.';
-						setTimeout(() => {
-							loadingOverlay.classList.add('is-hidden');
-							scanAction.disabled = false;
-							cameraStatus.textContent = 'Final capture complete. You may recapture if needed.';
-						}, 1000);
-						return;
-					}
-
 					loadingText.textContent = 'Generating QR ticket...';
 					const qrMeta = createQrMeta();
 
@@ -2218,6 +2216,12 @@
 				pass_number: visitorIdPassNumber?.value.trim() || '',
 				control_number: qrMeta?.control_number || ensureAutoControlNumber(),
 				purpose_reason: visitReason?.value.trim() || '',
+				destination_office_text: registerType === 'contractor'
+					? (destinationOfficeText?.value.trim() || '')
+					: null,
+				contact_person: registerType === 'contractor'
+					? (contactPerson?.value.trim() || '')
+					: null,
 				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
 				qr_payload: qrMeta?.qr_payload || null,
@@ -2481,6 +2485,7 @@
 			const formData = new FormData();
 			formData.append('image', capturedIdData, 'id-scan.jpg');
 			formData.append('id_type', 'auto');
+			formData.append('register_type', registerType || 'normal');
 
 			console.log('✓ FormData prepared with Blob file, size:', capturedIdData.size);
 
@@ -3038,7 +3043,7 @@ ${ticketMarkup}
 
 		if (hasRegisterFlow) {
 			updateStepUI();
-			if (registerType === 'normal') {
+			if (registerType !== 'enrollee') {
 				ensureAutoControlNumber();
 			}
 			if (registerType === 'normal') {
