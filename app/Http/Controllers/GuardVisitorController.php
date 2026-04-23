@@ -17,7 +17,7 @@ class GuardVisitorController extends Controller
     public function storeVisitorRegistration(Request $request)
     {
         $validated = $request->validate([
-            'register_type' => ['required', 'string', Rule::in(['normal', 'contractor'])],
+            'register_type' => ['required', 'string', Rule::in(['normal', 'contractor', 'enrollee'])],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'house_no' => ['required', 'string', 'max:255'],
@@ -42,10 +42,37 @@ class GuardVisitorController extends Controller
         $registerType = strtolower((string) $validated['register_type']);
         $officeIds = array_values(array_unique(array_map('intval', $validated['office_ids'] ?? [])));
 
+        $enrolleeSteps = [];
+
+        if ($registerType === 'enrollee') {
+            $enrolleeSteps = $this->resolveEnrolleeStepAssignments();
+
+            if (empty($officeIds)) {
+                $officeIds = collect($enrolleeSteps)
+                    ->pluck('office_id')
+                    ->filter(fn ($id) => $id !== null && $id !== '')
+                    ->unique()
+                    ->values()
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+        }
+
+        if ($registerType === 'enrollee') {
+            $validated['purpose_reason'] = 'For Enrollment';
+        }
+
         if ($registerType === 'normal' && empty($officeIds)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Please select at least one destination office.',
+            ], 422);
+        }
+
+        if ($registerType === 'enrollee' && empty($officeIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active enrollee destination offices are configured.',
             ], 422);
         }
 
@@ -69,7 +96,7 @@ class GuardVisitorController extends Controller
         }
 
         $activeExitStatusId = $this->resolveExitStatusId();
-        $visitTypeName = $registerType === 'contractor' ? 'Contractor' : 'Visitor';
+        $visitTypeName = $this->resolveVisitTypeNameForRegisterType($registerType);
         $visitorVisitTypeId = $this->resolveVisitTypeId($visitTypeName) ?: $this->resolveVisitTypeId('Visitor');
 
         if (! $activeExitStatusId) {
@@ -87,7 +114,7 @@ class GuardVisitorController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $activeExitStatusId, $visitorVisitTypeId) {
+            $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $enrolleeSteps, $activeExitStatusId, $visitorVisitTypeId) {
                 $matchedVisitor = $this->findVisitorForRegistration($validated);
 
                 $addressPayload = [
@@ -140,7 +167,7 @@ class GuardVisitorController extends Controller
                     'guard_user_id' => optional(request()->user())->id,
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
-                    'primary_office_id' => $registerType === 'normal' ? $officeIds[0] : null,
+                    'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
                     'destination_text' => $registerType === 'contractor'
                         ? trim((string) ($validated['destination_office_text'] ?? ''))
                         : null,
@@ -152,9 +179,43 @@ class GuardVisitorController extends Controller
                 ], 'visit_id');
 
                 $savedOfficeCount = 0;
+                $enrolleeId = null;
+
+                if ($registerType === 'enrollee') {
+                    $pendingEnrolleeStatusId = $this->resolveEnrolleeStatusId('PENDING')
+                        ?? $this->resolveEnrolleeStatusId('ONGOING')
+                        ?? $this->resolveEnrolleeStatusId('COMPLETED')
+                        ?? 1;
+
+                    $enrolleeId = DB::table('enrollee')->insertGetId([
+                        'visitor_id' => $visitorId,
+                        'enrollee_status_id' => $pendingEnrolleeStatusId,
+                        'updated_at' => now(),
+                    ], 'enrollee_id');
+
+                    $pendingStepStatusId = $pendingEnrolleeStatusId;
+                    $stepRows = [];
+                    $resolvedStepAssignments = ! empty($enrolleeSteps)
+                        ? $enrolleeSteps
+                        : $this->resolveEnrolleeStepAssignments();
+
+                    foreach ($resolvedStepAssignments as $stepAssignment) {
+                        $stepRows[] = [
+                            'enrollee_id' => $enrolleeId,
+                            'step_id' => (int) $stepAssignment['step_id'],
+                            'step_status_id' => $pendingStepStatusId,
+                            'completed_at' => null,
+                        ];
+                    }
+
+                    if (! empty($stepRows)) {
+                        DB::table('enrollee_progress')->insert($stepRows);
+                        $savedOfficeCount = count($stepRows);
+                    }
+                }
 
                 // For multi-office visitors, use office_expectation table (not visit_route which is for enrollee steps)
-                if ($registerType === 'normal' && count($officeIds) > 1) {
+                if (in_array($registerType, ['normal', 'enrollee'], true) && count($officeIds) > 1) {
                     $expectationRows = [];
                     foreach ($officeIds as $officeId) {
                         $expectationRows[] = [
@@ -179,9 +240,10 @@ class GuardVisitorController extends Controller
                 return [
                     'address_id' => $addressId,
                     'visitor_id' => $visitorId,
+                    'enrollee_id' => $enrolleeId,
                     'visitor_action' => $visitorAction,
                     'visit_id' => $visitId,
-                    'primary_office_id' => $registerType === 'normal' ? $officeIds[0] : null,
+                    'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
                     'saved_office_count' => $savedOfficeCount,
                 ];
             });
@@ -270,11 +332,36 @@ class GuardVisitorController extends Controller
     public function getOffices()
     {
         try {
-            $offices = DB::table('office')
-                ->select('office_id', 'office_name')
-                ->where('is_active', true)
-                ->orderBy('office_name')
-                ->get();
+            $registerType = strtolower(trim((string) request()->query('register_type', 'normal')));
+
+            if ($registerType === 'enrollee') {
+                $offices = DB::table('enrollee_step as es')
+                    ->join('office as o', 'o.office_id', '=', 'es.office_id')
+                    ->where('es.is_active', true)
+                    ->where('o.is_active', true)
+                    ->select(
+                        'o.office_id',
+                        'o.office_name',
+                        DB::raw('MIN(es.step_order) as first_step_order')
+                    )
+                    ->groupBy('o.office_id', 'o.office_name')
+                    ->orderBy('first_step_order')
+                    ->orderBy('o.office_name')
+                    ->get()
+                    ->map(static function ($row) {
+                        return [
+                            'office_id' => (int) $row->office_id,
+                            'office_name' => (string) $row->office_name,
+                        ];
+                    })
+                    ->values();
+            } else {
+                $offices = DB::table('office')
+                    ->select('office_id', 'office_name')
+                    ->where('is_active', true)
+                    ->orderBy('office_name')
+                    ->get();
+            }
 
             return response()->json([
                 'success' => true,
@@ -1289,5 +1376,59 @@ class GuardVisitorController extends Controller
             ->value('route_status_id');
 
         return $fallback ? (int) $fallback : null;
+    }
+
+    protected function resolveEnrolleeStatusId(string $statusName): ?int
+    {
+        $exact = DB::table('enrollee_status')
+            ->whereRaw('LOWER(status_name) = ?', [strtolower($statusName)])
+            ->value('enrollee_status_id');
+
+        if ($exact) {
+            return (int) $exact;
+        }
+
+        $fallback = DB::table('enrollee_status')
+            ->orderBy('enrollee_status_id')
+            ->value('enrollee_status_id');
+
+        return $fallback ? (int) $fallback : null;
+    }
+
+    protected function resolveEnrolleeOfficeIds(): array
+    {
+        return collect($this->resolveEnrolleeStepAssignments())
+            ->pluck('office_id')
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->unique()
+            ->values()
+            ->map(static fn ($id) => (int) $id)
+            ->all();
+    }
+
+    protected function resolveEnrolleeStepAssignments(): array
+    {
+        return DB::table('enrollee_step as es')
+            ->join('office as o', 'o.office_id', '=', 'es.office_id')
+            ->where('es.is_active', true)
+            ->where('o.is_active', true)
+            ->select(
+                'es.step_id',
+                'es.office_id',
+                'o.office_name',
+                'es.step_order'
+            )
+            ->orderBy('es.step_order')
+            ->orderBy('es.step_id')
+            ->get()
+            ->map(static function ($row) {
+                return [
+                    'step_id' => (int) $row->step_id,
+                    'office_id' => (int) $row->office_id,
+                    'office_name' => (string) $row->office_name,
+                    'step_order' => (int) $row->step_order,
+                ];
+            })
+            ->all();
     }
 }
