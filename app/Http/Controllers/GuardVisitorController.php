@@ -35,6 +35,8 @@ class GuardVisitorController extends Controller
             'office_ids' => ['nullable', 'array'],
             'office_ids.*' => ['integer'],
             'visitor_photo_with_id_url' => ['nullable', 'string', 'max:2000'],
+            'qr_token' => ['nullable', 'string', 'max:255'],
+            'qr_payload' => ['nullable', 'string', 'max:4000'],
         ]);
 
         $registerType = strtolower((string) $validated['register_type']);
@@ -142,7 +144,9 @@ class GuardVisitorController extends Controller
                     'destination_text' => $registerType === 'contractor'
                         ? trim((string) ($validated['destination_office_text'] ?? ''))
                         : null,
-                    'qr_token' => strtoupper(Str::random(12)),
+                    'qr_token' => trim((string) ($validated['qr_token'] ?? '')) !== ''
+                        ? trim((string) $validated['qr_token'])
+                        : strtoupper(Str::random(12)),
                     'entry_time' => now(),
                     'exit_status_id' => $activeExitStatusId,
                 ], 'visit_id');

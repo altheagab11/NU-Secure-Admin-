@@ -2321,11 +2321,27 @@
 			}
 
 			const qrToken = `QR-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+			const firstName = toTitleCase(visitorFirstName?.value);
+			const lastName = toTitleCase(visitorLastName?.value);
+			const visitorName = `${firstName} ${lastName}`.trim();
+			const passNumber = (visitorIdPassNumber?.value || '').trim();
+			const destination = getSelectedDestinationText();
+			const issuedAt = new Date().toISOString();
+
+			const qrPayloadData = {
+				control_number: controlNumber,
+				qr_token: qrToken,
+				visitor_name: visitorName || null,
+				pass_number: passNumber || null,
+				register_type: registerType || 'normal',
+				destination: destination !== '-' ? destination : null,
+				issued_at: issuedAt,
+			};
 
 			return {
 				control_number: controlNumber,
 				qr_token: qrToken,
-				qr_payload: `${controlNumber}|${qrToken}`,
+				qr_payload: JSON.stringify(qrPayloadData),
 			};
 		};
 
@@ -2352,6 +2368,7 @@
 					: null,
 				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
+				qr_token: qrMeta?.qr_token || null,
 				qr_payload: qrMeta?.qr_payload || null,
 			};
 
