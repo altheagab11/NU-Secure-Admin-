@@ -33,6 +33,8 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
  
     Route::get('/user/guards', [GuardController::class, 'index']);
     Route::post('/user/guards', [GuardController::class, 'store']);
+    Route::delete('/user/guards/{id}', [GuardController::class, 'recycle']);
+    Route::post('/user/guards/{id}/restore', [GuardController::class, 'restore']);
  
     Route::get('/user/offices', [OfficeController::class, 'index']);
     Route::post('/user/offices', [OfficeController::class, 'store']);

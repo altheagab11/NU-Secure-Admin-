@@ -4,6 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Visitor Monitoring</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -32,208 +34,255 @@
 		}
 
 		.sidebar {
-			width: 280px;
-			background: var(--sidebar-bg);
-			color: var(--text-white);
-			padding: 12px 10px;
-			display: flex;
-			flex-direction: column;
-			border-right: 1px solid rgba(0, 0, 0, 0.05);
+			width: 260px;
+			min-height: 100vh;
+			background: linear-gradient(180deg, #243c96 0%, #2d3fa3 45%, #3146b4 100%);
+			color: #fff;
+			padding: 18px 14px;
+			box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
 			height: 100vh;
-			overflow: hidden;
-			flex-shrink: 0;
+			overflow-y: auto;
+			z-index: 1000;
 		}
 
-		.brand-row {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			padding: 6px 10px 2px;
-			margin-bottom: 18px;
+		.sidebar::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		.sidebar::-webkit-scrollbar-thumb {
+			background: rgba(255, 255, 255, 0.18);
+			border-radius: 10px;
+		}
+
+		.sidebar-brand {
+			gap: 12px;
+			padding: 10px 10px 18px;
+			margin-bottom: 10px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 		}
 
 		.brand-icon {
-			width: 32px;
-			height: 32px;
-			background: #f6f8ff;
-			border-radius: 6px;
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			background: rgba(255, 255, 255, 0.14);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			color: #273272;
+			font-size: 22px;
 			flex-shrink: 0;
 		}
 
 		.brand-title {
-			margin: 0;
-			font-size: 0;
-			line-height: 1;
+			font-size: 28px;
 			font-weight: 800;
-			letter-spacing: -0.02em;
-			display: flex;
-			gap: 4px;
-			align-items: baseline;
-		}
-
-		.brand-title span:first-child {
-			color: var(--text-yellow);
-			font-size: 24px;
-		}
-
-		.brand-title span:last-child {
-			color: #eef2ff;
-			font-size: 22px;
-			font-weight: 700;
+			color: #ffd84d;
+			line-height: 1;
 		}
 
 		.brand-subtitle {
-			margin: 2px 0 0;
-			color: var(--muted);
+			color: rgba(255, 255, 255, 0.78);
 			font-size: 12px;
-			white-space: nowrap;
-		}
-
-		.menu {
-			display: flex;
-			flex-direction: column;
-			gap: 6px;
-		}
-
-		.menu-item {
 			display: block;
-			text-decoration: none;
-			color: var(--text-white);
-			padding: 9px 12px;
-			border-radius: 6px;
-			font-size: 16px;
-			font-weight: 500;
-			line-height: 1.2;
+			margin-top: 2px;
 		}
 
-		.menu-item .inner {
-			display: flex;
-			align-items: center;
-			gap: 10px;
+		.sidebar-section {
+			margin-top: 18px;
 		}
 
-		.menu-item svg {
-			flex-shrink: 0;
-			width: 22px;
-			height: 22px;
+		.sidebar-label {
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 1px;
+			color: rgba(255, 255, 255, 0.55);
+			margin: 0 0 8px 10px;
+			text-transform: uppercase;
 		}
 
-		.menu-item.active {
-			background: var(--sidebar-bg-light);
-			color: var(--text-yellow);
-		}
-
-		.menu-item:hover {
-			background: rgba(255, 255, 255, 0.08);
-		}
-
-		.menu-group {
-			display: flex;
-			flex-direction: column;
-			gap: 6px;
-		}
-
-		.menu-toggle {
+		.sidebar-link {
 			width: 100%;
-			border: 0;
-			background: transparent;
-			cursor: pointer;
 			display: flex;
 			align-items: center;
+			gap: 12px;
+			color: #fff;
+			text-decoration: none;
+			padding: 12px 14px;
+			border-radius: 12px;
+			margin-bottom: 6px;
+			position: relative;
+			transition: all 0.25s ease;
+			font-weight: 500;
+			border: none;
+			background: transparent;
+		}
+
+		.sidebar-link:hover {
+			background: rgba(255, 255, 255, 0.10);
+			color: #fff;
+			transform: translateX(4px);
+		}
+
+		.sidebar-link.active {
+			background: linear-gradient(90deg, #4f62ff, #6678ff);
+			color: #fff;
+			box-shadow: 0 8px 20px rgba(46, 78, 255, 0.28);
+		}
+
+		.sidebar-link.active::before {
+			content: "";
+			position: absolute;
+			left: -14px;
+			top: 8px;
+			bottom: 8px;
+			width: 4px;
+			border-radius: 10px;
+			background: #ffd84d;
+		}
+
+		.sidebar-icon {
+			width: 20px;
+			text-align: center;
+			font-size: 18px;
+			flex-shrink: 0;
+		}
+
+		.sidebar-text {
+			flex: 1;
+			text-align: left;
+		}
+
+		.sidebar-badge {
+			background: #ff4d4f;
+			color: #fff;
+			font-size: 11px;
+			font-weight: 700;
+			padding: 3px 8px;
+			border-radius: 50px;
+			min-width: 22px;
+			text-align: center;
+		}
+
+		.sidebar-toggle {
 			justify-content: space-between;
+			cursor: pointer;
 		}
 
-		.menu-toggle .caret {
-			width: 16px;
-			height: 16px;
-			transition: transform 0.2s ease;
+		.dropdown-arrow {
+			transition: transform 0.25s ease;
+			font-size: 13px;
 		}
 
-		.menu-group.open .menu-toggle .caret {
+		.sidebar-dropdown.open .dropdown-arrow,
+		.sidebar-toggle[aria-expanded="true"] .dropdown-arrow {
 			transform: rotate(180deg);
 		}
 
 		.submenu {
 			display: none;
-			flex-direction: column;
-			gap: 4px;
-			margin-left: 34px;
+			margin: 6px 0 8px 14px;
+			padding-left: 14px;
+			border-left: 1px solid rgba(255, 255, 255, 0.15);
 		}
 
-		.menu-group.open .submenu {
-			display: flex;
+		.sidebar-dropdown.open .submenu {
+			display: block;
 		}
 
-		.submenu-item {
-			text-decoration: none;
-			color: var(--text-white);
-			font-size: 14px;
-			font-weight: 500;
-			padding: 6px 10px;
-			border-radius: 6px;
-		}
-
-		.submenu-item:hover {
-			background: rgba(255, 255, 255, 0.08);
-		}
-
-		.spacer {
-			flex: 1;
-		}
-
-		.bottom {
-			border-top: 2px solid var(--line);
-			margin: 0 -10px;
-			padding: 14px 10px 14px;
-		}
-
-		.admin-row {
+		.submenu-link {
 			display: flex;
 			align-items: center;
-			justify-content: center;
-			gap: 8px;
-			font-size: 16px;
-			font-weight: 500;
+			gap: 10px;
+			color: rgba(255, 255, 255, 0.88);
+			text-decoration: none;
+			padding: 10px 12px;
+			border-radius: 10px;
+			margin-bottom: 5px;
+			font-size: 14px;
+			transition: all 0.2s ease;
+		}
+
+		.submenu-link:hover {
+			background: rgba(255, 255, 255, 0.10);
+			color: #fff;
+			transform: translateX(3px);
+		}
+
+		.submenu-link.active {
+			background: rgba(255, 255, 255, 0.16);
+			color: #ffd84d;
+			font-weight: 600;
+		}
+
+		.sidebar-footer {
+			padding-top: 16px;
+			margin-top: 20px;
+			border-top: 1px solid rgba(255, 255, 255, 0.12);
+		}
+
+		.admin-card {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			background: rgba(255, 255, 255, 0.08);
+			border-radius: 14px;
+			padding: 12px;
 			margin-bottom: 12px;
 		}
 
-		.admin-row svg {
-			width: 20px;
-			height: 20px;
+		.admin-avatar {
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.15);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
+			flex-shrink: 0;
 		}
 
-		.logout-wrap {
-			display: flex;
-			justify-content: center;
+		.admin-info h6 {
+			font-size: 15px;
+			font-weight: 700;
+			color: #fff;
+		}
+
+		.admin-info small {
+			color: rgba(255, 255, 255, 0.72);
 		}
 
 		.logout-btn {
-			border: 0;
-			background: #ecedf2;
-			color: #ff0000;
-			font-weight: 700;
-			font-size: 17px;
-			border-radius: 14px;
-			padding: 8px 18px;
-			display: inline-flex;
+			width: 100%;
+			display: flex;
 			align-items: center;
+			justify-content: center;
 			gap: 8px;
-			cursor: pointer;
+			background: #fff;
+			color: #ff3b30;
+			text-decoration: none;
+			padding: 11px 14px;
+			border-radius: 12px;
+			font-weight: 700;
+			transition: all 0.25s ease;
 		}
 
-		.logout-btn svg {
-			width: 18px;
-			height: 18px;
+		.logout-btn:hover {
+			background: #ffe9e9;
+			color: #ff3b30;
+			transform: translateY(-1px);
 		}
 
 		.main {
 			flex: 1;
 			background: #f7f8ff;
 			padding: 24px 32px;
+			margin-left: 260px;
+			min-height: 100vh;
 			height: 100vh;
 			overflow-y: auto;
 		}
@@ -984,17 +1033,13 @@
 				grid-template-columns: 1fr;
 			}
 
-			.menu-item,
-			.admin-row,
+			.sidebar-link,
+			.admin-info h6,
 			.logout-btn {
 				font-size: 16px;
 			}
 
-			.brand-title span:first-child {
-				font-size: 22px;
-			}
-
-			.brand-title span:last-child {
+			.brand-title {
 				font-size: 20px;
 			}
 		}
@@ -1002,92 +1047,96 @@
 </head>
 <body>
 	<div class="layout">
-		<aside class="sidebar">
-			<div class="brand-row">
-				<div class="brand-icon" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-					</svg>
+		<aside class="sidebar d-flex flex-column justify-content-between">
+			<div>
+				<div class="sidebar-brand d-flex align-items-center">
+					<div class="brand-icon">
+						<i class="bi bi-person-badge-fill"></i>
+					</div>
+					<div>
+						<h4 class="brand-title mb-0">SVMS Admin</h4>
+						<small class="brand-subtitle">Smart Visitor Monitoring System</small>
+					</div>
 				</div>
-				<div>
-					<p class="brand-title"><span>SVMS</span><span>Admin</span></p>
-					<p class="brand-subtitle">Smart Visitor Monitoring System</p>
+
+				<div class="sidebar-section">
+					<p class="sidebar-label">MAIN</p>
+					<a href="/admin/dashboard" class="sidebar-link {{ request()->is('admin/dashboard') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+						<span class="sidebar-text">Dashboard</span>
+					</a>
+				</div>
+
+				<div class="sidebar-section">
+					<p class="sidebar-label">MONITORING</p>
+					<a href="/admin/visitor" class="sidebar-link {{ request()->is('admin/visitor*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-people-fill"></i></span>
+						<span class="sidebar-text">Visitor Monitoring</span>
+					</a>
+					<a href="/admin/alerts" class="sidebar-link {{ request()->is('admin/alerts*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+						<span class="sidebar-text">Alerts</span>
+						<span class="sidebar-badge">5</span>
+					</a>
+				</div>
+
+				@php
+					$isUserMgmtOpen = request()->is('admin/user/guards*') || request()->is('admin/user/offices*');
+				@endphp
+				<div class="sidebar-section">
+					<p class="sidebar-label">MANAGEMENT</p>
+					<div class="sidebar-dropdown {{ $isUserMgmtOpen ? 'open' : '' }}" id="userMenuGroup">
+						<button class="sidebar-link sidebar-toggle {{ $isUserMgmtOpen ? 'active' : '' }}"
+							type="button"
+							id="userMenuToggle"
+							aria-expanded="{{ $isUserMgmtOpen ? 'true' : 'false' }}">
+							<span class="d-flex align-items-center gap-2">
+								<span class="sidebar-icon"><i class="bi bi-person-lines-fill"></i></span>
+								<span class="sidebar-text">User Management</span>
+							</span>
+							<span class="dropdown-arrow"><i class="bi bi-chevron-down"></i></span>
+						</button>
+						<div class="submenu" id="userSubmenu">
+							<a href="/admin/user/guards" class="submenu-link {{ request()->is('admin/user/guards*') ? 'active' : '' }}">
+								<i class="bi bi-shield-fill-check"></i>
+								<span>Guards</span>
+							</a>
+							<a href="/admin/user/offices" class="submenu-link {{ request()->is('admin/user/offices*') ? 'active' : '' }}">
+								<i class="bi bi-building"></i>
+								<span>Offices</span>
+							</a>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			<nav class="menu" aria-label="Sidebar Navigation">
-				<a href="/admin/dashboard" class="menu-item">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-						</svg>
-						Dashboard
-					</span>
-				</a>
-
-				<a href="/admin/visitor" class="menu-item active">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-						</svg>
-						Visitor Monitoring
-					</span>
-				</a>
-
-				<a href="/admin/alerts" class="menu-item">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="m12 3 10 18H2L12 3Zm0 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							<circle cx="12" cy="17" r="1.2" fill="currentColor"/>
-						</svg>
-						Alerts
-					</span>
-				</a>
-
-				<div class="menu-group" id="userMenuGroup">
-					<button type="button" class="menu-item menu-toggle" id="userMenuToggle" aria-expanded="false" aria-controls="userSubmenu">
-						<span class="inner">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							</svg>
-							User Management
-						</span>
-						<svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-							<path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</button>
-					<div class="submenu" id="userSubmenu">
-						<a href="/admin/user/guards" class="submenu-item">Guards</a>
-						<a href="/admin/user/offices" class="submenu-item">Offices</a>
+			<div class="sidebar-footer">
+				<div class="admin-card">
+					<div class="admin-avatar">
+						<i class="bi bi-person-circle"></i>
+					</div>
+					@php
+						$sidebarAuthUser = auth()->user();
+						$sidebarDisplayName = trim(((string) ($sidebarAuthUser->first_name ?? '')).' '.((string) ($sidebarAuthUser->last_name ?? '')));
+						$sidebarDisplayName = $sidebarDisplayName !== ''
+							? $sidebarDisplayName
+							: ((string) ($sidebarAuthUser->name ?? $sidebarAuthUser->email ?? 'User'));
+						$sidebarRoleLabel = ((int) ($sidebarAuthUser->role_id ?? 0) === 4) ? 'Guard' : 'System Administrator';
+					@endphp
+					<div class="admin-info">
+						<h6 class="mb-0">{{ $sidebarDisplayName }}</h6>
+						<small>{{ $sidebarRoleLabel }}</small>
 					</div>
 				</div>
-			</nav>
 
-			<div class="spacer" aria-hidden="true"></div>
+				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+					<i class="bi bi-box-arrow-right"></i>
+					<span>Logout</span>
+				</a>
 
-			<div class="bottom">
-				<div class="admin-row">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-					</svg>
-					<span>Admin Reyes</span>
-				</div>
-
-				<div class="logout-wrap">
-					<form method="POST" action="{{ route('logout') }}">
-						@csrf
-						<button type="submit" class="logout-btn">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M15 7 20 12 15 17M20 12H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M11 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-						</svg>
-						Logout
-						</button>
-					</form>
-				</div>
+				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+					@csrf
+				</form>
 			</div>
 		</aside>
 

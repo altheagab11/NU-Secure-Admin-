@@ -19,8 +19,20 @@ class GuardController extends Controller
      */
     public function index()
     {
-        // load guard rows with related user accounts, 10 per page
-        $guards = Guard::with('user')
+        // load active (non-recycled) guard rows with related user accounts, 10 per page
+        $guardsQuery = Guard::with('user');
+
+        if (Schema::hasColumn('users', 'status')) {
+            $guardsQuery->whereHas('user', function ($q) {
+                $q->whereRaw("LOWER(COALESCE(status, '')) != ?", ['recycle_bin']);
+            });
+        } elseif (Schema::hasColumn('users', 'deleted_at')) {
+            $guardsQuery->whereHas('user', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+        }
+
+        $guards = $guardsQuery
             ->orderByDesc('guard_id')
             ->paginate(10)
             ->withQueryString()
@@ -42,6 +54,8 @@ class GuardController extends Controller
                 }
 
                 return (object) [
+                    'user_id' => $user->user_id ?? $user->id ?? null,
+                    'guard_id' => $g->guard_id ?? null,
                     'name' => $name,
                     'email' => $user->email ?? '',
                     'badge_number' => $g->badge_number ?? $g->badge ?? null,
@@ -49,7 +63,57 @@ class GuardController extends Controller
                 ];
             });
 
-        return view('admin.user', ['section' => 'guards', 'guards' => $guards]);
+        // Build recycle bin list for guard accounts
+        $recycledGuards = collect([]);
+        try {
+            $recycledQuery = Guard::with('user')->orderByDesc('guard_id');
+
+            if (Schema::hasColumn('users', 'status')) {
+                $recycledQuery->whereHas('user', function ($q) {
+                    $q->whereRaw("LOWER(COALESCE(status, '')) = ?", ['recycle_bin']);
+                });
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $recycledQuery->whereHas('user', function ($q) {
+                    $q->whereNotNull('deleted_at');
+                });
+            } else {
+                $recycledQuery->whereRaw('1 = 0');
+            }
+
+            $recycledGuards = $recycledQuery->get()->map(function ($g) {
+                $user = $g->user;
+
+                $name = '';
+                if ($user) {
+                    $first = $user->first_name ?? null;
+                    $last = $user->last_name ?? null;
+                    if ($first || $last) {
+                        $name = trim(($first ?: '') . ' ' . ($last ?: ''));
+                    } elseif (! empty($user->name)) {
+                        $name = $user->name;
+                    } else {
+                        $name = $user->email ?? '';
+                    }
+                }
+
+                return (object) [
+                    'user_id' => $user->user_id ?? $user->id ?? null,
+                    'name' => $name,
+                    'email' => $user->email ?? '—',
+                    'badge_number' => $g->badge_number ?? $g->badge ?? '—',
+                    'station' => $g->station ?? '—',
+                ];
+            })->values();
+        } catch (\Exception $e) {
+            logger()->debug('Failed to load recycled guards: ' . $e->getMessage());
+            $recycledGuards = collect([]);
+        }
+
+        return view('admin.user', [
+            'section' => 'guards',
+            'guards' => $guards,
+            'recycledGuards' => $recycledGuards,
+        ]);
     }
     /**
      * Store a newly created guard (and user) in storage.
@@ -161,6 +225,80 @@ class GuardController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'Failed to create guard: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Move a guard account to recycle bin.
+     */
+    public function recycle($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = User::where('user_id', $id)->first();
+            if (! $user) {
+                $user = User::find($id);
+            }
+
+            if (! $user) {
+                DB::rollBack();
+                return redirect()->back()->withErrors(['error' => 'Guard user not found.']);
+            }
+
+            if (Schema::hasColumn('users', 'status')) {
+                $user->status = 'recycle_bin';
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $user->deleted_at = now();
+            } else {
+                DB::rollBack();
+                return redirect()->back()->withErrors(['error' => 'Recycle bin is not supported by current users table schema.']);
+            }
+
+            $user->save();
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Guard account moved to recycle bin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Failed to recycle guard account: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Restore a guard account from recycle bin.
+     */
+    public function restore($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $user = User::where('user_id', $id)->first();
+            if (! $user) {
+                $user = User::find($id);
+            }
+
+            if (! $user) {
+                DB::rollBack();
+                return redirect()->back()->withErrors(['error' => 'Guard user not found.']);
+            }
+
+            if (Schema::hasColumn('users', 'status')) {
+                $user->status = 'Active';
+            } elseif (Schema::hasColumn('users', 'deleted_at')) {
+                $user->deleted_at = null;
+            } else {
+                DB::rollBack();
+                return redirect()->back()->withErrors(['error' => 'Recycle bin is not supported by current users table schema.']);
+            }
+
+            $user->save();
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Guard account restored from recycle bin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withErrors(['error' => 'Failed to restore guard account: ' . $e->getMessage()]);
         }
     }
 }
