@@ -1606,10 +1606,62 @@
 					</div>
 
 					@if ($registerType === 'enrollee')
-						<section class="type-placeholder visitor-step is-hidden" id="enrolleeStepPanel" aria-label="Enrollee registration">
-							<h2>Enrollee</h2>
-							<p>Enrollee registration form content can be placed here.</p>
-						</section>
+						<div class="visitor-step is-hidden" id="enrolleeStepPanel">
+							<div class="visitor-card">
+								<span class="visitor-card-title">Enrollee Details</span>
+								<div class="visitor-details-grid">
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorFirstName">First Name <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorLastName">Last Name <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no." required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorStreet">Street <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorBarangay">Barangay <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorCity">City / Municipality <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorProvince">Province <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province" required>
+									</div>
+									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorRegion">Region <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" required>
+									</div>
+								</div>
+							</div>
+
+							<div class="visitor-field">
+								<label class="visitor-label" for="visitorPhoneNumber">Phone Number <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="visitorPhoneNumber" name="phone_number" type="tel" placeholder="09XXXXXXXXX" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
+							</div>
+
+							<div class="visitor-field">
+								<label class="visitor-label" for="visitorIdPassNumber">ID Pass Number <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
+							</div>
+
+							<div class="visitor-field">
+								<label class="visitor-label" for="visitorControlNumber">Control Number <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="visitorControlNumber" name="control_number" type="text" placeholder="" required>
+							</div>
+
+							<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
+						</div>
 					@else
 					<div class="visitor-step is-hidden" id="visitorStepPanel">
 						<div class="visitor-card">
@@ -1883,7 +1935,7 @@
 				flowHead.classList.toggle('is-hidden', isCompleteStep);
 			}
 
-			if (isFormStep && registerType !== 'enrollee') {
+			if (isFormStep) {
 				ensureAutoControlNumber();
 			}
 
@@ -2774,7 +2826,8 @@ ${ticketMarkup}
 
 			ensureAutoControlNumber();
 
-			const requiredFields = Array.from(visitorStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
+			const activeStepPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;
+			const requiredFields = Array.from(activeStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
 
 			for (const field of requiredFields) {
 				if (!field.value.trim()) {
@@ -2797,7 +2850,7 @@ ${ticketMarkup}
 					alert('Please enter Destination Office.');
 					return;
 				}
-			} else if (!selectedOfficeIds.length) {
+			} else if (registerType === 'normal' && !selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				alert('Please select at least one Destination Office.');
 				return;
@@ -2952,8 +3005,9 @@ ${ticketMarkup}
 			existingVisitorConfirmed = false;
 			selectedOfficeIds = [];
 
-			if (visitorStepPanel) {
-				const fields = visitorStepPanel.querySelectorAll('input, textarea');
+			const resetPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;
+			if (resetPanel) {
+				const fields = resetPanel.querySelectorAll('input, textarea');
 				fields.forEach((field) => {
 					if (field.type === 'checkbox' || field.type === 'radio') {
 						field.checked = false;
@@ -3074,10 +3128,8 @@ ${ticketMarkup}
 
 		if (hasRegisterFlow) {
 			updateStepUI();
-			if (registerType !== 'enrollee') {
-				ensureAutoControlNumber();
-			}
-			if (registerType === 'normal') {
+			ensureAutoControlNumber();
+			if (registerType !== 'contractor') {
 				fetchOffices();
 			}
 			startCamera();
