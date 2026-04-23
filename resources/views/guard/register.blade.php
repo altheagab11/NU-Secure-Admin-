@@ -1955,6 +1955,7 @@
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
 		let existingVisitorModalResolver = null;
+		let autoEnrolleeOfficeNames = [];
 
 		const formatVisitorAddress = (visitor) => {
 			if (!visitor) {
@@ -2028,6 +2029,10 @@
 				return (destinationOfficeText?.value || '').trim() || '-';
 			}
 
+			if (registerType === 'enrollee') {
+				return autoEnrolleeOfficeNames.length ? autoEnrolleeOfficeNames.join(', ') : '-';
+			}
+
 			const labels = Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
 				const text = cb?.parentElement?.textContent || '';
 				return text.trim();
@@ -2066,6 +2071,14 @@
 			return visitorControlNumber.value.trim();
 		};
 
+		const getPurposeReasonValue = () => {
+			if (registerType === 'enrollee') {
+				return 'For Enrollment';
+			}
+
+			return (visitReason?.value || '').trim();
+		};
+
 		const renderQrTicket = (qrMeta) => {
 			if (!qrMeta || !qrCodeContainer || typeof QRCode === 'undefined') {
 				return false;
@@ -2084,7 +2097,7 @@
 			ticketControlNumber.textContent = qrMeta.control_number || '-';
 			ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
 			ticketPassNumber.textContent = (visitorIdPassNumber?.value || '').trim() || '-';
-			ticketPurpose.textContent = (visitReason?.value || '').trim() || '-';
+			ticketPurpose.textContent = getPurposeReasonValue() || '-';
 			ticketDestination.textContent = getSelectedDestinationText();
 
 			if (ticketPhoto && faceIdCapturePreviewUrl) {
@@ -2334,6 +2347,7 @@
 				visitor_name: visitorName || null,
 				pass_number: passNumber || null,
 				register_type: registerType || 'normal',
+				purpose_reason: getPurposeReasonValue() || null,
 				destination: destination !== '-' ? destination : null,
 				issued_at: issuedAt,
 			};
@@ -2359,7 +2373,7 @@
 				contact_no: visitorPhoneNumber?.value.trim() || '',
 				pass_number: visitorIdPassNumber?.value.trim() || '',
 				control_number: qrMeta?.control_number || ensureAutoControlNumber(),
-				purpose_reason: visitReason?.value.trim() || '',
+				purpose_reason: getPurposeReasonValue(),
 				destination_office_text: registerType === 'contractor'
 					? (destinationOfficeText?.value.trim() || '')
 					: null,
@@ -2943,9 +2957,11 @@ ${ticketMarkup}
 					alert('Please enter Destination Office.');
 					return;
 				}
-			} else if (registerType === 'normal' && !selectedOfficeIds.length) {
+			} else if ((registerType === 'normal' || registerType === 'enrollee') && !selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				alert('Please select at least one Destination Office.');
+				alert(registerType === 'enrollee'
+					? 'No enrollee destination offices are available. Please check enrollee steps setup.'
+					: 'Please select at least one Destination Office.');
 				return;
 			}
 
@@ -3025,13 +3041,30 @@ ${ticketMarkup}
 		});
 
 		const renderOfficeList = (offices) => {
+			autoEnrolleeOfficeNames = [];
+
+			const normalizedOffices = Array.isArray(offices)
+				? offices
+					.map((office) => ({
+						office_id: Number(office?.office_id),
+						office_name: String(office?.office_name || '').trim(),
+					}))
+					.filter((office) => Number.isInteger(office.office_id) && office.office_id > 0 && office.office_name)
+				: [];
+
+			if (registerType === 'enrollee') {
+				selectedOfficeIds = normalizedOffices.map((office) => String(office.office_id));
+				autoEnrolleeOfficeNames = normalizedOffices.map((office) => office.office_name);
+				return;
+			}
+
 			if (!destinationOffice) {
 				return;
 			}
 
 			destinationOffice.innerHTML = '';
 
-			if (!Array.isArray(offices) || offices.length === 0) {
+			if (!normalizedOffices.length) {
 				const emptyState = document.createElement('p');
 				emptyState.className = 'office-list-note';
 				emptyState.textContent = 'No active offices found.';
@@ -3039,7 +3072,7 @@ ${ticketMarkup}
 				return;
 			}
 
-			offices.forEach((office) => {
+			normalizedOffices.forEach((office) => {
 				const label = document.createElement('label');
 				label.className = 'office-option';
 
@@ -3065,7 +3098,7 @@ ${ticketMarkup}
 			}
 
 			try {
-				const response = await fetch('/guard/offices');
+				const response = await fetch(`/guard/offices?register_type=${encodeURIComponent(registerType || 'normal')}`);
 				const data = await response.json();
 
 				if (!response.ok || !data.success) {
@@ -3074,6 +3107,9 @@ ${ticketMarkup}
 
 				renderOfficeList(data.offices || []);
 			} catch (error) {
+				selectedOfficeIds = [];
+				autoEnrolleeOfficeNames = [];
+
 				if (destinationOffice) {
 					destinationOffice.innerHTML = '';
 					const errorState = document.createElement('p');
@@ -3097,6 +3133,7 @@ ${ticketMarkup}
 			existingVisitorMatch = null;
 			existingVisitorConfirmed = false;
 			selectedOfficeIds = [];
+			autoEnrolleeOfficeNames = [];
 
 			const resetPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;
 			if (resetPanel) {
