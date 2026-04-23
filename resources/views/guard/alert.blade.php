@@ -4,6 +4,8 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Active Alerts</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -236,11 +238,289 @@
 			height: 18px;
 		}
 
+		/* Register page sidebar parity */
+		.layout {
+			display: flex;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		.sidebar {
+			width: 260px;
+			min-height: 100vh;
+			background: linear-gradient(180deg, #243c96 0%, #2d3fa3 45%, #3146b4 100%);
+			color: #fff;
+			padding: 18px 14px;
+			box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+			position: fixed;
+			top: 0;
+			left: 0;
+			overflow-y: auto;
+			overflow-x: hidden;
+			z-index: 1000;
+		}
+
+		.sidebar::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		.sidebar::-webkit-scrollbar-thumb {
+			background: rgba(255,255,255,0.18);
+			border-radius: 10px;
+		}
+
+		.menu {
+			display: block;
+		}
+
+		.sidebar-brand {
+			gap: 12px;
+			padding: 10px 10px 18px;
+			margin-bottom: 10px;
+			border-bottom: 1px solid rgba(255,255,255,0.12);
+		}
+
+		.brand-icon {
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			background: rgba(255,255,255,0.14);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
+			flex-shrink: 0;
+			color: inherit;
+		}
+
+		.brand-title {
+			font-size: 28px;
+			font-weight: 800;
+			color: #ffd84d;
+			line-height: 1;
+			display: block;
+			gap: 0;
+			letter-spacing: 0;
+		}
+
+		.brand-subtitle {
+			color: rgba(255,255,255,0.78);
+			font-size: 12px;
+			display: block;
+			margin-top: 2px;
+			white-space: normal;
+		}
+
+		.sidebar-section {
+			margin-top: 18px;
+		}
+
+		.sidebar-label {
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 1px;
+			color: rgba(255,255,255,0.55);
+			margin: 0 0 8px 10px;
+			text-transform: uppercase;
+		}
+
+		.sidebar-link {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			color: #fff;
+			text-decoration: none;
+			padding: 12px 14px;
+			border-radius: 12px;
+			margin-bottom: 6px;
+			position: relative;
+			transition: all 0.25s ease;
+			font-weight: 500;
+			border: none;
+			background: transparent;
+		}
+
+		.sidebar-link:hover {
+			background: rgba(255,255,255,0.10);
+			color: #fff;
+			transform: translateX(4px);
+		}
+
+		.sidebar-link.active {
+			background: linear-gradient(90deg, #4f62ff, #6678ff);
+			color: #fff;
+			box-shadow: 0 8px 20px rgba(46, 78, 255, 0.28);
+		}
+
+		.sidebar-link.active::before {
+			content: "";
+			position: absolute;
+			left: -14px;
+			top: 8px;
+			bottom: 8px;
+			width: 4px;
+			border-radius: 10px;
+			background: #ffd84d;
+		}
+
+		.sidebar-icon {
+			width: 20px;
+			text-align: center;
+			font-size: 18px;
+			flex-shrink: 0;
+		}
+
+		.sidebar-text {
+			flex: 1;
+			text-align: left;
+		}
+
+		.sidebar-badge {
+			background: #ff4d4f;
+			color: #fff;
+			font-size: 11px;
+			font-weight: 700;
+			padding: 3px 8px;
+			border-radius: 50px;
+			min-width: 22px;
+			text-align: center;
+		}
+
+		.sidebar-toggle {
+			justify-content: space-between;
+		}
+
+		.dropdown-arrow {
+			transition: transform 0.25s ease;
+			font-size: 13px;
+		}
+
+		.sidebar-toggle[aria-expanded="true"] .dropdown-arrow {
+			transform: rotate(180deg);
+		}
+
+		.collapse .submenu {
+			margin: 6px 0 8px 14px;
+			padding-left: 14px;
+			border-left: 1px solid rgba(255,255,255,0.15);
+			display: grid;
+			gap: 5px;
+		}
+
+		.submenu-link {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			color: rgba(255,255,255,0.88);
+			text-decoration: none;
+			padding: 10px 12px;
+			border-radius: 10px;
+			margin-bottom: 0;
+			font-size: 14px;
+			transition: all 0.2s ease;
+		}
+
+		.submenu-link:hover {
+			background: rgba(255,255,255,0.10);
+			color: #fff;
+			transform: translateX(3px);
+		}
+
+		.submenu-link.active {
+			background: rgba(255,255,255,0.16);
+			color: #ffd84d;
+			font-weight: 600;
+		}
+
+		.quick-action-btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 10px;
+			width: 100%;
+			text-decoration: none;
+			background: #ffd84d;
+			color: #243c96;
+			font-weight: 700;
+			border-radius: 12px;
+			padding: 12px 14px;
+			margin-top: 6px;
+			transition: all 0.25s ease;
+		}
+
+		.quick-action-btn:hover {
+			background: #ffcf1f;
+			color: #243c96;
+			transform: translateY(-2px);
+			box-shadow: 0 10px 18px rgba(255, 216, 77, 0.25);
+		}
+
+		.sidebar-footer {
+			padding-top: 16px;
+			margin-top: 20px;
+			border-top: 1px solid rgba(255,255,255,0.12);
+		}
+
+		.admin-card {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			background: rgba(255,255,255,0.08);
+			border-radius: 14px;
+			padding: 12px;
+			margin-bottom: 12px;
+		}
+
+		.admin-avatar {
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: rgba(255,255,255,0.15);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
+			flex-shrink: 0;
+		}
+
+		.admin-info h6 {
+			font-size: 15px;
+			font-weight: 700;
+			color: #fff;
+		}
+
+		.admin-info small {
+			color: rgba(255,255,255,0.72);
+		}
+
+		.logout-btn {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			background: #fff;
+			color: #ff3b30;
+			text-decoration: none;
+			padding: 11px 14px;
+			border-radius: 12px;
+			font-weight: 700;
+			transition: all 0.25s ease;
+		}
+
+		.logout-btn:hover {
+			background: #ffe9e9;
+			color: #ff3b30;
+			transform: translateY(-1px);
+		}
+
 		.main {
 			flex: 1;
 			background: #f7f8ff;
 			padding: 24px 32px;
 			overflow-y: auto;
+			margin-left: 260px;
 		}
 
 		.page-title {
@@ -415,10 +695,12 @@
 			.sidebar {
 				width: 100%;
 				min-height: 100vh;
+				position: relative;
 			}
 
 			.main {
-				display: none;
+				display: block;
+				margin-left: 0;
 			}
 		}
 
@@ -428,9 +710,13 @@
 				max-width: none;
 			}
 
+			.main {
+				padding: 20px;
+			}
+
 			.completed-item {
+				align-items: flex-start;
 				flex-direction: column;
-				align-items: stretch;
 			}
 
 			.item-tag {
@@ -439,18 +725,14 @@
 		}
 
 		@media (max-width: 480px) {
-			.menu-item,
-			.admin-row,
+			.sidebar-link,
+			.submenu-link,
 			.logout-btn {
 				font-size: 16px;
 			}
 
-			.brand-title span:first-child {
+			.brand-title {
 				font-size: 22px;
-			}
-
-			.brand-title span:last-child {
-				font-size: 20px;
 			}
 
 			.main {
@@ -465,95 +747,123 @@
 </head>
 <body>
 	<div class="layout">
-		<aside class="sidebar">
-			<div class="brand-row">
-				<div class="brand-icon" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-					</svg>
-				</div>
-				<div>
-					<p class="brand-title"><span>SVMS</span><span>Guard</span></p>
-					<p class="brand-subtitle">Smart Visitor Monitoring System</p>
-				</div>
-			</div>
+		@php
+			$guardSidebarUser = auth()->user();
+			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
+			$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
+			$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
+		@endphp
 
-			<nav class="menu" aria-label="Sidebar Navigation">
-				<a href="/guard/dashboard" class="menu-item">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-							<rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-						</svg>
-						Dashboard
-					</span>
-				</a>
-
-				<div class="menu-group" id="registerMenuGroup">
-					<button type="button" class="menu-item menu-toggle" id="registerMenuToggle" aria-expanded="false" aria-controls="registerSubmenu">
-						<span class="inner">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-								<path d="M5 5h5M7.5 2.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							</svg>
-							Register
-						</span>
-						<svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-							<path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</button>
-					<div class="submenu" id="registerSubmenu">
-						<a href="/guard/register?type=normal" class="submenu-item">Normal Visitor</a>
-						<a href="/guard/register?type=enrollee" class="submenu-item">Enrollee</a>
-						<a href="/guard/register?type=contractor" class="submenu-item">Contractor</a>
+		<aside class="sidebar d-flex flex-column justify-content-between">
+			<div>
+				<div class="sidebar-brand d-flex align-items-center">
+					<div class="brand-icon">
+						<i class="bi bi-shield-lock-fill"></i>
+					</div>
+					<div>
+						<h4 class="brand-title mb-0">SVMS Guard</h4>
+						<small class="brand-subtitle">Smart Visitor Monitoring System</small>
 					</div>
 				</div>
 
-				<a href="/guard/exit" class="menu-item">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 4h3v3M17 4h3v3M4 17h3v3M17 17h3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M9 8h2v2H9zM13 8h2v2h-2zM9 12h2v2H9zM13 12h2v2h-2z" fill="currentColor"/>
-						</svg>
-						Exit Scan
-					</span>
-				</a>
+				<nav class="menu" aria-label="Sidebar Navigation">
+					@if (! $isSelfRegisteredRole)
+						<div class="sidebar-section">
+							<p class="sidebar-label">MAIN</p>
+							<a href="/guard/dashboard" class="sidebar-link {{ request()->is('guard/dashboard') ? 'active' : '' }}">
+								<span class="sidebar-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+								<span class="sidebar-text">Dashboard</span>
+							</a>
+						</div>
+					@endif
 
-				<a href="/guard/alert" class="menu-item active">
-					<span class="inner">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M15 17H5.8a1 1 0 0 1-.8-1.6L7 12.7V10a5 5 0 1 1 10 0v2.7l2 2.7a1 1 0 0 1-.8 1.6H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						</svg>
-						Active Alerts
-					</span>
-				</a>
-			</nav>
+					<div class="sidebar-section">
+						<p class="sidebar-label">VISITOR ACTIONS</p>
 
-			<div class="spacer" aria-hidden="true"></div>
+						<div class="sidebar-dropdown">
+							<button class="sidebar-link sidebar-toggle {{ request()->is('guard/register*') ? 'active open' : '' }}"
+								type="button"
+								data-bs-toggle="collapse"
+								data-bs-target="#registerMenu"
+								aria-expanded="{{ request()->is('guard/register*') ? 'true' : 'false' }}">
+								<span class="d-flex align-items-center gap-2">
+									<span class="sidebar-icon"><i class="bi bi-person-plus-fill"></i></span>
+									<span class="sidebar-text">Register</span>
+								</span>
+								<span class="dropdown-arrow"><i class="bi bi-chevron-down"></i></span>
+							</button>
 
-			<div class="bottom">
-				<div class="admin-row">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-					</svg>
-					<span>Officer Martinez</span>
+							<div class="collapse {{ request()->is('guard/register*') ? 'show' : '' }}" id="registerMenu">
+								<div class="submenu">
+									<a href="/guard/register?type=normal" class="submenu-link {{ request('type', 'normal') === 'normal' ? 'active' : '' }}">
+										<i class="bi bi-person"></i>
+										<span>Normal Visitor</span>
+									</a>
+
+									<a href="/guard/register?type=enrollee" class="submenu-link {{ request('type') === 'enrollee' ? 'active' : '' }}">
+										<i class="bi bi-mortarboard-fill"></i>
+										<span>Enrollee</span>
+									</a>
+
+									<a href="/guard/register?type=contractor" class="submenu-link {{ request('type') === 'contractor' ? 'active' : '' }}">
+										<i class="bi bi-briefcase-fill"></i>
+										<span>Contractor</span>
+									</a>
+								</div>
+							</div>
+						</div>
+
+						@if (! $isSelfRegisteredRole)
+							<a href="/guard/exit" class="sidebar-link {{ request()->is('guard/exit') ? 'active' : '' }}">
+								<span class="sidebar-icon"><i class="bi bi-box-arrow-right"></i></span>
+								<span class="sidebar-text">Exit Scan</span>
+							</a>
+						@endif
+					</div>
+
+					@if (! $isSelfRegisteredRole)
+						<div class="sidebar-section">
+							<p class="sidebar-label">MONITORING</p>
+							<a href="/guard/alert" class="sidebar-link {{ request()->is('guard/alert') ? 'active' : '' }}">
+								<span class="sidebar-icon"><i class="bi bi-bell-fill"></i></span>
+								<span class="sidebar-text">Active Alerts</span>
+								<span class="sidebar-badge">{{ $activeAlertsCount ?? 0 }}</span>
+							</a>
+						</div>
+					@endif
+
+					<div class="sidebar-section">
+						<p class="sidebar-label">QUICK ACTION</p>
+
+						<a href="/guard/register?type=normal" class="quick-action-btn">
+							<i class="bi bi-qr-code-scan"></i>
+							<span>Register Visitor</span>
+						</a>
+					</div>
+				</nav>
+			</div>
+
+			<div class="sidebar-footer">
+				<div class="admin-card">
+					<div class="admin-avatar">
+						<i class="bi bi-person-badge-fill"></i>
+					</div>
+					<div class="admin-info">
+						<h6 class="mb-0">{{ $guardSidebarName }}</h6>
+						<small>Guard Officer</small>
+					</div>
 				</div>
 
-				<div class="logout-wrap">
-					<form method="POST" action="{{ route('logout') }}">
-						@csrf
-						<button type="submit" class="logout-btn">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M15 7 20 12 15 17M20 12H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M11 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-						</svg>
-						Logout
-						</button>
-					</form>
-				</div>
+				<a href="{{ route('logout') }}"
+				   class="logout-btn"
+				   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+					<i class="bi bi-box-arrow-right"></i>
+					<span>Logout</span>
+				</a>
+
+				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+					@csrf
+				</form>
 			</div>
 		</aside>
 
@@ -615,16 +925,6 @@
 		</main>
 	</div>
 
-	<script>
-		const registerMenuGroup = document.getElementById('registerMenuGroup');
-		const registerMenuToggle = document.getElementById('registerMenuToggle');
-
-		if (registerMenuGroup && registerMenuToggle) {
-			registerMenuToggle.addEventListener('click', () => {
-				const isOpen = registerMenuGroup.classList.toggle('open');
-				registerMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-			});
-		}
-	</script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
