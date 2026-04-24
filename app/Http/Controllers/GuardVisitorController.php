@@ -11,6 +11,129 @@ use Illuminate\Validation\Rule;
 
 class GuardVisitorController extends Controller
 {
+    public function processExitScan(Request $request)
+    {
+        $validated = $request->validate([
+            'qr_data' => ['required', 'string', 'max:4000'],
+        ]);
+
+        $rawQr = trim((string) $validated['qr_data']);
+        $parsedQr = $this->parseExitQrPayload($rawQr);
+
+        if (
+            $parsedQr['qr_token'] === null
+            && $parsedQr['control_number'] === null
+            && $parsedQr['pass_number'] === null
+        ) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid QR payload. Please scan a valid visitor QR code.',
+            ], 422);
+        }
+
+        $visit = DB::table('visit as v')
+            ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+            ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
+            ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
+            ->select(
+                'v.visit_id',
+                'v.entry_time',
+                'v.exit_time',
+                'v.exit_status_id',
+                'v.qr_token',
+                'v.visitor_id',
+                'v.purpose_reason',
+                'v.destination_text',
+                'vr.first_name',
+                'vr.last_name',
+                'vr.control_number',
+                'vr.pass_number',
+                'vr.visitor_photo_with_id_url',
+                'o.office_name as primary_office_name',
+                'es.exit_status_name'
+            )
+            ->whereNull('v.exit_time')
+            ->where(function ($query) use ($parsedQr) {
+                if (!empty($parsedQr['qr_token'])) {
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(v.qr_token, \'\'))) = ?', [strtolower($parsedQr['qr_token'])]);
+                }
+
+                if (!empty($parsedQr['control_number'])) {
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
+                }
+
+                if (!empty($parsedQr['pass_number'])) {
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
+                }
+            })
+            ->orderByDesc('v.entry_time')
+            ->orderByDesc('v.visit_id')
+            ->first();
+
+        if (!$visit) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No active visitor record found for this QR code.',
+            ], 404);
+        }
+
+        $exitAt = now();
+        $durationMinutes = null;
+
+        if (!empty($visit->entry_time)) {
+            try {
+                $durationMinutes = max(0, $exitAt->diffInMinutes(\Carbon\Carbon::parse($visit->entry_time)));
+            } catch (\Throwable $e) {
+                $durationMinutes = null;
+            }
+        }
+
+        $exitedStatusId = $this->resolveExitStatusByNames(['exited', 'checked out', 'completed', 'ready to exit']);
+
+        DB::table('visit')
+            ->where('visit_id', $visit->visit_id)
+            ->update([
+                'exit_time' => $exitAt,
+                'duration_minutes' => $durationMinutes,
+                'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
+            ]);
+
+        $fullName = trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? '')));
+        $displayName = $fullName !== '' ? $fullName : 'Visitor';
+        $entryTime = null;
+        $photoPath = trim((string) ($visit->visitor_photo_with_id_url ?? ''));
+        $photoPreviewUrl = $this->resolveVisitorPhotoUrl($photoPath);
+
+        if (!empty($visit->entry_time)) {
+            try {
+                $entryTime = \Carbon\Carbon::parse($visit->entry_time)->toDateTimeString();
+            } catch (\Throwable $e) {
+                $entryTime = null;
+            }
+        }
+
+        return response()->json([
+            'status' => 'ok',
+            'message' => $displayName . ' successfully checked out.',
+            'qr_data' => $parsedQr['control_number'] ?: ($parsedQr['pass_number'] ?: ($parsedQr['qr_token'] ?: $rawQr)),
+            'data' => [
+                'visit_id' => (int) $visit->visit_id,
+                'visitor_id' => (int) $visit->visitor_id,
+                'visitor_name' => $displayName,
+                'control_number' => trim((string) ($visit->control_number ?? '')),
+                'pass_number' => trim((string) ($visit->pass_number ?? '')),
+                'purpose_reason' => trim((string) ($visit->purpose_reason ?? '')),
+                'office_name' => trim((string) ($visit->primary_office_name ?? '')),
+                'destination_text' => trim((string) ($visit->destination_text ?? '')),
+                'visitor_photo_with_id_url' => $photoPath,
+                'visitor_photo_preview_url' => $photoPreviewUrl,
+                'entry_time' => $entryTime,
+                'exit_time' => $exitAt->toDateTimeString(),
+                'duration_minutes' => $durationMinutes,
+            ],
+        ]);
+    }
+
     /**
      * Persist visitor registration data (visitor + visit + optional visit_route).
      */
@@ -1777,6 +1900,72 @@ class GuardVisitorController extends Controller
             ->value('exit_status_id');
 
         return $fallback ? (int) $fallback : 3;
+    }
+
+    protected function parseExitQrPayload(string $rawQr): array
+    {
+        $payload = [
+            'qr_token' => null,
+            'control_number' => null,
+            'pass_number' => null,
+        ];
+
+        if ($rawQr === '') {
+            return $payload;
+        }
+
+        $decoded = json_decode($rawQr, true);
+        if (is_array($decoded)) {
+            $payload['qr_token'] = $this->normalizeNullableString($decoded['qr_token'] ?? null);
+            $payload['control_number'] = $this->normalizeNullableString($decoded['control_number'] ?? null);
+            $payload['pass_number'] = $this->normalizeNullableString($decoded['pass_number'] ?? null);
+            return $payload;
+        }
+
+        $rawValue = $this->normalizeNullableString($rawQr);
+        if ($rawValue !== null) {
+            if (stripos($rawValue, 'QR-') === 0) {
+                $payload['qr_token'] = $rawValue;
+            } else {
+                $payload['control_number'] = $rawValue;
+            }
+        }
+
+        return $payload;
+    }
+
+    protected function normalizeNullableString($value): ?string
+    {
+        $normalized = trim((string) ($value ?? ''));
+        return $normalized === '' ? null : $normalized;
+    }
+
+    protected function resolveExitStatusByNames(array $statusNames): ?int
+    {
+        $normalizedNames = collect($statusNames)
+            ->map(static fn ($name) => strtolower(trim((string) $name)))
+            ->filter()
+            ->values();
+
+        if ($normalizedNames->isEmpty()) {
+            return null;
+        }
+
+        $directMatch = DB::table('exit_status')
+            ->select('exit_status_id')
+            ->where(function ($query) use ($normalizedNames) {
+                foreach ($normalizedNames as $name) {
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(exit_status_name, \'\'))) = ?', [$name]);
+                }
+            })
+            ->orderBy('exit_status_id')
+            ->value('exit_status_id');
+
+        if ($directMatch) {
+            return (int) $directMatch;
+        }
+
+        return null;
     }
 
     protected function resolveRouteStatusId(string $statusName): ?int

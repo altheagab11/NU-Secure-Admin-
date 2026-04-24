@@ -52,6 +52,7 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
     Route::get('/exit', function () {
         return view('guard.exit');
     });
+    Route::post('/exit/scan', [GuardVisitorController::class, 'processExitScan']);
  
     Route::get('/alert', [GuardAlertController::class, 'index']);
 

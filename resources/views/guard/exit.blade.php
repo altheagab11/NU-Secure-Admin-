@@ -526,6 +526,33 @@
 			flex-wrap: wrap;
 		}
 
+		.manual-entry-wrap {
+			margin-top: 12px;
+			display: none;
+			gap: 8px;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+
+		.manual-entry-wrap.show {
+			display: flex;
+		}
+
+		.manual-input {
+			height: 44px;
+			min-width: 240px;
+			border: 1px solid #d1d5db;
+			border-radius: 10px;
+			padding: 0 12px;
+			font-size: 14px;
+			outline: none;
+		}
+
+		.manual-input:focus {
+			border-color: #3f4db8;
+			box-shadow: 0 0 0 3px rgba(63, 77, 184, 0.12);
+		}
+
 		.scan-btn-primary,
 		.scan-btn-secondary {
 			border: none;
@@ -657,6 +684,268 @@
 			font-size: 20px;
 		}
 
+		.exit-modal-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(15, 23, 42, 0.45);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 9999;
+			padding: 24px;
+			font-family: Inter, "Segoe UI", sans-serif;
+		}
+
+		.exit-modal-overlay.show {
+			display: flex;
+		}
+
+		.exit-success-modal {
+			width: 100%;
+			max-width: 820px;
+			background: #ffffff;
+			border: 2px solid #3b6df6;
+			border-radius: 22px;
+			padding: 38px 42px 32px;
+			box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25);
+			animation: modalFadeIn 0.25s ease;
+		}
+
+		.success-icon-wrapper {
+			position: relative;
+			display: flex;
+			justify-content: center;
+			margin-bottom: 18px;
+		}
+
+		.success-ring {
+			width: 104px;
+			height: 104px;
+			border-radius: 50%;
+			background: rgba(34, 197, 94, 0.12);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.success-ring::before {
+			content: "";
+			position: absolute;
+			width: 78px;
+			height: 78px;
+			border-radius: 50%;
+			background: rgba(34, 197, 94, 0.16);
+		}
+
+		.success-icon {
+			position: relative;
+			width: 64px;
+			height: 64px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #5bd46f, #16a34a);
+			color: #ffffff;
+			font-size: 34px;
+			font-weight: 800;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 10px 22px rgba(22, 163, 74, 0.35);
+		}
+
+		.dot {
+			position: absolute;
+			width: 7px;
+			height: 7px;
+			background: #22c55e;
+			border-radius: 50%;
+		}
+
+		.dot-1 {
+			top: 10px;
+			left: 31%;
+		}
+
+		.dot-2 {
+			top: 48px;
+			left: 26%;
+		}
+
+		.dot-3 {
+			top: 18px;
+			right: 32%;
+		}
+
+		.dot-4 {
+			top: 55px;
+			right: 25%;
+		}
+
+		.dot-5 {
+			top: 72px;
+			right: 36%;
+			width: 4px;
+			height: 4px;
+		}
+
+		.modal-header-text {
+			text-align: center;
+		}
+
+		.modal-header-text h2 {
+			margin: 0;
+			color: #0f172a;
+			font-size: 34px;
+			font-weight: 800;
+			letter-spacing: -0.5px;
+		}
+
+		.modal-header-text p {
+			margin-top: 6px;
+			color: #64748b;
+			font-size: 16px;
+		}
+
+		.modal-divider {
+			height: 1px;
+			background: #e5e7eb;
+			margin: 24px 0 26px;
+		}
+
+		.visitor-details {
+			display: grid;
+			grid-template-columns: 150px 1fr;
+			gap: 30px;
+			align-items: center;
+		}
+
+		.visitor-photo-card {
+			width: 150px;
+			height: 180px;
+			border-radius: 18px;
+			background: #f1f5f9;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.visitor-photo-card img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: none;
+		}
+
+		.photo-placeholder {
+			text-align: center;
+			color: #64748b;
+		}
+
+		.user-icon {
+			font-size: 54px;
+			line-height: 1;
+			color: #86a2d9;
+			margin-bottom: 14px;
+		}
+
+		.photo-placeholder span {
+			font-size: 14px;
+			font-weight: 600;
+		}
+
+		.details-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			column-gap: 46px;
+			row-gap: 22px;
+		}
+
+		.detail-item {
+			display: flex;
+			align-items: flex-start;
+			gap: 13px;
+		}
+
+		.detail-icon {
+			min-width: 34px;
+			height: 34px;
+			border-radius: 50%;
+			background: #eef4ff;
+			color: #2563eb;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 16px;
+		}
+
+		.detail-label {
+			display: block;
+			color: #64748b;
+			font-size: 13px;
+			font-weight: 600;
+			margin-bottom: 3px;
+		}
+
+		.detail-item strong {
+			display: block;
+			color: #0f172a;
+			font-size: 19px;
+			font-weight: 800;
+			line-height: 1.25;
+			word-break: break-word;
+		}
+
+		.registered-by {
+			text-align: center;
+			color: #64748b;
+			font-size: 15px;
+			margin: 28px 0 18px;
+		}
+
+		.modal-action {
+			display: flex;
+			justify-content: center;
+		}
+
+		.done-btn {
+			width: 330px;
+			height: 58px;
+			border: none;
+			border-radius: 14px;
+			background: linear-gradient(135deg, #2563eb, #1d4ed8);
+			color: #ffffff;
+			font-size: 18px;
+			font-weight: 800;
+			cursor: pointer;
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 12px 26px rgba(37, 99, 235, 0.32);
+			transition: 0.2s ease;
+		}
+
+		.done-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 16px 32px rgba(37, 99, 235, 0.42);
+		}
+
+		.done-btn:active {
+			transform: scale(0.98);
+		}
+
+		@keyframes modalFadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(18px) scale(0.97);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
 		@media (max-width: 1024px) {
 			.sidebar {
 				width: 100%;
@@ -697,6 +986,28 @@
 			.scan-btn-primary,
 			.scan-btn-secondary {
 				width: 100%;
+			}
+
+			.exit-success-modal {
+				padding: 30px 24px;
+			}
+
+			.visitor-details {
+				grid-template-columns: 1fr;
+				justify-items: center;
+			}
+
+			.details-grid {
+				width: 100%;
+				grid-template-columns: 1fr;
+			}
+
+			.done-btn {
+				width: 100%;
+			}
+
+			.modal-header-text h2 {
+				font-size: 28px;
 			}
 		}
 	</style>
@@ -862,9 +1173,23 @@
 									<span id="scanButtonText">Scan Exit QR</span>
 								</button>
 
-								<button type="button" class="scan-btn-secondary">
+								<button type="button" class="scan-btn-secondary" id="manualEntryButton">
 									<i class="fas fa-keyboard"></i>
 									Manual Entry
+								</button>
+							</div>
+
+							<div class="manual-entry-wrap" id="manualEntryWrap">
+								<input
+									type="text"
+									class="manual-input"
+									id="manualQrInput"
+									placeholder="Enter QR code / control number"
+									autocomplete="off"
+								>
+								<button type="button" class="scan-btn-primary" id="submitManualEntryButton">
+									<i class="fas fa-check"></i>
+									Submit Code
 								</button>
 							</div>
 
@@ -916,6 +1241,97 @@
 		</main>
 	</div>
 
+	<div class="exit-modal-overlay" id="exitResultModal" aria-hidden="true">
+		<div class="exit-success-modal" role="dialog" aria-modal="true" aria-labelledby="exitResultTitle">
+			<div class="success-icon-wrapper">
+				<span class="dot dot-1"></span>
+				<span class="dot dot-2"></span>
+				<span class="dot dot-3"></span>
+				<span class="dot dot-4"></span>
+				<span class="dot dot-5"></span>
+				<div class="success-ring">
+					<div class="success-icon">✓</div>
+				</div>
+			</div>
+
+			<div class="modal-header-text">
+				<h2 id="exitResultTitle">Exit Processed!</h2>
+				<p>Visitor has left the campus</p>
+			</div>
+
+			<div class="modal-divider"></div>
+
+			<div class="visitor-details">
+				<div class="visitor-photo-card">
+					<img id="exitResultPhoto" alt="Visitor Photo">
+					<div class="photo-placeholder" id="exitResultPhotoFallback">
+						<div class="user-icon">👤</div>
+						<span>Visitor Photo</span>
+					</div>
+				</div>
+
+				<div class="details-grid">
+					<div class="detail-item">
+						<div class="detail-icon">👤</div>
+						<div>
+							<span class="detail-label">Control Number</span>
+							<strong id="exitResultControlNumber">-</strong>
+						</div>
+					</div>
+
+					<div class="detail-item">
+						<div class="detail-icon">🏢</div>
+						<div>
+							<span class="detail-label">Office Visited</span>
+							<strong id="exitResultOffice">-</strong>
+						</div>
+					</div>
+
+					<div class="detail-item">
+						<div class="detail-icon">👤</div>
+						<div>
+							<span class="detail-label">Full Name</span>
+							<strong id="exitResultVisitorName">-</strong>
+						</div>
+					</div>
+
+					<div class="detail-item">
+						<div class="detail-icon">⏱</div>
+						<div>
+							<span class="detail-label">Duration</span>
+							<strong id="exitResultDuration">-</strong>
+						</div>
+					</div>
+
+					<div class="detail-item">
+						<div class="detail-icon">🕒</div>
+						<div>
+							<span class="detail-label">Time In</span>
+							<strong id="exitResultTimeIn">-</strong>
+						</div>
+					</div>
+
+					<div class="detail-item">
+						<div class="detail-icon">🪪</div>
+						<div>
+							<span class="detail-label">ID Pass Number</span>
+							<strong id="exitResultPassNumber">-</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<p class="registered-by">Registered by Officer Martinez</p>
+
+			<div class="modal-action">
+				<button type="button" class="done-btn" id="exitResultDoneButton">
+					<span>✓</span>
+					Done
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 	<script>
@@ -923,9 +1339,23 @@
 		const cameraFeed = document.getElementById('cameraFeed');
 		const scanButton = document.getElementById('scanButton');
 		const scanButtonText = document.getElementById('scanButtonText');
+		const manualEntryButton = document.getElementById('manualEntryButton');
+		const submitManualEntryButton = document.getElementById('submitManualEntryButton');
+		const manualEntryWrap = document.getElementById('manualEntryWrap');
+		const manualQrInput = document.getElementById('manualQrInput');
 		const cameraStatus = document.getElementById('cameraStatus');
 		const scanResult = document.getElementById('scanResult');
 		const scanCanvas = document.getElementById('scanCanvas');
+		const exitResultModal = document.getElementById('exitResultModal');
+		const exitResultDoneButton = document.getElementById('exitResultDoneButton');
+		const exitResultPhoto = document.getElementById('exitResultPhoto');
+		const exitResultPhotoFallback = document.getElementById('exitResultPhotoFallback');
+		const exitResultControlNumber = document.getElementById('exitResultControlNumber');
+		const exitResultOffice = document.getElementById('exitResultOffice');
+		const exitResultVisitorName = document.getElementById('exitResultVisitorName');
+		const exitResultDuration = document.getElementById('exitResultDuration');
+		const exitResultTimeIn = document.getElementById('exitResultTimeIn');
+		const exitResultPassNumber = document.getElementById('exitResultPassNumber');
 		const canvasContext = scanCanvas.getContext('2d', { willReadFrequently: true });
 		const csrfToken = '{{ csrf_token() }}';
 
@@ -957,6 +1387,105 @@
 			if (type) {
 				scanResult.classList.add(type);
 			}
+		};
+
+		const formatDuration = (minutes) => {
+			const value = Number(minutes);
+			if (!Number.isFinite(value) || value < 0) {
+				return '-';
+			}
+
+			if (value < 60) {
+				return `${Math.round(value)}m`;
+			}
+
+			const hrs = Math.floor(value / 60);
+			const mins = value % 60;
+			return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+		};
+
+		const formatDateTime = (value) => {
+			if (!value) {
+				return '-';
+			}
+
+			const parsed = new Date(value);
+			if (Number.isNaN(parsed.getTime())) {
+				return '-';
+			}
+
+			return parsed.toLocaleString('en-US', {
+				month: 'short',
+				day: 'numeric',
+				year: 'numeric',
+				hour: 'numeric',
+				minute: '2-digit',
+				hour12: true
+			});
+		};
+
+		const closeExitResultModal = () => {
+			if (!exitResultModal) {
+				return;
+			}
+
+			exitResultModal.classList.remove('show');
+			exitResultModal.setAttribute('aria-hidden', 'true');
+		};
+
+		const resolveVisitorPhotoUrl = (rawPath) => {
+			const value = String(rawPath || '').trim();
+			if (!value) {
+				return '';
+			}
+
+			if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+				return value;
+			}
+
+			if (value.startsWith('/')) {
+				return value;
+			}
+
+			if (value.startsWith('storage/')) {
+				return `/${value}`;
+			}
+
+			if (value.startsWith('public/')) {
+				return `/${value.replace(/^public\//, 'storage/')}`;
+			}
+
+			return `/storage/${value.replace(/^\/+/, '')}`;
+		};
+
+		const showExitResultModal = (scanData) => {
+			if (!exitResultModal || !scanData) {
+				return;
+			}
+
+			const destination = String(scanData.office_name || scanData.destination_text || '').trim() || '-';
+			const photoUrl = resolveVisitorPhotoUrl(scanData.visitor_photo_preview_url || scanData.visitor_photo_with_id_url);
+			const controlNo = String(scanData.control_number || '').trim() || String(scanData.qr_data || '').trim() || '-';
+
+			exitResultControlNumber.textContent = controlNo;
+			exitResultOffice.textContent = destination;
+			exitResultVisitorName.textContent = String(scanData.visitor_name || '').trim() || '-';
+			exitResultDuration.textContent = formatDuration(scanData.duration_minutes);
+			exitResultTimeIn.textContent = formatDateTime(scanData.entry_time);
+			exitResultPassNumber.textContent = String(scanData.pass_number || '').trim() || '-';
+
+			if (photoUrl) {
+				exitResultPhoto.src = photoUrl;
+				exitResultPhoto.style.display = 'block';
+				exitResultPhotoFallback.style.display = 'none';
+			} else {
+				exitResultPhoto.removeAttribute('src');
+				exitResultPhoto.style.display = 'none';
+				exitResultPhotoFallback.style.display = 'block';
+			}
+
+			exitResultModal.classList.add('show');
+			exitResultModal.setAttribute('aria-hidden', 'false');
 		};
 
 		const resetScanLoop = () => {
@@ -1009,6 +1538,13 @@
 
 				setResult(payload.message + ' (' + payload.qr_data + ')', 'success');
 				cameraStatus.textContent = 'Scan completed. Ready for next QR.';
+				showExitResultModal({
+					...(payload.data || {}),
+					qr_data: payload.qr_data || ''
+				});
+				if (manualQrInput) {
+					manualQrInput.value = '';
+				}
 			} catch (error) {
 				lastProcessedQr = '';
 				setResult(error.message || 'Scan failed. Please try again.', 'error');
@@ -1109,6 +1645,62 @@
 			cameraStatus.textContent = 'Scanner is live. Align QR code inside the frame.';
 			setResult('Waiting for QR code...');
 			lastProcessedQr = '';
+		});
+
+		const normalizeManualCode = (rawValue) => String(rawValue || '').trim();
+
+		const submitManualEntry = () => {
+			if (!manualQrInput) {
+				return;
+			}
+
+			const code = normalizeManualCode(manualQrInput.value);
+			if (!code) {
+				setResult('Please enter the QR code or control number first.', 'error');
+				manualQrInput.focus();
+				return;
+			}
+
+			cameraStatus.textContent = 'Processing manual code...';
+			processQrData(code);
+		};
+
+		manualEntryButton?.addEventListener('click', () => {
+			if (!manualEntryWrap) {
+				return;
+			}
+
+			const isShown = manualEntryWrap.classList.toggle('show');
+			if (isShown && manualQrInput) {
+				manualQrInput.focus();
+			}
+		});
+
+		submitManualEntryButton?.addEventListener('click', submitManualEntry);
+
+		manualQrInput?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				submitManualEntry();
+			}
+		});
+
+		exitResultDoneButton?.addEventListener('click', () => {
+			closeExitResultModal();
+		});
+
+		exitResultPhoto?.addEventListener('error', () => {
+			exitResultPhoto.removeAttribute('src');
+			exitResultPhoto.style.display = 'none';
+			if (exitResultPhotoFallback) {
+				exitResultPhotoFallback.style.display = 'block';
+			}
+		});
+
+		exitResultModal?.addEventListener('click', (event) => {
+			if (event.target === exitResultModal) {
+				closeExitResultModal();
+			}
 		});
 
 		window.addEventListener('beforeunload', () => {

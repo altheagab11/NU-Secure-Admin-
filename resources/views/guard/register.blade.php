@@ -1873,6 +1873,7 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 	<script>
 		const registerMenuGroup = document.getElementById('registerMenuGroup');
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
@@ -2781,18 +2782,43 @@
 			}
 		});
 
-		downloadQrBtn?.addEventListener('click', () => {
-			const qrCanvas = qrCodeContainer?.querySelector('canvas');
-			if (!qrCanvas) {
-				alert('QR code is not ready yet.');
+		downloadQrBtn?.addEventListener('click', async () => {
+			if (!registrationTicketCard) {
+				alert('Ticket is not ready yet.');
 				return;
 			}
 
-			const link = document.createElement('a');
-			const controlNo = (ticketControlNumber?.textContent || 'visitor-ticket').trim();
-			link.href = qrCanvas.toDataURL('image/png');
-			link.download = `${controlNo}.png`;
-			link.click();
+			if (typeof html2canvas === 'undefined') {
+				alert('Ticket download tool is not ready. Please refresh and try again.');
+				return;
+			}
+
+			try {
+				downloadQrBtn.disabled = true;
+				const originalText = downloadQrBtn.textContent;
+				downloadQrBtn.textContent = 'Preparing...';
+
+				const canvas = await html2canvas(registrationTicketCard, {
+					backgroundColor: '#ffffff',
+					scale: 2,
+					useCORS: true,
+					allowTaint: false,
+				});
+
+				const link = document.createElement('a');
+				const controlNo = (ticketControlNumber?.textContent || 'visitor-ticket').trim();
+				link.href = canvas.toDataURL('image/png');
+				link.download = `${controlNo}-ticket.png`;
+				link.click();
+
+				downloadQrBtn.textContent = originalText || 'Download QR';
+				downloadQrBtn.disabled = false;
+			} catch (error) {
+				console.error('Failed to download full ticket image:', error);
+				alert('Failed to download ticket image. Please try again.');
+				downloadQrBtn.disabled = false;
+				downloadQrBtn.textContent = 'Download QR';
+			}
 		});
 
 		const printTicketInNewWindow = () => {
