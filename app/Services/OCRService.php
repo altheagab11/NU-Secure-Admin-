@@ -239,6 +239,9 @@ class OCRService
             case 'voters_id':
                 $extracted = $this->extractVotersIdData($lines, $extracted);
                 break;
+            case 'senior_citizen_id':
+                $extracted = $this->extractSeniorCitizenIdData($lines, $extracted);
+                break;
             default:
                 $extracted = $this->extractNationalIdData($lines, $extracted);
                 break;
@@ -685,7 +688,9 @@ class OCRService
      */
     protected function extractUmidData(array $lines, array $extracted): array
     {
-        $normalizedLines = array_values(array_filter(array_map(fn ($line) => $this->normalizeOcrLine($line), $lines)));
+        $normalizedLines = array_values(array_filter(array_map(function ($line) {
+            return $this->normalizeUmidLabelTypos($this->normalizeOcrLine($line));
+        }, $lines)));
         $fullText = implode(' ', $normalizedLines);
         $compactText = preg_replace('/\s+/', ' ', $fullText);
 
@@ -714,6 +719,28 @@ class OCRService
         }
         if (!empty($middleName)) {
             $extracted['middle_name'] = $middleName;
+        }
+
+        if ($lastName === '' || $firstName === '') {
+            $fromCompactNames = $this->extractUmidNamesFromCompact($compactText);
+            if ($lastName === '' && !empty($fromCompactNames['last_name'])) {
+                $lastName = $fromCompactNames['last_name'];
+            }
+            if ($firstName === '' && !empty($fromCompactNames['first_name'])) {
+                $firstName = $fromCompactNames['first_name'];
+            }
+            if ($middleName === '' && !empty($fromCompactNames['middle_name'])) {
+                $middleName = $fromCompactNames['middle_name'];
+            }
+            if (!empty($lastName)) {
+                $extracted['last_name'] = $lastName;
+            }
+            if (!empty($firstName)) {
+                $extracted['first_name'] = $firstName;
+            }
+            if (!empty($middleName)) {
+                $extracted['middle_name'] = $middleName;
+            }
         }
 
         if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
@@ -746,7 +773,10 @@ class OCRService
             $extracted['gender'] = strtoupper($matches[1][0]);
         }
 
-        $address = $this->extractLabeledDriverAddress($normalizedLines);
+        $address = $this->extractUmidAddressMultiline($normalizedLines);
+        if (empty($address)) {
+            $address = $this->extractLabeledDriverAddress($normalizedLines);
+        }
         if (empty($address)) {
             $address = $this->extractUmidAddressLine($compactText, $normalizedLines);
         }
@@ -757,10 +787,125 @@ class OCRService
             $address = $this->buildAddressFromNationalIdLines($normalizedLines, $compactText);
         }
         if (!empty($address)) {
-            $extracted['address'] = $address;
+            $extracted['address'] = $this->trimUmidAddressTrailingFields($address);
         }
 
         return $extracted;
+    }
+
+    protected function trimUmidAddressTrailingFields(string $address): string
+    {
+        $t = trim($address);
+
+        return trim((string) preg_replace('/\s+(?:DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|SEX|GENDER|CRN|COMMON\s+REFERENCE|SURNAME|GIVEN\s+NAME|MIDDLE\s+NAME)\b.*/i', '', $t));
+    }
+
+    /**
+     * Fix common OCR splits on UMID field labels (old and new card layouts).
+     */
+    protected function normalizeUmidLabelTypos(string $line): string
+    {
+        $t = strtoupper(trim($line));
+        $replacements = [
+            '/\bGIV\s+N\s*A\s*M\s*E\b/' => 'GIVEN NAME',
+            '/\bGIVEN\s+N\s*A\s*M\s*E\b/' => 'GIVEN NAME',
+            '/\bSUR\s+N\s*A\s*M\s*E\b/' => 'SURNAME',
+            '/\bSURN\s*A\s*M\s*E\b/' => 'SURNAME',
+            '/\bMID\s*D\s*L\s*E\s+N\s*A\s*M\s*E\b/' => 'MIDDLE NAME',
+            '/\bADD\s*R\s*E\s*S\s*S\b/' => 'ADDRESS',
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $t = preg_replace($pattern, $replacement, $t);
+        }
+
+        return $t;
+    }
+
+    /**
+     * Newer UMIDs often split address across lines (e.g. PRK/BRGY line, "BATANGAS PHL", then ZIP only).
+     */
+    protected function extractUmidAddressMultiline(array $lines): string
+    {
+        $addressParts = [];
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            if (!preg_match('/\bADDRESS\b/i', $line)) {
+                continue;
+            }
+
+            $sameLine = preg_replace('/^.*?\bADDRESS\s*[:\-]?\s*/i', '', $line);
+            $sameLine = $this->trimUmidAddressTrailingFields((string) $sameLine);
+            $sameLine = $this->cleanAddressCandidate((string) $sameLine);
+            if (!empty($sameLine)) {
+                $addressParts[] = $sameLine;
+            }
+
+            for ($j = $i + 1; $j <= min($i + 6, count($lines) - 1); $j++) {
+                if (preg_match('/\b(DATE\s+OF\s+BIRTH|BIRTH|SEX|GENDER|CRN|COMMON\s+REFERENCE|SURNAME|GIVEN\s+NAME|MIDDLE\s+NAME|MGA\s+PANGALAN|APELYIDO|GITNANG)\b/i', $lines[$j])) {
+                    break;
+                }
+
+                $c = $this->cleanUmidAddressContinuationLine((string) $lines[$j]);
+                if ($c !== '') {
+                    $addressParts[] = $c;
+                }
+
+                $joined = implode(' ', $addressParts);
+                if (preg_match('/\bPHL\s*\d{4}\b/', $joined)) {
+                    break;
+                }
+            }
+
+            if (!empty($addressParts)) {
+                return implode(', ', array_values(array_unique($addressParts)));
+            }
+        }
+
+        return '';
+    }
+
+    protected function cleanUmidAddressContinuationLine(string $line): string
+    {
+        $line = strtoupper(trim($line));
+        if ($line === '') {
+            return '';
+        }
+
+        if (preg_match('/^\d{4}$/', $line)) {
+            return $line;
+        }
+
+        return $this->cleanAddressCandidate($line);
+    }
+
+    /**
+     * Single-line OCR blobs (common from cameras): all labels and values in one string.
+     *
+     * @return array{last_name: string, first_name: string, middle_name: string}
+     */
+    protected function extractUmidNamesFromCompact(string $compactText): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($compactText)));
+        $stop = '(?=\s+(?:ADDRESS|TIRAHAN|DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|SEX|GENDER|CRN|COMMON\s+REFERENCE)\b|\s*$)';
+        $tok = '([A-Z]{2,25}(?:\s+[A-Z]{2,12})?)';
+
+        if (preg_match('/\bSURNAME\s*[:\-]?\s*' . $tok . '\s+GIVEN\s+NAME\s*[:\-]?\s*' . $tok . '\s+MIDDLE\s+NAME\s*[:\-]?\s*' . $tok . $stop . '/i', $t, $m)) {
+            $out['last_name'] = trim(preg_replace('/\s+/', ' ', (string) $m[1]));
+            $out['first_name'] = trim(preg_replace('/\s+/', ' ', (string) $m[2]));
+            $out['middle_name'] = trim(preg_replace('/\s+/', ' ', (string) $m[3]));
+
+            return $out;
+        }
+
+        if (preg_match('/\bSURNAME\s*[:\-]?\s*([A-Z]{2,25})\s+GIVEN\s+NAME\s*[:\-]?\s*([A-Z]{2,25})\b/i', $t, $m)) {
+            $out['last_name'] = trim((string) $m[1]);
+            $out['first_name'] = trim((string) $m[2]);
+        }
+
+        return $out;
     }
 
     /**
@@ -768,13 +913,28 @@ class OCRService
      */
     protected function extractUmidAddressLine(string $compactText, array $lines): string
     {
-        // Prefer barangay-style lines so a trailing "/23" from a DOB line is not read as a house number.
-        if (preg_match('/\b(\d{1,5}\s+BRGY[A-Z0-9\s]{10,}?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+        // Newer layout: house + optional PRK/PUROK + BRGY. (dot) + ... + PHL + ZIP (one compact string).
+        if (preg_match('/\b(\d{1,5}(?:\s+(?:PRK|PUROK)\s*\d+)?\s+BRGY\.?\s+.+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
             return $this->cleanAddressCandidate(trim((string) $m[1]));
         }
 
-        if (preg_match('/\b(\d{3,5}[A-Z0-9\s]{12,}?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+        // Prefer barangay-style lines so a trailing "/23" from a DOB line is not read as a house number.
+        if (preg_match('/\b(\d{1,5}\s+BRGY\.?\s+.+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
             return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        if (preg_match('/\b(\d{3,5}\s+[A-Z0-9\s.]+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+            return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        $merged = '';
+        foreach ($lines as $idx => $line) {
+            if (preg_match('/\bPHL\b/', $line) && !preg_match('/\b\d{4}\b/', $line) && isset($lines[$idx + 1]) && preg_match('/^\d{4}$/', trim((string) $lines[$idx + 1]))) {
+                $merged = $this->cleanAddressCandidate(trim($line . ' ' . trim((string) $lines[$idx + 1])));
+                if (!empty($merged)) {
+                    return $merged;
+                }
+            }
         }
 
         foreach ($lines as $line) {
@@ -1465,6 +1625,231 @@ class OCRService
         return false;
     }
 
+    protected function textLooksLikeSeniorCitizenId(string $fullTextUpper): bool
+    {
+        if (preg_match('/\bOSCA\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bSENIOR\s+CITIZEN/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/OFFICE\s+FOR\s+SENIOR\s+CITIZENS/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/SENIOR\s+CITIZENS\s+AFFAIRS/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bAFFAIRS\s+OSCA\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/NON[\s\-]*TRANSFERABLE.*VALID\s+ANYWHERE/i', $fullTextUpper)
+            && preg_match('/\bDATE\s+OF\s+BIRTH\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * City / municipal Senior Citizen ID (e.g. Lipa OSCA): name above NAME line, comma address, ID no. like 131-58599.
+     */
+    protected function extractSeniorCitizenIdData(array $lines, array $extracted): array
+    {
+        $normalizedLines = array_values(array_filter(array_map(fn ($line) => $this->normalizeOcrLine($line), $lines)));
+        $fullText = implode(' ', $normalizedLines);
+        $compact = preg_replace('/\s+/', ' ', $fullText);
+
+        $names = $this->extractSeniorCitizenNames($compact, $normalizedLines);
+        if (!empty($names['last_name'])) {
+            $extracted['last_name'] = $names['last_name'];
+        }
+        if (!empty($names['first_name'])) {
+            $extracted['first_name'] = $names['first_name'];
+        }
+        if (!empty($names['middle_name'])) {
+            $extracted['middle_name'] = $names['middle_name'];
+        }
+
+        if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim(
+                $extracted['last_name']
+                . ', '
+                . $extracted['first_name']
+                . (!empty($extracted['middle_name']) ? ' ' . $extracted['middle_name'] : '')
+            );
+        }
+
+        if (preg_match('/\b(\d{2,4}-\d{4,7})\b/', $compact, $m)) {
+            $extracted['document_number'] = trim((string) $m[1]);
+        }
+
+        $dob = $this->extractLabeledDriverDate($normalizedLines, ['DATE OF BIRTH', 'BIRTH DATE', 'DATE OF BIRTH / AGE', 'DOB']);
+        if (empty($dob) && preg_match('/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\s*(?:\/\s*\d{1,3}\b|\b)/', $compact, $dm)) {
+            $dob = $this->normalizeDate((string) $dm[1]);
+        }
+        if (empty($dob)) {
+            $dob = $this->extractDateOfBirthWithEnglishMonth($fullText);
+        }
+        if (!empty($dob)) {
+            $extracted['date_of_birth'] = $dob;
+        }
+
+        $issue = $this->extractLabeledDriverDate($normalizedLines, ['DATE ISSUE', 'ISSUE DATE', 'DATE ISSUED']);
+        if (!empty($issue)) {
+            $extracted['expiration_date'] = $issue;
+        }
+
+        $address = '';
+        if (preg_match('/\bADDRESS\s*[:\-]?\s*([A-Z][A-Z\s,]{3,70}?)(?=\s+(?:DATE\s+OF|DATEOF|DATE\s+ISSUE|DATE\s+ISSUED|PRINTED\s+NAME|PRINTED|CTRL|THIS\s+CARD)\b|\s+\d{1,2}\/\d{1,2}\/\d{4}\b)/i', $compact, $am)) {
+            $address = $this->cleanAddressCandidate(trim((string) $am[1]));
+        }
+        // OSCA layout often prints the value *above* the ADDRESS label (reads earlier in OCR string).
+        // Value-above-label: barangay is one (or few) words, comma, then "... CITY" before ADDRESS.
+        if ($address === '' && preg_match('/\b([A-Z]{5,22},\s*[A-Z\s]{3,40}\bCITY)\s+ADDRESS\b/i', $compact, $am)) {
+            $address = $this->cleanAddressCandidate(trim((string) $am[1]));
+        }
+        if ($address === '') {
+            $address = $this->extractLabeledDriverAddress($normalizedLines);
+        }
+        if (!empty($address)) {
+            if (preg_match('/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/', $address)) {
+                $address = '';
+            }
+        }
+        if (!empty($address)) {
+            $extracted['address'] = $this->normalizeSeniorCitizenAddressForParse($address, $compact);
+        }
+
+        return $extracted;
+    }
+
+    /**
+     * @return array{last_name: string, first_name: string, middle_name: string}
+     */
+    protected function extractSeniorCitizenNames(string $compact, array $lines): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($compact)));
+
+        // Footer: "JOCELYN VILLARUZ HERNANDEZ" before PRINTED NAME / THUMBMARK (First Middle Last).
+        if (preg_match('/\b([A-Z]{2,15})\s+([A-Z]{4,20})\s+([A-Z]{2,20})\b(?=\s+(?:PRINTED\s+NAME|PRINTED|THUMBMARK|THUMB\s*MARK|NON[\s\-]*TRANSFERABLE|THIS\s+CARD)\b)/i', $t, $m)) {
+            $fn = $this->sanitizeSeniorNameToken((string) $m[1]);
+            $mn = $this->sanitizeSeniorNameToken((string) $m[2]);
+            $ln = $this->sanitizeSeniorNameToken((string) $m[3]);
+            if ($fn !== '' && $mn !== '' && $ln !== '') {
+                return ['first_name' => $fn, 'middle_name' => $mn, 'last_name' => $ln];
+            }
+        }
+
+        // Main field: NAME ... JOCELYN V. HERNANDEZ (First, middle initial, Last).
+        if (preg_match('/\bNAME\s*[:\-]?\s*([A-Z]+)\s+([A-Z])\.?\s+([A-Z]{2,20})\b/i', $t, $m)) {
+            $fn = $this->sanitizeSeniorNameToken((string) $m[1]);
+            $mi = $this->sanitizeSeniorNameToken((string) $m[2]);
+            $ln = $this->sanitizeSeniorNameToken((string) $m[3]);
+            if ($fn !== '' && $ln !== '') {
+                $mn = $mi;
+                if (strlen($mi) === 1) {
+                    $fullMiddle = $this->inferSeniorMiddleFromCompact($t, $fn, $ln);
+                    if ($fullMiddle !== '') {
+                        $mn = $fullMiddle;
+                    }
+                }
+
+                return ['first_name' => $fn, 'middle_name' => $mn, 'last_name' => $ln];
+            }
+        }
+
+        return $this->extractSeniorCitizenNamesFromLines($lines);
+    }
+
+    protected function inferSeniorMiddleFromCompact(string $t, string $firstName, string $lastName): string
+    {
+        if (preg_match_all('/\b([A-Z]{4,22})\b/', $t, $all)) {
+            foreach ($all[1] as $w) {
+                if ($w === $firstName || $w === $lastName) {
+                    continue;
+                }
+                if (in_array($w, ['MALITLIT', 'LIPA', 'CITY', 'REPUBLIC', 'PHILIPPINES', 'SENIOR', 'CITIZEN', 'CITIZENS', 'OFFICE', 'AFFAIRS', 'PRINTED', 'THUMBMARK', 'TRANSFERABLE', 'VALID', 'ANYWHERE', 'COUNTRY', 'ISSUE', 'DATE', 'BIRTH', 'AGE', 'CTRL', 'NUMBER', 'CARD', 'THIS', 'NON'], true)) {
+                    continue;
+                }
+                if (str_starts_with($w, 'CITY')) {
+                    continue;
+                }
+
+                return $w;
+            }
+        }
+
+        return '';
+    }
+
+    protected function sanitizeSeniorNameToken(string $token): string
+    {
+        $token = strtoupper(preg_replace('/\s+/', '', trim($token)));
+        $token = $this->fixVoterNameOcrDigitsInToken($token);
+
+        return preg_match('/^[A-Z]+$/', $token) && strlen($token) >= 1 && strlen($token) <= 25 ? $token : '';
+    }
+
+    /**
+     * @return array{last_name: string, first_name: string, middle_name: string}
+     */
+    protected function extractSeniorCitizenNamesFromLines(array $lines): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        foreach ($lines as $i => $line) {
+            if (!preg_match('/\bNAME\b/', $line)) {
+                continue;
+            }
+            if (preg_match('/\bNAME\s*[:\-]?\s*([A-Z]+)\s+([A-Z])\.?\s+([A-Z]{2,20})\b/i', $line, $m)) {
+                $out['first_name'] = $this->sanitizeSeniorNameToken((string) $m[1]);
+                $out['middle_name'] = $this->sanitizeSeniorNameToken((string) $m[2]);
+                $out['last_name'] = $this->sanitizeSeniorNameToken((string) $m[3]);
+
+                return $out;
+            }
+            if ($i > 0 && preg_match('/^([A-Z]+)\s+([A-Z])\.?\s+([A-Z]{2,20})$/', trim((string) $lines[$i - 1]), $m)) {
+                $out['first_name'] = $this->sanitizeSeniorNameToken((string) $m[1]);
+                $out['middle_name'] = $this->sanitizeSeniorNameToken((string) $m[2]);
+                $out['last_name'] = $this->sanitizeSeniorNameToken((string) $m[3]);
+
+                return $out;
+            }
+            if (isset($lines[$i + 1]) && preg_match('/^([A-Z]+)\s+([A-Z])\.?\s+([A-Z]{2,20})$/', trim((string) $lines[$i + 1]), $m)) {
+                $out['first_name'] = $this->sanitizeSeniorNameToken((string) $m[1]);
+                $out['middle_name'] = $this->sanitizeSeniorNameToken((string) $m[2]);
+                $out['last_name'] = $this->sanitizeSeniorNameToken((string) $m[3]);
+
+                return $out;
+            }
+        }
+
+        return $out;
+    }
+
+    protected function normalizeSeniorCitizenAddressForParse(string $address, string $compactText): string
+    {
+        $u = strtoupper(preg_replace('/\s+/', ' ', trim($address)));
+        if ($u === '') {
+            return '';
+        }
+
+        if (preg_match('/\bBRGY\./i', $u)) {
+            return $this->normalizeComelecAddressForParseAddress($address, $compactText);
+        }
+
+        if (preg_match('/^([A-Z]+)\s*,\s*(.+?\bCITY)\s*$/i', $u, $m)) {
+            return 'BRGY. ' . strtoupper(trim($m[1])) . ', ' . strtoupper(trim($m[2]));
+        }
+
+        return $this->normalizeComelecAddressForParseAddress($address, $compactText);
+    }
+
     protected function normalizeIdType(string $idType): string
     {
         $normalized = strtolower(trim($idType));
@@ -1474,6 +1859,7 @@ class OCRService
             'driver', 'driver_license', 'drivers_license', 'driver-license' => 'driver_license',
             'umid' => 'umid',
             'voters_id', 'voters', 'voter_id', 'comelec' => 'voters_id',
+            'senior_citizen_id', 'senior', 'senior_id', 'osca', 'sc_id' => 'senior_citizen_id',
             'auto', 'automatic', '' => 'auto',
             default => 'national',
         };
@@ -1497,6 +1883,10 @@ class OCRService
             return 'voters_id';
         }
 
+        if ($requestedType === 'senior_citizen_id') {
+            return 'senior_citizen_id';
+        }
+
         $fullText = strtoupper(implode(' ', $lines));
 
         if (preg_match('/\bPASSPORT\b/', $fullText)) {
@@ -1516,6 +1906,10 @@ class OCRService
 
         if ($this->textLooksLikeVotersId($fullText)) {
             return 'voters_id';
+        }
+
+        if ($this->textLooksLikeSeniorCitizenId($fullText)) {
+            return 'senior_citizen_id';
         }
 
         if ($this->textLooksLikeUmid($fullText)) {
