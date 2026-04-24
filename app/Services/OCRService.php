@@ -236,6 +236,9 @@ class OCRService
             case 'umid':
                 $extracted = $this->extractUmidData($lines, $extracted);
                 break;
+            case 'voters_id':
+                $extracted = $this->extractVotersIdData($lines, $extracted);
+                break;
             default:
                 $extracted = $this->extractNationalIdData($lines, $extracted);
                 break;
@@ -812,6 +815,656 @@ class OCRService
         return false;
     }
 
+    /**
+     * COMELEC Voter's Identification Card: VIN, precinct, surname / first / middle, long-form DOB.
+     */
+    protected function extractVotersIdData(array $lines, array $extracted): array
+    {
+        $normalizedLines = array_values(array_filter(array_map(fn ($line) => $this->normalizeOcrLine($line), $lines)));
+        $fullText = implode(' ', $normalizedLines);
+        $compactText = preg_replace('/\s+/', ' ', $fullText);
+        $compactNormalized = $this->normalizeVotersLabelTypos($compactText);
+
+        $lastName = '';
+        $firstName = '';
+        $middleName = '';
+
+        $mergeVoterNames = function (array $src) use (&$lastName, &$firstName, &$middleName): void {
+            if ($lastName === '' && ($src['last_name'] ?? '') !== '') {
+                $lastName = (string) $src['last_name'];
+            }
+            if ($firstName === '' && ($src['first_name'] ?? '') !== '') {
+                $firstName = (string) $src['first_name'];
+            }
+            if ($middleName === '' && ($src['middle_name'] ?? '') !== '') {
+                $middleName = (string) $src['middle_name'];
+            }
+        };
+
+        // Prefer voter-specific parsers first — driver-style label scan can grab wrong tokens from long OCR lines.
+        $mergeVoterNames($this->extractVotersNamesFromCompactText($compactNormalized));
+        $mergeVoterNames($this->extractVotersNamesBetweenVinAndDob($compactNormalized));
+        // Many COMELEC cards print surname / first / middle as three unlabeled lines after the VIN.
+        $mergeVoterNames($this->extractVotersNamesUnlabeledTripletAfterVin($compactNormalized));
+        $mergeVoterNames($this->extractVotersNamesUnlabeledTripletFromLines($normalizedLines));
+        $mergeVoterNames($this->extractVotersNamesFromLineBlocks($normalizedLines));
+
+        if ($lastName === '' || $firstName === '') {
+            $commaNames = $this->extractDriverNamesFromCommaLine($normalizedLines);
+            if ($lastName === '' && !empty($commaNames['last_name'])) {
+                $lastName = $commaNames['last_name'];
+            }
+            if ($firstName === '' && !empty($commaNames['first_name'])) {
+                $firstName = $commaNames['first_name'];
+            }
+            if ($middleName === '' && !empty($commaNames['middle_name'])) {
+                $middleName = $commaNames['middle_name'];
+            }
+        }
+
+        if ($lastName === '') {
+            $lastName = $this->extractLabeledDriverNameValue($normalizedLines, ['SURNAME', 'LAST NAME', 'APELYIDO']);
+        }
+        if ($firstName === '') {
+            $firstName = $this->extractLabeledDriverNameValue($normalizedLines, ['FIRST NAME', 'GIVEN NAME', 'MGA PANGALAN'], true);
+        }
+        if ($middleName === '') {
+            $middleName = $this->extractLabeledDriverNameValue($normalizedLines, ['MIDDLE NAME', 'MIDDLE INITIAL', 'GITNANG APELYIDO'], true);
+        }
+
+        if (!empty($lastName)) {
+            $extracted['last_name'] = $lastName;
+        }
+        if (!empty($firstName)) {
+            $extracted['first_name'] = $firstName;
+        }
+        if (!empty($middleName)) {
+            $extracted['middle_name'] = $middleName;
+        }
+
+        if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim(
+                $extracted['last_name']
+                . ', '
+                . $extracted['first_name']
+                . (!empty($extracted['middle_name']) ? ' ' . $extracted['middle_name'] : '')
+            );
+        }
+
+        $vin = $this->extractVotersVin($compactText, $normalizedLines);
+        if (!empty($vin)) {
+            $extracted['document_number'] = $vin;
+        }
+
+        $dateOfBirth = $this->extractLabeledDriverDate($normalizedLines, ['DATE OF BIRTH', 'BIRTH DATE', 'BIRTHDATE', 'DOB', 'PETSA NG KAPANGANAKAN']);
+        if (empty($dateOfBirth)) {
+            $dateOfBirth = $this->extractDateOfBirthWithEnglishMonth($fullText);
+        }
+        if (empty($dateOfBirth) && preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $fullText, $matches)) {
+            $dateOfBirth = $this->normalizeDate((string) $matches[1]);
+        }
+        if (!empty($dateOfBirth)) {
+            $extracted['date_of_birth'] = $dateOfBirth;
+        }
+
+        if (preg_match('/\b(?:SEX|GENDER)\s*[:\-]?\s*(MALE|FEMALE|M|F)\b/i', $fullText, $matches)) {
+            $gender = strtoupper((string) $matches[1]);
+            $extracted['gender'] = $gender === 'M' ? 'M' : ($gender === 'F' ? 'F' : $gender);
+        } elseif (preg_match('/\b(MALE|FEMALE)\b/i', $fullText, $matches)) {
+            $extracted['gender'] = strtoupper($matches[1][0]);
+        }
+
+        if (preg_match('/\bCITIZENSHIP\s*[:\-]?\s*([A-Z]{3,20})\b/i', $fullText, $m)) {
+            $extracted['nationality'] = trim((string) $m[1]);
+        }
+
+        $address = $this->extractVotersAddressAfterLabel($normalizedLines, $compactText);
+        if (empty($address)) {
+            $address = $this->extractLabeledDriverAddress($normalizedLines);
+        }
+        if (empty($address)) {
+            $address = $this->extractLabeledAddressValue($normalizedLines);
+        }
+        if (empty($address)) {
+            $address = $this->buildAddressFromNationalIdLines($normalizedLines, $compactText);
+        }
+        if (!empty($address)) {
+            $extracted['address'] = $this->normalizeComelecAddressForParseAddress($address, $compactText);
+        }
+
+        return $extracted;
+    }
+
+    /**
+     * Fix spaced / garbled COMELEC field labels before regex extraction.
+     */
+    protected function normalizeVotersLabelTypos(string $text): string
+    {
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($text)));
+
+        $replacements = [
+            '/\bSUR\s+N\s*A\s*M\s*E\b/' => 'SURNAME',
+            '/\bSURN\s*A\s*M\s*E\b/' => 'SURNAME',
+            '/\bSUR\s*N\s*A\s*M\s*E\b/' => 'SURNAME',
+            '/\bFIR\s*ST\s+N\s*A\s*M\s*E\b/' => 'FIRST NAME',
+            '/\bF\s*I\s*R\s*S\s*T\s+N\s*A\s*M\s*E\b/' => 'FIRST NAME',
+            '/\bF\s*I\s*R\s*S\s*T\s*NAME\b/' => 'FIRST NAME',
+            '/\bMID\s*D\s*L\s*E\s+N\s*A\s*M\s*E\b/' => 'MIDDLE NAME',
+            '/\bM\s*I\s*D\s*D\s*L\s*E\s+N\s*A\s*M\s*E\b/' => 'MIDDLE NAME',
+            '/\bMID\s*DLE\s+NAME\b/' => 'MIDDLE NAME',
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $t = preg_replace($pattern, $replacement, $t);
+        }
+
+        return $t;
+    }
+
+    /**
+     * Names usually sit between the VIN token and "DATE OF BIRTH" on COMELEC cards — isolate that span for parsing.
+     */
+    protected function extractVotersNamesBetweenVinAndDob(string $compactText): array
+    {
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($compactText)));
+        if (!preg_match('/\b(\d{4}-[A-Z0-9]+-[A-Z0-9]{6,}-\d)\b/', $t, $vm)) {
+            return ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        }
+
+        $vinToken = strtoupper((string) $vm[1]);
+        $pos = strpos($t, $vinToken);
+        if ($pos === false) {
+            return ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        }
+
+        $afterVin = trim(substr($t, $pos + strlen($vinToken)));
+        if ($afterVin === '') {
+            return ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        }
+
+        if (preg_match('/\bDATE\s+OF\s+BIRTH\b/i', $afterVin, $dm, PREG_OFFSET_CAPTURE)) {
+            $segment = trim(substr($afterVin, 0, (int) $dm[0][1]));
+
+            return $this->extractVotersNamesFromCompactText($this->normalizeVotersLabelTypos($segment));
+        }
+
+        return $this->extractVotersNamesFromCompactText($this->normalizeVotersLabelTypos($afterVin));
+    }
+
+    /**
+     * Strip header fragments that sometimes sit between VIN and the three name lines on COMELEC IDs.
+     */
+    protected function stripComelecHeaderPrefixBeforeNames(string $segment): string
+    {
+        $s = strtoupper(preg_replace('/\s+/', ' ', trim($segment)));
+
+        for ($i = 0; $i < 30; $i++) {
+            $before = $s;
+            $s = preg_replace('/^[\s,;:]+/', '', $s);
+            $s = preg_replace('/^(?:(?:LIPA\s+CITY,?\s*)|(?:BATANGAS)\s+|(?:COMMISSION\s+ON\s+ELECTIONS)\s+|(?:REPUBLIC\s+OF\s+THE\s+PHILIPPINES)\s+|(?:REPUBLIC\s+OF\s+PHILIPPINES)\s+|(?:COMELEC)\s+|(?:PHILIPPINES)\s+|(?:ELECTIONS)\s+|(?:COMMISSION)\s+|(?:REPUBLIC)\s+|(?:THE)\s+|(?:OF)\s+|(?:ON)\s+)+/i', '', $s);
+            if ($s === $before) {
+                break;
+            }
+        }
+
+        return trim($s);
+    }
+
+    /**
+     * Three all-caps tokens after VIN, before DOB / civil / address (no SURNAME/FIRST NAME labels on card).
+     */
+    protected function extractVotersNamesUnlabeledTripletAfterVin(string $compactText): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($compactText)));
+
+        if (!preg_match('/\b(\d{4}-[A-Z0-9]+-[A-Z0-9]{6,}-\d)\b(.*)$/is', $t, $vm)) {
+            return $out;
+        }
+
+        $afterVin = trim((string) $vm[2]);
+        if ($afterVin === '') {
+            return $out;
+        }
+
+        if (preg_match('/\bDATE\s+OF\s+BIRTH\b/i', $afterVin, $dm, PREG_OFFSET_CAPTURE)) {
+            $segment = trim(substr($afterVin, 0, (int) $dm[0][1]));
+        } else {
+            $segment = $afterVin;
+        }
+
+        $seg = $this->stripComelecHeaderPrefixBeforeNames($segment);
+        if ($seg === '') {
+            return $out;
+        }
+
+        // Segment is usually cut *before* "DATE OF BIRTH", so allow end-of-string as well as a following field.
+        $dobStop = '(?=\s+(?:DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|OCTOBER|JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|NOVEMBER|DECEMBER|CIVIL\s+STATUS|CIVIL|ADDRESS|PRECINCT|CITIZENSHIP|MARRIED|SINGLE|FILIPINO|WIDOW)\b|\s*$)';
+
+        if (!preg_match('/^([A-Z0-9]{2,25})\s+([A-Z0-9]{2,25})\s+([A-Z0-9]{2,25})\s*' . $dobStop . '/is', $seg, $m)) {
+            return $out;
+        }
+
+        $ln = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[1]), false);
+        $fn = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[2]), true);
+        $mn = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[3]), true);
+
+        if ($ln !== '' && $fn !== '' && $mn !== '') {
+            $out['last_name'] = $ln;
+            $out['first_name'] = $fn;
+            $out['middle_name'] = $mn;
+        }
+
+        return $out;
+    }
+
+    protected function extractVotersNamesUnlabeledTripletFromLines(array $lines): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $vinIdx = -1;
+
+        foreach ($lines as $i => $line) {
+            if (preg_match('/\b\d{4}-[A-Z0-9]+-[A-Z0-9]{6,}-\d\b/', $line)) {
+                $vinIdx = $i;
+                break;
+            }
+        }
+
+        if ($vinIdx < 0) {
+            return $out;
+        }
+
+        $buf = [];
+        for ($j = $vinIdx + 1; $j < count($lines); $j++) {
+            $line = trim((string) $lines[$j]);
+            if ($line === '') {
+                continue;
+            }
+
+            if ($this->isVotersNameSectionStopLine($line)) {
+                break;
+            }
+
+            if ($this->isVotersNameSkippableHeaderLine($line)) {
+                continue;
+            }
+
+            $tok = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken($line), false);
+            if ($tok === '' || str_contains($tok, ' ')) {
+                continue;
+            }
+
+            $buf[] = $tok;
+            if (count($buf) >= 3) {
+                $out['last_name'] = $buf[0];
+                $out['first_name'] = $buf[1];
+                $out['middle_name'] = $buf[2];
+
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    protected function isVotersNameSectionStopLine(string $line): bool
+    {
+        return (bool) preg_match('/\b(DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|CIVIL\s+STATUS|ADDRESS|PRECINCT|CITIZENSHIP|MARRIED|SINGLE|FILIPINO|WIDOW|WIDOWED|DIVORCED|OCTOBER|JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|NOVEMBER|DECEMBER)\b/i', $line);
+    }
+
+    protected function isVotersNameSkippableHeaderLine(string $line): bool
+    {
+        if (preg_match('/^LIPA\s+CITY,?\s*BATANGAS$/i', $line)) {
+            return true;
+        }
+
+        return (bool) preg_match('/^(?:LIPA\s+CITY,?|BATANGAS|COMMISSION\s+ON\s+ELECTIONS|REPUBLIC\s+OF\s+THE\s+PHILIPPINES|REPUBLIC\s+OF\s+PHILIPPINES|COMELEC|PHILIPPINES|REPUBLIC|COMMISSION|ELECTIONS|THE|OF|ON|AND)$/i', $line);
+    }
+
+    /**
+     * Map common OCR digit misreads inside name tokens (e.g. H3RNANDEZ).
+     */
+    protected function fixVoterNameOcrDigitsInToken(string $token): string
+    {
+        $token = strtoupper(trim($token));
+        if ($token === '' || !preg_match('/\d/', $token)) {
+            return $token;
+        }
+
+        static $digitToLetter = [
+            '0' => 'O', '1' => 'I', '2' => 'Z', '3' => 'E', '4' => 'A',
+            '5' => 'S', '6' => 'G', '7' => 'T', '8' => 'B', '9' => 'G',
+        ];
+
+        $out = '';
+        for ($i = 0, $len = strlen($token); $i < $len; $i++) {
+            $c = $token[$i];
+            $out .= $digitToLetter[$c] ?? $c;
+        }
+
+        return $out;
+    }
+
+    /**
+     * COMELEC OCR often yields one long line; driver-style extraction requires the value at EOL.
+     */
+    protected function extractVotersNamesFromCompactText(string $compactText): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $t = strtoupper(preg_replace('/\s+/', ' ', trim($compactText)));
+        $t = $this->normalizeVotersLabelTypos($t);
+
+        $nameTok = '([A-Z0-9]{2,25})';
+        $middleTok = '([A-Z0-9]{2,25}(?:\s+[A-Z0-9]{2,12})?)';
+        $stop = '(?=\s+(?:DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|ADDRESS|PRECINCT|CIVIL\s+STATUS|CITIZENSHIP)\b|\s*$)';
+
+        $patterns = [
+            '/\bSURNAME\s*[:\-]?\s*' . $nameTok . '\s+FIRST\s+NAME\s*[:\-]?\s*' . $nameTok . '\s+MIDDLE\s+NAME\s*[:\-]?\s*' . $middleTok . $stop . '/i',
+            '/\bSURNAME\s*[:\-]?\s*' . $nameTok . '\s*[,;]\s*' . $nameTok . '\s*[,;]\s*' . $middleTok . $stop . '/i',
+            '/\bSURNAME\s*[:\-]?\s*' . $nameTok . '\s+FIRST\s+NAME\s*[:\-]?\s*' . $nameTok . '\b/i',
+            '/\bSURNAME\s*[:\-]?\s*' . $nameTok . '\s+' . $nameTok . '\s+' . $nameTok . $stop . '/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (!preg_match($pattern, $t, $m)) {
+                continue;
+            }
+            $ln = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[1]), false);
+            $fn = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[2]), true);
+            $mn = isset($m[3]) ? $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[3]), true) : '';
+
+            if ($ln !== '' && $fn !== '') {
+                $out['last_name'] = $ln;
+                $out['first_name'] = $fn;
+                $out['middle_name'] = $mn;
+
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Read name values on the lines after SURNAME / FIRST NAME / MIDDLE NAME labels (column layout).
+     */
+    protected function extractVotersNamesFromLineBlocks(array $lines): array
+    {
+        $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
+        $map = [
+            'last_name' => ['SURNAME', 'LAST NAME'],
+            'first_name' => ['FIRST NAME', 'GIVEN NAME'],
+            'middle_name' => ['MIDDLE NAME', 'MIDDLE INITIAL'],
+        ];
+
+        foreach ($map as $field => $labels) {
+            if ($out[$field] !== '') {
+                continue;
+            }
+
+            foreach ($lines as $i => $line) {
+                $matchedLabel = '';
+                foreach ($labels as $lab) {
+                    $uLab = strtoupper($lab);
+                    if (!str_contains($line, $uLab)) {
+                        continue;
+                    }
+                    $matchedLabel = $uLab;
+                    break;
+                }
+                if ($matchedLabel === '') {
+                    continue;
+                }
+
+                if (preg_match('/' . preg_quote($matchedLabel, '/') . '\s*[:\-]?\s*([A-Z0-9]{2,25})\s*$/i', $line, $m)) {
+                    $tok = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken((string) $m[1]), $field !== 'last_name');
+                    if ($tok !== '') {
+                        $out[$field] = $tok;
+                        break;
+                    }
+                }
+
+                for ($j = $i + 1; $j <= min($i + 8, count($lines) - 1); $j++) {
+                    $ln = trim((string) $lines[$j]);
+                    if ($ln === '') {
+                        continue;
+                    }
+                    if (preg_match('/\b(SURNAME|FIRST\s+NAME|MIDDLE\s+NAME|DATE\s+OF\s+BIRTH|DATEOFBIRTH|DOB|PRECINCT|VIN|ADDRESS|CIVIL\s+STATUS|CITIZENSHIP|COMMISSION|COMELEC|REPUBLIC|CHAIRMAN|VOTER)\b/i', $ln)) {
+                        break;
+                    }
+                    $tok = $this->sanitizeVotersNameToken($this->fixVoterNameOcrDigitsInToken($ln), $field !== 'last_name');
+                    if ($tok !== '') {
+                        $out[$field] = $tok;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    protected function sanitizeVotersNameToken(string $raw, bool $allowMultiWord): string
+    {
+        $raw = strtoupper(preg_replace('/\s+/', ' ', trim($raw)));
+        $raw = trim((string) $raw, " \t\n\r\0\x0B,:;.-");
+
+        if ($raw === '' || strlen($raw) > 45 || preg_match('/\d/', $raw)) {
+            return '';
+        }
+
+        if (!preg_match('/^[A-Z\s]+$/', $raw)) {
+            return '';
+        }
+
+        $badExact = [
+            'SURNAME', 'FIRST', 'NAME', 'MIDDLE', 'LAST', 'GIVEN', 'DATE', 'BIRTH', 'VIN', 'PRECINCT',
+            'ADDRESS', 'CIVIL', 'STATUS', 'CITIZENSHIP', 'MARRIED', 'SINGLE', 'WIDOW', 'WIDOWED', 'FILIPINO',
+            'COMELEC', 'REPUBLIC', 'COMMISSION', 'ELECTIONS', 'CHAIRMAN', 'VOTER', 'IDENTIFICATION',
+            'SIGNATURE', 'RIGHT', 'THUMB', 'BATANGAS', 'LIPA', 'CITY', 'MALITLIT', 'PROVINCE', 'REGION',
+            'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+        ];
+        foreach (explode(' ', $raw) as $w) {
+            if ($w !== '' && in_array($w, $badExact, true)) {
+                return '';
+            }
+        }
+
+        $wc = count(array_filter(explode(' ', $raw)));
+        if (!$allowMultiWord && $wc > 2) {
+            return '';
+        }
+        if ($allowMultiWord && $wc > 3) {
+            return '';
+        }
+
+        $vowels = preg_match_all('/[AEIOUY]/', $raw);
+        if ($vowels < 1) {
+            return '';
+        }
+
+        return $raw;
+    }
+
+    /**
+     * Turn COMELEC "MALITLIT LIPA CITY [, MALITLIT]" into a string parseAddress maps to barangay + city.
+     */
+    protected function normalizeComelecAddressForParseAddress(string $address, string $compactText): string
+    {
+        $u = strtoupper(preg_replace('/\s+/', ' ', trim($address)));
+        if ($u === '') {
+            return '';
+        }
+
+        if (preg_match('/\bBRGY\./i', $u)) {
+            if (preg_match('/\bBATANGAS\b/', strtoupper($compactText)) && !preg_match('/\bBATANGAS\b/', $u)) {
+                return $u . ', BATANGAS';
+            }
+
+            return $address;
+        }
+
+        if (preg_match('/^([A-Z]{3,25})\s+(.+?\bCITY)\s*,?\s*\1$/', $u, $m)) {
+            $u = $m[1] . ' ' . $m[2];
+        } elseif (preg_match('/^([A-Z]{3,25})\s+(.+?\bCITY)\s+\1$/', $u, $m)) {
+            $u = $m[1] . ' ' . $m[2];
+        }
+
+        if (preg_match('/^([A-Z]+(?:\s+[A-Z]+){0,1})\s+((?:[A-Z]+\s+){1,3}CITY)$/i', $u, $m)) {
+            $brgy = trim((string) $m[1]);
+            $cityLine = trim((string) $m[2]);
+            if (strlen($brgy) >= 3 && strlen($cityLine) >= 6) {
+                $prov = preg_match('/\bBATANGAS\b/', strtoupper($compactText)) ? ', BATANGAS' : '';
+
+                return 'BRGY. ' . $brgy . ', ' . $cityLine . $prov;
+            }
+        }
+
+        return $address;
+    }
+
+    /**
+     * VIN on voter's ID: e.g. 1014-0349A-J2363JVH20000-1 (segments separated by hyphens).
+     */
+    protected function extractVotersVin(string $compactText, array $lines): string
+    {
+        if (preg_match('/\b(?:VIN|VOTER\s+IDENTIFICATION(?:\s+NUMBER)?)\s*[:\#\-]?\s*([A-Z0-9][A-Z0-9\-]{12,45})\b/i', $compactText, $m)) {
+            $candidate = strtoupper(preg_replace('/\s+/', '', (string) $m[1]));
+            if ($this->looksLikeVotersVin($candidate)) {
+                return $candidate;
+            }
+        }
+
+        foreach ($lines as $line) {
+            if (!preg_match('/\bVIN\b/i', $line)) {
+                continue;
+            }
+            if (preg_match('/\bVIN\s*[:\#\-]?\s*([A-Z0-9][A-Z0-9\-]{12,45})\b/i', $line, $m)) {
+                $candidate = strtoupper(preg_replace('/\s+/', '', (string) $m[1]));
+                if ($this->looksLikeVotersVin($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        if (preg_match('/\b(\d{4}-[A-Z0-9]+-[A-Z0-9]{6,}-\d)\b/i', $compactText, $m)
+            && $this->textLooksLikeVotersId(strtoupper($compactText))) {
+            $candidate = strtoupper((string) $m[1]);
+
+            return $this->looksLikeVotersVin($candidate) ? $candidate : '';
+        }
+
+        return '';
+    }
+
+    protected function looksLikeVotersVin(string $value): bool
+    {
+        $value = strtoupper(trim($value));
+        if (strlen($value) < 18 || strlen($value) > 48) {
+            return false;
+        }
+
+        if (substr_count($value, '-') < 3) {
+            return false;
+        }
+
+        return (bool) preg_match('/^\d{4}-/', $value);
+    }
+
+    /**
+     * COMELEC cards often use "October 23, 1963" (comma optional).
+     */
+    protected function extractDateOfBirthWithEnglishMonth(string $text): string
+    {
+        if (preg_match('/\b(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{1,2}),?\s*(\d{4})\b/i', $text, $m)) {
+            return $this->englishMonthDayYearToIso((string) $m[1], (string) $m[2], (string) $m[3]);
+        }
+
+        return '';
+    }
+
+    protected function englishMonthDayYearToIso(string $monthName, string $day, string $year): string
+    {
+        $map = [
+            'january' => '01', 'february' => '02', 'march' => '03', 'april' => '04',
+            'may' => '05', 'june' => '06', 'july' => '07', 'august' => '08',
+            'september' => '09', 'october' => '10', 'november' => '11', 'december' => '12',
+        ];
+        $key = strtolower(trim($monthName));
+        $mm = $map[$key] ?? '';
+        if ($mm === '') {
+            return '';
+        }
+        $d = str_pad(preg_replace('/\D/', '', $day), 2, '0', STR_PAD_LEFT);
+        $y = preg_replace('/\D/', '', $year);
+        if (strlen($y) !== 4 || (int) $d < 1 || (int) $d > 31) {
+            return '';
+        }
+
+        return "{$y}-{$mm}-{$d}";
+    }
+
+    protected function extractVotersAddressAfterLabel(array $lines, string $compactText): string
+    {
+        if (preg_match('/\bADDRESS\s*[:\-]?\s*([A-Z0-9\s,.]+?)(?=\s+\bPRECINCT\b|\s+\bVIN\b|\s+\bDATE OF BIRTH\b|\s+\bCIVIL STATUS\b|\s+\bCITIZENSHIP\b|\s+\bSURNAME\b|$)/i', $compactText, $m)) {
+            $tail = trim((string) $m[1]);
+            $tail = preg_replace('/\b(PRECINCT|VIN|DATE OF BIRTH|CIVIL STATUS|CITIZENSHIP|SURNAME|FIRST NAME|MIDDLE NAME)\b.*$/i', '', $tail);
+
+            return $this->cleanAddressCandidate(trim((string) $tail));
+        }
+
+        foreach ($lines as $i => $line) {
+            if (!preg_match('/\bADDRESS\b/i', $line)) {
+                continue;
+            }
+            $same = preg_replace('/^.*?\bADDRESS\s*[:\-]?\s*/i', '', $line);
+            $same = $this->cleanAddressCandidate(trim((string) $same));
+            $parts = [];
+            if (!empty($same)) {
+                $parts[] = $same;
+            }
+            for ($j = $i + 1; $j <= min($i + 5, count($lines) - 1); $j++) {
+                if (preg_match('/\b(PRECINCT|VIN|DATE OF BIRTH|CIVIL STATUS|CITIZENSHIP|SURNAME|FIRST NAME|MIDDLE NAME)\b/i', $lines[$j])) {
+                    break;
+                }
+                $candidate = $this->cleanAddressCandidate((string) $lines[$j]);
+                if (!empty($candidate)) {
+                    $parts[] = $candidate;
+                }
+            }
+            if (!empty($parts)) {
+                return implode(', ', array_values(array_unique($parts)));
+            }
+        }
+
+        return '';
+    }
+
+    protected function textLooksLikeVotersId(string $fullTextUpper): bool
+    {
+        if (preg_match('/\bCOMELEC\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/COMMISSION\s+ON\s+ELECTIONS/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bVOTER[\'S]*\s+IDENTIFICATION\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bVOTERS?\s+ID\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bVIN\b/', $fullTextUpper) && preg_match('/\bPRECINCT\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function normalizeIdType(string $idType): string
     {
         $normalized = strtolower(trim($idType));
@@ -820,6 +1473,7 @@ class OCRService
             'passport', 'pass port', 'password' => 'passport',
             'driver', 'driver_license', 'drivers_license', 'driver-license' => 'driver_license',
             'umid' => 'umid',
+            'voters_id', 'voters', 'voter_id', 'comelec' => 'voters_id',
             'auto', 'automatic', '' => 'auto',
             default => 'national',
         };
@@ -839,6 +1493,10 @@ class OCRService
             return 'umid';
         }
 
+        if ($requestedType === 'voters_id') {
+            return 'voters_id';
+        }
+
         $fullText = strtoupper(implode(' ', $lines));
 
         if (preg_match('/\bPASSPORT\b/', $fullText)) {
@@ -854,6 +1512,10 @@ class OCRService
 
         if (preg_match('/\b(DRIVER|LICENSE|LICENCE|DL)\b/', $fullText)) {
             return 'driver_license';
+        }
+
+        if ($this->textLooksLikeVotersId($fullText)) {
+            return 'voters_id';
         }
 
         if ($this->textLooksLikeUmid($fullText)) {
@@ -1202,7 +1864,7 @@ class OCRService
             }
 
             for ($j = $i + 1; $j <= min($i + 3, count($lines) - 1); $j++) {
-                if (preg_match('/\b(DATE OF BIRTH|BIRTH|EXPIRATION|EXPIRY|SEX|GENDER|NATIONALITY|LICENSE|LICENCE)\b/', $lines[$j])) {
+                if (preg_match('/\b(DATE OF BIRTH|BIRTH|EXPIRATION|EXPIRY|SEX|GENDER|NATIONALITY|LICENSE|LICENCE|PRECINCT|VIN|CIVIL STATUS|CITIZENSHIP)\b/', $lines[$j])) {
                     break;
                 }
 
