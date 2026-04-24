@@ -773,19 +773,15 @@ class OCRService
             $extracted['gender'] = strtoupper($matches[1][0]);
         }
 
-        $address = $this->extractUmidAddressMultiline($normalizedLines);
-        if (empty($address)) {
-            $address = $this->extractLabeledDriverAddress($normalizedLines);
-        }
-        if (empty($address)) {
-            $address = $this->extractUmidAddressLine($compactText, $normalizedLines);
-        }
-        if (empty($address)) {
-            $address = $this->extractLabeledAddressValue($normalizedLines);
-        }
-        if (empty($address)) {
-            $address = $this->buildAddressFromNationalIdLines($normalizedLines, $compactText);
-        }
+        $addressCandidates = [];
+        $addressCandidates[] = $this->extractUmidAddressMultiline($normalizedLines);
+        $addressCandidates[] = $this->extractUmidAddressLine($compactText, $normalizedLines);
+        $addressCandidates[] = $this->extractUmidAddressFromCompactLoose($compactText);
+        $addressCandidates[] = $this->extractLabeledDriverAddress($normalizedLines);
+        $addressCandidates[] = $this->extractLabeledAddressValue($normalizedLines);
+        $addressCandidates[] = $this->buildAddressFromNationalIdLines($normalizedLines, $compactText);
+
+        $address = $this->pickBestUmidAddressCandidate($addressCandidates);
         if (!empty($address)) {
             $extracted['address'] = $this->trimUmidAddressTrailingFields($address);
         }
@@ -813,6 +809,8 @@ class OCRService
             '/\bSURN\s*A\s*M\s*E\b/' => 'SURNAME',
             '/\bMID\s*D\s*L\s*E\s+N\s*A\s*M\s*E\b/' => 'MIDDLE NAME',
             '/\bADD\s*R\s*E\s*S\s*S\b/' => 'ADDRESS',
+            '/\bADORESS\b/' => 'ADDRESS',
+            '/\bADD0RESS\b/' => 'ADDRESS',
         ];
 
         foreach ($replacements as $pattern => $replacement) {
@@ -847,6 +845,19 @@ class OCRService
                     break;
                 }
 
+                $joinedSoFar = implode(' ', $addressParts);
+                $nextRaw = strtoupper(trim((string) $lines[$j]));
+
+                // Once PHL is already captured, allow only a short ZIP continuation line.
+                // This avoids pulling signature/name noise below the ID card text block.
+                if (
+                    preg_match('/\bPHL\b/', $joinedSoFar)
+                    && $nextRaw !== ''
+                    && !preg_match('/^\d{3,5}\??$/', $nextRaw)
+                ) {
+                    break;
+                }
+
                 $c = $this->cleanUmidAddressContinuationLine((string) $lines[$j]);
                 if ($c !== '') {
                     $addressParts[] = $c;
@@ -854,6 +865,13 @@ class OCRService
 
                 $joined = implode(' ', $addressParts);
                 if (preg_match('/\bPHL\s*\d{4}\b/', $joined)) {
+                    break;
+                }
+
+                if (
+                    preg_match('/\bPHL\b/', $joined)
+                    && preg_match('/\b(?:LIPA\s+CITY|CITY\s+OF\s+[A-Z\s]+|BATANGAS)\b/i', $joined)
+                ) {
                     break;
                 }
             }
@@ -914,22 +932,22 @@ class OCRService
     protected function extractUmidAddressLine(string $compactText, array $lines): string
     {
         // Newer layout: house + optional PRK/PUROK + BRGY. (dot) + ... + PHL + ZIP (one compact string).
-        if (preg_match('/\b(\d{1,5}(?:\s+(?:PRK|PUROK)\s*\d+)?\s+BRGY\.?\s+.+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+        if (preg_match('/\b(\d{1,5}(?:\s+(?:PRK|PUROK)\s*\d+)?\s+BRGY\.?\s+.+?\bPHL(?:\s*[0-9?]{3,5})?)\b/i', $compactText, $m)) {
             return $this->cleanAddressCandidate(trim((string) $m[1]));
         }
 
         // Prefer barangay-style lines so a trailing "/23" from a DOB line is not read as a house number.
-        if (preg_match('/\b(\d{1,5}\s+BRGY\.?\s+.+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+        if (preg_match('/\b(\d{1,5}\s+BRGY\.?\s+.+?\bPHL(?:\s*[0-9?]{3,5})?)\b/i', $compactText, $m)) {
             return $this->cleanAddressCandidate(trim((string) $m[1]));
         }
 
-        if (preg_match('/\b(\d{3,5}\s+[A-Z0-9\s.]+?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+        if (preg_match('/\b(\d{3,5}\s+[A-Z0-9\s.]+?\bPHL(?:\s*[0-9?]{3,5})?)\b/i', $compactText, $m)) {
             return $this->cleanAddressCandidate(trim((string) $m[1]));
         }
 
         $merged = '';
         foreach ($lines as $idx => $line) {
-            if (preg_match('/\bPHL\b/', $line) && !preg_match('/\b\d{4}\b/', $line) && isset($lines[$idx + 1]) && preg_match('/^\d{4}$/', trim((string) $lines[$idx + 1]))) {
+            if (preg_match('/\bPHL\b/', $line) && !preg_match('/\b\d{4}\b/', $line) && isset($lines[$idx + 1]) && preg_match('/^\d{3,5}\??$/', trim((string) $lines[$idx + 1]))) {
                 $merged = $this->cleanAddressCandidate(trim($line . ' ' . trim((string) $lines[$idx + 1])));
                 if (!empty($merged)) {
                     return $merged;
@@ -938,7 +956,7 @@ class OCRService
         }
 
         foreach ($lines as $line) {
-            if (preg_match('/\bPHL\s*\d{4}\b/', $line) && preg_match('/\d/', $line)) {
+            if (preg_match('/\bPHL(?:\s*[0-9?]{3,5})?\b/', $line) && preg_match('/\d/', $line)) {
                 $candidate = $this->cleanAddressCandidate($line);
                 if (!empty($candidate)) {
                     return $candidate;
@@ -947,6 +965,74 @@ class OCRService
         }
 
         return '';
+    }
+
+    protected function extractUmidAddressFromCompactLoose(string $compactText): string
+    {
+        $t = strtoupper(trim((string) preg_replace('/\s+/', ' ', $compactText)));
+        if ($t === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(\d{1,5}(?:\s+(?:PRK|PUROK)\s*[A-Z0-9-]+)?\s+BRGY\.?\s+[A-Z\s]+?\s+(?:CITY\s+OF\s+[A-Z\s]+|[A-Z]+\s+CITY)\s+[A-Z\s]+(?:\s+PHL(?:\s*[0-9?]{3,5})?)?)/i', $t, $m)) {
+            return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        if (preg_match('/\b(\d{1,5}\s+(?:PRK|PUROK)\s*[A-Z0-9-]+\s+BRGY\.?\s+[A-Z\s]+(?:\s+[A-Z]+\s+CITY)?(?:\s+[A-Z\s]+)?)/i', $t, $m)) {
+            return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        return '';
+    }
+
+    protected function pickBestUmidAddressCandidate(array $candidates): string
+    {
+        $best = '';
+        $bestScore = -1;
+
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate === '') {
+                continue;
+            }
+
+            $clean = $this->trimUmidAddressTrailingFields($candidate);
+            $u = strtoupper(trim((string) preg_replace('/\s+/', ' ', $clean)));
+            if ($u === '') {
+                continue;
+            }
+
+            $score = strlen($u);
+
+            if (preg_match('/^\d{1,5}\b/', $u)) {
+                $score += 30;
+            }
+            if (preg_match('/\b(?:PRK|PUROK)\s*[A-Z0-9-]{1,3}\b/', $u)) {
+                $score += 45;
+            }
+            if (preg_match('/\bBRGY\.?\s+[A-Z]/', $u)) {
+                $score += 50;
+            }
+            if (preg_match('/\bCITY\b/', $u)) {
+                $score += 60;
+            }
+            if (preg_match('/\bBATANGAS\b/', $u)) {
+                $score += 60;
+            }
+            if (preg_match('/\bPHL\b/', $u)) {
+                $score += 20;
+            }
+            if (preg_match('/\b(?:SURNAME|GIVEN\s+NAME|MIDDLE\s+NAME|DATE\s+OF\s+BIRTH|CRN|COMMON\s+REFERENCE)\b/', $u)) {
+                $score -= 120;
+            }
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $best = $clean;
+            }
+        }
+
+        return $best;
     }
 
     protected function textLooksLikeUmid(string $fullTextUpper): bool
@@ -1983,6 +2069,51 @@ class OCRService
             }
             if (empty($middleName) && !empty($headerBlockNames['middle_name'])) {
                 $middleName = $headerBlockNames['middle_name'];
+            }
+        }
+
+        // Newer LTO layout prints a combined value under
+        // "Last Name, First Name, Middle Name" (e.g. "BRICCIO CARANDANG").
+        // If middle name is still empty, split the trailing token as middle name.
+        if (
+            empty($middleName)
+            && !empty($firstName)
+            && preg_match('/\bLAST\W*NAME\W*FIRST\W*NAME\W*MIDDLE\W*NAME\b/i', $fullText)
+        ) {
+            $nameParts = array_values(array_filter(preg_split('/\s+/', trim((string) $firstName))));
+            if (count($nameParts) >= 2) {
+                $middleCandidate = array_pop($nameParts);
+                $firstCandidate = implode(' ', $nameParts);
+
+                $cleanFirstCandidate = $this->cleanDriverNameCandidate($firstCandidate, true);
+                $cleanMiddleCandidate = $this->cleanDriverNameCandidate($middleCandidate, true);
+
+                if (!empty($cleanFirstCandidate) && !empty($cleanMiddleCandidate)) {
+                    $firstName = $cleanFirstCandidate;
+                    $middleName = $cleanMiddleCandidate;
+                }
+            }
+        }
+
+        // Fallback for OCR that still keeps "FIRST MIDDLE" together in first_name.
+        if (
+            empty($middleName)
+            && !empty($lastName)
+            && !empty($firstName)
+            && preg_match('/^\s*[A-Z][A-Z\s]{2,35}\s*,\s*[A-Z][A-Z\s]{2,35}\s*$/', (string) ($extracted['full_name'] ?? ''))
+        ) {
+            $nameParts = array_values(array_filter(preg_split('/\s+/', trim((string) $firstName))));
+            if (count($nameParts) >= 2) {
+                $middleCandidate = array_pop($nameParts);
+                $firstCandidate = implode(' ', $nameParts);
+
+                $cleanFirstCandidate = $this->cleanDriverNameCandidate($firstCandidate, true);
+                $cleanMiddleCandidate = $this->cleanDriverNameCandidate($middleCandidate, true);
+
+                if (!empty($cleanFirstCandidate) && !empty($cleanMiddleCandidate)) {
+                    $firstName = $cleanFirstCandidate;
+                    $middleName = $cleanMiddleCandidate;
+                }
             }
         }
 

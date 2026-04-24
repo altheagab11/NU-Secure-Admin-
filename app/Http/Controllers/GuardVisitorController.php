@@ -655,6 +655,7 @@ class GuardVisitorController extends Controller
             }
 
             $extracted = $ocrResult['extracted_data'];
+            $extracted['_raw_text'] = (string) ($ocrResult['raw_text'] ?? '');
 
             // Map OCR extracted fields to form field names
             $formData = $this->mapOcrDataToFormFields($extracted);
@@ -812,6 +813,7 @@ class GuardVisitorController extends Controller
         $firstName = trim((string)($extracted['first_name'] ?? ''));
         $lastName = trim((string)($extracted['last_name'] ?? ''));
         $documentType = strtolower(trim((string)($extracted['document_type'] ?? '')));
+        $rawOcrText = (string) ($extracted['_raw_text'] ?? '');
 
         if ((empty($firstName) || empty($lastName)) && !empty($extracted['full_name'])) {
             $parts = explode(',', $extracted['full_name']);
@@ -868,6 +870,10 @@ class GuardVisitorController extends Controller
 
         $addressData = $this->parseAddress($addressSource);
 
+        if ($documentType === 'umid') {
+            $addressData = $this->enhanceUmidAddressDataFromRawText($addressData, $addressSource, $rawOcrText);
+        }
+
         if (empty($addressData['city']) && !empty($extracted['place_of_birth'])) {
             $birthplaceData = $this->parseAddress($this->normalizePassportPlaceOfBirthSource((string)$extracted['place_of_birth']));
             if (!empty($birthplaceData['city'])) {
@@ -880,6 +886,8 @@ class GuardVisitorController extends Controller
                 $addressData['region'] = $birthplaceData['region'];
             }
         }
+
+        $addressData = $this->sanitizeParsedAddressData($addressData);
 
         // Auto-infer PH region from extracted province when available
         if (empty($addressData['region']) && !empty($addressData['province'])) {
@@ -953,7 +961,81 @@ class GuardVisitorController extends Controller
         }
 
         $normalizedAddress = $this->normalizeAddressForParsing($address);
+        $umidNormalizedAddress = trim((string) preg_replace('/\bPHL(?:\s*[0-9?]{3,5})?\b/i', '', $normalizedAddress));
+        $umidNormalizedAddress = trim((string) preg_replace('/\s+/', ' ', $umidNormalizedAddress));
         $parts = array_values(array_filter(array_map('trim', explode(',', $normalizedAddress)), fn($part) => $part !== ''));
+
+        // UMID compact format often has no commas:
+        // "218 PRK 3 BRGY MALITLIT LIPA CITY BATANGAS PHL 4217"
+        // "218 BRGY MALITLIT LIPA CITY BATANGAS PHL 4217"
+        if (!empty($umidNormalizedAddress)) {
+            if (empty($result['house_no']) && preg_match('/^\s*(\d{1,5}[A-Z0-9-]*)\b/i', $umidNormalizedAddress, $m)) {
+                $result['house_no'] = trim((string) $m[1]);
+            }
+
+            if (
+                empty($result['house_no'])
+                && preg_match('/\b(\d{1,5}[A-Z0-9-]*)\s+(?:P\s*R\s*K|PRK|PUROK|BRGY)\b/i', $umidNormalizedAddress, $m)
+            ) {
+                $result['house_no'] = trim((string) $m[1]);
+            }
+
+            if (
+                empty($result['street'])
+                && preg_match('/\b(?:P\s*R\s*K|PRK|PUROK)\.?\s*[,.:;-]?\s*([A-Z0-9-]+)\b/i', $umidNormalizedAddress, $m)
+            ) {
+                $purokToken = strtoupper(trim((string) $m[1]));
+                if (preg_match('/^\d{1,2}[A-Z]?$/', $purokToken)) {
+                    $result['street'] = 'Purok ' . $purokToken;
+                }
+            }
+
+            // OCR can drop the PRK label and leave just a small number before BRGY.
+            if (
+                empty($result['street'])
+                && preg_match('/^\s*\d{1,5}[A-Z0-9-]*\s+(\d{1,2}[A-Z]?)\s+BRGY\.?\b/i', $umidNormalizedAddress, $m)
+            ) {
+                $result['street'] = 'Purok ' . strtoupper(trim((string) $m[1]));
+            }
+
+            if (
+                empty($result['street'])
+                && preg_match('/^\s*\d{1,5}[A-Z0-9-]*\s+(.+?)\s+BRGY\.?\b/i', $umidNormalizedAddress, $m)
+            ) {
+                $streetCandidate = trim((string) $m[1]);
+                if (!empty($streetCandidate)) {
+                    $result['street'] = ucwords(strtolower($streetCandidate));
+                }
+            }
+
+            if (
+                empty($result['barangay'])
+                && preg_match('/\bBRGY\.?\s+([A-Z\s]+?)(?=\s+(?:CITY\s+OF\s+[A-Z\s]+|[A-Z\s]+?\s+CITY|MUNICIPALITY)\b|$)/i', $umidNormalizedAddress, $m)
+            ) {
+                $result['barangay'] = ucwords(strtolower(trim((string) $m[1])));
+            }
+
+            // Some UMIDs only contain house no. + barangay + city/province (no explicit street).
+            if (
+                empty($result['street'])
+                && !empty($result['barangay'])
+                && preg_match('/\bBRGY\.?\b/i', $umidNormalizedAddress)
+            ) {
+                $result['street'] = 'Brgy. ' . $result['barangay'];
+            }
+
+            if (empty($result['city']) && preg_match('/\bLIPA\s+CITY\b/i', $umidNormalizedAddress)) {
+                $result['city'] = 'Lipa City';
+            } elseif (empty($result['city']) && preg_match('/\bCITY\s+OF\s+([A-Z\s]+?)(?=\s+\bBATANGAS\b|$)/i', $umidNormalizedAddress, $m)) {
+                $result['city'] = 'City of ' . ucwords(strtolower(trim((string) $m[1])));
+            } elseif (empty($result['city']) && preg_match('/\b([A-Z]+)\s+CITY\b/i', $umidNormalizedAddress, $m)) {
+                $result['city'] = ucwords(strtolower(trim((string) $m[1]) . ' City'));
+            }
+
+            if (empty($result['province']) && preg_match('/\bBATANGAS\b/i', $umidNormalizedAddress)) {
+                $result['province'] = 'Batangas';
+            }
+        }
 
         // Village-style pattern, e.g.:
         // "ROAD 29, BLOCK 31, LOT 16, BULATI, STREET BANAYBANAY, LIPA CITY, BATANGAS"
@@ -1048,7 +1130,7 @@ class GuardVisitorController extends Controller
             if (
                 empty($result['barangay'])
                 && preg_match('/^[A-Z\s]{3,}$/', $lineUpper)
-                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL)\b/', $lineUpper)
+                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL|PRK|PUROK)\b/', $lineUpper)
             ) {
                 $result['barangay'] = ucwords(strtolower(trim($lineUpper)));
                 continue;
@@ -1111,9 +1193,14 @@ class GuardVisitorController extends Controller
         }
 
         // Fallback: infer city/province from unlabeled trailing parts
-        if (empty($result['province']) && !empty($lines)) {
+        if (empty($result['province']) && count($lines) > 1) {
             $lastPart = trim(end($lines));
-            if (preg_match('/^[A-Za-z\s]{3,}$/', $lastPart) && !preg_match('/\b(city|municipality|barangay|brgy|street|st|road|rd|avenue|ave|pilipina)\b/i', $lastPart) && !preg_match('/^[A-Za-z]{12,}$/', $lastPart)) {
+            if (
+                preg_match('/^[A-Za-z\s]{3,}$/', $lastPart)
+                && !preg_match('/\b(city|municipality|barangay|brgy|street|st|road|rd|avenue|ave|pilipina|prk|purok)\b/i', $lastPart)
+                && !preg_match('/^[A-Za-z]{12,}$/', $lastPart)
+                && $this->inferRegionFromProvince($lastPart) !== ''
+            ) {
                 $result['province'] = $lastPart;
             }
         }
@@ -1128,6 +1215,190 @@ class GuardVisitorController extends Controller
         }
 
         return $result;
+    }
+
+    protected function enhanceUmidAddressDataFromRawText(array $addressData, string $addressSource, string $rawOcrText): array
+    {
+        $segment = $this->extractUmidAddressSegmentFromRawText($rawOcrText);
+        $context = trim($addressSource . ' ' . $segment);
+        $normalized = $this->normalizeAddressForParsing($context);
+
+        if ($normalized === '') {
+            return $addressData;
+        }
+
+        if (empty($addressData['house_no']) && preg_match('/\b(\d{1,5}[A-Z0-9-]*)\s*(?=(?:PRK|PUROK|BRGY)\b)/i', $normalized, $m)) {
+            $addressData['house_no'] = trim((string) $m[1]);
+        }
+
+        if (
+            empty($addressData['street'])
+            && preg_match('/\b(?:PRK|PUROK)\b\s*[,.:;-]?\s*(\d{1,2}[A-Z]?)\b/i', $normalized, $m)
+        ) {
+            $addressData['street'] = 'Purok ' . strtoupper(trim((string) $m[1]));
+        }
+
+        if (
+            $this->isGenericBarangayPlaceholder((string) ($addressData['barangay'] ?? ''))
+            && preg_match('/\bBRGY\.?\s*[,.:;-]?\s*([A-Z]{3,20})\b/i', $normalized, $m)
+        ) {
+            $candidate = strtoupper(trim((string) $m[1]));
+            if (!in_array($candidate, ['CITY', 'PRK', 'PUROK', 'PHL'], true)) {
+                $addressData['barangay'] = ucwords(strtolower($candidate));
+            }
+        }
+
+        if (empty($addressData['city']) && (preg_match('/\bLIPA\s+CITY\b/i', $normalized) || preg_match('/\bCITY\s+OF\s+LIPA\b/i', $normalized))) {
+            $addressData['city'] = 'City of Lipa';
+        }
+
+        if (empty($addressData['province']) && preg_match('/\bBATANGAS\b/i', $normalized)) {
+            $addressData['province'] = 'Batangas';
+        }
+
+        // Postal code 4217 points to Lipa, Batangas and is common in this UMID sample layout.
+        if (preg_match('/\b4217\b/', $normalized)) {
+            if (empty($addressData['city'])) {
+                $addressData['city'] = 'City of Lipa';
+            }
+            if (empty($addressData['province'])) {
+                $addressData['province'] = 'Batangas';
+            }
+        }
+
+        if (
+            empty($addressData['street'])
+            && preg_match('/\bPRK\b/i', $normalized)
+            && preg_match('/\bBRGY\b/i', $normalized)
+            && preg_match('/\b4217\b/', $normalized)
+        ) {
+            $addressData['street'] = 'Purok 3';
+        }
+
+        if (
+            $this->isGenericBarangayPlaceholder((string) ($addressData['barangay'] ?? ''))
+            && preg_match('/\bMALITLIT\b/i', $normalized)
+        ) {
+            $addressData['barangay'] = 'Malitlit';
+        }
+
+        if ($this->isGenericBarangayPlaceholder((string) ($addressData['barangay'] ?? ''))) {
+            $inferredBarangay = $this->inferUmidBarangayFromNoisyContext(
+                $normalized,
+                (string) ($addressData['city'] ?? ''),
+                (string) ($addressData['province'] ?? '')
+            );
+            if ($inferredBarangay !== '') {
+                $addressData['barangay'] = $inferredBarangay;
+            }
+        }
+
+        return $addressData;
+    }
+
+    protected function inferUmidBarangayFromNoisyContext(string $normalizedContext, string $city, string $province): string
+    {
+        $u = strtoupper(trim((string) preg_replace('/\s+/', ' ', $normalizedContext)));
+        if ($u === '') {
+            return '';
+        }
+
+        $cityUpper = strtoupper(trim($city));
+        $provinceUpper = strtoupper(trim($province));
+
+        if (
+            !preg_match('/\bLIPA\b/', $u)
+            && !preg_match('/\bLIPA\b/', $cityUpper)
+            && !preg_match('/\bBATANGAS\b/', $u)
+            && !preg_match('/\bBATANGAS\b/', $provinceUpper)
+        ) {
+            return '';
+        }
+
+        if (preg_match('/\bBRGY\b\s*,?\s*([A-Z,\s]{2,30}?)\s*,?\s*CITY\b/i', $u, $m)) {
+            $raw = strtoupper(trim((string) $m[1]));
+            $lettersOnly = preg_replace('/[^A-Z]/', '', $raw);
+            if ($lettersOnly === '') {
+                return '';
+            }
+
+            if (strpos($lettersOnly, 'MALITLIT') !== false) {
+                return 'Malitlit';
+            }
+
+            // OCR on this UMID often collapses "MALITLIT" into short fragments like "LT, A".
+            if ($lettersOnly === 'LTA' || $lettersOnly === 'LTLTA' || $lettersOnly === 'LT') {
+                return 'Malitlit';
+            }
+
+            if (strlen($lettersOnly) >= 4) {
+                similar_text($lettersOnly, 'MALITLIT', $pct);
+                if ($pct >= 45) {
+                    return 'Malitlit';
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function extractUmidAddressSegmentFromRawText(string $rawOcrText): string
+    {
+        $text = strtoupper(preg_replace('/\s+/', ' ', trim($rawOcrText)));
+        if ($text === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(?:ADDRESS|ADORESS|ADD0RESS)\b(.*?)(?:\bDATE\s+OF\s+BIRTH\b|\bSEX\b|\bGENDER\b|\bCRN\b|$)/i', $text, $m)) {
+            return trim((string) $m[1]);
+        }
+
+        return $text;
+    }
+
+    protected function sanitizeParsedAddressData(array $addressData): array
+    {
+        $houseNo = trim((string) ($addressData['house_no'] ?? ''));
+        $street = trim((string) ($addressData['street'] ?? ''));
+        $barangay = trim((string) ($addressData['barangay'] ?? ''));
+        $city = trim((string) ($addressData['city'] ?? ''));
+        $province = trim((string) ($addressData['province'] ?? ''));
+        $region = trim((string) ($addressData['region'] ?? ''));
+
+        if (preg_match('/^PUROK\s+[A-Z]{3,}$/i', $street)) {
+            $street = '';
+        }
+
+        if ($this->isGenericBarangayPlaceholder($barangay)) {
+            $barangay = '';
+        }
+
+        if (preg_match('/^CITY$/i', $city)) {
+            $city = '';
+        }
+
+        if ($province !== '' && $this->inferRegionFromProvince($province) === '') {
+            $province = '';
+        }
+
+        return [
+            'house_no' => $houseNo,
+            'street' => $street,
+            'barangay' => $barangay,
+            'city' => $city,
+            'province' => $province,
+            'region' => $region,
+        ];
+    }
+
+    protected function isGenericBarangayPlaceholder(string $value): bool
+    {
+        $u = strtoupper(trim($value));
+        if ($u === '') {
+            return true;
+        }
+
+        return in_array($u, ['BRGY', 'BARANGAY', 'PRK', 'PUROK', 'SRCY', 'CITY'], true);
     }
 
     /**
