@@ -6,6 +6,7 @@
 	<title>Exit Scan</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -293,56 +294,124 @@
 
 		.main {
 			flex: 1;
-			background: #f7f8ff;
-			padding: 24px 32px;
+			background: #f5f7fb;
+			padding: 0;
 			overflow-y: auto;
 			margin-left: 260px;
 		}
 
-		.exit-content {
-			min-height: calc(100vh - 48px);
-			max-width: 720px;
-			margin: 0 auto;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			padding: 18px 0;
+		.exit-page-wrap {
+			padding: 28px;
 		}
 
-		.page-title {
-			margin: 0;
-			font-size: 28px;
+		.exit-page-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 16px;
+			flex-wrap: wrap;
+			margin-bottom: 24px;
+		}
+
+		.exit-page-title {
+			margin: 0 0 6px;
+			font-size: 32px;
 			font-weight: 700;
-			color: #0f172a;
-			text-align: center;
+			color: #111827;
 		}
 
-		.page-subtitle {
-			margin: 6px 0 16px;
+		.exit-page-subtitle {
+			margin: 0;
 			font-size: 14px;
-			color: #475569;
-			text-align: center;
+			color: #6b7280;
 		}
 
-		.exit-panel {
-			width: 100%;
-			background: #ffffff;
-			border: 1px solid #d9dde4;
-			border-radius: 14px;
-			padding: 16px;
-			box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-		}
-
-		.scanner-zone {
-			position: relative;
-			overflow: hidden;
-			background: #d9dee6;
-			border-radius: 10px;
-			padding: 50px 32px;
-			display: flex;
-			justify-content: center;
+		.scan-status-pill {
+			display: inline-flex;
 			align-items: center;
-			min-height: 380px;
+			gap: 8px;
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 999px;
+			padding: 10px 14px;
+			font-size: 13px;
+			font-weight: 600;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+		}
+
+		.status-dot {
+			width: 8px;
+			height: 8px;
+			background: #22c55e;
+			border-radius: 50%;
+		}
+
+		.exit-scan-layout {
+			display: grid;
+			grid-template-columns: 1.5fr 0.9fr;
+			gap: 22px;
+			align-items: start;
+		}
+
+		.scanner-panel {
+			min-width: 0;
+		}
+
+		.scanner-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 22px;
+			padding: 18px;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+		}
+
+		.scanner-card-top {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 16px;
+			flex-wrap: wrap;
+			margin-bottom: 16px;
+		}
+
+		.scanner-card-top h3 {
+			margin: 0 0 6px;
+			font-size: 20px;
+			font-weight: 700;
+		}
+
+		.scanner-card-top p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.scanner-mode-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 8px 12px;
+			border-radius: 999px;
+			background: #eef2ff;
+			color: #3f4db8;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.scanner-box {
+			margin-bottom: 16px;
+		}
+
+		.scanner-preview {
+			position: relative;
+			width: 100%;
+			min-height: 430px;
+			border-radius: 18px;
+			background: #dfe4ec;
+			border: 1px solid #d2d8e2;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 
 		.camera-feed {
@@ -353,79 +422,93 @@
 			object-fit: cover;
 			display: none;
 			background: #cbd2dc;
+			z-index: 1;
 		}
 
 		.scanner-zone.camera-on .camera-feed {
 			display: block;
 		}
 
-		.scanner-overlay {
+		.scan-frame {
 			position: relative;
+			width: 230px;
+			height: 230px;
 			z-index: 2;
-			width: 100%;
-			height: 100%;
-			display: flex;
-			justify-content: center;
-			align-items: center;
 		}
 
-		.qr-guide {
-			width: 250px;
-			height: 250px;
-			position: relative;
-			border-radius: 16px;
-			background: transparent;
-		}
-
-		.qr-guide .corner {
+		.corner {
 			position: absolute;
-			width: 44px;
-			height: 44px;
-			border-color: #3f4a9f;
+			width: 40px;
+			height: 40px;
+			border-color: #3f4db8;
 			border-style: solid;
-			pointer-events: none;
+			border-width: 0;
 		}
 
-		.qr-guide .corner.tl {
+		.top-left {
 			top: 0;
 			left: 0;
-			border-width: 5px 0 0 5px;
+			border-top-width: 5px;
+			border-left-width: 5px;
 			border-top-left-radius: 16px;
 		}
 
-		.qr-guide .corner.tr {
+		.top-right {
 			top: 0;
 			right: 0;
-			border-width: 5px 5px 0 0;
+			border-top-width: 5px;
+			border-right-width: 5px;
 			border-top-right-radius: 16px;
 		}
 
-		.qr-guide .corner.bl {
+		.bottom-left {
 			bottom: 0;
 			left: 0;
-			border-width: 0 0 5px 5px;
+			border-bottom-width: 5px;
+			border-left-width: 5px;
 			border-bottom-left-radius: 16px;
 		}
 
-		.qr-guide .corner.br {
+		.bottom-right {
 			bottom: 0;
 			right: 0;
-			border-width: 0 5px 5px 0;
+			border-bottom-width: 5px;
+			border-right-width: 5px;
 			border-bottom-right-radius: 16px;
 		}
 
-		.camera-status {
-			margin: 10px 0 0;
-			font-size: 14px;
-			color: #475569;
-			text-align: center;
+		.scanner-overlay-text {
+			position: absolute;
+			bottom: 22px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(17, 24, 39, 0.72);
+			color: #ffffff;
+			padding: 8px 14px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 600;
+			letter-spacing: 0.02em;
+			z-index: 2;
 		}
 
-		.scan-result {
-			margin: 10px 0 0;
-			font-size: 14px;
+		.scanner-helper-text {
 			text-align: center;
-			min-height: 20px;
+			margin-bottom: 18px;
+		}
+
+		.helper-normal {
+			margin: 0 0 8px;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.helper-error {
+			margin: 0;
+			font-size: 13px;
+			color: #dc2626;
+			font-weight: 500;
+			min-height: 18px;
 		}
 
 		.scan-result.success {
@@ -436,26 +519,142 @@
 			color: #dc2626;
 		}
 
-		.scan-button {
-			width: min(100%, 380px);
-			margin: 16px auto 4px;
-			height: 56px;
-			border: 0;
-			border-radius: 10px;
-			background: #3f4a9f;
-			color: #f8faff;
+		.scanner-actions {
+			display: flex;
+			justify-content: center;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.scan-btn-primary,
+		.scan-btn-secondary {
+			border: none;
+			outline: none;
+			height: 48px;
+			padding: 0 20px;
+			border-radius: 12px;
+			font-size: 14px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 10px;
+			cursor: pointer;
+			transition: 0.2s ease;
+		}
+
+		.scan-btn-primary {
+			background: linear-gradient(135deg, #3f4db8, #33419e);
+			color: #ffffff;
+			min-width: 170px;
+			justify-content: center;
+		}
+
+		.scan-btn-primary:hover {
+			transform: translateY(-1px);
+		}
+
+		.scan-btn-secondary {
+			background: #ffffff;
+			color: #111827;
+			border: 1px solid #e5e7eb;
+			min-width: 150px;
+			justify-content: center;
+		}
+
+		.scan-btn-secondary:hover {
+			background: #f9fafb;
+		}
+
+		.scan-side-panel {
+			display: flex;
+			flex-direction: column;
+			gap: 18px;
+		}
+
+		.side-info-card,
+		.recent-scan-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 18px;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+			padding: 18px;
+		}
+
+		.side-info-card {
+			display: flex;
+			gap: 14px;
+			align-items: flex-start;
+		}
+
+		.side-info-icon {
+			width: 42px;
+			height: 42px;
+			min-width: 42px;
+			border-radius: 12px;
+			background: #eef2ff;
+			color: #3f4db8;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			gap: 10px;
 			font-size: 16px;
-			font-weight: 500;
-			cursor: pointer;
 		}
 
-		.scan-button svg {
-			width: 20px;
-			height: 20px;
+		.side-info-icon.soft-green {
+			background: #ecfdf3;
+			color: #16a34a;
+		}
+
+		.side-info-card h4,
+		.recent-header h4 {
+			margin: 0 0 8px;
+			font-size: 16px;
+			font-weight: 700;
+		}
+
+		.side-info-card p,
+		.side-info-card ul,
+		.recent-empty-state p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+			line-height: 1.6;
+		}
+
+		.side-info-card ul {
+			padding-left: 18px;
+		}
+
+		.recent-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 14px;
+		}
+
+		.recent-header span {
+			font-size: 12px;
+			color: #6b7280;
+			font-weight: 600;
+		}
+
+		.recent-empty-state {
+			border: 1px dashed #d1d5db;
+			border-radius: 14px;
+			padding: 24px 16px;
+			text-align: center;
+		}
+
+		.recent-empty-icon {
+			width: 52px;
+			height: 52px;
+			margin: 0 auto 12px;
+			border-radius: 50%;
+			background: #f3f4f6;
+			color: #6b7280;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 20px;
 		}
 
 		@media (max-width: 1024px) {
@@ -471,39 +670,33 @@
 			}
 		}
 
-		@media (max-width: 480px) {
-			.sidebar-link,
-			.submenu-link,
-			.logout-btn {
-				font-size: 16px;
+		@media (max-width: 1100px) {
+			.exit-scan-layout {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		@media (max-width: 768px) {
+			.exit-page-wrap {
+				padding: 16px;
 			}
 
-			.brand-title {
-				font-size: 22px;
+			.scanner-preview {
+				min-height: 320px;
 			}
 
-			.exit-content {
-				min-height: auto;
-				max-width: none;
-				padding: 0;
-			}
-
-			.exit-panel {
-				padding: 10px;
-			}
-
-			.scanner-zone {
-				padding: 28px 12px;
-				min-height: 260px;
-			}
-
-			.qr-guide {
+			.scan-frame {
 				width: 180px;
 				height: 180px;
 			}
 
-			.scan-button {
-				height: 54px;
+			.scanner-actions {
+				flex-direction: column;
+			}
+
+			.scan-btn-primary,
+			.scan-btn-secondary {
+				width: 100%;
 			}
 		}
 	</style>
@@ -618,34 +811,107 @@
 		</aside>
 
 		<main class="main">
-			<div class="exit-content">
-				<h1 class="page-title">Exit Scan</h1>
-				<p class="page-subtitle">Process visitor exit</p>
+			<div class="exit-page-wrap">
+				<div class="exit-page-header">
+					<div>
+						<h1 class="exit-page-title">Exit Scan</h1>
+						<p class="exit-page-subtitle">Scan visitor QR code to process exit quickly and securely.</p>
+					</div>
 
-				<section class="exit-panel" aria-label="Exit Scanner">
-					<div class="scanner-zone">
-						<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
-						<div class="scanner-overlay">
-							<div class="qr-guide" aria-hidden="true">
-								<span class="corner tl"></span>
-								<span class="corner tr"></span>
-								<span class="corner bl"></span>
-								<span class="corner br"></span>
+					<div class="scan-status-pill">
+						<span class="status-dot"></span>
+						Scanner Ready
+					</div>
+				</div>
+
+				<div class="exit-scan-layout">
+					<div class="scanner-panel">
+						<div class="scanner-card">
+							<div class="scanner-card-top">
+								<div>
+									<h3>QR Scanner</h3>
+									<p>Align the QR code inside the frame to continue exit processing.</p>
+								</div>
+								<span class="scanner-mode-badge">Live Camera</span>
+							</div>
+
+							<div class="scanner-box">
+								<div id="qr-reader" class="scanner-preview scanner-zone">
+									<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
+									<div class="scan-frame">
+										<span class="corner top-left"></span>
+										<span class="corner top-right"></span>
+										<span class="corner bottom-left"></span>
+										<span class="corner bottom-right"></span>
+									</div>
+
+									<div class="scanner-overlay-text">
+										Position QR code here
+									</div>
+								</div>
+							</div>
+
+							<div class="scanner-helper-text">
+								<p class="helper-normal" id="cameraStatus">Starting camera...</p>
+								<p class="helper-error scan-result" id="scanResult" aria-live="polite"></p>
+							</div>
+
+							<div class="scanner-actions">
+								<button type="button" class="scan-btn-primary" id="scanButton">
+									<i class="fas fa-camera-retro"></i>
+									<span id="scanButtonText">Scan Exit QR</span>
+								</button>
+
+								<button type="button" class="scan-btn-secondary">
+									<i class="fas fa-keyboard"></i>
+									Manual Entry
+								</button>
+							</div>
+
+							<canvas id="scanCanvas" style="display:none;"></canvas>
+						</div>
+					</div>
+
+					<div class="scan-side-panel">
+						<div class="side-info-card">
+							<div class="side-info-icon">
+								<i class="fas fa-circle-info"></i>
+							</div>
+							<div>
+								<h4>Scanning Tips</h4>
+								<ul>
+									<li>Keep the QR code inside the scanning frame.</li>
+									<li>Use proper lighting for faster detection.</li>
+									<li>Hold the device steady for better camera focus.</li>
+								</ul>
+							</div>
+						</div>
+
+						<div class="side-info-card">
+							<div class="side-info-icon soft-green">
+								<i class="fas fa-shield-check"></i>
+							</div>
+							<div>
+								<h4>Exit Validation</h4>
+								<p>The system will verify visitor record, completion status, and exit readiness before checkout.</p>
+							</div>
+						</div>
+
+						<div class="recent-scan-card">
+							<div class="recent-header">
+								<h4>Recent Scan</h4>
+								<span>Latest</span>
+							</div>
+
+							<div class="recent-empty-state">
+								<div class="recent-empty-icon">
+									<i class="fas fa-qrcode"></i>
+								</div>
+								<p>No recent successful scan yet.</p>
 							</div>
 						</div>
 					</div>
-					<p class="camera-status" id="cameraStatus">Starting camera...</p>
-					<p class="scan-result" id="scanResult" aria-live="polite"></p>
-
-					<button type="button" class="scan-button" id="scanButton">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-							<path d="M4 7V4h3M17 4h3v3M4 17v3h3M20 17v3h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							<path d="M8 8h2v2H8zM11 8h2v2h-2zM14 8h2v2h-2zM8 11h2v2H8zM12 11h1v1h-1zM14 11h2v2h-2zM8 14h2v2H8zM11 14h2v2h-2zM14 14h2v2h-2z" fill="currentColor"/>
-						</svg>
-						<span id="scanButtonText">Scan Exit QR</span>
-					</button>
-					<canvas id="scanCanvas" style="display:none;"></canvas>
-				</section>
+				</div>
 			</div>
 		</main>
 	</div>

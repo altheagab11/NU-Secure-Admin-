@@ -6,6 +6,7 @@
 	<title>Active Alerts</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -517,178 +518,351 @@
 
 		.main {
 			flex: 1;
-			background: #f7f8ff;
-			padding: 24px 32px;
+			background: #f5f7fb;
+			padding: 0;
 			overflow-y: auto;
 			margin-left: 260px;
 		}
 
-		.page-title {
-			margin: 0 0 18px;
-			font-size: 28px;
-			font-weight: 700;
-			color: #0f172a;
+		.alerts-page-wrap {
+			padding: 24px;
 		}
 
-		.alert-summary {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+		.alerts-page-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
 			gap: 16px;
-			max-width: 560px;
-			margin: 0 auto 20px;
+			flex-wrap: wrap;
+			margin-bottom: 24px;
 		}
 
-		.summary-card {
-			position: relative;
-			background: #ffffff;
-			border: 1px solid #dfe4eb;
-			border-radius: 12px;
-			padding: 16px 22px 12px;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
-		}
-
-		.summary-title {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
+		.alerts-page-title {
+			margin: 0 0 6px;
+			font-size: 30px;
+			font-weight: 700;
 			color: #111827;
 		}
 
-		.summary-value {
-			margin: 10px 0 2px;
-			font-size: 28px;
-			font-weight: 500;
-			color: #111827;
-			line-height: 1.15;
-		}
-
-		.summary-subtitle {
+		.alerts-page-subtitle {
 			margin: 0;
 			font-size: 14px;
-			color: #4b5563;
+			color: #6b7280;
+		}
+
+		.alerts-page-meta {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.live-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			background: #fff;
+			border: 1px solid #e5e7eb;
+			padding: 10px 14px;
+			border-radius: 999px;
+			font-size: 13px;
+			font-weight: 600;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		}
+
+		.dot {
+			width: 8px;
+			height: 8px;
+			background: #22c55e;
+			border-radius: 50%;
+			display: inline-block;
+		}
+
+		.alerts-summary-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(220px, 280px));
+			gap: 18px;
+			margin-bottom: 22px;
+			justify-content: center;
+		}
+
+		.alerts-summary-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 16px;
+			padding: 20px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+			transition: 0.2s ease;
+		}
+
+		.alerts-summary-card:hover {
+			transform: translateY(-2px);
+		}
+
+		.summary-top {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 14px;
+		}
+
+		.summary-label {
+			font-size: 15px;
+			font-weight: 600;
+			color: #111827;
 		}
 
 		.summary-icon {
-			position: absolute;
-			top: 14px;
-			right: 16px;
-			width: 30px;
-			height: 30px;
-			border-radius: 7px;
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 16px;
+		}
+
+		.soft-red {
+			background: #fdecec;
+			color: #dc2626;
+		}
+
+		.soft-green {
+			background: #eafaf1;
+			color: #16a34a;
+		}
+
+		.soft-green-lite {
+			background: #ecfdf3;
+			color: #16a34a;
+		}
+
+		.summary-number {
+			margin: 0 0 4px;
+			font-size: 34px;
+			font-weight: 700;
+			line-height: 1.1;
+		}
+
+		.summary-text {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.alerts-panel-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 20px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+			margin-bottom: 22px;
+			overflow: hidden;
+		}
+
+		.alerts-panel-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			flex-wrap: wrap;
+			padding: 22px;
+			border-bottom: 1px solid #e5e7eb;
+		}
+
+		.alerts-panel-title-wrap {
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+		}
+
+		.section-icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 16px;
+			flex-shrink: 0;
+		}
+
+		.alerts-panel-header h3 {
+			margin: 0 0 4px;
+			font-size: 18px;
+			font-weight: 700;
+		}
+
+		.alerts-panel-header p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.alerts-panel-actions {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.alerts-search-input,
+		.alerts-filter-select {
+			height: 42px;
+			border: 1px solid #e5e7eb;
+			background: #fff;
+			border-radius: 10px;
+			padding: 0 14px;
+			font-size: 14px;
+			color: #1f2937;
+			outline: none;
+		}
+
+		.alerts-search-input {
+			min-width: 220px;
+		}
+
+		.alerts-search-input:focus,
+		.alerts-filter-select:focus {
+			border-color: #c7d2fe;
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+		}
+
+		.alerts-list {
+			padding: 20px 22px 22px;
+		}
+
+		.alert-visitor-item {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 18px;
+			background: #f9fafb;
+			border: 1px solid #e5e7eb;
+			border-radius: 16px;
+			padding: 18px;
+			transition: 0.2s ease;
+			flex-wrap: wrap;
+		}
+
+		.alert-visitor-item.completed {
+			background: #f0fdf4;
+			border-color: #86efac;
+		}
+
+		.alert-visitor-item:hover {
+			transform: translateY(-1px);
+		}
+
+		.alert-visitor-left {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.alert-avatar {
+			width: 48px;
+			height: 48px;
+			border-radius: 50%;
+			background: #eef2ff;
+			color: #3949ab;
+			font-weight: 700;
+			font-size: 14px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 		}
 
-		.summary-icon svg {
-			width: 18px;
-			height: 18px;
+		.alert-visitor-info h4 {
+			margin: 0 0 4px;
+			font-size: 18px;
+			font-weight: 700;
+			color: #111827;
 		}
 
-		.summary-card.wrong .summary-icon {
-			background: #ffdfe1;
-			color: #ef4444;
-		}
-
-		.summary-card.completed .summary-icon {
-			background: #cef3df;
-			color: #16a34a;
-		}
-
-		.completed-card {
-			background: #ffffff;
-			border: 1px solid #dfe4eb;
-			border-radius: 12px;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
-			padding: 18px 24px 20px;
-		}
-
-		.completed-header {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			margin-bottom: 6px;
-			color: #0f9f58;
-		}
-
-		.completed-header svg {
-			width: 18px;
-			height: 18px;
-		}
-
-		.completed-title {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
-		}
-
-		.completed-subtitle {
-			margin: 0 0 16px;
+		.alert-visitor-info p {
+			margin: 0 0 4px;
 			font-size: 14px;
 			color: #374151;
 		}
 
-		.completed-item {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 16px;
-			background: #cef3df;
-			border: 1px solid #4ade80;
-			border-radius: 10px;
-			padding: 12px 14px;
+		.alert-visitor-info span {
+			font-size: 13px;
+			color: #6b7280;
 		}
 
-		.item-left {
+		.alert-visitor-right {
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			min-width: 0;
+			flex-wrap: wrap;
 		}
 
-		.item-avatar {
-			width: 38px;
-			height: 38px;
-			flex-shrink: 0;
+		.alert-status-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 8px 12px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.alert-status-badge.ready {
+			background: #dcfce7;
+			color: #15803d;
+		}
+
+		.alert-action-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 40px;
+			padding: 0 16px;
+			border-radius: 10px;
+			background: #111827;
+			color: #fff;
+			text-decoration: none;
+			font-size: 13px;
+			font-weight: 600;
+			transition: 0.2s ease;
+		}
+
+		.alert-action-btn:hover {
+			background: #1f2937;
+			color: #fff;
+		}
+
+		.alerts-empty-card {
+			background: #ffffff;
+			border: 1px dashed #d1d5db;
+			border-radius: 20px;
+			padding: 32px 24px;
+			text-align: center;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		}
+
+		.alerts-empty-icon {
+			width: 56px;
+			height: 56px;
+			margin: 0 auto 14px;
+			border-radius: 50%;
+			background: #f3f4f6;
+			color: #6b7280;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
+		}
+
+		.alerts-empty-card h3 {
+			margin: 0 0 8px;
+			font-size: 18px;
+			font-weight: 700;
 			color: #111827;
 		}
 
-		.item-avatar svg {
-			width: 38px;
-			height: 38px;
-		}
-
-		.item-copy {
-			min-width: 0;
-		}
-
-		.item-name {
+		.alerts-empty-card p {
 			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
-			color: #1f2937;
-		}
-
-		.item-meta,
-		.item-time {
-			margin: 2px 0 0;
-			font-size: 13px;
-			color: #1f2937;
-		}
-
-		.item-time {
-			color: #374151;
-		}
-
-		.item-tag {
-			padding: 7px 12px;
-			font-size: 12px;
-			font-weight: 500;
-			border: 1px solid #22c55e;
-			color: #0f9f58;
-			background: #bbf7d0;
-			border-radius: 6px;
-			white-space: nowrap;
+			font-size: 14px;
+			color: #6b7280;
 		}
 
 		@media (max-width: 1024px) {
@@ -704,43 +878,39 @@
 			}
 		}
 
-		@media (max-width: 900px) {
-			.alert-summary {
-				grid-template-columns: 1fr;
-				max-width: none;
-			}
-
-			.main {
-				padding: 20px;
-			}
-
-			.completed-item {
-				align-items: flex-start;
-				flex-direction: column;
-			}
-
-			.item-tag {
-				align-self: flex-start;
+		@media (max-width: 992px) {
+			.alerts-summary-grid {
+				grid-template-columns: 1fr 1fr;
+				justify-content: stretch;
 			}
 		}
 
-		@media (max-width: 480px) {
-			.sidebar-link,
-			.submenu-link,
-			.logout-btn {
-				font-size: 16px;
-			}
-
-			.brand-title {
-				font-size: 22px;
-			}
-
-			.main {
+		@media (max-width: 768px) {
+			.alerts-page-wrap {
 				padding: 16px;
 			}
 
-			.completed-card {
-				padding: 14px;
+			.alerts-summary-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.alerts-panel-actions {
+				width: 100%;
+				flex-direction: column;
+			}
+
+			.alerts-search-input,
+			.alerts-filter-select {
+				width: 100%;
+			}
+
+			.alert-visitor-item {
+				align-items: flex-start;
+			}
+
+			.alert-visitor-right {
+				width: 100%;
+				justify-content: flex-start;
 			}
 		}
 	</style>
@@ -868,60 +1038,95 @@
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">Active Alerts</h1>
-
-			<section class="alert-summary" aria-label="Alert Summary">
-				<article class="summary-card wrong">
-					<div class="summary-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-							<path d="m9 9 6 6M15 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						</svg>
+			<div class="alerts-page-wrap">
+				<div class="alerts-page-header">
+					<div>
+						<h1 class="alerts-page-title">Active Alerts</h1>
+						<p class="alerts-page-subtitle">Monitor visitor alerts and completed visits that are ready for exit processing.</p>
 					</div>
-					<p class="summary-title">Wrong Office</p>
-					<p class="summary-value">0</p>
-					<p class="summary-subtitle">Active alerts</p>
-				</article>
 
-				<article class="summary-card completed">
-					<div class="summary-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-							<path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
+					<div class="alerts-page-meta">
+						<div class="live-badge">
+							<span class="dot"></span>
+							Live Status
+						</div>
 					</div>
-					<p class="summary-title">Completed</p>
-					<p class="summary-value">1</p>
-					<p class="summary-subtitle">Ready to exit</p>
-				</article>
-			</section>
-
-			<section class="completed-card" aria-label="Completed Visitors">
-				<div class="completed-header">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-						<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
-						<path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-					<p class="completed-title">Completed Visitors</p>
 				</div>
-				<p class="completed-subtitle">Visitors who have completed their business and are ready to exit</p>
 
-				<article class="completed-item">
-					<div class="item-left">
-						<div class="item-avatar" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-							</svg>
+				<div class="alerts-summary-grid">
+					<div class="alerts-summary-card">
+						<div class="summary-top">
+							<span class="summary-label">Wrong Office</span>
+							<div class="summary-icon soft-red">
+								<i class="fas fa-circle-xmark"></i>
+							</div>
 						</div>
-						<div class="item-copy">
-							<p class="item-name">Robert Kim</p>
-							<p class="item-meta">Finance Department • ID123456</p>
-							<p class="item-time">Completed at: 5:00 pm</p>
+						<h2 class="summary-number">0</h2>
+						<p class="summary-text">Active alerts</p>
+					</div>
+
+					<div class="alerts-summary-card">
+						<div class="summary-top">
+							<span class="summary-label">Completed</span>
+							<div class="summary-icon soft-green">
+								<i class="fas fa-circle-check"></i>
+							</div>
+						</div>
+						<h2 class="summary-number">1</h2>
+						<p class="summary-text">Ready to exit</p>
+					</div>
+				</div>
+
+				<div class="alerts-panel-card">
+					<div class="alerts-panel-header">
+						<div class="alerts-panel-title-wrap">
+							<div class="section-icon soft-green-lite">
+								<i class="fas fa-check-circle"></i>
+							</div>
+							<div>
+								<h3>Completed Visitors</h3>
+								<p>Visitors who have completed their business and are ready to exit.</p>
+							</div>
+						</div>
+
+						<div class="alerts-panel-actions">
+							<input type="text" class="alerts-search-input" placeholder="Search visitor..." />
+							<select class="alerts-filter-select">
+								<option>All</option>
+								<option>Ready to Exit</option>
+								<option>Completed</option>
+								<option>Wrong Office</option>
+							</select>
 						</div>
 					</div>
-					<span class="item-tag">Ready to Exit</span>
-				</article>
-			</section>
+
+					<div class="alerts-list">
+						<div class="alert-visitor-item completed">
+							<div class="alert-visitor-left">
+								<div class="alert-avatar">RK</div>
+								<div class="alert-visitor-info">
+									<h4>Robert Kim</h4>
+									<p>Finance Department • ID123456</p>
+									<span>Completed at: 5:00 PM</span>
+								</div>
+							</div>
+
+							<div class="alert-visitor-right">
+								<span class="alert-status-badge ready">Ready to Exit</span>
+								<a href="#" class="alert-action-btn">Process Exit</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="alerts-empty-card">
+					<div class="alerts-empty-icon">
+						<i class="fas fa-shield-check"></i>
+					</div>
+					<h3>No wrong office alerts</h3>
+					<p>There are currently no visitors flagged for wrong office routing.</p>
+				</div>
+			</div>
 		</main>
 	</div>
 

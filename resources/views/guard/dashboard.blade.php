@@ -6,6 +6,7 @@
 	<title>Guard Dashboard</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -296,340 +297,470 @@
 
 		.main {
 			flex: 1;
-			background: #f7f8ff;
-			padding: 24px 32px;
+			background: #f5f7fb;
+			padding: 0;
 			overflow-y: auto;
 			margin-left: 260px;
 			min-height: 100vh;
 		}
 
-		.dashboard-title {
-			margin: 0 0 18px;
-			font-size: 28px;
-			font-weight: 700;
-			color: #0f172a;
+		.dashboard-wrap {
+			padding: 24px;
 		}
 
-		.summary-grid {
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+		.dashboard-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
 			gap: 16px;
+			margin-bottom: 24px;
+			flex-wrap: wrap;
+		}
+
+		.page-title {
+			font-size: 30px;
+			font-weight: 700;
+			margin: 0 0 6px;
+			color: #111827;
+		}
+
+		.page-subtitle {
+			margin: 0;
+			font-size: 14px;
+			color: #6b7280;
+		}
+
+		.header-meta {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.live-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			padding: 10px 14px;
+			border-radius: 999px;
+			font-size: 13px;
+			font-weight: 600;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		}
+
+		.dot {
+			width: 8px;
+			height: 8px;
+			background: #22c55e;
+			border-radius: 50%;
+			display: inline-block;
+		}
+
+		.last-update {
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 18px;
 			margin-bottom: 18px;
 		}
 
-		.summary-card {
-			position: relative;
+		.stat-card {
 			background: #ffffff;
-			border: 1px solid #dfe4eb;
-			border-radius: 12px;
-			padding: 16px 18px;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
-			min-height: 106px;
+			border: 1px solid #e5e7eb;
+			border-radius: 18px;
+			padding: 20px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+			transition: 0.2s ease;
 		}
 
-		.summary-card .label {
-			margin: 0 0 10px;
-			font-size: 16px;
-			font-weight: 600;
-			color: #4b5563;
+		.stat-card:hover {
+			transform: translateY(-2px);
 		}
 
-		.summary-card .value {
-			margin: 0;
-			font-size: 28px;
-			font-weight: 700;
-			color: #111827;
-			line-height: 1.2;
+		.stat-card-primary {
+			background: linear-gradient(135deg, #3949ab, #2f3f9d);
+			color: #fff;
+			border: none;
 		}
 
-		.summary-card .meta {
-			margin: 8px 0 0;
+		.stat-card-primary .stat-label,
+		.stat-card-primary .stat-text {
+			color: rgba(255, 255, 255, 0.85);
+		}
+
+		.stat-top {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 18px;
+		}
+
+		.stat-label {
 			font-size: 14px;
-			color: #374151;
+			color: #6b7280;
+			font-weight: 600;
 		}
 
-		.summary-icon {
-			position: absolute;
-			top: 14px;
-			right: 18px;
-			width: 36px;
-			height: 36px;
-			border-radius: 7px;
+		.stat-icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			font-size: 16px;
 		}
 
-		.summary-icon svg {
-			width: 22px;
-			height: 22px;
+		.soft-green {
+			background: #eafaf1;
+			color: #16a34a;
 		}
 
-		.summary-card.clock {
-			background: #3b4497;
-			border-color: #3b4497;
-			color: #f8faff;
+		.soft-yellow {
+			background: #fff8e6;
+			color: #d97706;
 		}
 
-		.summary-card.clock .label,
-		.summary-card.clock .value,
-		.summary-card.clock .meta {
-			color: #f8faff;
+		.soft-gray {
+			background: #f3f4f6;
+			color: #6b7280;
 		}
 
-		.summary-card.visitors .summary-icon {
-			background: #d8f6e5;
-			color: #22a86f;
+		.soft-blue-light {
+			background: rgba(255, 255, 255, 0.18);
+			color: #ffffff;
 		}
 
-		.summary-card.clock .summary-icon {
-			background: #d8e5ff;
-			color: #3b4497;
+		.stat-number {
+			margin: 0 0 6px;
+			font-size: 32px;
+			font-weight: 700;
+			line-height: 1.1;
 		}
 
-		.summary-card.alerts .summary-icon {
-			background: #ffe24f;
-			color: #24316f;
+		.stat-text {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.overview-strip {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 14px;
+			margin-bottom: 18px;
+		}
+
+		.overview-item {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 14px;
+			padding: 14px 16px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		}
+
+		.overview-title {
+			display: block;
+			font-size: 12px;
+			color: #6b7280;
+			margin-bottom: 6px;
+		}
+
+		.overview-item strong {
+			font-size: 20px;
+			color: #111827;
 		}
 
 		.action-grid {
 			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 16px;
-			margin-bottom: 14px;
+			grid-template-columns: 1.4fr 1fr;
+			gap: 18px;
+			margin-bottom: 18px;
 		}
 
 		.action-card {
-			position: relative;
-			padding: 18px;
-			border-radius: 12px;
-			border: 1px solid #dce2ea;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
-			min-height: 132px;
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-end;
-		}
-
-		.action-card-link,
-		.alert-strip-link {
-			display: block;
-			text-decoration: none;
-			color: inherit;
-		}
-
-		.action-card.primary {
-			background: #3b4497;
-			border-color: #3b4497;
-		}
-
-		.action-card.secondary {
 			background: #ffffff;
-		}
-
-		.action-card-title {
-			margin: 0 0 6px;
-			font-size: 16px;
-			font-weight: 500;
-			line-height: 1.2;
-			color: #4b5563;
-		}
-
-		.action-card.primary .action-card-title {
-			color: #f7f8ff;
-		}
-
-		.action-card-subtitle {
-			margin: 0;
-			font-size: 13px;
-			line-height: 1.35;
-			color: #6b7280;
-		}
-
-		.action-card.primary .action-card-subtitle {
-			color: #d8defe;
-		}
-
-		.action-icon,
-		.action-arrow {
-			position: absolute;
-			top: 12px;
-		}
-
-		.action-icon {
-			left: 16px;
-			width: 36px;
-			height: 36px;
-			border-radius: 6px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background: #ffe24f;
-			color: #31408c;
-		}
-
-		.action-icon svg {
-			width: 22px;
-			height: 22px;
-		}
-
-		.action-card.secondary .action-icon {
-			background: #e5e7eb;
-			color: #1f2937;
-		}
-
-		.action-arrow {
-			right: 14px;
-			color: inherit;
-			opacity: 0.8;
-		}
-
-		.action-arrow svg {
-			width: 22px;
-			height: 22px;
-		}
-
-		.action-card.primary .action-arrow {
-			color: #f8faff;
-		}
-
-		.action-card-inner {
-			padding-top: 26px;
-		}
-
-		.alert-strip {
-			position: relative;
+			border: 1px solid #e5e7eb;
+			border-radius: 18px;
+			padding: 22px;
 			display: flex;
 			align-items: center;
 			gap: 16px;
-			background: #3b4497;
-			color: #f8faff;
-			border: 1px solid #3b4497;
-			border-radius: 12px;
-			padding: 12px 16px;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
-			margin-bottom: 16px;
+			text-decoration: none;
+			color: inherit;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+			transition: all 0.2s ease;
 		}
 
-		.alert-strip .action-icon {
-			position: static;
-			flex-shrink: 0;
+		.action-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+			color: inherit;
 		}
 
-		.alert-strip .copy {
-			line-height: 1.35;
+		.action-card-primary {
+			background: linear-gradient(135deg, #3949ab, #2f3f9d);
+			border: none;
+			color: #ffffff;
 		}
 
-		.alert-strip-title {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
+		.action-card-primary .action-content p {
+			color: rgba(255, 255, 255, 0.82);
 		}
 
-		.alert-strip-subtitle {
-			margin: 4px 0 0;
-			font-size: 14px;
-			color: #d8defe;
-		}
-
-		.alert-strip .action-arrow {
-			position: absolute;
-			top: 50%;
-			right: 14px;
-			transform: translateY(-50%);
-			color: #f8faff;
-		}
-
-		.active-visitor-card {
-			background: #ffffff;
-			border: 1px solid #dfe4eb;
-			border-radius: 12px;
-			box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12);
-			overflow: hidden;
-		}
-
-		.active-visitor-header {
-			padding: 16px 20px;
-			font-size: 16px;
-			font-weight: 500;
-			color: #4b5563;
-			border-bottom: 1px solid #e5e7eb;
-		}
-
-		.visitor-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 14px;
-			padding: 16px 20px;
-			border-bottom: 1px solid #eef2f7;
-		}
-
-		.visitor-row:last-child {
-			border-bottom: 0;
-		}
-
-		.visitor-info {
-			display: flex;
-			align-items: center;
-			gap: 14px;
-			min-width: 0;
-		}
-
-		.visitor-avatar {
-			width: 44px;
-			height: 44px;
-			flex-shrink: 0;
-			border-radius: 999px;
+		.action-icon {
+			width: 52px;
+			height: 52px;
+			min-width: 52px;
+			border-radius: 14px;
+			background: #fef3c7;
+			color: #d97706;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			color: #111827;
+			font-size: 18px;
 		}
 
-		.visitor-avatar svg {
-			width: 34px;
-			height: 34px;
+		.action-icon.secondary {
+			background: #eef2ff;
+			color: #3949ab;
 		}
 
-		.visitor-copy {
-			min-width: 0;
+		.action-content {
+			flex: 1;
+		}
+
+		.action-content h3 {
+			margin: 0 0 6px;
+			font-size: 18px;
+			font-weight: 700;
+		}
+
+		.action-content p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+			line-height: 1.5;
+		}
+
+		.action-arrow {
+			font-size: 18px;
+			opacity: 0.8;
+		}
+
+		.alert-banner {
+			background: #ffffff;
+			border: 1px solid #f3e8b3;
+			border-left: 5px solid #facc15;
+			border-radius: 18px;
+			padding: 18px 20px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 20px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		}
+
+		.alert-banner-left {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.alert-banner-icon {
+			width: 46px;
+			height: 46px;
+			border-radius: 12px;
+			background: #fff8e6;
+			color: #d97706;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 18px;
+		}
+
+		.alert-banner h4 {
+			margin: 0 0 4px;
+			font-size: 16px;
+			font-weight: 700;
+		}
+
+		.alert-banner p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.alert-banner-btn {
+			text-decoration: none;
+			background: #111827;
+			color: #ffffff;
+			padding: 10px 16px;
+			border-radius: 10px;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.panel-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 20px;
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+			overflow: hidden;
+		}
+
+		.panel-header {
+			padding: 20px 22px;
+			border-bottom: 1px solid #e5e7eb;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 16px;
+			flex-wrap: wrap;
+		}
+
+		.panel-header h3 {
+			margin: 0 0 4px;
+			font-size: 18px;
+			font-weight: 700;
+		}
+
+		.panel-header p {
+			margin: 0;
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.panel-actions {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.search-input,
+		.filter-select {
+			height: 42px;
+			border: 1px solid #e5e7eb;
+			background: #ffffff;
+			border-radius: 10px;
+			padding: 0 14px;
+			font-size: 14px;
+			color: #1f2937;
+			outline: none;
+		}
+
+		.search-input {
+			min-width: 220px;
+		}
+
+		.search-input:focus,
+		.filter-select:focus {
+			border-color: #c7d2fe;
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+		}
+
+		.visitor-table-wrap {
+			width: 100%;
+			overflow-x: auto;
+		}
+
+		.visitor-table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		.visitor-table thead th {
+			text-align: left;
+			font-size: 12px;
+			font-weight: 700;
+			color: #6b7280;
+			padding: 16px 22px;
+			background: #fafbfc;
+			border-bottom: 1px solid #e5e7eb;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		.visitor-table tbody td {
+			padding: 18px 22px;
+			border-bottom: 1px solid #f1f5f9;
+			vertical-align: middle;
+			font-size: 14px;
+		}
+
+		.visitor-table tbody tr:hover {
+			background: #fafcff;
+		}
+
+		.visitor-cell {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.avatar-circle {
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: #eef2ff;
+			color: #3949ab;
+			font-weight: 700;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 13px;
 		}
 
 		.visitor-name {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 500;
-			color: #4b5563;
+			font-weight: 600;
+			color: #111827;
 		}
 
 		.visitor-meta {
-			margin: 4px 0 0;
-			font-size: 14px;
-			color: #6b7280;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.visitor-status {
-			padding: 7px 14px;
 			font-size: 12px;
+			color: #6b7280;
+			margin-top: 2px;
+		}
+
+		.status-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 7px 12px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.status-badge.arrived {
+			background: #eafaf1;
+			color: #15803d;
+		}
+
+		.status-badge.transit {
+			background: #eaf4ff;
+			color: #2563eb;
+		}
+
+		.status-badge.exit {
+			background: #fff8e6;
+			color: #b45309;
+		}
+
+		.table-link {
+			color: #3949ab;
+			text-decoration: none;
 			font-weight: 600;
-			border-radius: 6px;
-			text-transform: none;
-			flex-shrink: 0;
-			border: 1px solid transparent;
 		}
 
-		.visitor-status.arrived {
-			background: #cdf5e5;
-			color: #099169;
-		}
-
-		.visitor-status.transit {
-			background: #cbeffb;
-			color: #0f89a8;
+		.table-link:hover {
+			text-decoration: underline;
 		}
 
 		@media (max-width: 1024px) {
@@ -647,60 +778,45 @@
 			}
 		}
 
-		@media (max-width: 980px) {
-			.summary-grid {
-			.submenu-link,
-				grid-template-columns: 1fr;
+		@media (max-width: 1200px) {
+			.stats-grid,
+			.overview-strip {
+				grid-template-columns: repeat(2, 1fr);
 			}
 
 			.action-grid {
 				grid-template-columns: 1fr;
 			}
-
-			.visitor-row {
-				align-items: flex-start;
-			}
 		}
 
-		@media (max-width: 480px) {
-			.menu-item,
-			.admin-row,
-			.logout-btn {
-				font-size: 16px;
-			}
-
-			.brand-title span:first-child {
-				font-size: 22px;
-			}
-
-			.brand-title span:last-child {
-				font-size: 20px;
-			}
-
-			.main {
+		@media (max-width: 768px) {
+			.dashboard-wrap {
 				padding: 16px;
 			}
 
-			.dashboard-title {
-				font-size: 24px;
+			.stats-grid,
+			.overview-strip {
+				grid-template-columns: 1fr;
 			}
 
-			.summary-card,
-			.action-card,
-			.alert-strip,
-			.active-visitor-header,
-			.visitor-row {
-				padding-left: 14px;
-				padding-right: 14px;
-			}
-
-			.visitor-row {
+			.panel-actions {
+				width: 100%;
 				flex-direction: column;
-				align-items: stretch;
 			}
 
-			.visitor-status {
-				align-self: flex-start;
+			.search-input,
+			.filter-select {
+				width: 100%;
+			}
+
+			.alert-banner {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+
+			.visitor-table thead th,
+			.visitor-table tbody td {
+				padding: 14px 16px;
 			}
 		}
 	</style>
@@ -820,159 +936,235 @@
 		</aside>
 
 		<main class="main">
-			<h1 class="dashboard-title">Guard Dashboard</h1>
+			<div class="dashboard-wrap">
+				<div class="dashboard-header">
+					<div>
+						<h1 class="page-title">Guard Dashboard</h1>
+						<p class="page-subtitle">Monitor visitors, alerts, and campus activity in real time.</p>
+					</div>
 
-			<section class="summary-grid" aria-label="Guard Summary">
-				<article class="summary-card visitors">
-					<div class="summary-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M16 11a3 3 0 1 0-2.999-3A3 3 0 0 0 16 11Zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.2 0-4 .9-4 2v2h8v-2c0-1.1-1.8-2-4-2Zm8 0c-.7 0-1.4.1-2 .3 1.2.7 2 1.6 2 2.7V17h4v-1c0-1.6-1.8-3-4-3Z" fill="currentColor"/>
-						</svg>
+					<div class="header-meta">
+						<div class="live-badge">
+							<span class="dot"></span>
+							Live Monitoring
+						</div>
+						<div class="last-update">Last updated: <span id="lastUpdateTime">--:-- --</span></div>
 					</div>
-					<p class="label">Active Visitor</p>
-					<p class="value">3</p>
-				</article>
-
-				<article class="summary-card clock">
-					<div class="summary-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
-							<path d="M12 8v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-					<p class="label">Current Time</p>
-					<p class="value" id="currentTimeValue">09:18 PM</p>
-				</article>
-
-				<article class="summary-card alerts">
-					<div class="summary-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M15 17H5.8a1 1 0 0 1-.8-1.6L7 12.7V10a5 5 0 1 1 10 0v2.7l2 2.7a1 1 0 0 1-.8 1.6H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						</svg>
-					</div>
-					<p class="label">Active Alerts</p>
-					<p class="meta">1 overstay • 1 ready to exit</p>
-				</article>
-			</section>
-
-			<section class="action-grid" aria-label="Primary Actions">
-				<a href="/guard/register?type=normal" class="action-card-link" aria-label="Open Normal Visitor registration">
-				<article class="action-card primary">
-					<div class="action-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-							<path d="M18 6h4M20 4v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-						</svg>
-					</div>
-					<div class="action-arrow" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-					<div class="action-card-inner">
-						<p class="action-card-title">Register New Visitor</p>
-						<p class="action-card-subtitle">Scan face and ID, fill form, generate QR ticket</p>
-					</div>
-				</article>
-				</a>
-
-				<a href="/guard/exit" class="action-card-link" aria-label="Open Exit Scan">
-				<article class="action-card secondary">
-					<div class="action-icon" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 7h12M4 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							<path d="m12 3 4 4-4 4M12 13l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-					<div class="action-arrow" aria-hidden="true">
-						<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-					<div class="action-card-inner">
-						<p class="action-card-title">Exit Scan</p>
-						<p class="action-card-subtitle">Scan visitor QR code to process exit</p>
-					</div>
-				</article>
-				</a>
-			</section>
-
-			<a href="/guard/alert" class="alert-strip-link" aria-label="Open Active Alerts">
-			<section class="alert-strip" aria-label="Active Alert Banner">
-				<div class="action-icon" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M15 17H5.8a1 1 0 0 1-.8-1.6L7 12.7V10a5 5 0 1 1 10 0v2.7l2 2.7a1 1 0 0 1-.8 1.6H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						<path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-					</svg>
 				</div>
-				<div class="copy">
-					<p class="alert-strip-title">Active Alerts</p>
-					<p class="alert-strip-subtitle">1 ready to exit</p>
+
+				<div class="stats-grid">
+					<div class="stat-card">
+						<div class="stat-top">
+							<span class="stat-label">Active Visitors</span>
+							<div class="stat-icon soft-green">
+								<i class="fas fa-users"></i>
+							</div>
+						</div>
+						<h2 class="stat-number">3</h2>
+						<p class="stat-text">Currently inside campus</p>
+					</div>
+
+					<div class="stat-card stat-card-primary">
+						<div class="stat-top">
+							<span class="stat-label">Current Time</span>
+							<div class="stat-icon soft-blue-light">
+								<i class="fas fa-clock"></i>
+							</div>
+						</div>
+						<h2 class="stat-number" id="currentTimeValue">--:-- --</h2>
+						<p class="stat-text">System time</p>
+					</div>
+
+					<div class="stat-card">
+						<div class="stat-top">
+							<span class="stat-label">Active Alerts</span>
+							<div class="stat-icon soft-yellow">
+								<i class="fas fa-bell"></i>
+							</div>
+						</div>
+						<h2 class="stat-number">2</h2>
+						<p class="stat-text">1 overstay • 1 ready to exit</p>
+					</div>
+
+					<div class="stat-card">
+						<div class="stat-top">
+							<span class="stat-label">Exited Today</span>
+							<div class="stat-icon soft-gray">
+								<i class="fas fa-arrow-right-from-bracket"></i>
+							</div>
+						</div>
+						<h2 class="stat-number">12</h2>
+						<p class="stat-text">Completed visitor exits</p>
+					</div>
 				</div>
-				<div class="action-arrow" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
+
+				<div class="overview-strip">
+					<div class="overview-item">
+						<span class="overview-title">Entries Today</span>
+						<strong>15</strong>
+					</div>
+					<div class="overview-item">
+						<span class="overview-title">Pending Exit Scans</span>
+						<strong>1</strong>
+					</div>
+					<div class="overview-item">
+						<span class="overview-title">Unresolved Alerts</span>
+						<strong>1</strong>
+					</div>
+					<div class="overview-item">
+						<span class="overview-title">Resolved Today</span>
+						<strong>6</strong>
+					</div>
 				</div>
-			</section>
-			</a>
 
-			<section class="active-visitor-card" aria-label="Active Visitors Inside Campus">
-				<div class="active-visitor-header">Active Visitors Inside Campus</div>
-
-				<article class="visitor-row">
-					<div class="visitor-info">
-						<div class="visitor-avatar" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-							</svg>
+				<div class="action-grid">
+					<a href="/guard/register?type=normal" class="action-card action-card-primary">
+						<div class="action-icon">
+							<i class="fas fa-user-plus"></i>
 						</div>
-						<div class="visitor-copy">
-							<p class="visitor-name">Robert Kim</p>
-							<p class="visitor-meta">Finance Department • 09:23 AM</p>
+						<div class="action-content">
+							<h3>Register New Visitor</h3>
+							<p>Capture face and ID, fill out form, and generate QR ticket.</p>
+						</div>
+						<div class="action-arrow">
+							<i class="fas fa-arrow-right"></i>
+						</div>
+					</a>
+
+					<a href="/guard/exit" class="action-card">
+						<div class="action-icon secondary">
+							<i class="fas fa-qrcode"></i>
+						</div>
+						<div class="action-content">
+							<h3>Exit Scan</h3>
+							<p>Scan visitor QR code to process exit quickly and accurately.</p>
+						</div>
+						<div class="action-arrow">
+							<i class="fas fa-arrow-right"></i>
+						</div>
+					</a>
+				</div>
+
+				<div class="alert-banner">
+					<div class="alert-banner-left">
+						<div class="alert-banner-icon">
+							<i class="fas fa-bell"></i>
+						</div>
+						<div>
+							<h4>Attention Needed</h4>
+							<p>1 visitor is ready to exit and waiting for QR scan.</p>
 						</div>
 					</div>
-					<span class="visitor-status arrived">Arrived</span>
-				</article>
 
-				<article class="visitor-row">
-					<div class="visitor-info">
-						<div class="visitor-avatar" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-							</svg>
+					<a href="/guard/alert" class="alert-banner-btn">View Alerts</a>
+				</div>
+
+				<div class="panel-card">
+					<div class="panel-header">
+						<div>
+							<h3>Active Visitors Inside Campus</h3>
+							<p>Track current visitor movement and status.</p>
 						</div>
-						<div class="visitor-copy">
-							<p class="visitor-name">Maria Garcia</p>
-							<p class="visitor-meta">IT Department • 11:53 AM</p>
+
+						<div class="panel-actions">
+							<input type="text" class="search-input" placeholder="Search visitor..." />
+							<select class="filter-select">
+								<option>All Status</option>
+								<option>Arrived</option>
+								<option>In Transit</option>
+								<option>Ready to Exit</option>
+							</select>
 						</div>
 					</div>
-					<span class="visitor-status transit">In Transit</span>
-				</article>
 
-				<article class="visitor-row">
-					<div class="visitor-info">
-						<div class="visitor-avatar" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z" fill="currentColor"/>
-							</svg>
-						</div>
-						<div class="visitor-copy">
-							<p class="visitor-name">John Anderson</p>
-							<p class="visitor-meta">Human Resources • 10:23 AM</p>
-						</div>
+					<div class="visitor-table-wrap">
+						<table class="visitor-table">
+							<thead>
+								<tr>
+									<th>Visitor</th>
+									<th>Department</th>
+									<th>Entry Time</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										<div class="visitor-cell">
+											<div class="avatar-circle">RK</div>
+											<div>
+												<div class="visitor-name">Robert Kim</div>
+												<div class="visitor-meta">Pass No: PASS-0012</div>
+											</div>
+										</div>
+									</td>
+									<td>Finance Department</td>
+									<td>09:23 AM</td>
+									<td><span class="status-badge arrived">Arrived</span></td>
+									<td><a href="#" class="table-link">View</a></td>
+								</tr>
+
+								<tr>
+									<td>
+										<div class="visitor-cell">
+											<div class="avatar-circle">MG</div>
+											<div>
+												<div class="visitor-name">Maria Garcia</div>
+												<div class="visitor-meta">Pass No: PASS-0015</div>
+											</div>
+										</div>
+									</td>
+									<td>IT Department</td>
+									<td>11:53 AM</td>
+									<td><span class="status-badge transit">In Transit</span></td>
+									<td><a href="#" class="table-link">View</a></td>
+								</tr>
+
+								<tr>
+									<td>
+										<div class="visitor-cell">
+											<div class="avatar-circle">JA</div>
+											<div>
+												<div class="visitor-name">John Anderson</div>
+												<div class="visitor-meta">Pass No: PASS-0018</div>
+											</div>
+										</div>
+									</td>
+									<td>Human Resources</td>
+									<td>10:23 AM</td>
+									<td><span class="status-badge arrived">Arrived</span></td>
+									<td><a href="#" class="table-link">View</a></td>
+								</tr>
+
+								<tr>
+									<td>
+										<div class="visitor-cell">
+											<div class="avatar-circle">LC</div>
+											<div>
+												<div class="visitor-name">Liam Cruz</div>
+												<div class="visitor-meta">Pass No: PASS-0021</div>
+											</div>
+										</div>
+									</td>
+									<td>Registrar</td>
+									<td>01:14 PM</td>
+									<td><span class="status-badge exit">Ready to Exit</span></td>
+									<td><a href="#" class="table-link">View</a></td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
-					<span class="visitor-status arrived">Arrived</span>
-				</article>
-			</section>
+				</div>
+			</div>
 		</main>
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script>
 		const timeTarget = document.getElementById('currentTimeValue');
-		if (timeTarget) {
+		const lastUpdateTarget = document.getElementById('lastUpdateTime');
+		if (timeTarget && lastUpdateTarget) {
 			const formatter = new Intl.DateTimeFormat('en-US', {
 				hour: '2-digit',
 				minute: '2-digit',
@@ -980,7 +1172,10 @@
 			});
 
 			const updateClock = () => {
-				timeTarget.textContent = formatter.format(new Date());
+				const now = new Date();
+				const formattedTime = formatter.format(now);
+				timeTarget.textContent = formattedTime;
+				lastUpdateTarget.textContent = formattedTime;
 			};
 
 			updateClock();

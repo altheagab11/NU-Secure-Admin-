@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class OfficeController extends Controller
@@ -429,9 +431,31 @@ class OfficeController extends Controller
                 'position' => $data['position'] ?? null,
             ]);
 
+            // Create password setup token and email office user the onboarding link.
+            $resetToken = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'token' => Hash::make($resetToken),
+                    'created_at' => now(),
+                ]
+            );
+
+            $setupUrl = route('password.setup.form', [
+                'token' => $resetToken,
+                'email' => $user->email,
+            ]);
+
+            Mail::to($user->email)->send(new UserMail(
+                $fullName,
+                $user->email,
+                $passwordPlain,
+                $setupUrl
+            ));
+
             DB::commit();
 
-            return redirect()->back()->with('success', 'Office user created successfully.');
+            return redirect()->back()->with('success', 'Office user created successfully. Login details and password setup link were sent by email.');
         } catch (\Exception $e) {
             DB::rollBack();
             logger()->error('Failed to create office user: ' . $e->getMessage());
