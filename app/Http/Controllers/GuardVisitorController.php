@@ -490,7 +490,7 @@ class GuardVisitorController extends Controller
                 'message' => 'Capture uploaded successfully',
                 'filename' => $uploadResult['filename'],
                 'path' => $uploadResult['object_path'],
-                'public_url' => $uploadResult['public_url'],
+                'public_url' => $uploadResult['preview_url'] ?? $uploadResult['public_url'],
                 'bucket' => $uploadResult['bucket'],
                 'bucket_file_path' => $uploadResult['bucket_file_path'],
                 'step' => $step,
@@ -588,14 +588,79 @@ class GuardVisitorController extends Controller
             ];
         }
 
+        $signedPreviewUrl = $this->createSignedStorageObjectUrl(
+            $supabaseUrl,
+            $supabaseKey,
+            $bucket,
+            $objectPath
+        );
+
+        $publicUrl = $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
+
         return [
             'success' => true,
             'bucket' => $bucket,
             'filename' => $filename,
             'object_path' => $objectPath,
-            'public_url' => $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath,
+            'public_url' => $publicUrl,
+            'preview_url' => $signedPreviewUrl ?: $publicUrl,
             'bucket_file_path' => $bucket . '/' . $objectPath,
         ];
+    }
+
+    protected function createSignedStorageObjectUrl(
+        string $supabaseUrl,
+        string $supabaseKey,
+        string $bucket,
+        string $objectPath
+    ): ?string {
+        try {
+            $encodedBucket = rawurlencode($bucket);
+            $encodedObjectPath = collect(explode('/', $objectPath))
+                ->filter(fn ($segment) => $segment !== '')
+                ->map(fn ($segment) => rawurlencode($segment))
+                ->implode('/');
+
+            $response = Http::withHeaders([
+                'apikey' => $supabaseKey,
+                'Authorization' => 'Bearer ' . $supabaseKey,
+                'Accept' => 'application/json',
+            ])->timeout(20)->post($supabaseUrl . '/storage/v1/object/sign/' . $encodedBucket . '/' . $encodedObjectPath, [
+                'expiresIn' => 3600,
+            ]);
+
+            if (! $response->ok()) {
+                return null;
+            }
+
+            $payload = $response->json();
+            $signed = is_array($payload) ? ($payload['signedURL'] ?? $payload['signedUrl'] ?? null) : null;
+            if (! is_string($signed) || trim($signed) === '') {
+                return null;
+            }
+
+            if (preg_match('/^https?:\/\//i', $signed) === 1) {
+                return $signed;
+            }
+
+            $signedPath = ltrim($signed, '/');
+            if (Str::startsWith($signedPath, 'storage/v1/')) {
+                return $supabaseUrl . '/' . $signedPath;
+            }
+
+            if (Str::startsWith($signedPath, 'object/')) {
+                return $supabaseUrl . '/storage/v1/' . $signedPath;
+            }
+
+            return $supabaseUrl . '/' . $signedPath;
+        } catch (\Throwable $e) {
+            logger()->warning('Unable to build signed storage URL for capture preview: ' . $e->getMessage(), [
+                'bucket' => $bucket,
+                'object_path' => $objectPath,
+            ]);
+
+            return null;
+        }
     }
 
     /**
@@ -748,6 +813,13 @@ class GuardVisitorController extends Controller
 
         $photoPath = trim((string) ($record->visitor_photo_with_id_url ?? ''));
 
+        $previewUrl = $this->resolveVisitorPhotoUrl($photoPath);
+        logger()->info('Existing visitor photo preview resolved', [
+            'visitor_id' => (int) $record->visitor_id,
+            'photo_path' => $photoPath,
+            'photo_preview_url' => $previewUrl,
+        ]);
+
         return [
             'exists' => true,
             'match_basis' => 'name',
@@ -764,7 +836,7 @@ class GuardVisitorController extends Controller
             'province' => (string) ($record->province ?? ''),
             'region' => (string) ($record->region ?? ''),
             'photo_path' => $photoPath,
-            'photo_preview_url' => $this->resolveVisitorPhotoUrl($photoPath),
+            'photo_preview_url' => $previewUrl,
         ];
     }
 
@@ -782,15 +854,15 @@ class GuardVisitorController extends Controller
             return $cleanPath;
         }
 
-        if (! str_contains($cleanPath, '/')) {
-            return null;
+        // Local fallback path (used when Supabase upload is blocked):
+        // /storage/captures/xxx.jpg or storage/captures/xxx.jpg
+        if (Str::startsWith($cleanPath, ['/storage/', 'storage/'])) {
+            $normalized = '/' . ltrim($cleanPath, '/');
+            return url($normalized);
         }
 
-        [$bucket, $objectPath] = array_pad(explode('/', $cleanPath, 2), 2, '');
-        $bucket = trim($bucket);
-        $objectPath = trim($objectPath);
-
-        if ($bucket === '' || $objectPath === '') {
+        [$bucket, $objectPath] = $this->parseStorageObjectPathForPreview($cleanPath);
+        if ($bucket === null || $objectPath === null) {
             return null;
         }
 
@@ -799,9 +871,84 @@ class GuardVisitorController extends Controller
             return null;
         }
 
+        $supabaseKey = (string) (env('SUPABASE_STORAGE_KEY') ?: env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY') ?: '');
+        if ($supabaseKey !== '') {
+            try {
+                $encodedBucket = rawurlencode($bucket);
+                $encodedObjectPath = collect(explode('/', $objectPath))
+                    ->map(fn ($segment) => rawurlencode($segment))
+                    ->implode('/');
+
+                $signedResponse = Http::withHeaders([
+                    'apikey' => $supabaseKey,
+                    'Authorization' => 'Bearer ' . $supabaseKey,
+                    'Accept' => 'application/json',
+                ])->timeout(20)->post($supabaseUrl . '/storage/v1/object/sign/' . $encodedBucket . '/' . $encodedObjectPath, [
+                    'expiresIn' => 3600,
+                ]);
+
+                if ($signedResponse->ok()) {
+                    $payload = $signedResponse->json();
+                    $signed = is_array($payload) ? ($payload['signedURL'] ?? $payload['signedUrl'] ?? null) : null;
+
+                    if (is_string($signed) && trim($signed) !== '') {
+                        if (preg_match('/^https?:\/\//i', $signed) === 1) {
+                            return $signed;
+                        }
+
+                        $signedPath = ltrim($signed, '/');
+                        if (Str::startsWith($signedPath, 'storage/v1/')) {
+                            return $supabaseUrl . '/' . $signedPath;
+                        }
+
+                        if (Str::startsWith($signedPath, 'object/')) {
+                            return $supabaseUrl . '/storage/v1/' . $signedPath;
+                        }
+
+                        return $supabaseUrl . '/' . $signedPath;
+                    }
+                }
+            } catch (\Throwable $e) {
+                logger()->warning('Unable to sign visitor preview URL: ' . $e->getMessage());
+            }
+        }
+
+        // Public bucket fallback.
         $encodedPath = implode('/', array_map('rawurlencode', explode('/', $objectPath)));
 
         return $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
+    }
+
+    protected function parseStorageObjectPathForPreview(string $rawPath): array
+    {
+        $path = trim($rawPath);
+        if ($path === '') {
+            return [null, null];
+        }
+
+        $path = preg_replace('#^https?://[^/]+/#i', '', $path) ?? $path;
+        $path = ltrim($path, '/');
+
+        $publicPrefix = 'storage/v1/object/public/';
+        if (Str::startsWith($path, $publicPrefix)) {
+            $path = Str::after($path, $publicPrefix);
+        }
+
+        $signPrefix = 'storage/v1/object/sign/';
+        if (Str::startsWith($path, $signPrefix)) {
+            $path = Str::after($path, $signPrefix);
+            $path = explode('?', $path, 2)[0] ?? $path;
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), fn ($segment) => $segment !== ''));
+        if (count($segments) < 2) {
+            return [null, null];
+        }
+
+        $bucket = (string) $segments[0];
+        $objectPath = implode('/', array_slice($segments, 1));
+
+        return [$bucket !== '' ? $bucket : null, $objectPath !== '' ? $objectPath : null];
     }
 
     /**

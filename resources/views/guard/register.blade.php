@@ -2261,7 +2261,7 @@
 			.then(data => {
 				if (data.success) {
 					faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
-					faceIdCapturePreviewUrl = data.public_url || data.path || '';
+					faceIdCapturePreviewUrl = data.preview_url || data.public_url || data.path || '';
 
 					loadingText.textContent = 'Generating QR ticket...';
 					const qrMeta = createQrMeta();

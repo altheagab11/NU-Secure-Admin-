@@ -1061,7 +1061,7 @@
 								<i class="fas fa-circle-xmark"></i>
 							</div>
 						</div>
-						<h2 class="summary-number">0</h2>
+						<h2 class="summary-number">{{ number_format((int) ($wrongOfficeAlertsCount ?? 0)) }}</h2>
 						<p class="summary-text">Active alerts</p>
 					</div>
 
@@ -1072,7 +1072,7 @@
 								<i class="fas fa-circle-check"></i>
 							</div>
 						</div>
-						<h2 class="summary-number">1</h2>
+						<h2 class="summary-number">{{ number_format((int) ($readyToExitCount ?? 0)) }}</h2>
 						<p class="summary-text">Ready to exit</p>
 					</div>
 				</div>
@@ -1101,30 +1101,77 @@
 					</div>
 
 					<div class="alerts-list">
-						<div class="alert-visitor-item completed">
-							<div class="alert-visitor-left">
-								<div class="alert-avatar">RK</div>
-								<div class="alert-visitor-info">
-									<h4>Robert Kim</h4>
-									<p>Finance Department • ID123456</p>
-									<span>Completed at: 5:00 PM</span>
+						@forelse(($completedVisitors ?? []) as $visitor)
+							<div class="alert-visitor-item completed">
+								<div class="alert-visitor-left">
+									<div class="alert-avatar">{{ $visitor['initials'] ?? 'NA' }}</div>
+									<div class="alert-visitor-info">
+										<h4>{{ $visitor['visitor_name'] ?? 'Unknown Visitor' }}</h4>
+										<p>{{ $visitor['office_name'] ?? 'No office assigned' }} • {{ $visitor['pass_number'] ?? 'No pass/control number' }}</p>
+										<span>Completed at: {{ $visitor['completed_at'] ?? '—' }}</span>
+									</div>
+								</div>
+
+								<div class="alert-visitor-right">
+									<span class="alert-status-badge ready">{{ $visitor['status'] ?? 'Ready to Exit' }}</span>
+									<a href="/guard/exit" class="alert-action-btn">Process Exit</a>
 								</div>
 							</div>
-
-							<div class="alert-visitor-right">
-								<span class="alert-status-badge ready">Ready to Exit</span>
-								<a href="#" class="alert-action-btn">Process Exit</a>
+						@empty
+							<div class="alerts-empty-card">
+								<div class="alerts-empty-icon">
+									<i class="fas fa-user-check"></i>
+								</div>
+								<h3>No completed visitors yet</h3>
+								<p>Visitors with "Ready to Exit" or "Completed" status will appear here.</p>
 							</div>
-						</div>
+						@endforelse
 					</div>
 				</div>
 
-				<div class="alerts-empty-card">
-					<div class="alerts-empty-icon">
-						<i class="fas fa-shield-check"></i>
+				<div class="alerts-panel-card">
+					<div class="alerts-panel-header">
+						<div class="alerts-panel-title-wrap">
+							<div class="section-icon soft-red">
+								<i class="fas fa-triangle-exclamation"></i>
+							</div>
+							<div>
+								<h3>Wrong Office Alerts</h3>
+								<p>Visitors flagged for incorrect office routing.</p>
+							</div>
+						</div>
 					</div>
-					<h3>No wrong office alerts</h3>
-					<p>There are currently no visitors flagged for wrong office routing.</p>
+
+					<div class="alerts-list">
+						@forelse(($wrongOfficeAlerts ?? []) as $alert)
+							<div class="alert-visitor-item">
+								<div class="alert-visitor-left">
+									<div class="alert-avatar">{{ strtoupper(substr((string) ($alert['visitor_name'] ?? 'NA'), 0, 2)) }}</div>
+									<div class="alert-visitor-info">
+										<h4>[{{ $alert['severity'] ?? 'High' }}] Wrong Office</h4>
+										<p>Visitor: {{ $alert['visitor_name'] ?? 'Unknown Visitor' }}</p>
+										<p>Pass No: {{ $alert['pass_number'] ?? 'No pass/control number' }}</p>
+										<p>Expected Office: {{ $alert['expected_office'] ?? 'No expected office' }}</p>
+										<p>Scanned Office: {{ $alert['scanned_office'] ?? 'No scanned office' }}</p>
+										<p>Message: {{ $alert['message'] ?? 'Visitor scanned at wrong office' }}</p>
+										<span>Time: {{ $alert['time'] ?? '—' }}</span>
+									</div>
+								</div>
+
+								<div class="alert-visitor-right">
+									<a href="/guard/alert" class="alert-action-btn">View Details</a>
+								</div>
+							</div>
+						@empty
+							<div class="alerts-empty-card">
+								<div class="alerts-empty-icon">
+									<i class="fas fa-shield-check"></i>
+								</div>
+								<h3>No wrong office alerts</h3>
+								<p>There are currently no visitors flagged for wrong office routing.</p>
+							</div>
+						@endforelse
+					</div>
 				</div>
 			</div>
 		</main>

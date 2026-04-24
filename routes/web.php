@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\GuardController;
+use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
@@ -52,9 +53,7 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
         return view('guard.exit');
     });
  
-    Route::get('/alert', function () {
-        return view('guard.alert');
-    });
+    Route::get('/alert', [GuardAlertController::class, 'index']);
 
 });
  
