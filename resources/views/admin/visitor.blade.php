@@ -739,6 +739,12 @@
 			margin-bottom: 12px;
 			background: #f8fafc;
 		}
+
+		.vd-photo.has-image {
+			border: 0;
+			background: transparent;
+		}
+
 		.vd-photo img {
 			max-width: 100%;
 			max-height: 100%;
@@ -1683,6 +1689,7 @@
 			if (photoContainer) {
 				const photoUrl = normalizePhotoUrl(trigger.dataset.photoUrl);
 				photoContainer.innerHTML = '';
+				photoContainer.classList.remove('has-image');
 				if (photoUrl && photoUrl !== '—') {
 					const img = document.createElement('img');
 					img.src = photoUrl;
@@ -1690,11 +1697,14 @@
 					img.loading = 'lazy';
 					img.referrerPolicy = 'no-referrer';
 					img.onerror = () => {
+						photoContainer.classList.remove('has-image');
 						photoContainer.innerHTML = '';
 						photoContainer.textContent = 'No Photo Available';
 					};
+					photoContainer.classList.add('has-image');
 					photoContainer.appendChild(img);
 				} else {
+					photoContainer.classList.remove('has-image');
 					photoContainer.textContent = 'No Photo Available';
 				}
 			}

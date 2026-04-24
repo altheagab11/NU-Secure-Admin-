@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\GuardController;
+use App\Http\Controllers\GuardDashboardController;
 use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\OfficeController;
@@ -45,9 +46,8 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
 });
  
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('guard.dashboard');
-    });
+    Route::get('/dashboard', [GuardDashboardController::class, 'index']);
+    Route::get('/dashboard/visits/{visitId}/details', [GuardDashboardController::class, 'visitDetails']);
  
     Route::get('/exit', function () {
         return view('guard.exit');

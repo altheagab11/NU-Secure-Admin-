@@ -757,11 +757,108 @@
 			color: #3949ab;
 			text-decoration: none;
 			font-weight: 600;
+			background: transparent;
+			border: 0;
+			padding: 0;
 		}
 
 		.table-link:hover {
 			text-decoration: underline;
 		}
+
+		.drawer-overlay {
+			position: fixed;
+			inset: 0;
+			background: rgba(15, 23, 42, 0.45);
+			opacity: 0;
+			visibility: hidden;
+			transition: 0.25s ease;
+			z-index: 998;
+		}
+
+		.drawer-overlay.active {
+			opacity: 1;
+			visibility: visible;
+		}
+
+		.visitor-drawer {
+			position: fixed;
+			top: 0;
+			right: -680px;
+			width: 620px;
+			max-width: 100%;
+			height: 100vh;
+			background: #f8fafc;
+			box-shadow: -10px 0 40px rgba(15, 23, 42, 0.18);
+			z-index: 999;
+			display: flex;
+			flex-direction: column;
+			transition: 0.3s ease;
+		}
+
+		.visitor-drawer.active {
+			right: 0;
+		}
+
+		.drawer-header {
+			background: #ffffff;
+			padding: 22px 26px;
+			border-bottom: 1px solid #e5e7eb;
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+		}
+
+		.drawer-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; }
+		.drawer-header p { margin: 5px 0 0; font-size: 13px; color: #64748b; }
+		.drawer-close { border: none; background: #f1f5f9; color: #334155; width: 34px; height: 34px; border-radius: 10px; font-size: 24px; cursor: pointer; }
+		.drawer-close:hover { background: #e2e8f0; }
+		.drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+		.drawer-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 18px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04); }
+		.drawer-section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+		.drawer-section-title h3 { margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; }
+		.profile-top { display: flex; gap: 16px; align-items: center; }
+		.visitor-photo { width: 90px; height: 90px; border-radius: 16px; background: #eef2ff; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #64748b; }
+		.visitor-photo img { width: 100%; height: 100%; object-fit: cover; }
+		.profile-info h3 { margin: 0 0 8px; font-size: 20px; color: #0f172a; }
+		.profile-info p { margin: 5px 0; font-size: 13px; color: #475569; }
+		.drawer-info-grid { margin-top: 16px; display: grid; grid-template-columns: 1fr; gap: 12px; }
+		.drawer-info-grid.two-col { grid-template-columns: repeat(2, 1fr); }
+		.drawer-info-grid div, .drawer-full-info { background: #f8fafc; border-radius: 12px; padding: 12px; }
+		.drawer-info-grid span, .drawer-full-info span { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
+		.drawer-info-grid strong, .drawer-full-info strong { font-size: 14px; color: #0f172a; font-weight: 700; }
+		.drawer-full-info { margin-top: 12px; }
+		.drawer-status-badge { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+		.drawer-status-badge.green { background: #dcfce7; color: #15803d; }
+		.drawer-status-badge.gray { background: #f1f5f9; color: #475569; }
+		.drawer-status-badge.red { background: #fee2e2; color: #b91c1c; }
+		.drawer-status-badge.orange { background: #ffedd5; color: #c2410c; }
+		.timeline { position: relative; }
+		.timeline-item { display: flex; gap: 14px; position: relative; padding-bottom: 18px; }
+		.timeline-item:not(:last-child)::before { content: ""; position: absolute; left: 8px; top: 20px; width: 2px; height: calc(100% - 10px); background: #e5e7eb; }
+		.timeline-dot { width: 18px; height: 18px; border-radius: 50%; margin-top: 3px; background: #cbd5e1; z-index: 1; }
+		.timeline-item.completed .timeline-dot { background: #22c55e; }
+		.timeline-item.pending .timeline-dot { background: #94a3b8; }
+		.timeline-content { width: 100%; }
+		.timeline-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+		.timeline-head strong { font-size: 14px; color: #0f172a; }
+		.timeline-content p { margin: 5px 0 0; font-size: 13px; color: #64748b; }
+		.scan-list { display: flex; flex-direction: column; gap: 12px; }
+		.scan-card { border-radius: 14px; padding: 14px; border: 1px solid #e5e7eb; background: #f8fafc; }
+		.scan-card.valid { border-left: 5px solid #22c55e; }
+		.scan-card.invalid { border-left: 5px solid #ef4444; }
+		.scan-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+		.scan-head h4 { margin: 0; font-size: 15px; color: #0f172a; }
+		.scan-head p { margin: 4px 0 0; font-size: 13px; color: #475569; }
+		.scan-meta { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; font-size: 12px; color: #64748b; }
+		.scan-remarks { margin: 10px 0 0; font-size: 13px; color: #334155; }
+		.drawer-alert-card { border-color: #fed7aa; background: #fffaf5; }
+		.drawer-alert-message { background: #ffffff; border: 1px solid #fed7aa; padding: 12px; border-radius: 12px; font-size: 14px; color: #7c2d12; line-height: 1.5; }
+		.drawer-footer { background: #ffffff; border-top: 1px solid #e5e7eb; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; }
+		.drawer-btn-secondary, .drawer-btn-primary { border: none; padding: 11px 18px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 14px; }
+		.drawer-btn-secondary { background: #f1f5f9; color: #334155; }
+		.drawer-btn-primary { background: #0f172a; color: #ffffff; }
+		.drawer-empty { text-align: center; color: #64748b; font-size: 14px; padding: 8px 0; }
 
 		@media (max-width: 1024px) {
 			.layout {
@@ -960,7 +1057,7 @@
 								<i class="fas fa-users"></i>
 							</div>
 						</div>
-						<h2 class="stat-number">3</h2>
+						<h2 class="stat-number">{{ number_format((int) ($activeVisitorsCount ?? 0)) }}</h2>
 						<p class="stat-text">Currently inside campus</p>
 					</div>
 
@@ -982,8 +1079,8 @@
 								<i class="fas fa-bell"></i>
 							</div>
 						</div>
-						<h2 class="stat-number">2</h2>
-						<p class="stat-text">1 overstay • 1 ready to exit</p>
+						<h2 class="stat-number">{{ number_format((int) ($activeAlertsCount ?? 0)) }}</h2>
+						<p class="stat-text">Total unresolved alerts</p>
 					</div>
 
 					<div class="stat-card">
@@ -993,7 +1090,7 @@
 								<i class="fas fa-arrow-right-from-bracket"></i>
 							</div>
 						</div>
-						<h2 class="stat-number">12</h2>
+						<h2 class="stat-number">{{ number_format((int) ($exitedTodayCount ?? 0)) }}</h2>
 						<p class="stat-text">Completed visitor exits</p>
 					</div>
 				</div>
@@ -1001,19 +1098,19 @@
 				<div class="overview-strip">
 					<div class="overview-item">
 						<span class="overview-title">Entries Today</span>
-						<strong>15</strong>
+						<strong>{{ number_format((int) ($entriesTodayCount ?? 0)) }}</strong>
 					</div>
 					<div class="overview-item">
 						<span class="overview-title">Pending Exit Scans</span>
-						<strong>1</strong>
+						<strong>{{ number_format((int) ($pendingExitScansCount ?? 0)) }}</strong>
 					</div>
 					<div class="overview-item">
 						<span class="overview-title">Unresolved Alerts</span>
-						<strong>1</strong>
+						<strong>{{ number_format((int) ($unresolvedAlertsCount ?? 0)) }}</strong>
 					</div>
 					<div class="overview-item">
 						<span class="overview-title">Resolved Today</span>
-						<strong>6</strong>
+						<strong>{{ number_format((int) ($resolvedTodayCount ?? 0)) }}</strong>
 					</div>
 				</div>
 
@@ -1052,7 +1149,12 @@
 						</div>
 						<div>
 							<h4>Attention Needed</h4>
-							<p>1 visitor is ready to exit and waiting for QR scan.</p>
+							<p>
+								{{ number_format((int) ($pendingExitScansCount ?? 0)) }}
+								visitor{{ ((int) ($pendingExitScansCount ?? 0)) === 1 ? '' : 's' }}
+								{{ ((int) ($pendingExitScansCount ?? 0)) === 1 ? 'is' : 'are' }}
+								ready to exit and waiting for QR scan.
+							</p>
 						</div>
 					</div>
 
@@ -1082,82 +1184,62 @@
 							<thead>
 								<tr>
 									<th>Visitor</th>
-									<th>Department</th>
+									<th>Destination</th>
 									<th>Entry Time</th>
+									<th>Duration</th>
 									<th>Status</th>
+									<th>Alert</th>
 									<th>Action</th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr>
-									<td>
-										<div class="visitor-cell">
-											<div class="avatar-circle">RK</div>
-											<div>
-												<div class="visitor-name">Robert Kim</div>
-												<div class="visitor-meta">Pass No: PASS-0012</div>
+								@forelse(($activeVisitors ?? []) as $visitor)
+									<tr>
+										<td>
+											<div class="visitor-cell">
+												<div class="avatar-circle">{{ $visitor['initials'] ?? 'NA' }}</div>
+												<div>
+													<div class="visitor-name">{{ $visitor['visitor_name'] ?? 'Unknown Visitor' }}</div>
+													<div class="visitor-meta">Pass No: {{ $visitor['pass_number'] ?? 'No pass/control number' }}</div>
+												</div>
 											</div>
-										</div>
-									</td>
-									<td>Finance Department</td>
-									<td>09:23 AM</td>
-									<td><span class="status-badge arrived">Arrived</span></td>
-									<td><a href="#" class="table-link">View</a></td>
-								</tr>
-
-								<tr>
-									<td>
-										<div class="visitor-cell">
-											<div class="avatar-circle">MG</div>
-											<div>
-												<div class="visitor-name">Maria Garcia</div>
-												<div class="visitor-meta">Pass No: PASS-0015</div>
-											</div>
-										</div>
-									</td>
-									<td>IT Department</td>
-									<td>11:53 AM</td>
-									<td><span class="status-badge transit">In Transit</span></td>
-									<td><a href="#" class="table-link">View</a></td>
-								</tr>
-
-								<tr>
-									<td>
-										<div class="visitor-cell">
-											<div class="avatar-circle">JA</div>
-											<div>
-												<div class="visitor-name">John Anderson</div>
-												<div class="visitor-meta">Pass No: PASS-0018</div>
-											</div>
-										</div>
-									</td>
-									<td>Human Resources</td>
-									<td>10:23 AM</td>
-									<td><span class="status-badge arrived">Arrived</span></td>
-									<td><a href="#" class="table-link">View</a></td>
-								</tr>
-
-								<tr>
-									<td>
-										<div class="visitor-cell">
-											<div class="avatar-circle">LC</div>
-											<div>
-												<div class="visitor-name">Liam Cruz</div>
-												<div class="visitor-meta">Pass No: PASS-0021</div>
-											</div>
-										</div>
-									</td>
-									<td>Registrar</td>
-									<td>01:14 PM</td>
-									<td><span class="status-badge exit">Ready to Exit</span></td>
-									<td><a href="#" class="table-link">View</a></td>
-								</tr>
+										</td>
+										<td>{{ $visitor['office_name'] ?? 'No destination' }}</td>
+										<td>{{ $visitor['entry_time'] ?? '—' }}</td>
+										<td>{{ $visitor['duration'] ?? '—' }}</td>
+										<td><span class="status-badge {{ $visitor['status_class'] ?? 'arrived' }}">{{ $visitor['status_label'] ?? 'Arrived' }}</span></td>
+										<td>{{ $visitor['alert'] ?? 'None' }}</td>
+										<td><button type="button" class="table-link js-view-visitor" data-visit-id="{{ $visitor['visit_id'] ?? 0 }}">View</button></td>
+									</tr>
+								@empty
+									<tr>
+										<td colspan="7" style="text-align:center; color:#6b7280;">No active visitors inside campus.</td>
+									</tr>
+								@endforelse
 							</tbody>
 						</table>
 					</div>
 				</div>
 			</div>
 		</main>
+	</div>
+
+	<div id="visitorDrawerOverlay" class="drawer-overlay"></div>
+	<div id="visitorDrawer" class="visitor-drawer">
+		<div class="drawer-header">
+			<div>
+				<h2>Visitor Details</h2>
+				<p>View complete visitor transaction details.</p>
+			</div>
+			<button type="button" class="drawer-close" id="closeVisitorDrawerBtn">&times;</button>
+		</div>
+		<div class="drawer-body" id="visitorDrawerBody">
+			<div class="drawer-empty">Select a visitor to view details.</div>
+		</div>
+		<div class="drawer-footer">
+			<button type="button" class="drawer-btn-secondary" id="closeVisitorDrawerFooterBtn">Close</button>
+			<button type="button" class="drawer-btn-primary" id="drawerResolveAlertBtn">Resolve Alert</button>
+		</div>
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1181,6 +1263,202 @@
 			updateClock();
 			setInterval(updateClock, 30000);
 		}
+
+		const drawer = document.getElementById('visitorDrawer');
+		const drawerOverlay = document.getElementById('visitorDrawerOverlay');
+		const drawerBody = document.getElementById('visitorDrawerBody');
+		const drawerResolveAlertBtn = document.getElementById('drawerResolveAlertBtn');
+
+		function closeVisitorDrawer() {
+			drawer?.classList.remove('active');
+			drawerOverlay?.classList.remove('active');
+		}
+
+		function openVisitorDrawer() {
+			drawer?.classList.add('active');
+			drawerOverlay?.classList.add('active');
+		}
+
+		function formatTime(isoValue) {
+			if (!isoValue) return '—';
+			const date = new Date(isoValue);
+			if (Number.isNaN(date.getTime())) return '—';
+			return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+		}
+
+		function getDrawerStatusClass(statusText) {
+			const value = String(statusText || '').toLowerCase();
+			if (value.includes('arrived') || value.includes('inside')) return 'green';
+			if (value.includes('pending')) return 'gray';
+			if (value.includes('invalid') || value.includes('wrong') || value.includes('unresolved')) return 'red';
+			return 'gray';
+		}
+
+		function escapeHtml(value) {
+			return String(value ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#039;');
+		}
+
+		function renderVisitorDrawer(details) {
+			const visitor = details?.visitor || {};
+			const visit = details?.visit || {};
+			const route = Array.isArray(details?.expected_route) ? details.expected_route : [];
+			const scans = Array.isArray(details?.scans) ? details.scans : [];
+			const alert = details?.alert || null;
+
+			const photoHtml = visitor.photo_url
+				? `<img src="${escapeHtml(visitor.photo_url)}" alt="Visitor Photo">`
+				: `<span>No Photo</span>`;
+
+			const routeHtml = route.length > 0
+				? route.map((item) => {
+					const routeStatus = item.status || 'Pending';
+					const isCompleted = String(routeStatus).toLowerCase().includes('arrived') || String(routeStatus).toLowerCase().includes('done');
+					return `
+						<div class="timeline-item ${isCompleted ? 'completed' : 'pending'}">
+							<div class="timeline-dot"></div>
+							<div class="timeline-content">
+								<div class="timeline-head">
+									<strong>${escapeHtml(item.expected_order ?? '-')} . ${escapeHtml(item.office_name ?? 'Unknown Office')}</strong>
+									<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(routeStatus))}">${escapeHtml(routeStatus)}</span>
+								</div>
+								<p>Arrived At: ${escapeHtml(formatTime(item.arrived_at))}</p>
+							</div>
+						</div>`;
+				}).join('')
+				: '<div class="drawer-empty">No expected office route found.</div>';
+
+			const scansHtml = scans.length > 0
+				? scans.map((scan) => {
+					const validation = scan.validation_status || 'Unknown';
+					const isValid = String(validation).toLowerCase().includes('valid') && !String(validation).toLowerCase().includes('invalid');
+					return `
+						<div class="scan-card ${isValid ? 'valid' : 'invalid'}">
+							<div class="scan-head">
+								<div>
+									<h4>Scan #${escapeHtml(scan.scan_id ?? '-')}</h4>
+									<p>${escapeHtml(scan.office_name ?? 'Unknown Office')}</p>
+								</div>
+								<span class="drawer-status-badge ${isValid ? 'green' : 'red'}">${escapeHtml(validation)}</span>
+							</div>
+							<div class="scan-meta">
+								<span>Scanned by ${escapeHtml(scan.scanned_by ?? 'Unknown scanner')}</span>
+								<span>${escapeHtml(formatTime(scan.scan_time))}</span>
+							</div>
+							<p class="scan-remarks">${escapeHtml(scan.remarks ?? '—')}</p>
+						</div>`;
+				}).join('')
+				: '<div class="drawer-empty">No scan records found.</div>';
+
+			const alertHtml = alert
+				? `
+					<div class="drawer-card drawer-alert-card">
+						<div class="drawer-section-title">
+							<h3>Alert Information</h3>
+							<span class="drawer-status-badge orange">${escapeHtml(alert.severity || 'Medium')}</span>
+						</div>
+						<div class="drawer-section-title" style="margin-bottom:10px;">
+							<h3 style="font-size:15px;">${escapeHtml(alert.alert_type || 'General Alert')}</h3>
+							<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(alert.status || 'Unresolved'))}">${escapeHtml(alert.status || 'Unresolved')}</span>
+						</div>
+						<p class="drawer-alert-message">${escapeHtml(alert.message || '—')}</p>
+						<div class="drawer-info-grid two-col">
+							<div><span>Alert ID</span><strong>${escapeHtml(alert.alert_id ?? '-')}</strong></div>
+							<div><span>Created At</span><strong>${escapeHtml(formatTime(alert.created_at))}</strong></div>
+							<div><span>Resolved At</span><strong>${escapeHtml(formatTime(alert.resolved_at))}</strong></div>
+							<div><span>Resolved By</span><strong>${escapeHtml(alert.resolved_by || '—')}</strong></div>
+						</div>
+						<div class="drawer-full-info"><span>Resolution Notes</span><strong>${escapeHtml(alert.resolution_notes || '—')}</strong></div>
+					</div>`
+				: `
+					<div class="drawer-card">
+						<div class="drawer-section-title"><h3>Alert Information</h3></div>
+						<div class="drawer-empty">No active alerts found.</div>
+					</div>`;
+
+			drawerBody.innerHTML = `
+				<div class="drawer-card">
+					<div class="profile-top">
+						<div class="visitor-photo">${photoHtml}</div>
+						<div class="profile-info">
+							<h3>${escapeHtml(visitor.name || 'Unknown Visitor')}</h3>
+							<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(visitor.status || 'Still Inside'))}">${escapeHtml(visitor.status || 'Still Inside')}</span>
+							<p>Visitor ID: <strong>${escapeHtml(visitor.visitor_id ?? '-')}</strong></p>
+							<p>${escapeHtml(visitor.pass_number || '—')} • ${escapeHtml(visitor.control_number || '—')}</p>
+						</div>
+					</div>
+					<div class="drawer-info-grid">
+						<div><span>Contact Number</span><strong>${escapeHtml(visitor.contact_no || '—')}</strong></div>
+						<div><span>Address</span><strong>${escapeHtml(visitor.address || '—')}</strong></div>
+					</div>
+				</div>
+
+				<div class="drawer-card">
+					<div class="drawer-section-title"><h3>Visit Information</h3></div>
+					<div class="drawer-info-grid two-col">
+						<div><span>Visit ID</span><strong>${escapeHtml(visit.visit_id ?? '-')}</strong></div>
+						<div><span>Visit Type</span><strong>${escapeHtml(visit.visit_type || '—')}</strong></div>
+						<div><span>Primary Office</span><strong>${escapeHtml(visit.primary_office || '—')}</strong></div>
+						<div><span>Exit Status</span><strong>${escapeHtml(visit.exit_status || '—')}</strong></div>
+						<div><span>Entry Time</span><strong>${escapeHtml(formatTime(visit.entry_time))}</strong></div>
+						<div><span>Exit Time</span><strong>${escapeHtml(formatTime(visit.exit_time))}</strong></div>
+						<div><span>Duration</span><strong>${escapeHtml(visit.duration_label || '—')}</strong></div>
+						<div><span>Registered By</span><strong>${escapeHtml(visit.registered_by || '—')}</strong></div>
+					</div>
+					<div class="drawer-full-info"><span>Purpose / Reason</span><strong>${escapeHtml(visit.purpose_reason || '—')}</strong></div>
+					<div class="drawer-full-info"><span>Destination Text</span><strong>${escapeHtml(visit.destination_text || '—')}</strong></div>
+				</div>
+
+				<div class="drawer-card">
+					<div class="drawer-section-title"><h3>Office Route / Expected Offices</h3></div>
+					<div class="timeline">${routeHtml}</div>
+				</div>
+
+				<div class="drawer-card">
+					<div class="drawer-section-title"><h3>Scan Information</h3></div>
+					<div class="scan-list">${scansHtml}</div>
+				</div>
+
+				${alertHtml}
+			`;
+
+			drawerResolveAlertBtn.style.display = alert ? 'inline-block' : 'none';
+			drawerResolveAlertBtn.onclick = () => window.location.href = '/guard/alert';
+		}
+
+		async function openVisitorDetails(visitId) {
+			drawerBody.innerHTML = '<div class="drawer-empty">Loading visitor details...</div>';
+			openVisitorDrawer();
+			try {
+				const response = await fetch(`/guard/dashboard/visits/${encodeURIComponent(visitId)}/details`, {
+					headers: { Accept: 'application/json' },
+				});
+				const payload = await response.json().catch(() => ({}));
+				if (!response.ok) {
+					throw new Error(payload.message || 'Unable to load visitor details.');
+				}
+				renderVisitorDrawer(payload);
+			} catch (error) {
+				drawerBody.innerHTML = `<div class="drawer-empty">${escapeHtml(error.message || 'Unable to load visitor details.')}</div>`;
+				drawerResolveAlertBtn.style.display = 'none';
+			}
+		}
+
+		document.getElementById('closeVisitorDrawerBtn')?.addEventListener('click', closeVisitorDrawer);
+		document.getElementById('closeVisitorDrawerFooterBtn')?.addEventListener('click', closeVisitorDrawer);
+		drawerOverlay?.addEventListener('click', closeVisitorDrawer);
+
+		document.addEventListener('click', (event) => {
+			const trigger = event.target.closest('.js-view-visitor');
+			if (!trigger) return;
+			const visitId = trigger.dataset.visitId;
+			if (!visitId) return;
+			openVisitorDetails(visitId);
+		});
 	</script>
 </body>
 </html>
