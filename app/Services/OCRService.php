@@ -233,6 +233,9 @@ class OCRService
             case 'driver_license':
                 $extracted = $this->extractDriverLicenseData($lines, $extracted);
                 break;
+            case 'umid':
+                $extracted = $this->extractUmidData($lines, $extracted);
+                break;
             default:
                 $extracted = $this->extractNationalIdData($lines, $extracted);
                 break;
@@ -674,6 +677,141 @@ class OCRService
         return $candidate;
     }
 
+    /**
+     * Philippine Unified Multi-Purpose ID (UMID): English labels, CRN, address often ends with PHL + ZIP.
+     */
+    protected function extractUmidData(array $lines, array $extracted): array
+    {
+        $normalizedLines = array_values(array_filter(array_map(fn ($line) => $this->normalizeOcrLine($line), $lines)));
+        $fullText = implode(' ', $normalizedLines);
+        $compactText = preg_replace('/\s+/', ' ', $fullText);
+
+        $lastName = $this->extractLabeledDriverNameValue($normalizedLines, ['SURNAME', 'LAST NAME', 'APELYIDO']);
+        $firstName = $this->extractLabeledDriverNameValue($normalizedLines, ['GIVEN NAME', 'FIRST NAME', 'MGA PANGALAN'], true);
+        $middleName = $this->extractLabeledDriverNameValue($normalizedLines, ['MIDDLE NAME', 'MIDDLE INITIAL', 'GITNANG APELYIDO'], true);
+
+        if (empty($lastName) || empty($firstName)) {
+            $commaNames = $this->extractDriverNamesFromCommaLine($normalizedLines);
+            if (empty($lastName) && !empty($commaNames['last_name'])) {
+                $lastName = $commaNames['last_name'];
+            }
+            if (empty($firstName) && !empty($commaNames['first_name'])) {
+                $firstName = $commaNames['first_name'];
+            }
+            if (empty($middleName) && !empty($commaNames['middle_name'])) {
+                $middleName = $commaNames['middle_name'];
+            }
+        }
+
+        if (!empty($lastName)) {
+            $extracted['last_name'] = $lastName;
+        }
+        if (!empty($firstName)) {
+            $extracted['first_name'] = $firstName;
+        }
+        if (!empty($middleName)) {
+            $extracted['middle_name'] = $middleName;
+        }
+
+        if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
+            $extracted['full_name'] = trim(
+                $extracted['last_name']
+                . ', '
+                . $extracted['first_name']
+                . (!empty($extracted['middle_name']) ? ' ' . $extracted['middle_name'] : '')
+            );
+        }
+
+        if (preg_match('/\b(?:CRN|COMMON\s+REFERENCE(?:\s+NUMBER)?)\s*[#:\-]?\s*(\d{4}[\-\s]?\d{7}[\-\s]?\d)\b/i', $compactText, $m)) {
+            $extracted['document_number'] = preg_replace('/\s+/', '', (string) $m[1]);
+        } elseif (preg_match('/\b(\d{4}[\-\s]?\d{7}[\-\s]?\d)\b/', $compactText, $m)) {
+            $extracted['document_number'] = preg_replace('/\s+/', '', (string) $m[1]);
+        }
+
+        $dateOfBirth = $this->extractLabeledDriverDate($normalizedLines, ['DATE OF BIRTH', 'BIRTH DATE', 'BIRTHDATE', 'DOB', 'PETSA NG KAPANGANAKAN']);
+        if (empty($dateOfBirth) && preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $fullText, $matches)) {
+            $dateOfBirth = $this->normalizeDate((string) $matches[1]);
+        }
+        if (!empty($dateOfBirth)) {
+            $extracted['date_of_birth'] = $dateOfBirth;
+        }
+
+        if (preg_match('/\b(?:SEX|GENDER)\s*[:\-]?\s*(MALE|FEMALE|M|F)\b/i', $fullText, $matches)) {
+            $gender = strtoupper((string) $matches[1]);
+            $extracted['gender'] = $gender === 'M' ? 'M' : ($gender === 'F' ? 'F' : $gender);
+        } elseif (preg_match('/\b(MALE|FEMALE)\b/i', $fullText, $matches)) {
+            $extracted['gender'] = strtoupper($matches[1][0]);
+        }
+
+        $address = $this->extractLabeledDriverAddress($normalizedLines);
+        if (empty($address)) {
+            $address = $this->extractUmidAddressLine($compactText, $normalizedLines);
+        }
+        if (empty($address)) {
+            $address = $this->extractLabeledAddressValue($normalizedLines);
+        }
+        if (empty($address)) {
+            $address = $this->buildAddressFromNationalIdLines($normalizedLines, $compactText);
+        }
+        if (!empty($address)) {
+            $extracted['address'] = $address;
+        }
+
+        return $extracted;
+    }
+
+    /**
+     * UMID permanent address is often one line ending with "PHL" and a 4-digit postal code.
+     */
+    protected function extractUmidAddressLine(string $compactText, array $lines): string
+    {
+        // Prefer barangay-style lines so a trailing "/23" from a DOB line is not read as a house number.
+        if (preg_match('/\b(\d{1,5}\s+BRGY[A-Z0-9\s]{10,}?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+            return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        if (preg_match('/\b(\d{3,5}[A-Z0-9\s]{12,}?\bPHL\s*\d{4})\b/i', $compactText, $m)) {
+            return $this->cleanAddressCandidate(trim((string) $m[1]));
+        }
+
+        foreach ($lines as $line) {
+            if (preg_match('/\bPHL\s*\d{4}\b/', $line) && preg_match('/\d/', $line)) {
+                $candidate = $this->cleanAddressCandidate($line);
+                if (!empty($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function textLooksLikeUmid(string $fullTextUpper): bool
+    {
+        if (preg_match('/\bUMID\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/UNIFIED\s+MULTI[\s\-]*PURPOSE/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bCOMMON\s+REFERENCE(?:\s+NUMBER)?\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\bCRN\b/', $fullTextUpper) && preg_match('/\b\d{4}[\-\s]?\d{7}[\-\s]?\d\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        if (preg_match('/\b\d{4}[\-\s]?\d{7}[\-\s]?\d\b/', $fullTextUpper)
+            && preg_match('/\b(SSS|GSIS|PHILHEALTH|PAG[\s\-]*IBIG|PHIL[\s\-]*HEALTH)\b/', $fullTextUpper)) {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function normalizeIdType(string $idType): string
     {
         $normalized = strtolower(trim($idType));
@@ -681,6 +819,7 @@ class OCRService
         return match ($normalized) {
             'passport', 'pass port', 'password' => 'passport',
             'driver', 'driver_license', 'drivers_license', 'driver-license' => 'driver_license',
+            'umid' => 'umid',
             'auto', 'automatic', '' => 'auto',
             default => 'national',
         };
@@ -688,8 +827,16 @@ class OCRService
 
     protected function resolveIdTypeFromText(array $lines, string $requestedType): string
     {
-        if (in_array($requestedType, ['passport', 'driver_license', 'national'], true)) {
-            return $requestedType;
+        if ($requestedType === 'passport') {
+            return 'passport';
+        }
+
+        if ($requestedType === 'driver_license') {
+            return 'driver_license';
+        }
+
+        if ($requestedType === 'umid') {
+            return 'umid';
         }
 
         $fullText = strtoupper(implode(' ', $lines));
@@ -699,7 +846,7 @@ class OCRService
         }
 
         foreach ($lines as $line) {
-            $normalized = strtoupper(trim((string)$line));
+            $normalized = strtoupper(trim((string) $line));
             if (str_starts_with($normalized, 'P<') || str_contains($normalized, '<<')) {
                 return 'passport';
             }
@@ -707,6 +854,10 @@ class OCRService
 
         if (preg_match('/\b(DRIVER|LICENSE|LICENCE|DL)\b/', $fullText)) {
             return 'driver_license';
+        }
+
+        if ($this->textLooksLikeUmid($fullText)) {
+            return 'umid';
         }
 
         return 'national';
