@@ -10,12 +10,11 @@ class GuardAlertController extends Controller
 {
     public function index(Request $request)
     {
-        $wrongOfficeAlertsCount = DB::table('alerts')
-            ->whereRaw('LOWER(TRIM(COALESCE(alert_type, \'\'))) = ?', ['wrong office'])
+        $unresolvedAlertsCount = DB::table('alerts')
             ->whereRaw('LOWER(TRIM(COALESCE(status, \'\'))) = ?', ['unresolved'])
             ->count();
 
-        $wrongOfficeAlertsRows = DB::table('alerts as al')
+        $unresolvedAlertsRows = DB::table('alerts as al')
             ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'al.visitor_id')
             ->leftJoin('visit as v', 'v.visit_id', '=', 'al.visit_id')
             ->leftJoin('office_scan as os', 'os.scan_id', '=', 'al.scan_id')
@@ -42,7 +41,11 @@ class GuardAlertController extends Controller
                 'vr.last_name',
                 'vr.pass_number',
                 'vr.control_number',
+                'vr.contact_no',
                 'v.purpose_reason',
+                'v.entry_time',
+                'v.exit_time',
+                'v.duration_minutes',
                 'eo.office_name as expected_office_name',
                 'po.office_name as primary_office_name',
                 'so.office_name as scanned_office_name',
@@ -51,14 +54,13 @@ class GuardAlertController extends Controller
                 'su.first_name as scanned_by_first_name',
                 'su.last_name as scanned_by_last_name',
             ])
-            ->whereRaw('LOWER(TRIM(COALESCE(al.alert_type, \'\'))) = ?', ['wrong office'])
             ->whereRaw('LOWER(TRIM(COALESCE(al.status, \'\'))) = ?', ['unresolved'])
             ->orderByDesc('al.created_at')
             ->orderByDesc('al.alert_id')
             ->limit(20)
             ->get();
 
-        $wrongOfficeAlerts = $wrongOfficeAlertsRows->map(function ($row) {
+        $unresolvedAlerts = $unresolvedAlertsRows->map(function ($row) {
             $firstName = trim((string) ($row->first_name ?? ''));
             $lastName = trim((string) ($row->last_name ?? ''));
             $visitorName = trim($firstName . ' ' . $lastName);
@@ -87,17 +89,39 @@ class GuardAlertController extends Controller
 
             $scannedBy = trim(((string) ($row->scanned_by_first_name ?? '')) . ' ' . ((string) ($row->scanned_by_last_name ?? '')));
             $severity = trim((string) ($row->severity ?? ''));
+            $alertType = trim((string) ($row->alert_type ?? ''));
+            $alertTypeLabel = $alertType !== ''
+                ? ucwords(strtolower($alertType))
+                : 'General Alert';
+
+            $message = trim((string) ($row->message ?? ''));
+            if ($message === '') {
+                $message = $alertTypeLabel . ' detected';
+            }
 
             return [
                 'alert_id' => (int) ($row->alert_id ?? 0),
                 'visit_id' => (int) ($row->visit_id ?? 0),
+                'scan_id' => (int) ($row->scan_id ?? 0),
+                'alert_type' => $alertTypeLabel,
+                'status' => trim((string) ($row->status ?? 'Unresolved')) ?: 'Unresolved',
                 'severity' => $severity !== '' ? ucfirst(strtolower($severity)) : 'High',
                 'visitor_name' => $visitorName !== '' ? $visitorName : 'Unknown Visitor',
                 'pass_number' => $passNumber !== '' ? $passNumber : 'No pass/control number',
+                'control_number' => trim((string) ($row->control_number ?? '')),
+                'contact_no' => trim((string) ($row->contact_no ?? '')),
                 'expected_office' => $expectedOffice !== '' ? $expectedOffice : 'No expected office',
                 'scanned_office' => trim((string) ($row->scanned_office_name ?? '')) ?: 'No scanned office',
-                'message' => trim((string) ($row->message ?? '')) ?: 'Visitor scanned at wrong office',
+                'message' => $message,
                 'time' => $createdAtLabel,
+                'created_at' => $row->created_at,
+                'resolved_at' => $row->resolved_at,
+                'resolution_notes' => trim((string) ($row->resolution_notes ?? '')),
+                'purpose_reason' => trim((string) ($row->purpose_reason ?? '')),
+                'entry_time' => $row->entry_time,
+                'exit_time' => $row->exit_time,
+                'duration_minutes' => $row->duration_minutes !== null ? (int) $row->duration_minutes : null,
+                'scan_remarks' => trim((string) ($row->scan_remarks ?? '')),
                 'scanned_by' => $scannedBy !== '' ? $scannedBy : 'Unknown scanner',
             ];
         })->values();
@@ -182,11 +206,41 @@ class GuardAlertController extends Controller
         })->values();
 
         return view('guard.alert', [
-            'wrongOfficeAlertsCount' => $wrongOfficeAlertsCount,
+            'unresolvedAlertsCount' => $unresolvedAlertsCount,
             'readyToExitCount' => $readyToExitCount,
-            'activeAlertsCount' => $wrongOfficeAlertsCount,
+            'activeAlertsCount' => $unresolvedAlertsCount,
             'completedVisitors' => $completedVisitors,
-            'wrongOfficeAlerts' => $wrongOfficeAlerts,
+            'unresolvedAlerts' => $unresolvedAlerts,
+        ]);
+    }
+
+    public function resolve(Request $request, $alertId)
+    {
+        $validated = $request->validate([
+            'resolution_notes' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $resolvedById = optional($request->user())->user_id
+            ?? optional($request->user())->id
+            ?? session('user_id');
+
+        $updated = DB::table('alerts')
+            ->where('alert_id', (int) $alertId)
+            ->update([
+                'status' => 'Resolved',
+                'resolved_at' => now(),
+                'resolved_by' => $resolvedById,
+                'resolution_notes' => $validated['resolution_notes'],
+            ]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'message' => 'Alert not found or already updated.',
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Alert resolved successfully.',
         ]);
     }
 }

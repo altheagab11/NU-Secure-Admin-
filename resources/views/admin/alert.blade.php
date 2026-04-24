@@ -1176,7 +1176,11 @@
 						<tbody>
 							@php $hasAlerts = count($alerts ?? []) > 0; @endphp
 								@foreach(($alerts ?? []) as $alert)
-									<tr style="border-bottom:1px solid #f1f5f9;" data-status="{{ strtolower($alert['status'] ?? 'unknown') }}" data-alert-id="{{ $alert['alert_id'] ?? '' }}">
+									<tr style="border-bottom:1px solid #f1f5f9;"
+										data-status="{{ strtolower($alert['status'] ?? 'unknown') }}"
+										data-alert-id="{{ $alert['alert_id'] ?? '' }}"
+										data-created-at="{{ $alert['created_at'] ?? '' }}"
+										data-resolved-at="{{ $alert['resolved_at'] ?? '' }}">
 									<td style="padding:10px 8px;">{{ $alert['alert_id'] ?? '' }}</td>
 									<td style="padding:10px 8px;">
 										@php $dt = isset($alert['created_at']) ? \Carbon\Carbon::parse($alert['created_at']) : null; @endphp
@@ -1431,6 +1435,10 @@
 			if (!tbody) return;
 
 			const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.id !== 'noResults');
+			const parseDate = (value) => {
+				const ts = Date.parse(value || '');
+				return Number.isNaN(ts) ? 0 : ts;
+			};
 			let visibleCount = 0;
 
 			rows.forEach(row => {
@@ -1442,6 +1450,25 @@
 					row.style.display = 'none';
 				}
 			});
+
+			if (filter === 'resolved') {
+				const resolvedRows = rows.filter(row => row.style.display !== 'none');
+				resolvedRows.sort((a, b) => {
+					const aResolved = parseDate(a.dataset.resolvedAt);
+					const bResolved = parseDate(b.dataset.resolvedAt);
+					if (bResolved !== aResolved) return bResolved - aResolved;
+
+					const aCreated = parseDate(a.dataset.createdAt);
+					const bCreated = parseDate(b.dataset.createdAt);
+					if (bCreated !== aCreated) return bCreated - aCreated;
+
+					const aId = parseInt(a.dataset.alertId || '0', 10);
+					const bId = parseInt(b.dataset.alertId || '0', 10);
+					return bId - aId;
+				});
+
+				resolvedRows.forEach(row => tbody.appendChild(row));
+			}
 
 			const noResults = document.getElementById('noResults');
 			if (noResults) {
@@ -1711,6 +1738,7 @@
 			const row = document.querySelector(`tr[data-alert-id="${alertId}"]`);
 			if (row) {
 				row.dataset.status = 'resolved';
+				row.dataset.resolvedAt = ALERTS[idx].resolved_at || new Date().toISOString();
 				const statusTd = row.querySelector('td:nth-last-child(2)');
 				if (statusTd) statusTd.innerHTML = '<span class="alert-pill status-resolved">Resolved</span>';
 			}
