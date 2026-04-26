@@ -143,6 +143,7 @@ class GuardVisitorController extends Controller
             'register_type' => ['required', 'string', Rule::in(['normal', 'contractor', 'enrollee'])],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
+            'birthday' => ['required', 'date'],
             'house_no' => ['required', 'string', 'max:255'],
             'street' => ['required', 'string', 'max:255'],
             'barangay' => ['required', 'string', 'max:255'],
@@ -160,6 +161,8 @@ class GuardVisitorController extends Controller
             'visitor_photo_with_id_url' => ['nullable', 'string', 'max:2000'],
             'qr_token' => ['nullable', 'string', 'max:255'],
             'qr_payload' => ['nullable', 'string', 'max:4000'],
+            'existing_visitor_confirmed' => ['nullable', 'boolean'],
+            'existing_visitor_id' => ['nullable', 'integer'],
         ]);
 
         $registerType = strtolower((string) $validated['register_type']);
@@ -238,7 +241,11 @@ class GuardVisitorController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $enrolleeSteps, $activeExitStatusId, $visitorVisitTypeId) {
-                $matchedVisitor = $this->findVisitorForRegistration($validated);
+                $confirmedExistingVisitorId = (int) ($validated['existing_visitor_id'] ?? 0);
+                $shouldReuseExistingVisitor = (bool) ($validated['existing_visitor_confirmed'] ?? false) && $confirmedExistingVisitorId > 0;
+                $matchedVisitor = $shouldReuseExistingVisitor
+                    ? $this->findVisitorForRegistration($validated, $confirmedExistingVisitorId)
+                    : null;
 
                 $addressPayload = [
                     'house_no' => $validated['house_no'],
@@ -253,7 +260,7 @@ class GuardVisitorController extends Controller
 
                 $visitorAction = 'created_new';
 
-                if ($matchedVisitor) {
+                if ($matchedVisitor && $shouldReuseExistingVisitor) {
                     $visitorId = (int) $matchedVisitor->visitor_id;
 
                     $photoPath = trim((string) ($validated['visitor_photo_with_id_url'] ?? ''));
@@ -263,6 +270,7 @@ class GuardVisitorController extends Controller
                         ->update([
                             'first_name' => $validated['first_name'],
                             'last_name' => $validated['last_name'],
+                            'birthday' => $validated['birthday'],
                             'address_id' => $addressId,
                             'contact_no' => $validated['contact_no'],
                             'pass_number' => $validated['pass_number'],
@@ -276,6 +284,7 @@ class GuardVisitorController extends Controller
                     $visitorId = DB::table('visitor')->insertGetId([
                         'first_name' => $validated['first_name'],
                         'last_name' => $validated['last_name'],
+                        'birthday' => $validated['birthday'],
                         'address_id' => $addressId,
                         'contact_no' => $validated['contact_no'],
                         'pass_number' => $validated['pass_number'],
@@ -423,7 +432,7 @@ class GuardVisitorController extends Controller
     /**
      * Find existing visitor for registration dedup by exact first+last name.
      */
-    protected function findVisitorForRegistration(array $validated): ?object
+    protected function findVisitorForRegistration(array $validated, ?int $visitorId = null): ?object
     {
         $firstName = trim((string) ($validated['first_name'] ?? ''));
         $lastName = trim((string) ($validated['last_name'] ?? ''));
@@ -438,15 +447,20 @@ class GuardVisitorController extends Controller
             return null;
         }
 
-        return $baseQuery()
+        $query = $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
                     ->whereColumn('vi.visitor_id', 'visitor.visitor_id');
-            })
-            ->first();
+            });
+
+        if ($visitorId !== null && $visitorId > 0) {
+            $query->where('visitor_id', $visitorId);
+        }
+
+        return $query->first();
     }
 
     /**
@@ -900,6 +914,7 @@ class GuardVisitorController extends Controller
                     'v.visitor_id',
                     'v.first_name',
                     'v.last_name',
+                    'v.birthday',
                     'v.control_number',
                     'v.contact_no',
                     'v.pass_number',
@@ -918,9 +933,15 @@ class GuardVisitorController extends Controller
             return ['exists' => false];
         }
 
+        $birthday = $this->normalizeBirthdayValue($formData['birthday'] ?? null);
+        if ($birthday === null) {
+            return ['exists' => false];
+        }
+
         $record = $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(v.first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(v.last_name, ''))) = ?", [Str::lower($lastName)])
+            ->whereDate('v.birthday', '=', $birthday)
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
@@ -945,10 +966,11 @@ class GuardVisitorController extends Controller
 
         return [
             'exists' => true,
-            'match_basis' => 'name',
+            'match_basis' => 'name_birthday',
             'visitor_id' => (int) $record->visitor_id,
             'first_name' => (string) ($record->first_name ?? ''),
             'last_name' => (string) ($record->last_name ?? ''),
+            'birthday' => $this->normalizeBirthdayValue($record->birthday),
             'control_number' => (string) ($record->control_number ?? ''),
             'contact_no' => (string) ($record->contact_no ?? ''),
             'pass_number' => (string) ($record->pass_number ?? ''),
@@ -1167,6 +1189,7 @@ class GuardVisitorController extends Controller
         return [
             'first_name' => $firstName,
             'last_name' => $lastName,
+            'birthday' => $this->normalizeBirthdayValue($extracted['date_of_birth'] ?? null),
             'house_no' => $addressData['house_no'],
             'street' => $addressData['street'],
             'barangay' => $addressData['barangay'],
@@ -1174,6 +1197,20 @@ class GuardVisitorController extends Controller
             'province' => $addressData['province'],
             'region' => $addressData['region'],
         ];
+    }
+
+    protected function normalizeBirthdayValue($value): ?string
+    {
+        $raw = trim((string) ($value ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($raw)->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

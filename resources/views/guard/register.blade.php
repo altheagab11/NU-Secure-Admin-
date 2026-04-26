@@ -1565,7 +1565,7 @@
 		<div class="confirmation-modal-card">
 			<div class="confirmation-modal-header">
 				<h2 class="confirmation-modal-title" id="existingVisitorModalTitle">Existing Visitor Found</h2>
-				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor record. Please confirm whether this is the same person before continuing.</p>
+				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor record. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.</p>
 			</div>
 			<div class="confirmation-modal-body">
 				<div class="confirmation-photo-panel">
@@ -1589,13 +1589,17 @@
 						<span class="confirmation-summary-value" id="existingVisitorModalContact">-</span>
 					</div>
 					<div class="confirmation-summary-row">
+						<span class="confirmation-summary-label">Birthday</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalBirthday">-</span>
+					</div>
+					<div class="confirmation-summary-row">
 						<span class="confirmation-summary-label">Saved Address</span>
 						<span class="confirmation-summary-value" id="existingVisitorModalAddressState">-</span>
 					</div>
 				</div>
 			</div>
 			<div class="confirmation-modal-footer">
-				<button type="button" class="confirmation-modal-btn secondary" id="existingVisitorModalCancel">Cancel</button>
+				<button type="button" class="confirmation-modal-btn secondary" id="existingVisitorModalCancel">Cancel (New Visitor)</button>
 				<button type="button" class="confirmation-modal-btn primary" id="existingVisitorModalConfirm">Yes, Continue</button>
 			</div>
 		</div>
@@ -1694,6 +1698,10 @@
 										<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
 									</div>
 									<div class="visitor-input-group">
+										<label class="visitor-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
+										<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
+									</div>
+									<div class="visitor-input-group">
 										<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
 										<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no." required>
 									</div>
@@ -1749,6 +1757,10 @@
 								<div class="visitor-input-group">
 									<label class="visitor-label" for="visitorLastName">Last Name <span class="required-mark">*</span></label>
 									<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
 								</div>
 								<div class="visitor-input-group">
 									<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
@@ -1919,6 +1931,7 @@
 		const existingVisitorModalValidationNote = document.getElementById('existingVisitorModalValidationNote');
 		const existingVisitorModalName = document.getElementById('existingVisitorModalName');
 		const existingVisitorModalContact = document.getElementById('existingVisitorModalContact');
+		const existingVisitorModalBirthday = document.getElementById('existingVisitorModalBirthday');
 		const existingVisitorModalAddressState = document.getElementById('existingVisitorModalAddressState');
 		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
 		const existingVisitorModalCancel = document.getElementById('existingVisitorModalCancel');
@@ -1929,6 +1942,7 @@
 		const officeListNote = document.getElementById('officeListNote');
 		const visitorFirstName = document.getElementById('visitorFirstName');
 		const visitorLastName = document.getElementById('visitorLastName');
+		const visitorBirthday = document.getElementById('visitorBirthday');
 		const visitorHouseNo = document.getElementById('visitorHouseNo');
 		const visitorStreet = document.getElementById('visitorStreet');
 		const visitorBarangay = document.getElementById('visitorBarangay');
@@ -2372,6 +2386,7 @@
 				province: visitorProvince?.value.trim() || '',
 				region: visitorRegion?.value.trim() || '',
 				contact_no: visitorPhoneNumber?.value.trim() || '',
+				birthday: visitorBirthday?.value || null,
 				pass_number: visitorIdPassNumber?.value.trim() || '',
 				control_number: qrMeta?.control_number || ensureAutoControlNumber(),
 				purpose_reason: getPurposeReasonValue(),
@@ -2385,6 +2400,10 @@
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
 				qr_token: qrMeta?.qr_token || null,
 				qr_payload: qrMeta?.qr_payload || null,
+				existing_visitor_confirmed: Boolean(existingVisitorConfirmed && existingVisitorMatch?.exists),
+				existing_visitor_id: existingVisitorConfirmed && existingVisitorMatch?.exists
+					? Number(existingVisitorMatch.visitor_id || 0)
+					: null,
 			};
 
 			const response = await fetch('/guard/register/visitor', {
@@ -2414,6 +2433,9 @@
 			}
 			if (visitorLastName && existingVisitor.last_name) {
 				visitorLastName.value = toTitleCase(existingVisitor.last_name);
+			}
+			if (visitorBirthday && existingVisitor.birthday) {
+				visitorBirthday.value = String(existingVisitor.birthday).trim();
 			}
 			if (visitorHouseNo && existingVisitor.house_no) {
 				visitorHouseNo.value = String(existingVisitor.house_no).trim();
@@ -2467,6 +2489,7 @@
 
 			const fullName = `${toTitleCase(existingVisitor.first_name)} ${toTitleCase(existingVisitor.last_name)}`.trim() || 'Unknown visitor';
 			const contactNo = String(existingVisitor.contact_no || '-').trim() || '-';
+			const birthday = String(existingVisitor.birthday || '-').trim() || '-';
 			const addressText = formatVisitorAddress(existingVisitor);
 			const previewUrl = String(existingVisitor.photo_preview_url || existingVisitor.photo_path || '').trim();
 			const hasPreviewPhoto = Boolean(previewUrl);
@@ -2476,6 +2499,9 @@
 			}
 			if (existingVisitorModalContact) {
 				existingVisitorModalContact.textContent = contactNo;
+			}
+			if (existingVisitorModalBirthday) {
+				existingVisitorModalBirthday.textContent = birthday;
 			}
 			if (existingVisitorModalAddressState) {
 				existingVisitorModalAddressState.textContent = addressText;
@@ -2568,9 +2594,10 @@
 					existingVisitorConfirmed = false;
 
 					if (existingVisitorMatch && existingVisitorMatch.exists) {
-						applyExistingVisitorData(existingVisitorMatch);
 						existingVisitorConfirmed = await openExistingVisitorModal(existingVisitorMatch);
-						if (!existingVisitorConfirmed) {
+						if (existingVisitorConfirmed) {
+							applyExistingVisitorData(existingVisitorMatch);
+						} else {
 							existingVisitorMatch = null;
 						}
 					}
@@ -2712,6 +2739,7 @@
 			const fieldMapping = {
 				'visitorFirstName': 'first_name',
 				'visitorLastName': 'last_name',
+				'visitorBirthday': 'birthday',
 				'visitorHouseNo': 'house_no',
 				'visitorStreet': 'street',
 				'visitorBarangay': 'barangay',
