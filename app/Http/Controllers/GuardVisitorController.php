@@ -870,6 +870,7 @@ class GuardVisitorController extends Controller
             \Log::info('Mapped form data', [
                 'first_name' => $formData['first_name'] ?? '',
                 'last_name' => $formData['last_name'] ?? '',
+                'birthday' => $formData['birthday'] ?? '',
                 'house_no' => $formData['house_no'] ?? '',
                 'street' => $formData['street'] ?? '',
                 'barangay' => $formData['barangay'] ?? '',
@@ -1206,10 +1207,34 @@ class GuardVisitorController extends Controller
             return null;
         }
 
+        // OCR cleanup: 0CTOBER -> OCTOBER, I963/L963 -> 1963, OCTOBER23 -> OCTOBER 23
+        $cleaned = strtoupper($raw);
+        $cleaned = strtr($cleaned, [
+            '0CTOBER' => 'OCTOBER',
+            'N0VEMBER' => 'NOVEMBER',
+            '0CT' => 'OCT',
+            'N0V' => 'NOV',
+        ]);
+        $cleaned = preg_replace('/\b([IL])(\d{3})\b/', '1$2', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/\b([A-Z]{3,12})(\d{1,2})\b/', '$1 $2', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/(\d{1,2}),(\d{4})/', '$1, $2', $cleaned) ?? $cleaned;
+        $cleaned = preg_replace('/\s+/', ' ', trim($cleaned)) ?? $cleaned;
+
+        // Prefer explicit month/day/year token from noisy OCR lines.
+        if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s+\d{1,2}(?:,|\s)?\s*\d{4}\b/i', $cleaned, $m)) {
+            $cleaned = trim((string) $m[0]);
+        } elseif (preg_match('/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})\b/', $cleaned, $m)) {
+            $cleaned = trim((string) $m[1]);
+        }
+
         try {
-            return \Carbon\Carbon::parse($raw)->toDateString();
+            return \Carbon\Carbon::parse($cleaned)->toDateString();
         } catch (\Throwable $e) {
-            return null;
+            try {
+                return \Carbon\Carbon::parse($raw)->toDateString();
+            } catch (\Throwable $e) {
+                return null;
+            }
         }
     }
 
@@ -1437,7 +1462,7 @@ class GuardVisitorController extends Controller
             if (
                 empty($result['barangay'])
                 && preg_match('/^[A-Z\s]{3,}$/', $lineUpper)
-                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL|PRK|PUROK)\b/', $lineUpper)
+                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL|PRK|PUROK|BRGY|BARANGAY)\b/', $lineUpper)
             ) {
                 $result['barangay'] = ucwords(strtolower(trim($lineUpper)));
                 continue;
@@ -1730,6 +1755,8 @@ class GuardVisitorController extends Controller
         $normalized = preg_replace('/\bCITY\s+OE\s+IPA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCITY\s+O\s+IPA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCITY\s+OF\s+IPA\b/', 'CITY OF LIPA', $normalized);
+        $normalized = preg_replace('/\bCITY\s+OF\s+LVA\b/', 'CITY OF LIPA', $normalized);
+        $normalized = preg_replace('/\bCITY\s+OF\s+L1PA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCHY\s+OF\s+LIPA\b/', 'CITY OF LIPA', $normalized);
         $normalized = preg_replace('/\bCHY\s+OF\b/', 'CITY OF', $normalized);
 

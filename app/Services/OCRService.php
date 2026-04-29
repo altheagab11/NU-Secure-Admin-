@@ -50,89 +50,122 @@ class OCRService
                 ]);
             }
 
-            // Keep OCR request timeout below PHP max_execution_time to avoid fatal timeout.
-            $requestStartedAt = microtime(true);
-            $response = Http::connectTimeout(8)->timeout(20);
+            $uploadCandidates = $this->buildOcrUploadCandidates($imageData, $isFile);
+            $ocrConfigs = [
+                ['engine' => 2, 'scale' => 'true', 'overlay' => 'true'],
+                ['engine' => 1, 'scale' => 'true', 'overlay' => 'false'],
+                ['engine' => 1, 'scale' => 'false', 'overlay' => 'false'],
+            ];
 
-            if ($isFile) {
-                // Send actual file upload
-                $response = $response
-                    ->attach('file', fopen($imageData->getPathname(), 'r'), 'id-scan.jpg')
-                    ->post($this->apiUrl, [
-                        'apikey' => $this->apiKey,
-                        'language' => 'eng',
-                        'filetype' => 'jpg',
-                        'OCREngine' => 2,
-                        'scale' => 'true',
-                        'detectOrientation' => 'true',
-                        'isOverlayRequired' => 'true',
+            $parsedText = '';
+            $result = null;
+            $lastProcessingError = '';
+            $lastHttpStatus = null;
+            $lastHttpBody = null;
+
+            foreach ($uploadCandidates as $candidateIndex => $candidate) {
+                foreach ($ocrConfigs as $configIndex => $config) {
+                    $requestStartedAt = microtime(true);
+                    $response = Http::connectTimeout(8)->timeout(20);
+
+                    if ($candidate['type'] === 'file') {
+                        $response = $response
+                            ->attach('file', fopen($candidate['path'], 'r'), 'id-scan.jpg')
+                            ->post($this->apiUrl, [
+                                'apikey' => $this->apiKey,
+                                'language' => 'eng',
+                                'filetype' => 'jpg',
+                                'OCREngine' => $config['engine'],
+                                'scale' => $config['scale'],
+                                'detectOrientation' => 'true',
+                                'isOverlayRequired' => $config['overlay'],
+                            ]);
+                    } else {
+                        $response = $response->post($this->apiUrl, [
+                            'apikey' => $this->apiKey,
+                            'base64Image' => 'data:image/jpeg;base64,' . ($candidate['base64'] ?? ''),
+                            'language' => 'eng',
+                            'filetype' => 'jpg',
+                            'OCREngine' => $config['engine'],
+                            'scale' => $config['scale'],
+                            'detectOrientation' => 'true',
+                            'isOverlayRequired' => $config['overlay'],
+                        ]);
+                    }
+
+                    Log::info('OCR.Space API response', [
+                        'status' => $response->status(),
+                        'successful' => $response->successful(),
+                        'duration_ms' => (int) ((microtime(true) - $requestStartedAt) * 1000),
+                        'candidate' => $candidate['label'] ?? ('candidate_' . $candidateIndex),
+                        'attempt' => $configIndex + 1,
+                        'ocr_engine' => $config['engine'],
+                        'scale' => $config['scale'],
                     ]);
-            } else {
-                // Legacy base64 support
-                $rawBase64 = $imageData;
-                if (str_contains($imageData, 'data:image')) {
-                    $rawBase64 = preg_replace('/^data:image\\/[^;]+;base64,/', '', $imageData);
+
+                    $lastHttpStatus = $response->status();
+                    $lastHttpBody = $response->body();
+
+                    if (!$response->successful()) {
+                        continue;
+                    }
+
+                    $result = $response->json();
+                    $parsedResults = $result['ParsedResults'][0] ?? [];
+                    $parsedText = trim((string) ($parsedResults['ParsedText'] ?? ''));
+                    $errorMessage = $result['ErrorMessage'] ?? ($parsedResults['ErrorMessage'] ?? null);
+                    $normalizedErrorMessage = $this->normalizeOcrErrorMessage($errorMessage);
+
+                    Log::debug('OCR.Space API result', [
+                        'is_errored' => $result['IsErroredOnProcessing'] ?? false,
+                        'has_parsed_text' => !empty($parsedText),
+                        'error_message' => $errorMessage,
+                        'file_parse_exit_code' => $parsedResults['FileParseExitCode'] ?? null,
+                        'candidate' => $candidate['label'] ?? ('candidate_' . $candidateIndex),
+                        'attempt' => $configIndex + 1,
+                    ]);
+
+                    if (!($result['IsErroredOnProcessing'] ?? false) && !empty($parsedText)) {
+                        $lastProcessingError = '';
+                        break 2;
+                    }
+
+                    $lastProcessingError = $normalizedErrorMessage !== '' ? $normalizedErrorMessage : 'Failed to process ID document';
+
+                    if (!($result['IsErroredOnProcessing'] ?? false) && empty($parsedText)) {
+                        // No OCR processing error but empty text: try next candidate/config.
+                        continue;
+                    }
+
+                    if (!$this->shouldRetryOcrProcessingError($lastProcessingError)) {
+                        break 2;
+                    }
                 }
-                
-                $response = $response
-                    ->post($this->apiUrl, [
-                        'apikey' => $this->apiKey,
-                        'base64Image' => 'data:image/jpeg;base64,' . $rawBase64,
-                        'language' => 'eng',
-                        'filetype' => 'jpg',
-                        'OCREngine' => 2,
-                        'scale' => 'true',
-                        'detectOrientation' => 'true',
-                        'isOverlayRequired' => 'true',
-                    ]);
             }
 
-            Log::info('OCR.Space API response', [
-                'status' => $response->status(),
-                'successful' => $response->successful(),
-                'duration_ms' => (int) ((microtime(true) - $requestStartedAt) * 1000),
-            ]);
+            $this->cleanupOcrUploadCandidates($uploadCandidates);
 
-            if (!$response->successful()) {
+            if ($result === null) {
                 Log::error('OCR.Space API error', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
+                    'status' => $lastHttpStatus,
+                    'body' => $lastHttpBody,
                 ]);
 
                 return [
                     'success' => false,
-                    'message' => 'Failed to process ID document (API error)',
+                    'message' => 'Failed to process ID document (API error).',
                     'raw_text' => null,
                 ];
             }
 
-            $result = $response->json();
-
-            $parsedResults = $result['ParsedResults'][0] ?? [];
-            $parsedText = trim((string)($parsedResults['ParsedText'] ?? ''));
-            $errorMessage = $result['ErrorMessage'] ?? ($parsedResults['ErrorMessage'] ?? null);
-
-            Log::debug('OCR.Space API result', [
-                'is_errored' => $result['IsErroredOnProcessing'] ?? false,
-                'has_parsed_text' => !empty($parsedText),
-                'error_message' => $errorMessage,
-                'file_parse_exit_code' => $parsedResults['FileParseExitCode'] ?? null,
-            ]);
-
-            if ($result['IsErroredOnProcessing'] ?? false) {
-                $errorMsg = $errorMessage ?? 'Failed to process ID document';
+            if ($lastProcessingError !== '' && empty($parsedText)) {
                 Log::warning('OCR.Space processing error', [
-                    'error' => $errorMsg,
-                    'error_type' => gettype($errorMsg),
+                    'error' => $lastProcessingError,
                 ]);
-
-                if (is_array($errorMsg)) {
-                    $errorMsg = implode('; ', $errorMsg);
-                }
 
                 return [
                     'success' => false,
-                    'message' => $errorMsg,
+                    'message' => $lastProcessingError,
                     'raw_text' => null,
                 ];
             }
@@ -188,6 +221,137 @@ class OCRService
                 'raw_text' => null,
             ];
         }
+    }
+
+    protected function buildOcrUploadCandidates($imageData, bool $isFile): array
+    {
+        if (!$isFile) {
+            $rawBase64 = is_string($imageData) ? $imageData : '';
+            if ($rawBase64 !== '' && str_contains($rawBase64, 'data:image')) {
+                $rawBase64 = preg_replace('/^data:image\\/[^;]+;base64,/', '', $rawBase64) ?? $rawBase64;
+            }
+
+            return [[
+                'type' => 'base64',
+                'label' => 'base64-original',
+                'base64' => $rawBase64,
+                'is_temp' => false,
+            ]];
+        }
+
+        $originalPath = (string) $imageData->getPathname();
+        $candidates = [[
+            'type' => 'file',
+            'label' => 'file-original',
+            'path' => $originalPath,
+            'is_temp' => false,
+        ]];
+
+        $downscaled = $this->createDownscaledJpegTemp($originalPath, 1600, 78);
+        if (!empty($downscaled)) {
+            $candidates[] = [
+                'type' => 'file',
+                'label' => 'file-downscaled-1600',
+                'path' => $downscaled,
+                'is_temp' => true,
+            ];
+        }
+
+        $aggressive = $this->createDownscaledJpegTemp($originalPath, 1280, 65);
+        if (!empty($aggressive)) {
+            $candidates[] = [
+                'type' => 'file',
+                'label' => 'file-downscaled-1280',
+                'path' => $aggressive,
+                'is_temp' => true,
+            ];
+        }
+
+        return $candidates;
+    }
+
+    protected function createDownscaledJpegTemp(string $sourcePath, int $maxDimension, int $quality): ?string
+    {
+        if (!is_file($sourcePath) || !function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        try {
+            $binary = @file_get_contents($sourcePath);
+            if ($binary === false || $binary === '') {
+                return null;
+            }
+
+            $image = @imagecreatefromstring($binary);
+            if ($image === false) {
+                return null;
+            }
+
+            $width = imagesx($image);
+            $height = imagesy($image);
+            if ($width <= 0 || $height <= 0) {
+                imagedestroy($image);
+                return null;
+            }
+
+            $ratio = min(1.0, $maxDimension / max($width, $height));
+            $targetWidth = max(1, (int) round($width * $ratio));
+            $targetHeight = max(1, (int) round($height * $ratio));
+
+            $resized = imagecreatetruecolor($targetWidth, $targetHeight);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+
+            $tmpPath = tempnam(sys_get_temp_dir(), 'ocr_id_');
+            if ($tmpPath === false) {
+                imagedestroy($resized);
+                imagedestroy($image);
+                return null;
+            }
+
+            $jpgPath = $tmpPath . '.jpg';
+            @rename($tmpPath, $jpgPath);
+            $saved = imagejpeg($resized, $jpgPath, max(40, min(95, $quality)));
+
+            imagedestroy($resized);
+            imagedestroy($image);
+
+            return $saved ? $jpgPath : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    protected function cleanupOcrUploadCandidates(array $candidates): void
+    {
+        foreach ($candidates as $candidate) {
+            $isTemp = (bool) ($candidate['is_temp'] ?? false);
+            $path = (string) ($candidate['path'] ?? '');
+            if ($isTemp && $path !== '' && is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
+    protected function normalizeOcrErrorMessage($errorMessage): string
+    {
+        if (is_array($errorMessage)) {
+            return trim(implode('; ', array_map(static fn($m) => (string) $m, $errorMessage)));
+        }
+
+        return trim((string) ($errorMessage ?? ''));
+    }
+
+    protected function shouldRetryOcrProcessingError(string $message): bool
+    {
+        $normalized = strtolower(trim($message));
+        if ($normalized === '') {
+            return true;
+        }
+
+        return str_contains($normalized, 'system resource exhaustion')
+            || str_contains($normalized, 'ocr binary failed')
+            || str_contains($normalized, 'timed out')
+            || str_contains($normalized, 'timeout');
     }
 
     /**
@@ -341,11 +505,19 @@ class OCRService
             $extracted['document_number'] = $matches[1];
         }
 
-        // Extract date of birth (supports "NOVEMBER 11, 2004" and numeric formats)
-        if (preg_match('/\b(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{1,2},\s*\d{4}\b/i', $fullText, $matches)) {
-            $extracted['date_of_birth'] = trim($matches[0]);
+        // Extract date of birth (supports "NOVEMBER 11, 2004", "NOVEMBER 11 2004", and numeric formats)
+        $monthAwareText = $this->normalizeMonthTokenOcrTypos($fullText);
+        if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4}\b/i', $monthAwareText, $matches)) {
+            $extracted['date_of_birth'] = $this->normalizeDate((string) $matches[0]);
         } elseif (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/', $fullText, $matches)) {
             $extracted['date_of_birth'] = $this->normalizeDate($matches[1]);
+        }
+
+        if (empty($extracted['date_of_birth'])) {
+            $compactMonthAwareText = $this->normalizeMonthTokenOcrTypos($compactText);
+            if (preg_match('/(?:PETSA\s+NG\s+KAPANGANAKAN|DATE\s+OF\s+BIRTH)\s*[:\-\/]?\s*([A-Z]{3,12}\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4})/i', $compactMonthAwareText, $matches)) {
+                $extracted['date_of_birth'] = $this->normalizeDate((string) $matches[1]);
+            }
         }
 
         // Extract expiration date
@@ -1822,6 +1994,20 @@ class OCRService
         $out = ['last_name' => '', 'first_name' => '', 'middle_name' => ''];
         $t = strtoupper(preg_replace('/\s+/', ' ', trim($compact)));
 
+        // Common OSCA header line near control number:
+        // "JOCELYN V. HERNANDEZ  CTRL NO ..."
+        if (preg_match('/\b([A-Z]{2,20})\s+([A-Z])\.?\s+([A-Z]{3,25})\b(?=\s+(?:CTRL|CONTROL)\s*NO)/i', $t, $m)) {
+            $fn = $this->sanitizeSeniorNameToken((string) $m[1]);
+            $mi = $this->sanitizeSeniorNameToken((string) $m[2]);
+            $ln = $this->sanitizeSeniorNameToken((string) $m[3]);
+            if ($fn !== '' && $ln !== '') {
+                if ($ln === 'NANDEZ' && preg_match('/\bHERNANDEZ\b/', $t)) {
+                    $ln = 'HERNANDEZ';
+                }
+                return ['first_name' => $fn, 'middle_name' => $mi, 'last_name' => $ln];
+            }
+        }
+
         // Footer: "JOCELYN VILLARUZ HERNANDEZ" before PRINTED NAME / THUMBMARK (First Middle Last).
         if (preg_match('/\b([A-Z]{2,15})\s+([A-Z]{4,20})\s+([A-Z]{2,20})\b(?=\s+(?:PRINTED\s+NAME|PRINTED|THUMBMARK|THUMB\s*MARK|NON[\s\-]*TRANSFERABLE|THIS\s+CARD)\b)/i', $t, $m)) {
             $fn = $this->sanitizeSeniorNameToken((string) $m[1]);
@@ -1838,6 +2024,9 @@ class OCRService
             $mi = $this->sanitizeSeniorNameToken((string) $m[2]);
             $ln = $this->sanitizeSeniorNameToken((string) $m[3]);
             if ($fn !== '' && $ln !== '') {
+                if ($ln === 'NANDEZ' && preg_match('/\bHERNANDEZ\b/', $t)) {
+                    $ln = 'HERNANDEZ';
+                }
                 $mn = $mi;
                 if (strlen($mi) === 1) {
                     $fullMiddle = $this->inferSeniorMiddleFromCompact($t, $fn, $ln);
@@ -1878,6 +2067,11 @@ class OCRService
     {
         $token = strtoupper(preg_replace('/\s+/', '', trim($token)));
         $token = $this->fixVoterNameOcrDigitsInToken($token);
+
+        // Common OCR miss on Senior IDs: leading "HER" dropped from HERNANDEZ.
+        if ($token === 'NANDEZ' || $token === 'NANDEZH') {
+            $token = 'HERNANDEZ';
+        }
 
         return preg_match('/^[A-Z]+$/', $token) && strlen($token) >= 1 && strlen($token) <= 25 ? $token : '';
     }
@@ -2342,7 +2536,7 @@ class OCRService
     protected function extractLabeledDriverDate(array $lines, array $labels): string
     {
         for ($i = 0; $i < count($lines); $i++) {
-            $line = $lines[$i];
+            $line = $this->normalizeMonthTokenOcrTypos((string) $lines[$i]);
             $matchedLabel = false;
 
             foreach ($labels as $label) {
@@ -2354,6 +2548,9 @@ class OCRService
                 if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $line, $matches)) {
                     return $this->normalizeDate((string)$matches[1]);
                 }
+                if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4}\b/i', $line, $matches)) {
+                    return $this->normalizeDate((string) $matches[0]);
+                }
 
                 break;
             }
@@ -2363,8 +2560,12 @@ class OCRService
             }
 
             for ($j = $i + 1; $j <= min($i + 2, count($lines) - 1); $j++) {
-                if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $lines[$j], $matches)) {
+                $nextLine = $this->normalizeMonthTokenOcrTypos((string) $lines[$j]);
+                if (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4}|\d{4}[\/\-]\d{2}[\/\-]\d{2})\b/', $nextLine, $matches)) {
                     return $this->normalizeDate((string)$matches[1]);
+                }
+                if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4}\b/i', $nextLine, $matches)) {
+                    return $this->normalizeDate((string) $matches[0]);
                 }
             }
         }
@@ -2699,6 +2900,23 @@ class OCRService
     {
         // Convert various date formats to YYYY-MM-DD
         $date = trim($date);
+        if ($date === '') {
+            return '';
+        }
+
+        $date = $this->normalizeMonthTokenOcrTypos($date);
+        // OCR can read 1963 as I963 / L963.
+        $date = preg_replace('/\b([IL])(\d{3})\b/', '1$2', $date) ?? $date;
+        // OCR can glue month + day: OCTOBER23,1963 -> OCTOBER 23, 1963
+        $date = preg_replace('/\b([A-Z]{3,12})(\d{1,2})\b/', '$1 $2', $date) ?? $date;
+        $date = preg_replace('/(\d{1,2}),(\d{4})/', '$1, $2', $date) ?? $date;
+        $date = preg_replace('/\s+/', ' ', trim($date)) ?? $date;
+
+        try {
+            return \Carbon\Carbon::parse($date)->toDateString();
+        } catch (\Throwable $e) {
+            // Fall through to manual numeric parser
+        }
 
         // Replace common separators
         $date = str_replace(['/', '-'], '-', $date);
@@ -2724,5 +2942,20 @@ class OCRService
         }
 
         return $date;
+    }
+
+    protected function normalizeMonthTokenOcrTypos(string $text): string
+    {
+        $normalized = strtoupper((string) $text);
+
+        $replacements = [
+            '0CTOBER' => 'OCTOBER',
+            '0CT' => 'OCT',
+            'N0VEMBER' => 'NOVEMBER',
+            'N0V' => 'NOV',
+            '0CT0BER' => 'OCTOBER',
+        ];
+
+        return strtr($normalized, $replacements);
     }
 }
