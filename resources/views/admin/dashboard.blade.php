@@ -440,6 +440,20 @@
 			font-family: inherit;
 		}
 
+		.dashboard-pagination nav .d-none.flex-sm-fill.d-sm-flex.align-items-sm-center.justify-content-sm-between {
+			gap: 14px;
+		}
+
+		.dashboard-pagination nav p.small.text-muted {
+			margin-bottom: 0;
+			margin-right: 10px;
+			white-space: nowrap;
+		}
+
+		.dashboard-pagination nav ul.pagination {
+			margin-bottom: 0;
+		}
+
 		.plot-line {
 			fill: none;
 			stroke: #f0c512;
@@ -967,10 +981,10 @@
 									<div class="mb-3">
 										<label class="form-label">Date Range</label>
 										<select name="date_filter" class="form-select">
-											<option value="">All</option>
-											<option value="today">Today</option>
-											<option value="week">This Week</option>
-											<option value="month">This Month</option>
+											<option value="" {{ ($selectedDateFilter ?? '') === '' ? 'selected' : '' }}>All</option>
+											<option value="today" {{ ($selectedDateFilter ?? '') === 'today' ? 'selected' : '' }}>Today</option>
+											<option value="week" {{ ($selectedDateFilter ?? '') === 'week' ? 'selected' : '' }}>This Week</option>
+											<option value="month" {{ ($selectedDateFilter ?? '') === 'month' ? 'selected' : '' }}>This Month</option>
 										</select>
 									</div>
 
@@ -978,10 +992,11 @@
 										<label class="form-label">Office</label>
 										<select name="office" class="form-select">
 											<option value="">All Offices</option>
-											<option value="Registrar">Registrar</option>
-											<option value="Cashier">Cashier</option>
-											<option value="HR">HR</option>
-											<option value="IT Department">IT Department</option>
+											@foreach(($officeOptions ?? []) as $officeOption)
+												<option value="{{ $officeOption->office_id }}" {{ ((int) ($selectedOfficeFilter ?? 0) === (int) $officeOption->office_id) ? 'selected' : '' }}>
+													{{ $officeOption->office_name }}
+												</option>
+											@endforeach
 										</select>
 									</div>
 
@@ -989,10 +1004,11 @@
 										<label class="form-label">Visitor Type</label>
 										<select name="visitor_type" class="form-select">
 											<option value="">All Types</option>
-											<option value="Student">Student</option>
-											<option value="Parent">Parent</option>
-											<option value="Guest">Guest</option>
-											<option value="Supplier">Supplier</option>
+											@foreach(($visitTypeOptions ?? []) as $visitTypeOption)
+												<option value="{{ $visitTypeOption->visit_type_id }}" {{ ((int) ($selectedVisitorTypeFilter ?? 0) === (int) $visitTypeOption->visit_type_id) ? 'selected' : '' }}>
+													{{ $visitTypeOption->visit_type_name }}
+												</option>
+											@endforeach
 										</select>
 									</div>
 
@@ -1000,10 +1016,11 @@
 										<label class="form-label">Status</label>
 										<select name="status" class="form-select">
 											<option value="">All Status</option>
-											<option value="Inside">Inside</option>
-											<option value="In Transit">In Transit</option>
-											<option value="Completed">Completed</option>
-											<option value="Exited">Exited</option>
+											@foreach(($statusOptions ?? []) as $statusOption)
+												<option value="{{ $statusOption }}" {{ strtolower((string) ($selectedStatusFilter ?? '')) === strtolower((string) $statusOption) ? 'selected' : '' }}>
+													{{ $statusOption }}
+												</option>
+											@endforeach
 										</select>
 									</div>
 
@@ -1022,8 +1039,8 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">7-Day Visitor Trend</h4>
-								<div class="bg-light rounded-4 border d-flex align-items-center justify-content-center" style="height: 300px;">
-									<span class="text-muted">Line Chart Here</span>
+								<div class="bg-light rounded-4 border p-3" style="height: 300px;">
+									<canvas id="visitorTrendChart"></canvas>
 								</div>
 							</div>
 						</div>
@@ -1033,8 +1050,8 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Status</h4>
-								<div class="bg-light rounded-4 border d-flex align-items-center justify-content-center" style="height: 300px;">
-									<span class="text-muted">Pie / Donut Chart Here</span>
+								<div class="bg-light rounded-4 border p-3" style="height: 300px;">
+									<canvas id="visitorStatusChart"></canvas>
 								</div>
 							</div>
 						</div>
@@ -1061,14 +1078,6 @@
 											</tr>
 										</thead>
 										<tbody>
-											@php
-												$liveVisitors = $liveVisitors ?? [
-													['name' => 'Juan Dela Cruz', 'status' => 'Inside', 'location' => 'Registrar', 'time_in' => '8:10 AM'],
-													['name' => 'Maria Santos', 'status' => 'In Transit', 'location' => 'Cashier', 'time_in' => '8:25 AM'],
-													['name' => 'Pedro Reyes', 'status' => 'Inside', 'location' => 'HR', 'time_in' => '9:00 AM'],
-												];
-											@endphp
-
 											@forelse($liveVisitors as $visitor)
 												<tr>
 													<td class="fw-medium">{{ $visitor['name'] }}</td>
@@ -1077,8 +1086,8 @@
 															<span class="badge bg-success">Inside</span>
 														@elseif($visitor['status'] === 'In Transit')
 															<span class="badge bg-primary">In Transit</span>
-														@elseif($visitor['status'] === 'Completed')
-															<span class="badge bg-dark">Completed</span>
+														@elseif($visitor['status'] === 'Exited')
+															<span class="badge bg-secondary">Exited</span>
 														@else
 															<span class="badge bg-secondary">{{ $visitor['status'] }}</span>
 														@endif
@@ -1094,6 +1103,11 @@
 										</tbody>
 									</table>
 								</div>
+								@if($liveVisitors->hasPages())
+									<div class="dashboard-pagination mt-3 d-flex justify-content-end">
+										{{ $liveVisitors->onEachSide(1)->links('pagination::bootstrap-5') }}
+									</div>
+								@endif
 							</div>
 						</div>
 					</div>
@@ -1119,14 +1133,6 @@
 											</tr>
 										</thead>
 										<tbody>
-											@php
-												$recentAlerts = $recentAlerts ?? [
-													['time' => '8:15 AM', 'visitor' => 'Juan Dela Cruz', 'type' => 'Wrong Office', 'severity' => 'High', 'status' => 'Unresolved'],
-													['time' => '8:40 AM', 'visitor' => 'Maria Santos', 'type' => 'Unauthorized', 'severity' => 'Critical', 'status' => 'Unresolved'],
-													['time' => '9:05 AM', 'visitor' => 'Carlo Reyes', 'type' => 'Overstay', 'severity' => 'Medium', 'status' => 'Resolved'],
-												];
-											@endphp
-
 											@forelse($recentAlerts as $alert)
 												<tr>
 													<td>{{ $alert['time'] }}</td>
@@ -1151,7 +1157,7 @@
 														@endif
 													</td>
 													<td>
-														<a href="#" class="btn btn-sm btn-outline-dark">View</a>
+														<a href="{{ url('/admin/alerts') . '?alert_id=' . ($alert['alert_id'] ?? 0) }}" class="btn btn-sm btn-outline-dark">View</a>
 													</td>
 												</tr>
 											@empty
@@ -1162,6 +1168,11 @@
 										</tbody>
 									</table>
 								</div>
+								@if($recentAlerts->hasPages())
+									<div class="dashboard-pagination mt-3 d-flex justify-content-end">
+										{{ $recentAlerts->onEachSide(1)->links('pagination::bootstrap-5') }}
+									</div>
+								@endif
 							</div>
 						</div>
 					</div>
@@ -1172,8 +1183,8 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Hour</h4>
-								<div class="bg-light rounded-4 border d-flex align-items-center justify-content-center" style="height: 280px;">
-									<span class="text-muted">Bar Chart Here</span>
+								<div class="bg-light rounded-4 border p-3" style="height: 280px;">
+									<canvas id="visitorHourChart"></canvas>
 								</div>
 							</div>
 						</div>
@@ -1183,8 +1194,8 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Office</h4>
-								<div class="bg-light rounded-4 border d-flex align-items-center justify-content-center" style="height: 280px;">
-									<span class="text-muted">Horizontal Bar Chart Here</span>
+								<div class="bg-light rounded-4 border p-3" style="height: 280px;">
+									<canvas id="visitorOfficeChart"></canvas>
 								</div>
 							</div>
 						</div>
@@ -1197,10 +1208,10 @@
 							<div class="card-body">
 								<h4 class="fw-bold mb-3">Key Insights</h4>
 								<ul class="mb-0 fs-5">
-									<li>Peak visitor hours are between 10:00 AM and 2:00 PM</li>
-									<li>Registrar receives the most visitors today</li>
-									<li>2 unresolved alerts need immediate attention</li>
-									<li>Cashier has the longest average visit duration</li>
+									<li>{{ $peakVisitorHourInsight ?? 'No visitor entries yet today.' }}</li>
+									<li>{{ $topOfficeTodayInsight ?? 'No office visits recorded today.' }}</li>
+									<li>{{ $unresolvedAlertsInsight ?? '0 unresolved alerts need immediate attention.' }}</li>
+									<li>{{ $longestAvgDurationInsight ?? 'No completed visit duration data yet.' }}</li>
 								</ul>
 							</div>
 						</div>
@@ -1223,15 +1234,24 @@
 			});
 		}
 
+		const trendLabels = @json($visitorTrendLabels ?? []);
+		const trendData = @json($visitorTrendData ?? []);
+		const statusLabels = @json($visitorStatusLabels ?? ['Currently Inside', 'Exited']);
+		const statusData = @json($visitorStatusData ?? [0, 0]);
+		const hourLabels = @json($visitorHourLabels ?? []);
+		const hourData = @json($visitorHourData ?? []);
+		const officeLabels = @json($visitorOfficeLabels ?? []);
+		const officeData = @json($visitorOfficeData ?? []);
+
 		const trendCtx = document.getElementById('visitorTrendChart')?.getContext('2d');
 		if (trendCtx) {
 			new Chart(trendCtx, {
 				type: 'line',
 				data: {
-					labels: ['Jan 19', 'Jan 20', 'Jan 25', 'Jan 26', 'Jan 27', 'Jan 28'],
+					labels: trendLabels,
 					datasets: [{
 						label: 'Visitors',
-						data: [45, 30, 25, 50, 22, 36],
+						data: trendData,
 						borderColor: '#f4c400',
 						backgroundColor: '#f4c400',
 						tension: 0.4,
@@ -1258,11 +1278,11 @@
 		const statusCtx = document.getElementById('visitorStatusChart')?.getContext('2d');
 		if (statusCtx) {
 			new Chart(statusCtx, {
-				type: 'pie',
+				type: 'doughnut',
 				data: {
-					labels: ['In Transit', 'Arrived'],
+					labels: statusLabels,
 					datasets: [{
-						data: [33, 67],
+						data: statusData,
 						backgroundColor: ['#3f4aa0', '#9aa3e5'],
 						borderWidth: 0
 					}]
@@ -1284,10 +1304,10 @@
 			new Chart(hourCtx, {
 				type: 'bar',
 				data: {
-					labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00'],
+					labels: hourLabels,
 					datasets: [{
 						label: 'Visitors',
-						data: [13, 12, 17, 13, 18, 5, 10, 5, 8, 18, 13, 6],
+						data: hourData,
 						backgroundColor: '#3f4aa0',
 						borderRadius: 6
 					}]
@@ -1312,10 +1332,10 @@
 			new Chart(officeCtx, {
 				type: 'bar',
 				data: {
-					labels: ['HR', 'Finance Department', 'IT Department'],
+					labels: officeLabels,
 					datasets: [{
 						label: 'Visitors',
-						data: [1, 1, 1],
+						data: officeData,
 						backgroundColor: '#f4c400',
 						borderRadius: 6
 					}]
