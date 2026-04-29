@@ -7,6 +7,7 @@ use App\Http\Controllers\GuardController;
 use App\Http\Controllers\GuardDashboardController;
 use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardVisitorController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
  
@@ -19,9 +20,7 @@ Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
  
 Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    });
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
  
     Route::get('/visitor', [VisitorMonitoringController::class, 'index'])->name('admin.visitor');
     Route::get('/visitor/export', [VisitorMonitoringController::class, 'export'])->name('admin.visitor.export');

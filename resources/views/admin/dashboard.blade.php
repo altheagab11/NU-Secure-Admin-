@@ -939,7 +939,7 @@
 									<div class="col-md-4">
 										<div class="mini-summary-box p-3 rounded-4">
 											<div class="small text-muted">Total Alerts Today</div>
-											<div class="fw-bold fs-4">{{ ($criticalAlerts ?? 2) + ($highAlerts ?? 5) + ($mediumAlerts ?? 3) + ($lowAlerts ?? 1) }}</div>
+											<div class="fw-bold fs-4">{{ $totalAlertsToday ?? 0 }}</div>
 										</div>
 									</div>
 									<div class="col-md-4">
@@ -951,7 +951,7 @@
 									<div class="col-md-4">
 										<div class="mini-summary-box p-3 rounded-4">
 											<div class="small text-muted">Most Common Alert</div>
-											<div class="fw-bold fs-6">Wrong Office</div>
+											<div class="fw-bold fs-6">{{ $mostCommonAlert ?? 'N/A' }}</div>
 										</div>
 									</div>
 								</div>
