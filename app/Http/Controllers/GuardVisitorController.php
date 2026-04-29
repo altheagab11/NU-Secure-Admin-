@@ -1546,7 +1546,79 @@ class GuardVisitorController extends Controller
             }
         }
 
+        // Unlabeled National ID fallback:
+        // "012 BANABA, PADRE GARCIA, BATANGAS, PHL" -> barangay=Banaba, city=Padre Garcia.
+        $normalizedParts = array_values(array_filter(array_map(
+            static fn ($part) => strtoupper(trim((string) $part)),
+            $lines
+        )));
+        $provinceUpper = strtoupper(trim((string) ($result['province'] ?? '')));
+        $cityUpper = strtoupper(trim((string) ($result['city'] ?? '')));
+
+        if (empty($result['city']) && !empty($normalizedParts)) {
+            for ($i = count($normalizedParts) - 1; $i >= 0; $i--) {
+                $candidate = $normalizedParts[$i];
+                if ($candidate === '' || $candidate === 'PHL' || $candidate === $provinceUpper) {
+                    continue;
+                }
+
+                if (preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|BARANGAY|BRGY|PUROK|PRK|STREET|ROAD|AVENUE)\b/', $candidate)) {
+                    continue;
+                }
+
+                // Municipality/city names are usually plain alpha chunks.
+                if (preg_match('/^[A-Z][A-Z\s]{2,40}$/', $candidate)) {
+                    $result['city'] = ucwords(strtolower($candidate));
+                    $cityUpper = strtoupper($result['city']);
+                    break;
+                }
+            }
+        }
+
+        if (!empty($normalizedParts)) {
+            $leadingPart = $normalizedParts[0];
+            $leadingBarangay = $this->extractBarangayFromLeadingAddressPart($leadingPart);
+
+            if (empty($result['barangay']) && $leadingBarangay !== '') {
+                $result['barangay'] = $leadingBarangay;
+            }
+
+            // If OCR previously treated municipality as barangay, recover barangay from leading part.
+            if (
+                !empty($result['city'])
+                && !empty($result['barangay'])
+                && strtoupper(trim((string) $result['barangay'])) === $cityUpper
+                && $leadingBarangay !== ''
+            ) {
+                $result['barangay'] = $leadingBarangay;
+            }
+        }
+
         return $result;
+    }
+
+    protected function extractBarangayFromLeadingAddressPart(string $part): string
+    {
+        $part = strtoupper(trim($part));
+        if ($part === '' || $part === 'PHL') {
+            return '';
+        }
+
+        $candidate = preg_replace('/^\d{1,6}[A-Z0-9-]*\s+/', '', $part) ?? $part;
+        $candidate = trim((string) preg_replace('/\b(PHL|CITY|MUNICIPALITY|PROVINCE|REGION)\b.*/', '', $candidate));
+        if ($candidate === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(BRGY|BARANGAY|PUROK|PRK|STREET|ROAD|AVENUE)\b/', $candidate)) {
+            return '';
+        }
+
+        if (!preg_match('/^[A-Z][A-Z\s]{1,40}$/', $candidate)) {
+            return '';
+        }
+
+        return ucwords(strtolower($candidate));
     }
 
     protected function enhanceUmidAddressDataFromRawText(array $addressData, string $addressSource, string $rawOcrText): array

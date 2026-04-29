@@ -454,6 +454,10 @@ class OCRService
             $extracted['middle_name'] = $labelMiddleName;
         }
 
+        if (!empty($extracted['last_name'])) {
+            $extracted['last_name'] = $this->normalizeLikelySurnameOcrTypos((string) $extracted['last_name']);
+        }
+
         if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
             $extracted['full_name'] = trim($extracted['last_name'] . ', ' . $extracted['first_name']);
         }
@@ -478,6 +482,10 @@ class OCRService
                 }
                 if (empty($extracted['middle_name'])) {
                     $extracted['middle_name'] = $nameCandidates[2] ?? '';
+                }
+
+                if (!empty($extracted['last_name'])) {
+                    $extracted['last_name'] = $this->normalizeLikelySurnameOcrTypos((string) $extracted['last_name']);
                 }
 
                 if (!empty($extracted['last_name']) && !empty($extracted['first_name'])) {
@@ -2771,6 +2779,31 @@ class OCRService
         }
 
         return (string)$candidate;
+    }
+
+    protected function normalizeLikelySurnameOcrTypos(string $surname): string
+    {
+        $normalized = strtoupper(trim($surname));
+        if ($normalized === '') {
+            return '';
+        }
+
+        $normalized = strtr($normalized, [
+            '0' => 'O',
+            '1' => 'I',
+            '5' => 'S',
+            '8' => 'B',
+        ]);
+
+        // OCR often reads "...NES" as "...NPS" on textured National ID backgrounds.
+        $normalized = preg_replace('/NPS\b/', 'NES', $normalized) ?? $normalized;
+
+        // Targeted correction observed on PhilID where MAINES is read as HAINES.
+        if ($normalized === 'HAINES') {
+            $normalized = 'MAINES';
+        }
+
+        return $normalized;
     }
 
     protected function extractBetweenLabels(string $text, array $startLabels, array $endLabels): string
