@@ -2728,8 +2728,8 @@
 		};
 
 		const autofillVisitorForm = (formData) => {
-			if (!visitorStepPanel) {
-				console.warn('Visitor step panel not found');
+			if (!visitorStepPanel && !enrolleeStepPanel) {
+				console.warn('No step panel found for autofill');
 				return;
 			}
 

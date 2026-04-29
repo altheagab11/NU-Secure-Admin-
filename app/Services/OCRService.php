@@ -507,7 +507,7 @@ class OCRService
 
         // Extract date of birth (supports "NOVEMBER 11, 2004", "NOVEMBER 11 2004", and numeric formats)
         $monthAwareText = $this->normalizeMonthTokenOcrTypos($fullText);
-        if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4}\b/i', $monthAwareText, $matches)) {
+        if (preg_match('/\b(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:T(?:EMBER)?)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s*[0-9ILO\]\|]{1,2}(?:,|\s)?\s*[0-9ILO\]\|]{4}\b/i', $monthAwareText, $matches)) {
             $extracted['date_of_birth'] = $this->normalizeDate((string) $matches[0]);
         } elseif (preg_match('/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/', $fullText, $matches)) {
             $extracted['date_of_birth'] = $this->normalizeDate($matches[1]);
@@ -515,7 +515,7 @@ class OCRService
 
         if (empty($extracted['date_of_birth'])) {
             $compactMonthAwareText = $this->normalizeMonthTokenOcrTypos($compactText);
-            if (preg_match('/(?:PETSA\s+NG\s+KAPANGANAKAN|DATE\s+OF\s+BIRTH)\s*[:\-\/]?\s*([A-Z]{3,12}\s*\d{1,2}(?:,|\s)?\s*[0-9IL]{4})/i', $compactMonthAwareText, $matches)) {
+            if (preg_match('/(?:PETSA\s+NG\s+KAPANGANAKAN|DATE\s+OF\s+BIRTH)\s*[:\-\/]?\s*([A-Z]{3,12}\s*[0-9ILO\]\|]{1,2}(?:,|\s)?\s*[0-9ILO\]\|]{4})/i', $compactMonthAwareText, $matches)) {
                 $extracted['date_of_birth'] = $this->normalizeDate((string) $matches[1]);
             }
         }
@@ -2905,12 +2905,27 @@ class OCRService
         }
 
         $date = $this->normalizeMonthTokenOcrTypos($date);
+        // Common OCR symbols for digits in birthdates.
+        $date = strtr($date, [
+            '|' => '1',
+            '!' => '1',
+            ']' => '1',
+            '[' => '1',
+        ]);
+        $date = preg_replace_callback('/\b[0-9ILO]{1,4}\b/', static function (array $m): string {
+            return strtr($m[0], [
+                'I' => '1',
+                'L' => '1',
+                'O' => '0',
+            ]);
+        }, $date) ?? $date;
         // OCR can read 1963 as I963 / L963.
         $date = preg_replace('/\b([IL])(\d{3})\b/', '1$2', $date) ?? $date;
         // OCR can glue month + day: OCTOBER23,1963 -> OCTOBER 23, 1963
         $date = preg_replace('/\b([A-Z]{3,12})(\d{1,2})\b/', '$1 $2', $date) ?? $date;
         $date = preg_replace('/(\d{1,2}),(\d{4})/', '$1, $2', $date) ?? $date;
         $date = preg_replace('/\s+/', ' ', trim($date)) ?? $date;
+        $date = $this->normalizeEnglishMonthInDate($date);
 
         try {
             return \Carbon\Carbon::parse($date)->toDateString();
@@ -2944,6 +2959,68 @@ class OCRService
         return $date;
     }
 
+    protected function normalizeEnglishMonthInDate(string $date): string
+    {
+        if (!preg_match('/\b([A-Z0-9]{3,12})\s+(\d{1,2})\s*,?\s*(\d{4})\b/i', $date, $m)) {
+            return $date;
+        }
+
+        $resolvedMonth = $this->resolveEnglishMonthToken((string) $m[1]);
+        if ($resolvedMonth === '') {
+            return $date;
+        }
+
+        return preg_replace(
+            '/\b' . preg_quote((string) $m[1], '/') . '\s+' . preg_quote((string) $m[2], '/') . '\s*,?\s*' . preg_quote((string) $m[3], '/') . '\b/i',
+            $resolvedMonth . ' ' . $m[2] . ', ' . $m[3],
+            $date,
+            1
+        ) ?? $date;
+    }
+
+    protected function resolveEnglishMonthToken(string $token): string
+    {
+        $token = strtoupper(trim($token));
+        if ($token === '') {
+            return '';
+        }
+
+        $token = strtr($token, [
+            '0' => 'O',
+            '1' => 'I',
+            '5' => 'S',
+            '8' => 'B',
+        ]);
+
+        $months = [
+            'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+            'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+        ];
+
+        if (in_array($token, $months, true)) {
+            return $token;
+        }
+
+        // Common National ID OCR misses where first letter is dropped.
+        foreach ($months as $month) {
+            if ($token === substr($month, 1)) {
+                return $month;
+            }
+        }
+
+        $bestMonth = '';
+        $bestDistance = PHP_INT_MAX;
+        foreach ($months as $month) {
+            $distance = levenshtein($token, $month);
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
+                $bestMonth = $month;
+            }
+        }
+
+        return $bestDistance <= 2 ? $bestMonth : '';
+    }
+
     protected function normalizeMonthTokenOcrTypos(string $text): string
     {
         $normalized = strtoupper((string) $text);
@@ -2956,6 +3033,27 @@ class OCRService
             '0CT0BER' => 'OCTOBER',
         ];
 
-        return strtr($normalized, $replacements);
+        $normalized = strtr($normalized, $replacements);
+
+        // OCR sometimes inserts spaces between month letters: N O V E M B E R
+        $spacedMonthPatterns = [
+            '/\bJ\s*A\s*N\s*U\s*A\s*R\s*Y\b/' => 'JANUARY',
+            '/\bF\s*E\s*B\s*R\s*U\s*A\s*R\s*Y\b/' => 'FEBRUARY',
+            '/\bM\s*A\s*R\s*C\s*H\b/' => 'MARCH',
+            '/\bA\s*P\s*R\s*I\s*L\b/' => 'APRIL',
+            '/\bM\s*A\s*Y\b/' => 'MAY',
+            '/\bJ\s*U\s*N\s*E\b/' => 'JUNE',
+            '/\bJ\s*U\s*L\s*Y\b/' => 'JULY',
+            '/\bA\s*U\s*G\s*U\s*S\s*T\b/' => 'AUGUST',
+            '/\bS\s*E\s*P\s*T\s*E\s*M\s*B\s*E\s*R\b/' => 'SEPTEMBER',
+            '/\bO\s*C\s*T\s*O\s*B\s*E\s*R\b/' => 'OCTOBER',
+            '/\bN\s*O\s*V\s*E\s*M\s*B\s*E\s*R\b/' => 'NOVEMBER',
+            '/\bD\s*E\s*C\s*E\s*M\s*B\s*E\s*R\b/' => 'DECEMBER',
+        ];
+        foreach ($spacedMonthPatterns as $pattern => $month) {
+            $normalized = preg_replace($pattern, $month, (string) $normalized) ?? $normalized;
+        }
+
+        return $normalized;
     }
 }
