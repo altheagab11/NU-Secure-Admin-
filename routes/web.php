@@ -1,6 +1,7 @@
 <?php
  
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\GuardController;
@@ -49,7 +50,13 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
     Route::get('/dashboard/visits/{visitId}/details', [GuardDashboardController::class, 'visitDetails']);
  
     Route::get('/exit', function () {
-        return view('guard.exit');
+        $activeAlertsCount = DB::table('alerts')
+            ->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
+            ->count();
+
+        return view('guard.exit', [
+            'activeAlertsCount' => $activeAlertsCount,
+        ]);
     });
     Route::post('/exit/scan', [GuardVisitorController::class, 'processExitScan']);
  
@@ -60,7 +67,13 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
  
 Route::middleware(['auth', 'role:2,4'])->prefix('guard')->group(function () {
     Route::get('/register', function () {
-        return view('guard.register');
+        $activeAlertsCount = DB::table('alerts')
+            ->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
+            ->count();
+
+        return view('guard.register', [
+            'activeAlertsCount' => $activeAlertsCount,
+        ]);
     });
 
     Route::post('/register/visitor', [GuardVisitorController::class, 'storeVisitorRegistration']);

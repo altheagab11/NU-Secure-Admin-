@@ -1075,6 +1075,11 @@
 
 				<div class="sidebar-section">
 					<p class="sidebar-label">MONITORING</p>
+					@php
+						$sidebarUnresolvedAlertsCount = (int) \Illuminate\Support\Facades\DB::table('alerts')
+							->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
+							->count();
+					@endphp
 					<a href="/admin/visitor" class="sidebar-link {{ request()->is('admin/visitor*') ? 'active' : '' }}">
 						<span class="sidebar-icon"><i class="bi bi-people-fill"></i></span>
 						<span class="sidebar-text">Visitor Monitoring</span>
@@ -1082,7 +1087,7 @@
 					<a href="/admin/alerts" class="sidebar-link {{ request()->is('admin/alerts*') ? 'active' : '' }}">
 						<span class="sidebar-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
 						<span class="sidebar-text">Alerts</span>
-						<span class="sidebar-badge">5</span>
+						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
 				</div>
 
