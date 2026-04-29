@@ -2297,12 +2297,12 @@ class OCRService
             }
         }
 
-        // Fallback for OCR that still keeps "FIRST MIDDLE" together in first_name.
+        // Fallback for OCR that keeps "FIRST MIDDLE" together in first_name.
+        // Do not depend on $extracted['full_name'] here because it's finalized later.
         if (
             empty($middleName)
             && !empty($lastName)
             && !empty($firstName)
-            && preg_match('/^\s*[A-Z][A-Z\s]{2,35}\s*,\s*[A-Z][A-Z\s]{2,35}\s*$/', (string) ($extracted['full_name'] ?? ''))
         ) {
             $nameParts = array_values(array_filter(preg_split('/\s+/', trim((string) $firstName))));
             if (count($nameParts) >= 2) {
