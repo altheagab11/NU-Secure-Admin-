@@ -144,12 +144,12 @@ class GuardVisitorController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'birthday' => ['required', 'date'],
-            'house_no' => ['required', 'string', 'max:255'],
-            'street' => ['required', 'string', 'max:255'],
-            'barangay' => ['required', 'string', 'max:255'],
-            'city_municipality' => ['required', 'string', 'max:255'],
-            'province' => ['required', 'string', 'max:255'],
-            'region' => ['required', 'string', 'max:255'],
+            'house_no' => ['nullable', 'string', 'max:255'],
+            'street' => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255'],
+            'city_municipality' => ['nullable', 'string', 'max:255'],
+            'province' => ['nullable', 'string', 'max:255'],
+            'region' => ['nullable', 'string', 'max:255'],
             'contact_no' => ['required', 'string', 'max:20'],
             'pass_number' => ['required', 'string', 'max:255'],
             'control_number' => ['required', 'string', 'max:255'],
@@ -186,6 +186,12 @@ class GuardVisitorController extends Controller
 
         if ($registerType === 'enrollee') {
             $validated['purpose_reason'] = 'For Enrollment';
+        }
+
+        $validated['province'] = trim((string) ($validated['province'] ?? ''));
+        $validated['region'] = trim((string) ($validated['region'] ?? ''));
+        if ($validated['region'] === '' && $validated['province'] !== '') {
+            $validated['region'] = $this->inferRegionFromProvince($validated['province']);
         }
 
         if ($registerType === 'normal' && empty($officeIds)) {
@@ -248,12 +254,12 @@ class GuardVisitorController extends Controller
                     : null;
 
                 $addressPayload = [
-                    'house_no' => $validated['house_no'],
-                    'street' => $validated['street'],
-                    'barangay' => $validated['barangay'],
-                    'city_municipality' => $validated['city_municipality'],
-                    'province' => $validated['province'],
-                    'region' => $validated['region'],
+                    'house_no' => (string) ($validated['house_no'] ?? ''),
+                    'street' => (string) ($validated['street'] ?? ''),
+                    'barangay' => (string) ($validated['barangay'] ?? ''),
+                    'city_municipality' => (string) ($validated['city_municipality'] ?? ''),
+                    'province' => (string) ($validated['province'] ?? ''),
+                    'region' => (string) ($validated['region'] ?? ''),
                 ];
 
                 $addressId = $this->resolveAddressIdForRegistration($addressPayload);

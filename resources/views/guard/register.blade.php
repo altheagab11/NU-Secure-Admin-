@@ -1702,28 +1702,28 @@
 										<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no." required>
+										<label class="visitor-label" for="visitorHouseNo">House No.</label>
+										<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorStreet">Street <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street" required>
+										<label class="visitor-label" for="visitorStreet">Street</label>
+										<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorBarangay">Barangay <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay" required>
+										<label class="visitor-label" for="visitorBarangay">Barangay</label>
+										<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorCity">City / Municipality <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality" required>
+										<label class="visitor-label" for="visitorCity">City / Municipality</label>
+										<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorProvince">Province <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province" required>
+										<label class="visitor-label" for="visitorProvince">Province</label>
+										<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
 									</div>
 									<div class="visitor-input-group">
-										<label class="visitor-label" for="visitorRegion">Region <span class="required-mark">*</span></label>
-										<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" required>
+										<label class="visitor-label" for="visitorRegion">Region</label>
+										<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" readonly>
 									</div>
 								</div>
 							</div>
@@ -1763,28 +1763,28 @@
 									<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorHouseNo">House No. <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no." required>
+									<label class="visitor-label" for="visitorHouseNo">House No.</label>
+									<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorStreet">Street <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street" required>
+									<label class="visitor-label" for="visitorStreet">Street</label>
+									<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorBarangay">Barangay <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay" required>
+									<label class="visitor-label" for="visitorBarangay">Barangay</label>
+									<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorCity">City / Municipality <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality" required>
+									<label class="visitor-label" for="visitorCity">City / Municipality</label>
+									<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorProvince">Province <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province" required>
+									<label class="visitor-label" for="visitorProvince">Province</label>
+									<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
 								</div>
 								<div class="visitor-input-group">
-									<label class="visitor-label" for="visitorRegion">Region <span class="required-mark">*</span></label>
-									<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" required>
+									<label class="visitor-label" for="visitorRegion">Region</label>
+									<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" readonly>
 								</div>
 							</div>
 						</div>
@@ -2065,6 +2065,108 @@
 			return raw
 				.toLowerCase()
 				.replace(/\b([a-z])/g, (match) => match.toUpperCase());
+		};
+
+		const PROVINCE_REGION_MAP = {
+			'metro manila': 'NCR',
+			'manila': 'NCR',
+			'abra': 'CAR',
+			'apayao': 'CAR',
+			'benguet': 'CAR',
+			'ifugao': 'CAR',
+			'kalinga': 'CAR',
+			'mountain province': 'CAR',
+			'ilocos norte': 'Region I',
+			'ilocos sur': 'Region I',
+			'la union': 'Region I',
+			'pangasinan': 'Region I',
+			'batanes': 'Region II',
+			'cagayan': 'Region II',
+			'isabela': 'Region II',
+			'nueva vizcaya': 'Region II',
+			'quirino': 'Region II',
+			'aurora': 'Region III',
+			'bataan': 'Region III',
+			'bulacan': 'Region III',
+			'nueva ecija': 'Region III',
+			'pampanga': 'Region III',
+			'tarlac': 'Region III',
+			'zambales': 'Region III',
+			'batangas': 'Region IV-A',
+			'cavite': 'Region IV-A',
+			'laguna': 'Region IV-A',
+			'quezon': 'Region IV-A',
+			'rizal': 'Region IV-A',
+			'marinduque': 'Region IV-B',
+			'occidental mindoro': 'Region IV-B',
+			'oriental mindoro': 'Region IV-B',
+			'palawan': 'Region IV-B',
+			'romblon': 'Region IV-B',
+			'albay': 'Region V',
+			'camarines norte': 'Region V',
+			'camarines sur': 'Region V',
+			'catanduanes': 'Region V',
+			'masbate': 'Region V',
+			'sorsogon': 'Region V',
+			'aklan': 'Region VI',
+			'antique': 'Region VI',
+			'capiz': 'Region VI',
+			'guimaras': 'Region VI',
+			'iloilo': 'Region VI',
+			'negros occidental': 'Region VI',
+			'bohol': 'Region VII',
+			'cebu': 'Region VII',
+			'negros oriental': 'Region VII',
+			'siquijor': 'Region VII',
+			'biliran': 'Region VIII',
+			'eastern samar': 'Region VIII',
+			'leyte': 'Region VIII',
+			'northern samar': 'Region VIII',
+			'samar': 'Region VIII',
+			'southern leyte': 'Region VIII',
+			'zamboanga del norte': 'Region IX',
+			'zamboanga del sur': 'Region IX',
+			'zamboanga sibugay': 'Region IX',
+			'bukidnon': 'Region X',
+			'camiguin': 'Region X',
+			'lanao del norte': 'Region X',
+			'misamis occidental': 'Region X',
+			'misamis oriental': 'Region X',
+			'davao de oro': 'Region XI',
+			'davao del norte': 'Region XI',
+			'davao del sur': 'Region XI',
+			'davao occidental': 'Region XI',
+			'davao oriental': 'Region XI',
+			'cotabato': 'Region XII',
+			'sarangani': 'Region XII',
+			'south cotabato': 'Region XII',
+			'sultan kudarat': 'Region XII',
+			'agusan del norte': 'Region XIII',
+			'agusan del sur': 'Region XIII',
+			'dinagat islands': 'Region XIII',
+			'surigao del norte': 'Region XIII',
+			'surigao del sur': 'Region XIII',
+			'basilan': 'BARMM',
+			'lanao del sur': 'BARMM',
+			'maguindanao del norte': 'BARMM',
+			'maguindanao del sur': 'BARMM',
+			'sulu': 'BARMM',
+			'tawi-tawi': 'BARMM',
+			'cotabato city': 'BARMM'
+		};
+
+		const inferRegionFromProvince = (provinceValue) => {
+			const normalized = String(provinceValue || '').trim().toLowerCase().replace(/\s+/g, ' ');
+			return PROVINCE_REGION_MAP[normalized] || '';
+		};
+
+		const syncRegionFromProvince = () => {
+			if (!visitorProvince || !visitorRegion) {
+				return;
+			}
+
+			visitorRegion.readOnly = true;
+			visitorRegion.value = inferRegionFromProvince(visitorProvince.value);
 		};
 
 		const generateControlNumber = () => {
@@ -2455,6 +2557,7 @@
 			if (visitorRegion && existingVisitor.region) {
 				visitorRegion.value = String(existingVisitor.region).trim();
 			}
+			syncRegionFromProvince();
 			if (visitorPhoneNumber && existingVisitor.contact_no) {
 				visitorPhoneNumber.value = String(existingVisitor.contact_no).replace(/\D/g, '').slice(0, 11);
 			}
@@ -3094,6 +3197,9 @@ ${ticketMarkup}
 			}
 		});
 
+		visitorProvince?.addEventListener('input', syncRegionFromProvince);
+		visitorProvince?.addEventListener('change', syncRegionFromProvince);
+
 		const renderOfficeList = (offices) => {
 			autoEnrolleeOfficeNames = [];
 
@@ -3313,6 +3419,7 @@ ${ticketMarkup}
 		if (hasRegisterFlow) {
 			updateStepUI();
 			ensureAutoControlNumber();
+			syncRegionFromProvince();
 			if (registerType !== 'contractor') {
 				fetchOffices();
 			}
