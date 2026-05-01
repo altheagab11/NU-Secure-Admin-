@@ -766,6 +766,58 @@
 			text-decoration: underline;
 		}
 
+		.pagination-wrap {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 14px 22px 18px;
+			border-top: 1px solid #f1f5f9;
+			flex-wrap: wrap;
+		}
+
+		.pagination-info {
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.pagination-controls {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			flex-wrap: wrap;
+		}
+
+		.pagination-btn {
+			border: 1px solid #dbe2ea;
+			background: #ffffff;
+			color: #374151;
+			min-width: 34px;
+			height: 34px;
+			padding: 0 10px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.pagination-btn:hover:not(:disabled) {
+			border-color: #c7d2fe;
+			color: #2f3f9d;
+		}
+
+		.pagination-btn.active {
+			background: #3949ab;
+			border-color: #3949ab;
+			color: #ffffff;
+		}
+
+		.pagination-btn:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+
 		.drawer-overlay {
 			position: fixed;
 			inset: 0;
@@ -1219,6 +1271,10 @@
 							</tbody>
 						</table>
 					</div>
+					<div class="pagination-wrap" id="activeVisitorsPagination" style="display:none;">
+						<div class="pagination-info" id="activeVisitorsPaginationInfo"></div>
+						<div class="pagination-controls" id="activeVisitorsPaginationControls"></div>
+					</div>
 				</div>
 			</div>
 		</main>
@@ -1459,6 +1515,74 @@
 			if (!visitId) return;
 			openVisitorDetails(visitId);
 		});
+
+		const ACTIVE_VISITORS_PER_PAGE = 10;
+		const activeVisitorsTableBody = document.querySelector('.visitor-table tbody');
+		const activeVisitorsPagination = document.getElementById('activeVisitorsPagination');
+		const activeVisitorsPaginationInfo = document.getElementById('activeVisitorsPaginationInfo');
+		const activeVisitorsPaginationControls = document.getElementById('activeVisitorsPaginationControls');
+
+		if (activeVisitorsTableBody) {
+			const activeVisitorRows = Array.from(activeVisitorsTableBody.querySelectorAll('tr'))
+				.filter((row) => !row.querySelector('td[colspan]'));
+			const totalRows = activeVisitorRows.length;
+			const totalPages = Math.ceil(totalRows / ACTIVE_VISITORS_PER_PAGE);
+			let currentPage = 1;
+
+			const renderActiveVisitorsPage = (page) => {
+				if (totalPages <= 1) {
+					if (activeVisitorsPagination) {
+						activeVisitorsPagination.style.display = 'none';
+					}
+					return;
+				}
+
+				currentPage = Math.min(Math.max(page, 1), totalPages);
+				const start = (currentPage - 1) * ACTIVE_VISITORS_PER_PAGE;
+				const end = start + ACTIVE_VISITORS_PER_PAGE;
+
+				activeVisitorRows.forEach((row, index) => {
+					row.style.display = index >= start && index < end ? '' : 'none';
+				});
+
+				if (activeVisitorsPagination) {
+					activeVisitorsPagination.style.display = 'flex';
+				}
+
+				if (activeVisitorsPaginationInfo) {
+					activeVisitorsPaginationInfo.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows} visitors`;
+				}
+
+				if (!activeVisitorsPaginationControls) return;
+				activeVisitorsPaginationControls.innerHTML = '';
+
+				const createPageButton = (label, targetPage, isDisabled = false, isActive = false) => {
+					const button = document.createElement('button');
+					button.type = 'button';
+					button.className = `pagination-btn${isActive ? ' active' : ''}`;
+					button.textContent = label;
+					button.disabled = isDisabled;
+					button.addEventListener('click', () => renderActiveVisitorsPage(targetPage));
+					return button;
+				};
+
+				activeVisitorsPaginationControls.appendChild(
+					createPageButton('Prev', currentPage - 1, currentPage === 1)
+				);
+
+				for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+					activeVisitorsPaginationControls.appendChild(
+						createPageButton(String(pageNumber), pageNumber, false, pageNumber === currentPage)
+					);
+				}
+
+				activeVisitorsPaginationControls.appendChild(
+					createPageButton('Next', currentPage + 1, currentPage === totalPages)
+				);
+			};
+
+			renderActiveVisitorsPage(1);
+		}
 	</script>
 </body>
 </html>

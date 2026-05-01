@@ -730,6 +730,58 @@
 			padding: 20px 22px 22px;
 		}
 
+		.pagination-wrap {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 0 22px 18px;
+			border-top: 1px solid #eef2f7;
+			flex-wrap: wrap;
+		}
+
+		.pagination-info {
+			font-size: 13px;
+			color: #6b7280;
+		}
+
+		.pagination-controls {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			flex-wrap: wrap;
+		}
+
+		.pagination-btn {
+			border: 1px solid #dbe2ea;
+			background: #ffffff;
+			color: #374151;
+			min-width: 34px;
+			height: 34px;
+			padding: 0 10px;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.pagination-btn:hover:not(:disabled) {
+			border-color: #c7d2fe;
+			color: #2f3f9d;
+		}
+
+		.pagination-btn.active {
+			background: #3949ab;
+			border-color: #3949ab;
+			color: #ffffff;
+		}
+
+		.pagination-btn:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+
 		.alert-visitor-item {
 			display: flex;
 			justify-content: space-between;
@@ -1384,7 +1436,7 @@
 						</div>
 					</div>
 
-					<div class="alerts-list">
+					<div class="alerts-list" id="completedVisitorsList">
 						@forelse(($completedVisitors ?? []) as $visitor)
 							<div class="alert-visitor-item completed">
 								<div class="alert-visitor-left">
@@ -1411,6 +1463,10 @@
 							</div>
 						@endforelse
 					</div>
+					<div class="pagination-wrap" id="completedVisitorsPagination" style="display:none;">
+						<div class="pagination-info" id="completedVisitorsPaginationInfo"></div>
+						<div class="pagination-controls" id="completedVisitorsPaginationControls"></div>
+					</div>
 				</div>
 
 				<div class="alerts-panel-card">
@@ -1426,7 +1482,7 @@
 						</div>
 					</div>
 
-					<div class="alerts-list">
+					<div class="alerts-list" id="unresolvedAlertsList">
 						@forelse(($unresolvedAlerts ?? []) as $alert)
 							<div class="alert-visitor-item">
 								<div class="alert-visitor-left">
@@ -1456,6 +1512,10 @@
 								<p>All alerts are currently resolved.</p>
 							</div>
 						@endforelse
+					</div>
+					<div class="pagination-wrap" id="unresolvedAlertsPagination" style="display:none;">
+						<div class="pagination-info" id="unresolvedAlertsPaginationInfo"></div>
+						<div class="pagination-controls" id="unresolvedAlertsPaginationControls"></div>
 					</div>
 				</div>
 			</div>
@@ -1740,6 +1800,78 @@
 				}
 			}
 		});
+
+		const ALERTS_PER_PAGE = 10;
+
+		function setupCardPagination(listId, paginationId, infoId, controlsId, itemLabel) {
+			const list = document.getElementById(listId);
+			const paginationWrap = document.getElementById(paginationId);
+			const infoTarget = document.getElementById(infoId);
+			const controlsTarget = document.getElementById(controlsId);
+			if (!list || !paginationWrap || !infoTarget || !controlsTarget) return;
+
+			const rows = Array.from(list.querySelectorAll('.alert-visitor-item'));
+			const totalRows = rows.length;
+			const totalPages = Math.ceil(totalRows / ALERTS_PER_PAGE);
+			let currentPage = 1;
+
+			const renderPage = (page) => {
+				if (totalPages <= 1) {
+					paginationWrap.style.display = 'none';
+					return;
+				}
+
+				currentPage = Math.min(Math.max(page, 1), totalPages);
+				const start = (currentPage - 1) * ALERTS_PER_PAGE;
+				const end = start + ALERTS_PER_PAGE;
+
+				rows.forEach((row, index) => {
+					row.style.display = index >= start && index < end ? '' : 'none';
+				});
+
+				paginationWrap.style.display = 'flex';
+				infoTarget.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows} ${itemLabel}`;
+				controlsTarget.innerHTML = '';
+
+				const createButton = (label, targetPage, isDisabled = false, isActive = false) => {
+					const button = document.createElement('button');
+					button.type = 'button';
+					button.className = `pagination-btn${isActive ? ' active' : ''}`;
+					button.textContent = label;
+					button.disabled = isDisabled;
+					button.addEventListener('click', () => renderPage(targetPage));
+					return button;
+				};
+
+				controlsTarget.appendChild(createButton('Prev', currentPage - 1, currentPage === 1));
+
+				for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+					controlsTarget.appendChild(
+						createButton(String(pageNumber), pageNumber, false, pageNumber === currentPage)
+					);
+				}
+
+				controlsTarget.appendChild(createButton('Next', currentPage + 1, currentPage === totalPages));
+			};
+
+			renderPage(1);
+		}
+
+		setupCardPagination(
+			'completedVisitorsList',
+			'completedVisitorsPagination',
+			'completedVisitorsPaginationInfo',
+			'completedVisitorsPaginationControls',
+			'completed visitors'
+		);
+
+		setupCardPagination(
+			'unresolvedAlertsList',
+			'unresolvedAlertsPagination',
+			'unresolvedAlertsPaginationInfo',
+			'unresolvedAlertsPaginationControls',
+			'unresolved alerts'
+		);
 	</script>
 </body>
 </html>
