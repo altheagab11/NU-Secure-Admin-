@@ -1033,6 +1033,7 @@
 							</div>
 						</div>
 					</div>
+					
 
 					@if (! $isSelfRegisteredRole)
 						<a href="/guard/exit" class="sidebar-link {{ request()->is('guard/exit') ? 'active' : '' }}">
