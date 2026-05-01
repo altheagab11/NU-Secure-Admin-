@@ -1033,6 +1033,7 @@
 				</div>
 			</div>
 
+			
 			<div class="sidebar-footer">
 				<div class="admin-card">
 					<div class="admin-avatar">
