@@ -665,6 +665,101 @@
 
 				.table-wrap { overflow-x: auto; }
 
+				.alerts-pagination-bar {
+					display: flex;
+					align-items: center;
+					justify-content: flex-end;
+					padding: 12px 16px;
+					border-top: 1px solid #e6edf6;
+					background: #fafbff;
+				}
+
+				.alerts-pagination-inner {
+					display: flex;
+					align-items: center;
+					justify-content: flex-end;
+					flex-wrap: wrap;
+					gap: 12px 16px;
+					max-width: 100%;
+				}
+
+				.alerts-pagination-summary {
+					font-size: 13px;
+					color: #64748b;
+					line-height: 1.35;
+					white-space: nowrap;
+				}
+
+				.alerts-pagination-nav {
+					display: inline-flex;
+					align-items: center;
+					flex-wrap: wrap;
+					gap: 6px;
+				}
+
+				.alerts-pagination-btn {
+					padding: 8px 14px;
+					border-radius: 8px;
+					border: 1px solid #d6deef;
+					background: #fff;
+					color: #334155;
+					font-size: 13px;
+					font-weight: 600;
+					cursor: pointer;
+				}
+
+				.alerts-pagination-btn:hover:not(:disabled) {
+					background: #eef2ff;
+					border-color: #c7d2fe;
+					color: #1e293b;
+				}
+
+				.alerts-pagination-btn:disabled {
+					opacity: 0.45;
+					cursor: not-allowed;
+				}
+
+				.alerts-pagination-pages {
+					display: inline-flex;
+					align-items: center;
+					flex-wrap: wrap;
+					gap: 4px;
+				}
+
+				.alerts-pagination-page {
+					min-width: 36px;
+					height: 36px;
+					padding: 0 8px;
+					border-radius: 8px;
+					border: 1px solid #d6deef;
+					background: #fff;
+					color: #334155;
+					font-size: 13px;
+					font-weight: 600;
+					cursor: pointer;
+					line-height: 1;
+				}
+
+				.alerts-pagination-page:hover {
+					background: #eef2ff;
+					border-color: #c7d2fe;
+					color: #1e293b;
+				}
+
+				.alerts-pagination-page.is-active {
+					background: #4b5cd1;
+					border-color: #4b5cd1;
+					color: #fff;
+					cursor: default;
+				}
+
+				.alerts-pagination-ellipsis {
+					padding: 0 4px;
+					font-size: 13px;
+					color: #94a3b8;
+					user-select: none;
+				}
+
 				/* Alert details modal - card layout (requested UI) */
 				.alert-modal {
 					display: none;
@@ -1229,6 +1324,16 @@
 							</tr>
 						</tbody>
 					</table>
+					<div class="alerts-pagination-bar" id="alertsPaginationBar" role="navigation" aria-label="Alert list pagination">
+						<div class="alerts-pagination-inner">
+							<span class="alerts-pagination-summary" id="alertsPaginationSummary"></span>
+							<div class="alerts-pagination-nav">
+								<button type="button" class="alerts-pagination-btn" id="alertsPaginationPrev" aria-label="Previous page">Previous</button>
+								<div class="alerts-pagination-pages" id="alertsPaginationPages" role="group" aria-label="Page numbers"></div>
+								<button type="button" class="alerts-pagination-btn" id="alertsPaginationNext" aria-label="Next page">Next</button>
+							</div>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -1435,31 +1540,28 @@
 		const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 		let pendingResolveAlertId = null;
 
-		// Helpers for filtering rows by status
-		function applyFilter(filter) {
-			const tbody = document.querySelector('.alerts-table tbody');
-			if (!tbody) return;
+		const ALERTS_PAGE_SIZE = 10;
+		const alertsPageByFilter = { unresolved: 1, all: 1, resolved: 1 };
 
-			const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.id !== 'noResults');
+		function rowMatchesAlertTab(row, filter) {
+			const status = (row.dataset.status || '').toLowerCase();
+			if (filter === 'all') {
+				return true;
+			}
+			if (filter === 'resolved') {
+				return status === 'resolved';
+			}
+			return status === 'unresolved';
+		}
+
+		function sortMatchingAlertRows(matching, filter) {
 			const parseDate = (value) => {
 				const ts = Date.parse(value || '');
 				return Number.isNaN(ts) ? 0 : ts;
 			};
-			let visibleCount = 0;
-
-			rows.forEach(row => {
-				const status = (row.dataset.status || '').toLowerCase();
-				if (filter === 'all' || status === filter) {
-					row.style.display = 'table-row';
-					visibleCount++;
-				} else {
-					row.style.display = 'none';
-				}
-			});
-
+			const sorted = [...matching];
 			if (filter === 'resolved') {
-				const resolvedRows = rows.filter(row => row.style.display !== 'none');
-				resolvedRows.sort((a, b) => {
+				sorted.sort((a, b) => {
 					const aResolved = parseDate(a.dataset.resolvedAt);
 					const bResolved = parseDate(b.dataset.resolvedAt);
 					if (bResolved !== aResolved) return bResolved - aResolved;
@@ -1472,14 +1574,130 @@
 					const bId = parseInt(b.dataset.alertId || '0', 10);
 					return bId - aId;
 				});
-
-				resolvedRows.forEach(row => tbody.appendChild(row));
+			} else {
+				sorted.sort((a, b) => {
+					const aId = parseInt(a.dataset.alertId || '0', 10);
+					const bId = parseInt(b.dataset.alertId || '0', 10);
+					return bId - aId;
+				});
 			}
+			return sorted;
+		}
+
+		function buildAlertPaginationSequence(totalPages, currentPage) {
+			if (totalPages <= 9) {
+				return Array.from({ length: totalPages }, (_, i) => i + 1);
+			}
+			const add = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1, currentPage - 2, currentPage + 2]);
+			const sorted = [...add].filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
+			const seq = [];
+			for (let i = 0; i < sorted.length; i++) {
+				if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+					seq.push('ellipsis');
+				}
+				seq.push(sorted[i]);
+			}
+			return seq;
+		}
+
+		function renderAlertsPaginationPages(filter, page, totalPages, totalMatching) {
+			const pagesEl = document.getElementById('alertsPaginationPages');
+			if (!pagesEl) return;
+			pagesEl.innerHTML = '';
+			if (totalMatching === 0 || totalPages < 1) {
+				return;
+			}
+			const sequence = totalPages === 1 ? [1] : buildAlertPaginationSequence(totalPages, page);
+			sequence.forEach((item) => {
+				if (item === 'ellipsis') {
+					const span = document.createElement('span');
+					span.className = 'alerts-pagination-ellipsis';
+					span.textContent = '…';
+					span.setAttribute('aria-hidden', 'true');
+					pagesEl.appendChild(span);
+					return;
+				}
+				const p = item;
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'alerts-pagination-page' + (p === page ? ' is-active' : '');
+				btn.textContent = String(p);
+				btn.setAttribute('aria-label', `Page ${p}`);
+				if (p === page) {
+					btn.setAttribute('aria-current', 'page');
+				}
+				btn.addEventListener('click', () => {
+					if (p === alertsPageByFilter[filter]) return;
+					alertsPageByFilter[filter] = p;
+					applyAlertTabFilter(filter);
+				});
+				pagesEl.appendChild(btn);
+			});
+		}
+
+		function updateAlertsPaginationUi(filter, page, totalPages, totalMatching) {
+			const prevBtn = document.getElementById('alertsPaginationPrev');
+			const nextBtn = document.getElementById('alertsPaginationNext');
+			const summary = document.getElementById('alertsPaginationSummary');
+			if (!prevBtn || !nextBtn || !summary) return;
+
+			if (totalMatching === 0) {
+				summary.textContent = 'No alerts in this view';
+				prevBtn.disabled = true;
+				nextBtn.disabled = true;
+				renderAlertsPaginationPages(filter, page, totalPages, totalMatching);
+				return;
+			}
+
+			const startIdx = (page - 1) * ALERTS_PAGE_SIZE;
+			const endIdx = Math.min(startIdx + ALERTS_PAGE_SIZE, totalMatching);
+			summary.textContent = `Showing ${startIdx + 1}–${endIdx} of ${totalMatching}`;
+			prevBtn.disabled = page <= 1;
+			nextBtn.disabled = page >= totalPages;
+			renderAlertsPaginationPages(filter, page, totalPages, totalMatching);
+		}
+
+		/** Filter by tab (unresolved / all / resolved), reorder rows, then show 10 per page for that tab. */
+		function applyAlertTabFilter(filter) {
+			const tbody = document.querySelector('.alerts-table tbody');
+			if (!tbody) return;
 
 			const noResults = document.getElementById('noResults');
-			if (noResults) {
-				noResults.style.display = visibleCount === 0 ? 'table-row' : 'none';
+			if (noResults && noResults.parentNode === tbody) {
+				noResults.remove();
 			}
+
+			const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.id !== 'noResults');
+			const nonMatching = rows.filter((r) => !rowMatchesAlertTab(r, filter));
+			const matching = rows.filter((r) => rowMatchesAlertTab(r, filter));
+			const sortedMatching = sortMatchingAlertRows(matching, filter);
+
+			nonMatching.forEach((r) => tbody.appendChild(r));
+			sortedMatching.forEach((r) => tbody.appendChild(r));
+			if (noResults) {
+				tbody.appendChild(noResults);
+			}
+
+			const totalMatching = sortedMatching.length;
+			const totalPages = Math.max(1, Math.ceil(totalMatching / ALERTS_PAGE_SIZE));
+			let page = parseInt(String(alertsPageByFilter[filter] || '1'), 10);
+			if (Number.isNaN(page) || page < 1) page = 1;
+			if (page > totalPages) page = totalPages;
+			alertsPageByFilter[filter] = page;
+
+			const start = (page - 1) * ALERTS_PAGE_SIZE;
+			nonMatching.forEach((r) => {
+				r.style.display = 'none';
+			});
+			sortedMatching.forEach((r, idx) => {
+				r.style.display = idx >= start && idx < start + ALERTS_PAGE_SIZE ? 'table-row' : 'none';
+			});
+
+			if (noResults) {
+				noResults.style.display = totalMatching === 0 ? 'table-row' : 'none';
+			}
+
+			updateAlertsPaginationUi(filter, page, totalPages, totalMatching);
 		}
 
 		if (userMenuGroup && userMenuToggle) {
@@ -1497,7 +1715,8 @@
 					tabLink.classList.add('active');
 
 					const filter = tabLink.dataset.filter || 'all';
-					applyFilter(filter);
+					alertsPageByFilter[filter] = alertsPageByFilter[filter] || 1;
+					applyAlertTabFilter(filter);
 
 					if (emptySubtitle) {
 						emptySubtitle.textContent = tabLink.dataset.emptySubtitle || 'No security alerts to display';
@@ -1508,8 +1727,23 @@
 			// Apply initial filter (show unresolved by default)
 			const initial = document.querySelector('.panel-tabs .tab-link.active');
 			const initFilter = initial ? (initial.dataset.filter || 'unresolved') : 'unresolved';
-			applyFilter(initFilter);
+			alertsPageByFilter[initFilter] = alertsPageByFilter[initFilter] || 1;
+			applyAlertTabFilter(initFilter);
 		}
+
+		document.getElementById('alertsPaginationPrev')?.addEventListener('click', () => {
+			const active = document.querySelector('.panel-tabs .tab-link.active');
+			const filter = active ? (active.dataset.filter || 'all') : 'unresolved';
+			alertsPageByFilter[filter] = Math.max(1, (alertsPageByFilter[filter] || 1) - 1);
+			applyAlertTabFilter(filter);
+		});
+
+		document.getElementById('alertsPaginationNext')?.addEventListener('click', () => {
+			const active = document.querySelector('.panel-tabs .tab-link.active');
+			const filter = active ? (active.dataset.filter || 'all') : 'unresolved';
+			alertsPageByFilter[filter] = (alertsPageByFilter[filter] || 1) + 1;
+			applyAlertTabFilter(filter);
+		});
 
 		// Modal handling -------------------------------------------------
 		function formatDateTime(iso) {
@@ -1772,7 +2006,7 @@
 
 			// reapply current filter so resolved row may hide if on unresolved tab
 			const active = document.querySelector('.panel-tabs .tab-link.active');
-			if (active) applyFilter(active.dataset.filter || 'all');
+			if (active) applyAlertTabFilter(active.dataset.filter || 'all');
 
 			closeResolveModal();
 			closeAlertModal();
