@@ -25,6 +25,7 @@
 		.layout {
 			display: flex;
 			min-height: 100vh;
+			min-height: 100dvh;
 		}
 
 		.sidebar {
@@ -946,18 +947,7 @@
 			}
 		}
 
-		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
-				position: relative;
-			}
-
-			.main {
-				display: block;
-				margin-left: 0;
-			}
-		}
+		@include('guard.partials.guard-responsive-styles')
 
 		@media (max-width: 1100px) {
 			.exit-scan-layout {
@@ -1010,16 +1000,23 @@
 				font-size: 28px;
 			}
 		}
+
+		@media (max-width: 991.98px) {
+			.exit-page-title {
+				display: none;
+			}
+		}
 	</style>
 </head>
 <body>
 	<div class="layout">
+		<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
 		@php
 			$guardSidebarUser = auth()->user();
 			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
 			$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
 		@endphp
-		<aside class="sidebar d-flex flex-column justify-content-between">
+		<aside class="sidebar d-flex flex-column justify-content-between" id="guardSidebarNav">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon">
@@ -1123,6 +1120,7 @@
 
 		<main class="main">
 			<div class="exit-page-wrap">
+				@include('guard.partials.guard-mobile-topbar', ['title' => 'Exit Scan'])
 				<div class="exit-page-header">
 					<div>
 						<h1 class="exit-page-title">Exit Scan</h1>
@@ -1709,5 +1707,6 @@
 
 		startCamera();
 	</script>
+	@include('guard.partials.guard-responsive-script')
 </body>
 </html>

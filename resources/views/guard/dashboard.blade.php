@@ -31,6 +31,7 @@
 		.layout {
 			display: flex;
 			min-height: 100vh;
+			min-height: 100dvh;
 		}
 
 		.sidebar {
@@ -912,20 +913,7 @@
 		.drawer-btn-primary { background: #0f172a; color: #ffffff; }
 		.drawer-empty { text-align: center; color: #64748b; font-size: 14px; padding: 8px 0; }
 
-		@media (max-width: 1024px) {
-			.layout {
-				flex-direction: column;
-			}
-
-			.sidebar {
-				width: 100%;
-				min-height: auto;
-			}
-
-			.main {
-				display: block;
-			}
-		}
+		@include('guard.partials.guard-responsive-styles')
 
 		@media (max-width: 1200px) {
 			.stats-grid,
@@ -968,17 +956,24 @@
 				padding: 14px 16px;
 			}
 		}
+
+		@media (max-width: 991.98px) {
+			.dashboard-header .page-title {
+				display: none;
+			}
+		}
 	</style>
 </head>
 <body>
 	<div class="layout">
+		<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
 		@php
 			$guardSidebarUser = auth()->user();
 			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
 			$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
 			$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
 		@endphp
-		<aside class="sidebar d-flex flex-column justify-content-between">
+		<aside class="sidebar d-flex flex-column justify-content-between" id="guardSidebarNav">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon">
@@ -1087,6 +1082,7 @@
 
 		<main class="main">
 			<div class="dashboard-wrap">
+				@include('guard.partials.guard-mobile-topbar', ['title' => 'Guard Dashboard'])
 				<div class="dashboard-header">
 					<div>
 						<h1 class="page-title">Guard Dashboard</h1>
@@ -1585,5 +1581,6 @@
 			renderActiveVisitorsPage(1);
 		}
 	</script>
+	@include('guard.partials.guard-responsive-script')
 </body>
 </html>

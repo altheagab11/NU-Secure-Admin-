@@ -242,8 +242,16 @@
 		/* Register page sidebar parity */
 		.layout {
 			display: flex;
-			height: 100vh;
-			overflow: hidden;
+			min-height: 100vh;
+			min-height: 100dvh;
+		}
+
+		@media (min-width: 992px) {
+			.layout {
+				height: 100vh;
+				height: 100dvh;
+				overflow: hidden;
+			}
 		}
 
 		.sidebar {
@@ -1201,18 +1209,7 @@
 			font-size: 14px;
 		}
 
-		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
-				position: relative;
-			}
-
-			.main {
-				display: block;
-				margin-left: 0;
-			}
-		}
+		@include('guard.partials.guard-responsive-styles')
 
 		@media (max-width: 992px) {
 			.alerts-summary-grid {
@@ -1249,10 +1246,17 @@
 				justify-content: flex-start;
 			}
 		}
+
+		@media (max-width: 991.98px) {
+			.alerts-page-title {
+				display: none;
+			}
+		}
 	</style>
 </head>
 <body>
 	<div class="layout">
+		<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
 		@php
 			$guardSidebarUser = auth()->user();
 			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
@@ -1260,7 +1264,7 @@
 			$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
 		@endphp
 
-		<aside class="sidebar d-flex flex-column justify-content-between">
+		<aside class="sidebar d-flex flex-column justify-content-between" id="guardSidebarNav">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon">
@@ -1375,6 +1379,7 @@
 
 		<main class="main">
 			<div class="alerts-page-wrap">
+				@include('guard.partials.guard-mobile-topbar', ['title' => 'Active Alerts'])
 				<div class="alerts-page-header">
 					<div>
 						<h1 class="alerts-page-title">Active Alerts</h1>
@@ -1873,5 +1878,6 @@
 			'unresolved alerts'
 		);
 	</script>
+	@include('guard.partials.guard-responsive-script')
 </body>
 </html>

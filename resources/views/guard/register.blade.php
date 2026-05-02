@@ -10,6 +10,7 @@
 	<style>
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+			--sidebar-bg: #243c96;
 		}
 
 		* {
@@ -24,8 +25,16 @@
 
 		.layout {
 			display: flex;
-			height: 100vh;
-			overflow: hidden;
+			min-height: 100vh;
+			min-height: 100dvh;
+		}
+
+		@media (min-width: 992px) {
+			.layout {
+				height: 100vh;
+				height: 100dvh;
+				overflow: hidden;
+			}
 		}
 
 		.sidebar {
@@ -438,6 +447,8 @@
 			color: #0f172a;
 			font-weight: 600;
 			text-align: right;
+			word-break: break-word;
+			overflow-wrap: anywhere;
 		}
 
 		.confirmation-modal-footer {
@@ -485,7 +496,7 @@
 
 		.page-title {
 			margin: 0;
-			font-size: 28px;
+			font-size: clamp(1.25rem, 2vw + 0.75rem, 1.75rem);
 			font-weight: 700;
 			color: #0f172a;
 		}
@@ -512,7 +523,7 @@
 		}
 
 		.flow-step-name {
-			font-size: 28px;
+			font-size: clamp(1.35rem, 2.2vw + 0.85rem, 1.75rem);
 			font-weight: 700;
 			color: #1f2937;
 			line-height: 1;
@@ -933,7 +944,7 @@
 		}
 
 		.visitor-meta-value {
-			font-size: 34px;
+			font-size: clamp(1.35rem, 2.5vw + 0.85rem, 2.125rem);
 			line-height: 1;
 			font-weight: 600;
 			color: #111827;
@@ -941,7 +952,7 @@
 		}
 
 		.visitor-meta-value.id {
-			font-size: 32px;
+			font-size: clamp(1.25rem, 2.2vw + 0.75rem, 2rem);
 		}
 
 		.visitor-select,
@@ -1040,7 +1051,7 @@
 
 		.complete-title {
 			margin: 0;
-			font-size: 46px;
+			font-size: clamp(1.75rem, 4vw + 1rem, 2.875rem);
 			font-weight: 700;
 			color: #121212;
 			line-height: 1.05;
@@ -1089,7 +1100,7 @@
 
 		.ticket-control-value {
 			margin: 0;
-			font-size: 46px;
+			font-size: clamp(1.75rem, 3.5vw + 1rem, 2.875rem);
 			font-weight: 800;
 			color: #121212;
 			line-height: 1;
@@ -1139,7 +1150,7 @@
 
 		.ticket-meta-value {
 			margin: 2px 0 10px;
-			font-size: 36px;
+			font-size: clamp(1.125rem, 2.5vw + 0.65rem, 2.25rem);
 			font-weight: 700;
 			color: #111827;
 			line-height: 1.25;
@@ -1266,16 +1277,85 @@
 			text-align: center;
 		}
 
-		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
-				position: relative;
+		@media (max-width: 991.98px) {
+			.main > h1.page-title {
+				display: none;
 			}
 
-			.main {
-				display: block;
-				margin-left: 0;
+			.confirmation-modal {
+				padding: 12px;
+				align-items: flex-end;
+			}
+
+			.confirmation-modal-card {
+				width: 100%;
+				max-height: min(92dvh, 640px);
+				overflow-y: auto;
+				border-radius: 16px 16px 0 0;
+			}
+
+			.confirmation-photo-panel {
+				grid-template-columns: 1fr;
+				justify-items: center;
+				text-align: center;
+			}
+
+			.confirmation-photo-frame {
+				width: min(132px, 40vw);
+				height: min(132px, 40vw);
+			}
+
+			.confirmation-modal-footer {
+				flex-direction: column-reverse;
+				align-items: stretch;
+			}
+
+			.confirmation-modal-btn {
+				width: 100%;
+				min-width: 0;
+			}
+
+			.visitor-details-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.visitor-details-row {
+				flex-wrap: wrap;
+				align-items: flex-start;
+			}
+
+			.ticket-info-grid {
+				grid-template-columns: 1fr;
+				justify-items: center;
+				text-align: center;
+			}
+
+			.ticket-photo-wrap {
+				margin: 0 auto;
+			}
+
+			.id-guide-layout {
+				grid-template-columns: 1fr;
+				gap: 8px;
+			}
+
+			.scan-actions-row {
+				width: 100%;
+				flex-wrap: wrap;
+			}
+
+			.scan-action,
+			.gallery-action {
+				min-width: min(100%, 160px);
+			}
+
+			.ticket-actions {
+				flex-wrap: wrap;
+			}
+
+			.ticket-btn {
+				flex: 1 1 auto;
+				min-width: min(100%, 140px);
 			}
 		}
 
@@ -1361,6 +1441,8 @@
 			}
 		}
 
+		@include('guard.partials.guard-responsive-styles')
+
 		@media print {
 			@page {
 				size: auto;
@@ -1377,6 +1459,8 @@
 				overflow: visible !important;
 			}
 
+			body.print-ticket-mode .guard-nav-backdrop,
+			body.print-ticket-mode .guard-mobile-topbar,
 			body.print-ticket-mode .sidebar,
 			body.print-ticket-mode .page-title,
 			body.print-ticket-mode .flow-head,
@@ -1442,13 +1526,14 @@
 </head>
 <body>
 	<div class="layout">
+		<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
 		@php
 			$guardSidebarUser = auth()->user();
 			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
 			$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
 			$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
 		@endphp
-		<aside class="sidebar d-flex flex-column justify-content-between">
+		<aside class="sidebar d-flex flex-column justify-content-between" id="guardSidebarNav">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon">
@@ -1608,6 +1693,7 @@
 
 
 		<main class="main">
+			@include('guard.partials.guard-mobile-topbar', ['title' => 'Register Visitor'])
 			@php($registerType = request('type', 'normal'))
 			@if (in_array($registerType, ['normal', 'contractor', 'enrollee'], true))
 				<h1 class="page-title">Register Visitor</h1>
@@ -1883,6 +1969,7 @@
 		</main>
 	</div>
 
+	@include('guard.partials.guard-responsive-script')
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
