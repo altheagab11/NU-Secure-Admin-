@@ -1868,7 +1868,7 @@
 								</div>
 							</div>
 
-							<p class="ticket-footer">Registered by Officer Martinez</p>
+							<p class="ticket-footer">Registered by {{ $guardSidebarName }}</p>
 						</div>
 
 						<p class="ticket-status" id="ticketSaveStatus">Generating QR and saving details...</p>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\OCRService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
@@ -302,7 +303,7 @@ class GuardVisitorController extends Controller
 
                 $visitId = DB::table('visit')->insertGetId([
                     'visitor_id' => $visitorId,
-                    'guard_user_id' => optional(request()->user())->id,
+                    'guard_user_id' => Auth::id(),
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
                     'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
@@ -352,13 +353,21 @@ class GuardVisitorController extends Controller
                     }
                 }
 
-                // For multi-office visitors, use office_expectation table (not visit_route which is for enrollee steps)
-                if (in_array($registerType, ['normal', 'enrollee'], true) && count($officeIds) > 1) {
+                // office_expectation: normal visitor kung 2+ office; enrollee — awtomatikong lahat ng office sa flow (1+).
+                $shouldSaveOfficeExpectations = ($registerType === 'normal' && count($officeIds) > 1)
+                    || ($registerType === 'enrollee' && count($officeIds) > 0);
+
+                if ($shouldSaveOfficeExpectations) {
+                    $pendingExpectationStatusId = $this->resolveExpectationStatusId();
+                    $expectationCreatedAt = now();
                     $expectationRows = [];
-                    foreach ($officeIds as $officeId) {
+                    foreach (array_values($officeIds) as $index => $officeId) {
                         $expectationRows[] = [
                             'visit_id' => $visitId,
-                            'office_id' => $officeId,
+                            'office_id' => (int) $officeId,
+                            'expected_order' => $index + 1,
+                            'expectation_status_id' => $pendingExpectationStatusId,
+                            'created_at' => $expectationCreatedAt,
                         ];
                     }
 
@@ -2140,6 +2149,28 @@ class GuardVisitorController extends Controller
         $fallback = DB::table('enrollee_status')
             ->orderBy('enrollee_status_id')
             ->value('enrollee_status_id');
+
+        return $fallback ? (int) $fallback : null;
+    }
+
+    /**
+     * Default expectation row status for new office_expectation rows (e.g. Pending).
+     */
+    protected function resolveExpectationStatusId(): ?int
+    {
+        $candidates = ['pending', 'not arrived', 'awaiting', 'scheduled', 'expected', 'open'];
+        foreach ($candidates as $name) {
+            $id = DB::table('expectation_status')
+                ->whereRaw('LOWER(TRIM(COALESCE(status_name, \'\'))) = ?', [$name])
+                ->value('expectation_status_id');
+            if ($id) {
+                return (int) $id;
+            }
+        }
+
+        $fallback = DB::table('expectation_status')
+            ->orderBy('expectation_status_id')
+            ->value('expectation_status_id');
 
         return $fallback ? (int) $fallback : null;
     }

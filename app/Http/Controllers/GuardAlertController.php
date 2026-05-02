@@ -120,7 +120,11 @@ class GuardAlertController extends Controller
                 'purpose_reason' => trim((string) ($row->purpose_reason ?? '')),
                 'entry_time' => $row->entry_time,
                 'exit_time' => $row->exit_time,
-                'duration_minutes' => $row->duration_minutes !== null ? (int) $row->duration_minutes : null,
+                'duration_minutes' => $this->resolveVisitDurationMinutesForDisplay(
+                    $row->entry_time ?? null,
+                    $row->exit_time ?? null,
+                    $row->duration_minutes ?? null
+                ),
                 'scan_remarks' => trim((string) ($row->scan_remarks ?? '')),
                 'scanned_by' => $scannedBy !== '' ? $scannedBy : 'Unknown scanner',
             ];
@@ -212,6 +216,30 @@ class GuardAlertController extends Controller
             'completedVisitors' => $completedVisitors,
             'unresolvedAlerts' => $unresolvedAlerts,
         ]);
+    }
+
+    /**
+     * Minutes on-site: if no exit yet, use entry_time → now (live); if exited, prefer stored duration_minutes else entry→exit.
+     */
+    private function resolveVisitDurationMinutesForDisplay($entryTime, $exitTime, $durationColumn): ?int
+    {
+        try {
+            if (empty($entryTime)) {
+                return null;
+            }
+            $entry = Carbon::parse($entryTime);
+            if (empty($exitTime)) {
+                return max(0, $entry->diffInMinutes(now()));
+            }
+            $exit = Carbon::parse($exitTime);
+            if ($durationColumn !== null && is_numeric($durationColumn)) {
+                return max(0, (int) $durationColumn);
+            }
+
+            return max(0, $entry->diffInMinutes($exit));
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public function resolve(Request $request, $alertId)

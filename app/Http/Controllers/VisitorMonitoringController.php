@@ -1098,18 +1098,21 @@ class VisitorMonitoringController extends Controller
 
     private function resolveDurationMinutes(array $visit, ?Carbon $entry, ?Carbon $exit): int
     {
+        if (! $entry) {
+            return 0;
+        }
+
+        // Still inside: duration runs from entry_time until now; do not use stale duration_minutes from DB.
+        if (! $exit) {
+            return max(0, $entry->diffInMinutes(now()));
+        }
+
         $fromColumn = $visit['duration_minutes'] ?? null;
         if (is_numeric($fromColumn)) {
             return max(0, (int) $fromColumn);
         }
 
-        if (! $entry) {
-            return 0;
-        }
-
-        $end = $exit ?: now();
-
-        return max(0, $entry->diffInMinutes($end));
+        return max(0, $entry->diffInMinutes($exit));
     }
 
     private function resolveStatus(array $visit, Collection $alerts): string

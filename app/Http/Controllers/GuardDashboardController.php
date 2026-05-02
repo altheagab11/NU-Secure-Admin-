@@ -108,15 +108,14 @@ class GuardDashboardController extends Controller
                 $entryTime = '—';
             }
 
-            $durationMinutes = $row->duration_minutes !== null ? (int) $row->duration_minutes : null;
-            if ($durationMinutes === null) {
-                try {
-                    if (!empty($row->entry_time)) {
-                        $durationMinutes = max(0, Carbon::parse($row->entry_time)->diffInMinutes(now()));
-                    }
-                } catch (\Throwable $e) {
-                    $durationMinutes = null;
+            // Active visits (no exit): duration runs from entry_time until "now"; ignore stored duration_minutes.
+            $durationMinutes = null;
+            try {
+                if (! empty($row->entry_time)) {
+                    $durationMinutes = max(0, Carbon::parse($row->entry_time)->diffInMinutes(now()));
                 }
+            } catch (\Throwable $e) {
+                $durationMinutes = null;
             }
 
             $durationLabel = '—';
