@@ -38,6 +38,9 @@ return [
     'ocr' => [
         'space' => [
             'key' => env('OCR_SPACE_API_KEY', ''),
+            // Upload + OCR can exceed 20s; OCR.Space often needs 30–90s on busy tiers.
+            'connect_timeout' => (int) env('OCR_SPACE_CONNECT_TIMEOUT', 25),
+            'timeout' => (int) env('OCR_SPACE_TIMEOUT', 120),
         ],
     ],
 

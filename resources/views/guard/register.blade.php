@@ -2053,6 +2053,8 @@
 		let faceIdCapturePublicPath = '';
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
+		/** Same string encoded in the on-screen QR; used for thermal print (must not call createQrMeta() again). */
+		let lastTicketQrPayload = '';
 		let shouldResetAfterPrint = false;
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
@@ -2295,8 +2297,10 @@
 				height: 128,
 				colorDark: '#000000',
 				colorLight: '#ffffff',
-				correctLevel: QRCode.CorrectLevel.M,
+				correctLevel: QRCode.CorrectLevel.L,
 			});
+
+			lastTicketQrPayload = String(qrMeta.qr_payload || '');
 
 			ticketControlNumber.textContent = qrMeta.control_number || '-';
 			ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
@@ -3039,6 +3043,49 @@
 			}
 		});
 
+		const buildThermalQrDataUrl = (payload) => {
+			if (!payload || typeof QRCode === 'undefined') {
+				return '';
+			}
+
+			const holder = document.createElement('div');
+			holder.setAttribute('aria-hidden', 'true');
+			holder.style.cssText = 'position:fixed;left:-4000px;top:0;width:1px;height:1px;overflow:hidden;';
+			document.body.appendChild(holder);
+
+			try {
+				holder.innerHTML = '';
+				new QRCode(holder, {
+					text: payload,
+					width: 400,
+					height: 400,
+					colorDark: '#000000',
+					colorLight: '#ffffff',
+					correctLevel: QRCode.CorrectLevel.L,
+				});
+
+				const c = holder.querySelector('canvas');
+				if (c) {
+					try {
+						return c.toDataURL('image/png');
+					} catch (err) {
+						console.error('Thermal QR canvas export failed:', err);
+					}
+				}
+
+				const imgEl = holder.querySelector('img');
+				if (imgEl?.src) {
+					return imgEl.src;
+				}
+			} catch (err) {
+				console.error('Thermal QR generation failed:', err);
+			} finally {
+				holder.remove();
+			}
+
+			return '';
+		};
+
 		const printTicketInNewWindow = () => {
 			if (!registrationTicketCard) {
 				alert('Ticket is not ready to print yet.');
@@ -3046,9 +3093,253 @@
 				return;
 			}
 
-			const sourceStyle = document.querySelector('style')?.textContent || '';
-			const ticketMarkup = registrationTicketCard.outerHTML;
-			const printWindow = window.open('', '_blank', 'width=980,height=1200');
+			// Preview window only — do not tie @page to mm; many drivers mis-handle it and shift content.
+			const thermalPreviewPx = 380;
+
+			const esc = (t) => String(t ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;');
+
+			const escAttr = (t) => String(t ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;');
+
+			let qrSrc = buildThermalQrDataUrl(lastTicketQrPayload);
+
+			if (!qrSrc) {
+				const qrCanvas = qrCodeContainer?.querySelector('canvas');
+				const qrImgEl = qrCodeContainer?.querySelector('img');
+				if (qrCanvas) {
+					try {
+						qrSrc = qrCanvas.toDataURL('image/png');
+					} catch (err) {
+						console.error('QR canvas export failed:', err);
+					}
+				}
+				if (!qrSrc && qrImgEl?.src) {
+					qrSrc = qrImgEl.src;
+				}
+			}
+
+			if (!qrSrc) {
+				alert('QR is not ready to print yet. Wait for the code to appear, then try again.');
+				shouldResetAfterPrint = false;
+				return;
+			}
+
+			const rawName = (ticketVisitorName?.textContent || '-').trim();
+			const rawDest = (ticketDestination?.textContent || '-').trim();
+			const rawNameUpper = rawName.toUpperCase();
+
+			const formatNameForPrint = (name) => {
+				const u = name.trim().toUpperCase();
+				if (!u || u === '-') {
+					return esc(u || '-');
+				}
+				const parts = u.split(/\s+/).filter(Boolean);
+				if (parts.length <= 1) {
+					return esc(u);
+				}
+				if (u.length <= 22) {
+					return esc(u);
+				}
+				const mid = Math.ceil(parts.length / 2);
+				const line1 = parts.slice(0, mid).join(' ');
+				const line2 = parts.slice(mid).join(' ');
+				return `${esc(line1)}<br/>${esc(line2)}`;
+			};
+
+			const formatDestForPrint = (dest) => {
+				const t = dest.trim();
+				if (!t || t === '-') {
+					return esc(t || '-');
+				}
+				if (t.length <= 18) {
+					return esc(t);
+				}
+				const parts = t.split(/\s+/).filter(Boolean);
+				if (parts.length <= 1) {
+					return esc(t);
+				}
+				const mid = Math.ceil(parts.length / 2);
+				return `${esc(parts.slice(0, mid).join(' '))}<br/>${esc(parts.slice(mid).join(' '))}`;
+			};
+
+			const nameHtml = formatNameForPrint(rawName);
+			const destHtml = formatDestForPrint(rawDest);
+
+			const nameSizeClass = rawNameUpper.length > 36 ? 'txt-tiny' : (rawNameUpper.length > 26 ? 'txt-small' : '');
+			const destSizeClass = rawDest.length > 24 ? 'txt-tiny' : (rawDest.length > 16 ? 'txt-small' : '');
+
+			const printDoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visitor ticket</title>
+<style>
+/* size: auto avoids Chrome centering a narrow mm box on Letter/A4 (causes right-shift on thermal). */
+/* Asymmetric margins (mas malaki sa kanan): i-offset pakanan ang printable area — maraming thermal na mas kinakain ang kanan. */
+@@page { size: auto; margin: 2mm 5mm 2.5mm 1.5mm; }
+* {
+	box-sizing: border-box;
+}
+html {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+html, body {
+	background: #fff;
+	color: #000;
+	-webkit-print-color-adjust: exact;
+	print-color-adjust: exact;
+}
+body {
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+	line-height: 1.25;
+	text-align: left;
+}
+.receipt {
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
+	padding: 1mm 5mm 2mm 1mm;
+	text-align: left;
+}
+.headline {
+	margin: 0 0 2mm;
+	padding: 0;
+	font-size: 9.5pt;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	text-align: center;
+}
+.rule-head {
+	border: 0;
+	border-top: 1px dashed #000;
+	margin: 0 0 3mm;
+	width: 100%;
+	height: 0;
+}
+.field-block {
+	margin: 0 0 1mm;
+}
+.field-label {
+	margin: 0 0 0.6mm;
+	padding: 0;
+	font-size: 8pt;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+.field-value {
+	margin: 0 0 2.5mm;
+	padding: 0;
+	font-size: 10pt;
+	font-weight: 800;
+	line-height: 1.25;
+	white-space: normal;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+.field-value.name-val {
+	text-transform: uppercase;
+}
+.field-value.dest-val {
+	text-transform: none;
+	font-weight: 700;
+}
+.field-value.name-val.txt-small {
+	font-size: 8.5pt;
+}
+.field-value.name-val.txt-tiny {
+	font-size: 7.25pt;
+	line-height: 1.18;
+}
+.field-value.dest-val.txt-small { font-size: 9pt; }
+.field-value.dest-val.txt-tiny { font-size: 8pt; line-height: 1.2; }
+.block-gap {
+	height: 2.5mm;
+	margin: 0;
+	padding: 0;
+}
+.qr-gap {
+	height: 2mm;
+	margin: 0;
+	padding: 0;
+}
+.qr-wrap {
+	margin: 0 auto 2mm;
+	width: 100%;
+	text-align: center;
+}
+.qr-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0 auto;
+}
+.qr-table td {
+	padding: 2.5mm 3mm 2.5mm 1mm;
+	text-align: center;
+	vertical-align: middle;
+}
+.qr-img {
+	display: block;
+	margin: 0 auto;
+	width: 40mm;
+	max-width: 86%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: contain;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+.foot {
+	margin: 3mm 0 0;
+	padding: 0;
+	font-size: 7.5pt;
+	font-weight: 600;
+	text-align: center;
+	line-height: 1.2;
+}
+@@media print {
+	body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<div class="receipt">
+	<p class="headline">Visitor QR Pass</p>
+	<hr class="rule-head" aria-hidden="true">
+	<div class="field-block">
+		<p class="field-label">Name:</p>
+		<p class="field-value name-val ${nameSizeClass}">${nameHtml}</p>
+		<div class="block-gap" aria-hidden="true"></div>
+		<p class="field-label">Destination:</p>
+		<p class="field-value dest-val ${destSizeClass}">${destHtml}</p>
+	</div>
+	<div class="qr-gap" aria-hidden="true"></div>
+	<div class="qr-wrap">
+		<table class="qr-table" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+			<tr><td align="center">
+				<img class="qr-img" src="${escAttr(qrSrc)}" width="400" height="400" alt="">
+			</td></tr>
+		</table>
+	</div>
+	<p class="foot">Please present this ticket.</p>
+</div>
+</body>
+</html>`;
+
+			const printWindow = window.open('', '_blank', `width=${thermalPreviewPx},height=720`);
 
 			if (!printWindow) {
 				alert('Unable to open print window. Please allow pop-ups for this site.');
@@ -3057,44 +3348,7 @@
 			}
 
 			printWindow.document.open();
-			printWindow.document.write(`<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QR Ticket</title>
-<style>
-${sourceStyle}
-body {
-	margin: 0;
-	padding: 10mm;
-	background: #ffffff;
-	font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-}
-.ticket-card {
-	width: 180mm;
-	max-width: 100%;
-	margin: 0 auto;
-	box-shadow: none;
-	border: 1px solid #d1d5db;
-}
-@media print {
-	@page { margin: 10mm; }
-	body { padding: 0; }
-	.ticket-card {
-		width: 180mm;
-		max-width: 100%;
-		page-break-inside: avoid;
-		-webkit-print-color-adjust: exact;
-		print-color-adjust: exact;
-	}
-}
-</style>
-</head>
-<body>
-${ticketMarkup}
-</body>
-</html>`);
+			printWindow.document.write(printDoc);
 			printWindow.document.close();
 
 			let resetHandled = false;
@@ -3377,6 +3631,7 @@ ${ticketMarkup}
 			faceIdCapturePublicPath = '';
 			faceIdCapturePreviewUrl = '';
 			hasSavedRegistration = false;
+			lastTicketQrPayload = '';
 			existingVisitorMatch = null;
 			existingVisitorConfirmed = false;
 			selectedOfficeIds = [];

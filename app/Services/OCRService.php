@@ -62,17 +62,34 @@ class OCRService
             $lastProcessingError = '';
             $lastHttpStatus = null;
             $lastHttpBody = null;
+            $hadConnectionFailure = false;
+
+            $connectTimeout = (int) config('services.ocr.space.connect_timeout', 25);
+            $requestTimeout = (int) config('services.ocr.space.timeout', 120);
 
             foreach ($uploadCandidates as $candidateIndex => $candidate) {
                 foreach ($ocrConfigs as $configIndex => $config) {
                     $requestStartedAt = microtime(true);
-                    $response = Http::connectTimeout(8)->timeout(20);
 
-                    if ($candidate['type'] === 'file') {
-                        $response = $response
-                            ->attach('file', fopen($candidate['path'], 'r'), 'id-scan.jpg')
-                            ->post($this->apiUrl, [
+                    try {
+                        $http = Http::connectTimeout($connectTimeout)->timeout($requestTimeout);
+
+                        if ($candidate['type'] === 'file') {
+                            $response = $http
+                                ->attach('file', fopen($candidate['path'], 'r'), 'id-scan.jpg')
+                                ->post($this->apiUrl, [
+                                    'apikey' => $this->apiKey,
+                                    'language' => 'eng',
+                                    'filetype' => 'jpg',
+                                    'OCREngine' => $config['engine'],
+                                    'scale' => $config['scale'],
+                                    'detectOrientation' => 'true',
+                                    'isOverlayRequired' => $config['overlay'],
+                                ]);
+                        } else {
+                            $response = $http->post($this->apiUrl, [
                                 'apikey' => $this->apiKey,
+                                'base64Image' => 'data:image/jpeg;base64,' . ($candidate['base64'] ?? ''),
                                 'language' => 'eng',
                                 'filetype' => 'jpg',
                                 'OCREngine' => $config['engine'],
@@ -80,17 +97,17 @@ class OCRService
                                 'detectOrientation' => 'true',
                                 'isOverlayRequired' => $config['overlay'],
                             ]);
-                    } else {
-                        $response = $response->post($this->apiUrl, [
-                            'apikey' => $this->apiKey,
-                            'base64Image' => 'data:image/jpeg;base64,' . ($candidate['base64'] ?? ''),
-                            'language' => 'eng',
-                            'filetype' => 'jpg',
-                            'OCREngine' => $config['engine'],
-                            'scale' => $config['scale'],
-                            'detectOrientation' => 'true',
-                            'isOverlayRequired' => $config['overlay'],
+                        }
+                    } catch (ConnectionException $e) {
+                        $hadConnectionFailure = true;
+                        Log::warning('OCR.Space attempt connection/timeout error', [
+                            'message' => $e->getMessage(),
+                            'candidate' => $candidate['label'] ?? ('candidate_' . $candidateIndex),
+                            'attempt' => $configIndex + 1,
+                            'duration_ms' => (int) ((microtime(true) - $requestStartedAt) * 1000),
                         ]);
+
+                        continue;
                     }
 
                     Log::info('OCR.Space API response', [
@@ -146,6 +163,16 @@ class OCRService
             $this->cleanupOcrUploadCandidates($uploadCandidates);
 
             if ($result === null) {
+                if ($hadConnectionFailure && $lastHttpStatus === null) {
+                    Log::error('OCR.Space unreachable after all attempts', []);
+
+                    return [
+                        'success' => false,
+                        'message' => 'OCR request timed out. Please try again with a clearer image or retry in a few seconds.',
+                        'raw_text' => null,
+                    ];
+                }
+
                 Log::error('OCR.Space API error', [
                     'status' => $lastHttpStatus,
                     'body' => $lastHttpBody,
