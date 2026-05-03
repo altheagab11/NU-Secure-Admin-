@@ -1186,6 +1186,7 @@
 
 		.ticket-actions {
 			display: flex;
+			flex-wrap: wrap;
 			justify-content: center;
 			gap: 10px;
 		}
@@ -1962,6 +1963,7 @@
 						<div class="ticket-actions">
 							<button type="button" class="ticket-btn" id="downloadQrBtn">Download QR</button>
 							<button type="button" class="ticket-btn primary" id="printTicketBtn">Print Ticket</button>
+							<button type="button" class="ticket-btn" id="newVisitorAfterTicketBtn">Register another visitor</button>
 						</div>
 					</div>
 				</section>
@@ -2011,6 +2013,7 @@
 		const ticketSaveStatus = document.getElementById('ticketSaveStatus');
 		const downloadQrBtn = document.getElementById('downloadQrBtn');
 		const printTicketBtn = document.getElementById('printTicketBtn');
+		const newVisitorAfterTicketBtn = document.getElementById('newVisitorAfterTicketBtn');
 		const existingVisitorModal = document.getElementById('existingVisitorModal');
 		const existingVisitorModalPhotoFrame = document.getElementById('existingVisitorModalPhotoFrame');
 		const existingVisitorModalPhoto = document.getElementById('existingVisitorModalPhoto');
@@ -2055,7 +2058,6 @@
 		let hasSavedRegistration = false;
 		/** Same string encoded in the on-screen QR; used for thermal print (must not call createQrMeta() again). */
 		let lastTicketQrPayload = '';
-		let shouldResetAfterPrint = false;
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
 		let existingVisitorModalResolver = null;
@@ -3031,7 +3033,10 @@
 				const controlNo = (ticketControlNumber?.textContent || 'visitor-ticket').trim();
 				link.href = canvas.toDataURL('image/png');
 				link.download = `${controlNo}-ticket.png`;
+				link.style.display = 'none';
+				document.body.appendChild(link);
 				link.click();
+				document.body.removeChild(link);
 
 				downloadQrBtn.textContent = originalText || 'Download QR';
 				downloadQrBtn.disabled = false;
@@ -3061,7 +3066,7 @@
 					height: 400,
 					colorDark: '#000000',
 					colorLight: '#ffffff',
-					correctLevel: QRCode.CorrectLevel.L,
+					correctLevel: QRCode.CorrectLevel.M,
 				});
 
 				const c = holder.querySelector('canvas');
@@ -3089,7 +3094,6 @@
 		const printTicketInNewWindow = () => {
 			if (!registrationTicketCard) {
 				alert('Ticket is not ready to print yet.');
-				shouldResetAfterPrint = false;
 				return;
 			}
 
@@ -3125,7 +3129,6 @@
 
 			if (!qrSrc) {
 				alert('QR is not ready to print yet. Wait for the code to appear, then try again.');
-				shouldResetAfterPrint = false;
 				return;
 			}
 
@@ -3170,8 +3173,12 @@
 			const nameHtml = formatNameForPrint(rawName);
 			const destHtml = formatDestForPrint(rawDest);
 
-			const nameSizeClass = rawNameUpper.length > 36 ? 'txt-tiny' : (rawNameUpper.length > 26 ? 'txt-small' : '');
+			const nameSizeClass = rawNameUpper.length > 30 ? 'txt-tiny' : (rawNameUpper.length > 18 ? 'txt-small' : '');
 			const destSizeClass = rawDest.length > 24 ? 'txt-tiny' : (rawDest.length > 16 ? 'txt-small' : '');
+			const controlNoPrint = esc((ticketControlNumber?.textContent || '-').trim());
+
+			const THERMAL_LINE_WIDTH = 28;
+			const dashedLineText = '-'.repeat(THERMAL_LINE_WIDTH);
 
 			const printDoc = `<!DOCTYPE html>
 <html lang="en">
@@ -3181,8 +3188,8 @@
 <title>Visitor ticket</title>
 <style>
 /* size: auto avoids Chrome centering a narrow mm box on Letter/A4 (causes right-shift on thermal). */
-/* Asymmetric margins (mas malaki sa kanan): i-offset pakanan ang printable area — maraming thermal na mas kinakain ang kanan. */
-@@page { size: auto; margin: 2mm 5mm 2.5mm 1.5mm; }
+/* Asymmetric margins: mas malaki sa kanan — maraming thermal na mas kinakain ang kanan. */
+@@page { size: auto; margin: 2mm 5mm 0 1.5mm; }
 * {
 	box-sizing: border-box;
 }
@@ -3203,83 +3210,80 @@ body {
 	margin: 0;
 	padding: 0;
 	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-	line-height: 1.25;
+	line-height: 1.3;
 	text-align: left;
 }
 .receipt {
 	width: 100%;
 	max-width: 100%;
 	margin: 0;
-	padding: 1mm 5mm 2mm 1mm;
+	padding: 1mm 5mm 0 1mm;
 	text-align: left;
 }
-.headline {
-	margin: 0 0 2mm;
+.receipt-title {
+	margin: 0 0 0.45em;
 	padding: 0;
-	font-size: 9.5pt;
+	text-align: center;
+	font-size: 11pt;
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
+	line-height: 1.2;
+}
+.dash-line {
+	margin: 0 0 0.95em;
+	padding: 0;
 	text-align: center;
+	font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
+	font-size: 8pt;
+	font-weight: 400;
+	line-height: 1;
+	letter-spacing: 0;
+	white-space: nowrap;
+	overflow: hidden;
 }
-.rule-head {
-	border: 0;
-	border-top: 1px dashed #000;
-	margin: 0 0 3mm;
-	width: 100%;
-	height: 0;
-}
-.field-block {
-	margin: 0 0 1mm;
+.fields {
+	margin: 0;
+	padding: 0;
 }
 .field-label {
-	margin: 0 0 0.6mm;
+	margin: 0 0 0.12em;
 	padding: 0;
 	font-size: 8pt;
 	font-weight: 800;
-	letter-spacing: 0.02em;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
 .field-value {
-	margin: 0 0 2.5mm;
+	margin: 0;
 	padding: 0;
 	font-size: 10pt;
-	font-weight: 800;
-	line-height: 1.25;
+	font-weight: 600;
+	line-height: 1.28;
 	white-space: normal;
 	word-wrap: break-word;
 	overflow-wrap: anywhere;
 }
 .field-value.name-val {
 	text-transform: uppercase;
+	font-size: 8pt;
+	line-height: 1.2;
+	margin-bottom: 0.95em;
 }
 .field-value.dest-val {
 	text-transform: none;
-	font-weight: 700;
+	font-weight: 600;
+	margin-bottom: 1.05em;
 }
-.field-value.name-val.txt-small {
-	font-size: 8.5pt;
-}
-.field-value.name-val.txt-tiny {
-	font-size: 7.25pt;
-	line-height: 1.18;
-}
+.field-value.name-val.txt-small { font-size: 7.1pt; line-height: 1.18; }
+.field-value.name-val.txt-tiny { font-size: 6.35pt; line-height: 1.15; }
 .field-value.dest-val.txt-small { font-size: 9pt; }
-.field-value.dest-val.txt-tiny { font-size: 8pt; line-height: 1.2; }
-.block-gap {
-	height: 2.5mm;
-	margin: 0;
-	padding: 0;
-}
-.qr-gap {
-	height: 2mm;
-	margin: 0;
-	padding: 0;
-}
+.field-value.dest-val.txt-tiny { font-size: 8pt; line-height: 1.22; }
 .qr-wrap {
-	margin: 0 auto 2mm;
+	margin: 0 auto;
 	width: 100%;
 	text-align: center;
+	padding: 0.15em 0 0.35em;
 }
 .qr-table {
 	width: 100%;
@@ -3287,14 +3291,14 @@ body {
 	margin: 0 auto;
 }
 .qr-table td {
-	padding: 2.5mm 3mm 2.5mm 1mm;
+	padding: 2mm 3mm 2mm 1mm;
 	text-align: center;
 	vertical-align: middle;
 }
 .qr-img {
 	display: block;
 	margin: 0 auto;
-	width: 40mm;
+	width: 34mm;
 	max-width: 86%;
 	height: auto;
 	aspect-ratio: 1 / 1;
@@ -3302,37 +3306,78 @@ body {
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
-.foot {
-	margin: 3mm 0 0;
+.control-label {
+	margin: 0.35em 0 0.1em;
 	padding: 0;
-	font-size: 7.5pt;
-	font-weight: 600;
 	text-align: center;
+	font-size: 7pt;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+.control-value {
+	margin: 0;
+	padding: 0;
+	text-align: center;
+	font-size: 9pt;
+	font-weight: 700;
+	letter-spacing: 0.03em;
 	line-height: 1.2;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+.foot {
+	margin: 2mm 0 0;
+	padding: 0;
+	font-size: 8pt;
+	font-weight: 500;
+	text-align: center;
+	line-height: 1.15;
 }
 @@media print {
-	body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+	body {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		height: auto !important;
+		min-height: 0 !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	html {
+		height: auto !important;
+		min-height: 0 !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+	.receipt {
+		padding-bottom: 0 !important;
+		margin-bottom: 0 !important;
+	}
+	p.foot {
+		margin-bottom: 0 !important;
+		padding-bottom: 0 !important;
+	}
 }
 </style>
 </head>
 <body>
 <div class="receipt">
-	<p class="headline">Visitor QR Pass</p>
-	<hr class="rule-head" aria-hidden="true">
-	<div class="field-block">
-		<p class="field-label">Name:</p>
+	<p class="receipt-title">VISITOR QR PASS</p>
+	<p class="dash-line" aria-hidden="true">${dashedLineText}</p>
+	<div class="fields">
+		<p class="field-label">NAME:</p>
 		<p class="field-value name-val ${nameSizeClass}">${nameHtml}</p>
-		<div class="block-gap" aria-hidden="true"></div>
-		<p class="field-label">Destination:</p>
+		<p class="field-label">DESTINATION:</p>
 		<p class="field-value dest-val ${destSizeClass}">${destHtml}</p>
 	</div>
-	<div class="qr-gap" aria-hidden="true"></div>
 	<div class="qr-wrap">
 		<table class="qr-table" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
 			<tr><td align="center">
 				<img class="qr-img" src="${escAttr(qrSrc)}" width="400" height="400" alt="">
 			</td></tr>
 		</table>
+		<p class="control-label">CONTROL NUMBER</p>
+		<p class="control-value">${controlNoPrint}</p>
 	</div>
 	<p class="foot">Please present this ticket.</p>
 </div>
@@ -3343,7 +3388,6 @@ body {
 
 			if (!printWindow) {
 				alert('Unable to open print window. Please allow pop-ups for this site.');
-				shouldResetAfterPrint = false;
 				return;
 			}
 
@@ -3360,26 +3404,20 @@ body {
 				resetHandled = true;
 				window.removeEventListener('focus', fallbackOnFocus);
 
-				if (shouldResetAfterPrint) {
-					shouldResetAfterPrint = false;
-					resetRegistrationFlowToStepOne();
-				}
-
-				if (!printWindow.closed) {
-					printWindow.close();
-				}
+				/* Close print tab after dialog; short delay avoids a jarring flash. Registration stays on the ticket screen. */
+				setTimeout(() => {
+					if (!printWindow.closed) {
+						printWindow.close();
+					}
+				}, 650);
 			};
 
 			const fallbackOnFocus = () => {
-				if (!shouldResetAfterPrint) {
-					return;
-				}
-
 				setTimeout(() => {
-					if (shouldResetAfterPrint) {
+					if (!resetHandled) {
 						finalizeAfterPrint();
 					}
-				}, 120);
+				}, 200);
 			};
 
 			const tryPrint = () => {
@@ -3397,7 +3435,6 @@ body {
 		};
 
 		printTicketBtn?.addEventListener('click', () => {
-			shouldResetAfterPrint = true;
 			printTicketInNewWindow();
 		});
 
@@ -3675,15 +3712,12 @@ body {
 			startCamera();
 		};
 
+		newVisitorAfterTicketBtn?.addEventListener('click', () => {
+			resetRegistrationFlowToStepOne();
+		});
+
 		window.addEventListener('afterprint', () => {
 			document.body.classList.remove('print-ticket-mode');
-
-			if (!shouldResetAfterPrint) {
-				return;
-			}
-
-			shouldResetAfterPrint = false;
-			resetRegistrationFlowToStepOne();
 		});
 
 		window.addEventListener('beforeunload', () => {
