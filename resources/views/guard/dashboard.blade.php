@@ -1037,6 +1037,7 @@
 						</a>
 					@endif
 				</div>
+				
 
 				@if (! $isSelfRegisteredRole)
 					<div class="sidebar-section">
