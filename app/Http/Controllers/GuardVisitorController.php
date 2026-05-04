@@ -1245,10 +1245,10 @@ class GuardVisitorController extends Controller
         }
 
         try {
-            return \Carbon\Carbon::parse($cleaned)->toDateString();
+            return Carbon::parse($cleaned)->toDateString();
         } catch (\Throwable $e) {
             try {
-                return \Carbon\Carbon::parse($raw)->toDateString();
+                return Carbon::parse($raw)->toDateString();
             } catch (\Throwable $e) {
                 return null;
             }
