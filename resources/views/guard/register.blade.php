@@ -2450,7 +2450,8 @@
 			captureCanvas.height = cameraFeed.videoHeight;
 			const context = captureCanvas.getContext('2d');
 			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-			 capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.70);
+			freezeCurrentFrame();
+			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.70);
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = 'Processing capture...';
 			scanAction.disabled = true;
