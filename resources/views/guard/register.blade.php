@@ -1973,6 +1973,7 @@
 
 	@include('guard.partials.guard-responsive-script')
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 	<script>
@@ -2086,6 +2087,100 @@
 				registerMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 			});
 		}
+
+		const guardSidebarNavEl = document.getElementById('guardSidebarNav');
+		let bypassNativeBeforeUnloadPrompt = false;
+
+		const shouldWarnLeaveRegisterFlow = () => {
+			if (!hasRegisterFlow || hasSavedRegistration) {
+				return false;
+			}
+			if (currentStep > 1) {
+				return true;
+			}
+			return Boolean(frozenFrame?.classList.contains('visible'));
+		};
+
+		const leaveRegisterConfirmCopy = {
+			title: 'Leave this page?',
+			html: 'You have an in-progress visitor registration. If you leave now, any unsaved information will be lost.<br/><br/>Do you want to continue?',
+			confirmButtonText: 'Leave page',
+			cancelButtonText: 'Stay here',
+		};
+
+		const confirmLeaveRegisterFlow = async () => {
+			if (typeof window.Swal?.fire !== 'function') {
+				return window.confirm(
+					'You have an in-progress visitor registration. If you leave now, any unsaved information will be lost.\n\nDo you want to continue?'
+				);
+			}
+
+			const result = await window.Swal.fire({
+				icon: 'warning',
+				title: leaveRegisterConfirmCopy.title,
+				html: leaveRegisterConfirmCopy.html,
+				showCancelButton: true,
+				confirmButtonText: leaveRegisterConfirmCopy.confirmButtonText,
+				cancelButtonText: leaveRegisterConfirmCopy.cancelButtonText,
+				focusCancel: true,
+				allowOutsideClick: false,
+				allowEscapeKey: true,
+				reverseButtons: true,
+				customClass: {
+					confirmButton: 'btn btn-primary',
+					cancelButton: 'btn btn-outline-secondary',
+					actions: 'd-flex gap-2 justify-content-end',
+				},
+				buttonsStyling: false,
+			});
+
+			return Boolean(result.isConfirmed);
+		};
+
+		guardSidebarNavEl?.addEventListener('click', (e) => {
+			const anchor = e.target.closest?.('a[href]');
+			if (!anchor || !anchor.href) {
+				return;
+			}
+			const hrefAttr = anchor.getAttribute('href') || '';
+			if (hrefAttr.startsWith('#') || hrefAttr.startsWith('javascript:')) {
+				return;
+			}
+			if (!shouldWarnLeaveRegisterFlow()) {
+				return;
+			}
+			e.preventDefault();
+			e.stopPropagation();
+
+			confirmLeaveRegisterFlow()
+				.then((shouldLeave) => {
+					if (!shouldLeave) {
+						return;
+					}
+					bypassNativeBeforeUnloadPrompt = true;
+
+					if (anchor.classList.contains('logout-btn')) {
+						document.getElementById('logout-form')?.submit();
+						return;
+					}
+
+					window.location.assign(anchor.href);
+				})
+				.catch(() => {
+					// no-op: stay on page on any modal error
+				});
+		}, true);
+
+		window.addEventListener('beforeunload', (e) => {
+			if (bypassNativeBeforeUnloadPrompt) {
+				return;
+			}
+			if (!shouldWarnLeaveRegisterFlow()) {
+				return;
+			}
+			e.preventDefault();
+			e.returnValue = '';
+		});
 
 		const updateStepUI = () => {
 			if (!hasRegisterFlow) {
