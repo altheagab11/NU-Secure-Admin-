@@ -27,12 +27,41 @@ class GuardDashboardController extends Controller
             ->whereDate('entry_time', today())
             ->count();
 
-        $pendingExitScansCount = DB::table('visit as v')
+        $pendingExpectationNames = ['pending', 'not arrived', 'awaiting', 'scheduled', 'expected', 'open'];
+
+        $pendingExitScansBaseQuery = DB::table('visit as v')
             ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
-            ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
             ->whereNull('v.exit_time')
-            ->whereRaw('LOWER(TRIM(COALESCE(es.exit_status_name, \'\'))) = ?', ['ready to exit'])
-            ->count('v.visit_id');
+            ->where(function ($query) use ($pendingExpectationNames) {
+                $query
+                    ->whereRaw('LOWER(TRIM(COALESCE(es.exit_status_name, \'\'))) = ?', ['ready to exit'])
+                    ->orWhere(function ($expectationQuery) use ($pendingExpectationNames) {
+                        $expectationQuery
+                            ->whereExists(function ($existsQuery) {
+                                $existsQuery->select(DB::raw(1))
+                                    ->from('office_expectation as oe_any')
+                                    ->whereColumn('oe_any.visit_id', 'v.visit_id');
+                            })
+                            ->whereNotExists(function ($pendingQuery) use ($pendingExpectationNames) {
+                                $pendingQuery->select(DB::raw(1))
+                                    ->from('office_expectation as oe_pending')
+                                    ->leftJoin('expectation_status as xs_pending', 'xs_pending.expectation_status_id', '=', 'oe_pending.expectation_status_id')
+                                    ->whereColumn('oe_pending.visit_id', 'v.visit_id')
+                                    ->where(function ($statusQuery) use ($pendingExpectationNames) {
+                                        $statusQuery
+                                            ->whereNull('oe_pending.expectation_status_id')
+                                            ->orWhereNull('xs_pending.status_name')
+                                            ->orWhereIn(
+                                                DB::raw('LOWER(TRIM(COALESCE(xs_pending.status_name, \'\')))')
+                                                ,
+                                                $pendingExpectationNames
+                                            );
+                                    });
+                            });
+                    });
+            });
+
+        $pendingExitScansCount = (clone $pendingExitScansBaseQuery)->count('v.visit_id');
 
         $resolvedTodayCount = DB::table('alerts')
             ->whereRaw('LOWER(TRIM(COALESCE(status, \'\'))) = ?', ['resolved'])
@@ -74,6 +103,27 @@ class GuardDashboardController extends Controller
                 'es.exit_status_name',
                 'vs.status_name as validation_status_name',
                 'la.alert_type as unresolved_alert_type',
+                DB::raw(
+                    "CASE
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM office_expectation oe_any
+                            WHERE oe_any.visit_id = v.visit_id
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM office_expectation oe_pending
+                            LEFT JOIN expectation_status xs_pending
+                                ON xs_pending.expectation_status_id = oe_pending.expectation_status_id
+                            WHERE oe_pending.visit_id = v.visit_id
+                              AND (
+                                  oe_pending.expectation_status_id IS NULL
+                                  OR xs_pending.status_name IS NULL
+                                  OR LOWER(TRIM(COALESCE(xs_pending.status_name, ''))) IN ('pending', 'not arrived', 'awaiting', 'scheduled', 'expected', 'open')
+                              )
+                        )
+                    THEN 1 ELSE 0 END as is_ready_to_exit_by_expectation"
+                ),
             ])
             ->orderByDesc('v.entry_time')
             ->orderByDesc('v.visit_id')
@@ -140,7 +190,9 @@ class GuardDashboardController extends Controller
             $statusLabel = 'Arrived';
             $statusClass = 'arrived';
 
-            if ($exitStatus === 'ready to exit') {
+            $isReadyToExitByExpectation = (int) ($row->is_ready_to_exit_by_expectation ?? 0) === 1;
+
+            if ($exitStatus === 'ready to exit' || $isReadyToExitByExpectation) {
                 $statusLabel = 'Ready to Exit';
                 $statusClass = 'exit';
             } elseif (str_contains($validationStatus, 'transit')) {

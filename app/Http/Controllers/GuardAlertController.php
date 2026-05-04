@@ -130,13 +130,42 @@ class GuardAlertController extends Controller
             ];
         })->values();
 
+        $pendingExpectationNames = ['pending', 'not arrived', 'awaiting', 'scheduled', 'expected', 'open'];
+
         $readyToExitBaseQuery = DB::table('visit as v')
             ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
             ->whereNull('v.exit_time')
-            ->where(function ($query) {
+            ->where(function ($query) use ($pendingExpectationNames) {
                 $query
                     ->whereRaw('LOWER(TRIM(COALESCE(es.exit_status_name, \'\'))) = ?', ['completed'])
-                    ->orWhereRaw('LOWER(TRIM(COALESCE(es.exit_status_name, \'\'))) = ?', ['ready to exit']);
+                    ->orWhereRaw('LOWER(TRIM(COALESCE(es.exit_status_name, \'\'))) = ?', ['ready to exit'])
+                    // Also treat visit as "Ready to Exit" when all expected offices are already completed.
+                    ->orWhere(function ($expectationQuery) use ($pendingExpectationNames) {
+                        $expectationQuery
+                            // Visit must have an expected office route.
+                            ->whereExists(function ($existsQuery) {
+                                $existsQuery->select(DB::raw(1))
+                                    ->from('office_expectation as oe_any')
+                                    ->whereColumn('oe_any.visit_id', 'v.visit_id');
+                            })
+                            // No expectation row should still be in a pending-like status.
+                            ->whereNotExists(function ($pendingQuery) use ($pendingExpectationNames) {
+                                $pendingQuery->select(DB::raw(1))
+                                    ->from('office_expectation as oe_pending')
+                                    ->leftJoin('expectation_status as xs_pending', 'xs_pending.expectation_status_id', '=', 'oe_pending.expectation_status_id')
+                                    ->whereColumn('oe_pending.visit_id', 'v.visit_id')
+                                    ->where(function ($statusQuery) use ($pendingExpectationNames) {
+                                        $statusQuery
+                                            ->whereNull('oe_pending.expectation_status_id')
+                                            ->orWhereNull('xs_pending.status_name')
+                                            ->orWhereIn(
+                                                DB::raw('LOWER(TRIM(COALESCE(xs_pending.status_name, \'\')))')
+                                                ,
+                                                $pendingExpectationNames
+                                            );
+                                    });
+                            });
+                    });
             });
 
         $readyToExitCount = (clone $readyToExitBaseQuery)->count('v.visit_id');
