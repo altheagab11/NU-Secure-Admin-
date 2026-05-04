@@ -85,21 +85,38 @@ class GuardVisitorController extends Controller
         if (!empty($visit->entry_time)) {
             try {
                 $entryAt = Carbon::parse($visit->entry_time, 'Asia/Manila');
-                $durationMinutes = max(0, $entryAt->diffInMinutes($exitAt));
+                // Ensure integer minutes for DB column type compatibility.
+                $durationMinutes = max(0, (int) floor($entryAt->diffInSeconds($exitAt) / 60));
             } catch (\Throwable $e) {
                 $durationMinutes = null;
             }
         }
 
         $exitedStatusId = $this->resolveExitStatusByNames(['exited', 'checked out', 'completed', 'ready to exit']);
+        $skippedExpectationStatusId = $this->resolveSkippedExpectationStatusId();
 
-        DB::table('visit')
-            ->where('visit_id', $visit->visit_id)
-            ->update([
-                'exit_time' => $exitAt,
-                'duration_minutes' => $durationMinutes,
-                'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
-            ]);
+        DB::transaction(function () use ($visit, $exitAt, $durationMinutes, $exitedStatusId, $skippedExpectationStatusId) {
+            DB::table('visit')
+                ->where('visit_id', $visit->visit_id)
+                ->update([
+                    'exit_time' => $exitAt,
+                    'duration_minutes' => $durationMinutes,
+                    'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
+                ]);
+
+            if ($skippedExpectationStatusId !== null) {
+                DB::table('office_expectation')
+                    ->where('visit_id', $visit->visit_id)
+                    ->whereNull('arrived_at')
+                    ->where(function ($query) use ($skippedExpectationStatusId) {
+                        $query->whereNull('expectation_status_id')
+                            ->orWhere('expectation_status_id', '!=', $skippedExpectationStatusId);
+                    })
+                    ->update([
+                        'expectation_status_id' => $skippedExpectationStatusId,
+                    ]);
+            }
+        });
 
         $fullName = trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? '')));
         $displayName = $fullName !== '' ? $fullName : 'Visitor';
@@ -2175,6 +2192,24 @@ class GuardVisitorController extends Controller
             ->value('expectation_status_id');
 
         return $fallback ? (int) $fallback : null;
+    }
+
+    protected function resolveSkippedExpectationStatusId(): ?int
+    {
+        $byName = DB::table('expectation_status')
+            ->whereRaw('LOWER(TRIM(COALESCE(status_name, \'\'))) = ?', ['skipped'])
+            ->value('expectation_status_id');
+
+        if ($byName) {
+            return (int) $byName;
+        }
+
+        $fallbackId = 3;
+        $exists = DB::table('expectation_status')
+            ->where('expectation_status_id', $fallbackId)
+            ->exists();
+
+        return $exists ? $fallbackId : null;
     }
 
     protected function resolveEnrolleeOfficeIds(): array
