@@ -353,9 +353,9 @@ class GuardVisitorController extends Controller
                     }
                 }
 
-                // office_expectation: normal visitor kung 2+ office; enrollee — awtomatikong lahat ng office sa flow (1+).
-                $shouldSaveOfficeExpectations = ($registerType === 'normal' && count($officeIds) > 1)
-                    || ($registerType === 'enrollee' && count($officeIds) > 0);
+                // office_expectation: normal visitor at enrollee — kahit isa lang ang office, nire-record ang route/order.
+                $shouldSaveOfficeExpectations = in_array($registerType, ['normal', 'enrollee'], true)
+                    && count($officeIds) > 0;
 
                 if ($shouldSaveOfficeExpectations) {
                     $pendingExpectationStatusId = $this->resolveExpectationStatusId();
