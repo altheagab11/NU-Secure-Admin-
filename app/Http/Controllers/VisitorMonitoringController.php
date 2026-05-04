@@ -1090,7 +1090,7 @@ class VisitorMonitoringController extends Controller
         }
 
         try {
-            return Carbon::parse($value);
+            return Carbon::parse($value)->timezone('Asia/Manila');
         } catch (\Throwable $e) {
             return null;
         }
@@ -1104,7 +1104,7 @@ class VisitorMonitoringController extends Controller
 
         // Still inside: duration runs from entry_time until now; do not use stale duration_minutes from DB.
         if (! $exit) {
-            return max(0, $entry->diffInMinutes(now()));
+            return max(0, $entry->diffInMinutes(Carbon::now('Asia/Manila')));
         }
 
         $fromColumn = $visit['duration_minutes'] ?? null;

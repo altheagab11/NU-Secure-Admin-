@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\OCRService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -78,12 +79,13 @@ class GuardVisitorController extends Controller
             ], 404);
         }
 
-        $exitAt = now();
+        $exitAt = $this->philippinesNow();
         $durationMinutes = null;
 
         if (!empty($visit->entry_time)) {
             try {
-                $durationMinutes = max(0, $exitAt->diffInMinutes(\Carbon\Carbon::parse($visit->entry_time)));
+                $entryAt = Carbon::parse($visit->entry_time, 'Asia/Manila');
+                $durationMinutes = max(0, $entryAt->diffInMinutes($exitAt));
             } catch (\Throwable $e) {
                 $durationMinutes = null;
             }
@@ -107,7 +109,7 @@ class GuardVisitorController extends Controller
 
         if (!empty($visit->entry_time)) {
             try {
-                $entryTime = \Carbon\Carbon::parse($visit->entry_time)->toDateTimeString();
+                $entryTime = Carbon::parse($visit->entry_time, 'Asia/Manila')->toDateTimeString();
             } catch (\Throwable $e) {
                 $entryTime = null;
             }
@@ -313,7 +315,7 @@ class GuardVisitorController extends Controller
                     'qr_token' => trim((string) ($validated['qr_token'] ?? '')) !== ''
                         ? trim((string) $validated['qr_token'])
                         : strtoupper(Str::random(12)),
-                    'entry_time' => now(),
+                    'entry_time' => $this->philippinesNow(),
                     'exit_status_id' => $activeExitStatusId,
                 ], 'visit_id');
 
@@ -2210,5 +2212,13 @@ class GuardVisitorController extends Controller
                 ];
             })
             ->all();
+    }
+
+    /**
+     * Philippines wall clock for visit entry/exit (stored as naive local datetime in DB / Supabase).
+     */
+    protected function philippinesNow(): Carbon
+    {
+        return Carbon::now('Asia/Manila');
     }
 }
