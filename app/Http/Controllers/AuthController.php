@@ -137,7 +137,7 @@ class AuthController extends Controller
         }
 
         if ($roleId === 4) {
-            return redirect()->to('/guard/register?type=normal');
+            return redirect()->to('/guard/register');
         }
 
         return redirect()->to('/guard/dashboard');

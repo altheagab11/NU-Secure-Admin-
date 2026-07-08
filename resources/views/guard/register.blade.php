@@ -1444,6 +1444,764 @@
 
 		@include('guard.partials.guard-responsive-styles')
 
+		html:has(body.self-registration-mode),
+		html:has(body.self-registration-mode) body {
+			overflow: hidden !important;
+			height: 100% !important;
+			max-height: 100% !important;
+		}
+
+		body.self-registration-mode {
+			position: fixed;
+			inset: 0;
+			width: 100%;
+			height: 100svh;
+			max-height: 100svh;
+			overflow: hidden !important;
+			overscroll-behavior: none;
+			background: #1a2d6d;
+		}
+
+		body.self-registration-mode .layout {
+			height: 100svh !important;
+			max-height: 100svh !important;
+			min-height: 0 !important;
+			overflow: hidden !important;
+		}
+
+		body.self-registration-mode .main {
+			margin-left: 0 !important;
+			padding: 0 !important;
+			display: flex;
+			flex-direction: column;
+			height: 100svh !important;
+			max-height: 100svh !important;
+			min-height: 0 !important;
+			overflow: hidden !important;
+			background: #eef1f8;
+		}
+
+		body.self-registration-mode .self-registration-header {
+			flex-shrink: 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 20px;
+			padding: 0 20px;
+			height: 56px;
+			background: #243c96;
+			color: #fff;
+			border-bottom: none;
+			box-shadow: none;
+		}
+
+		body.self-registration-mode .self-registration-brand .brand-icon {
+			width: 36px;
+			height: 36px;
+			border-radius: 10px;
+			background: rgba(255, 255, 255, 0.16);
+			font-size: 17px;
+		}
+
+		body.self-registration-mode .self-registration-brand .brand-title {
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: #fff;
+		}
+
+		body.self-registration-mode .self-registration-brand .brand-subtitle {
+			font-size: 0.68rem;
+			color: rgba(255, 255, 255, 0.72);
+		}
+
+		body.self-registration-mode .self-reg-header-progress {
+			flex: 1;
+			max-width: 420px;
+			min-width: 0;
+		}
+
+		body.self-registration-mode .self-reg-header-step {
+			margin: 0 0 6px;
+			text-align: center;
+			font-size: 0.82rem;
+			font-weight: 600;
+			color: rgba(255, 255, 255, 0.92);
+			letter-spacing: 0.02em;
+		}
+
+		body.self-registration-mode .self-reg-progress-track {
+			height: 4px;
+			background: rgba(255, 255, 255, 0.22);
+			border-radius: 999px;
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .self-reg-progress-fill {
+			height: 100%;
+			width: 33.33%;
+			background: #ffd84d;
+			border-radius: 999px;
+			transition: width 0.35s ease;
+		}
+
+		body.self-registration-mode .self-reg-logout-btn {
+			padding: 7px 12px;
+			font-size: 12px;
+			border-color: rgba(255, 255, 255, 0.28);
+			background: rgba(255, 255, 255, 0.1);
+			color: #fff;
+		}
+
+		body.self-registration-mode .self-reg-logout-btn:hover {
+			background: rgba(255, 255, 255, 0.18);
+			color: #fff;
+		}
+
+		body.self-registration-mode .self-registration-body {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden !important;
+			padding: 0;
+			width: 100%;
+			max-width: none;
+		}
+
+		body.self-registration-mode .page-title,
+		body.self-registration-mode .self-reg-subtitle,
+		body.self-registration-mode .flow-head,
+		body.self-registration-mode .self-reg-kiosk-title {
+			display: none !important;
+		}
+
+		body.self-registration-mode .register-flow {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+			overflow: hidden !important;
+			width: 100%;
+			max-width: none;
+			margin: 0;
+		}
+
+		body.self-registration-mode .scanner-card:not(.is-hidden) {
+			flex: 1;
+			display: flex;
+			flex-direction: row;
+			align-items: stretch;
+			min-height: 0;
+			overflow: hidden !important;
+			padding: 0;
+			margin: 0;
+			border: none;
+			border-radius: 0;
+			box-shadow: none;
+			background: #111827;
+		}
+
+		body.self-registration-mode .scanner-zone {
+			flex: 1;
+			min-width: 0;
+			min-height: 0;
+			height: auto;
+			border-radius: 0;
+			padding: 0;
+		}
+
+		body.self-registration-mode .kiosk-controls {
+			width: clamp(300px, 34vw, 400px);
+			flex-shrink: 0;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 14px;
+			padding: 28px 24px;
+			background: #fff;
+			border-left: 1px solid #dbe2ef;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .kiosk-controls-title {
+			margin: 0;
+			font-size: 1.35rem;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.2;
+		}
+
+		body.self-registration-mode .camera-status {
+			margin: 0;
+			text-align: left;
+			font-size: 0.92rem;
+			color: #475569;
+			line-height: 1.45;
+		}
+
+		body.self-registration-mode .scan-actions-row {
+			width: 100%;
+			margin: 0;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		body.self-registration-mode .scan-action,
+		body.self-registration-mode .gallery-action {
+			width: 100%;
+			flex: none;
+			height: 52px;
+			border-radius: 12px;
+			font-size: 15px;
+		}
+
+		body.self-registration-mode .gallery-hint {
+			width: 100%;
+			margin: 0;
+			text-align: left;
+			font-size: 12px;
+			color: #64748b;
+			line-height: 1.4;
+		}
+
+		body.self-registration-mode .id-types {
+			width: 100%;
+			margin: 0;
+			padding: 12px 14px;
+			border-radius: 10px;
+			background: #f1f5ff;
+			border: 1px solid #dbeafe;
+		}
+
+		body.self-registration-mode .id-types-title {
+			margin: 0 0 4px;
+			font-size: 12px;
+			font-weight: 700;
+			color: #243c96;
+		}
+
+		body.self-registration-mode .id-types-list {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			font-size: 11px;
+			line-height: 1.45;
+			color: #475569;
+		}
+
+		body.self-registration-mode .id-types-list li {
+			margin: 0;
+		}
+
+		body.self-registration-mode .visitor-step:not(.is-hidden) {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 10px;
+			min-height: 0;
+			overflow-x: hidden;
+			overflow-y: auto;
+			margin: 0;
+			padding: 20px 24px 28px;
+			background: #eef1f8;
+			scrollbar-width: thin;
+		}
+
+		body.self-registration-mode .visitor-step:not(.is-hidden) > * {
+			width: min(100%, 680px);
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-card,
+		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-textarea-wrap,
+		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-submit {
+			grid-column: auto;
+		}
+
+		body.self-registration-mode .registration-complete:not(.is-hidden) {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: flex-start;
+			min-height: 0;
+			overflow-x: hidden;
+			overflow-y: auto;
+			padding: 20px 24px 28px;
+			background: #eef1f8;
+			gap: 12px;
+			scrollbar-width: thin;
+		}
+
+		body.self-registration-mode .registration-complete:not(.is-hidden) > * {
+			width: min(100%, 680px);
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .visitor-card,
+		body.self-registration-mode .visitor-field,
+		body.self-registration-mode .visitor-textarea-wrap {
+			padding: 14px 16px;
+			margin-bottom: 0;
+			border-radius: 12px;
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+		}
+
+		body.self-registration-mode .visitor-card-title {
+			font-size: 1rem;
+			font-weight: 700;
+			margin-bottom: 12px;
+			color: #0f172a;
+		}
+
+		body.self-registration-mode .visitor-details-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px 14px;
+		}
+
+		body.self-registration-mode .visitor-details-grid .visitor-input-group:nth-child(3) {
+			grid-column: 1 / -1;
+		}
+
+		body.self-registration-mode .visitor-label {
+			font-size: 13px;
+			font-weight: 600;
+			margin-bottom: 6px;
+			color: #334155;
+		}
+
+		body.self-registration-mode .visitor-input,
+		body.self-registration-mode .visitor-select,
+		body.self-registration-mode .visitor-textarea {
+			padding: 9px 12px;
+			font-size: 14px;
+			min-height: 40px;
+			max-width: 100%;
+		}
+
+		body.self-registration-mode .visitor-textarea {
+			min-height: 72px;
+			max-height: 100px;
+			resize: none;
+		}
+
+		body.self-registration-mode .visitor-submit {
+			width: 100%;
+			max-width: 360px;
+			align-self: center;
+			height: 50px;
+			margin-top: 6px;
+			font-size: 15px;
+			font-weight: 600;
+			border-radius: 12px;
+		}
+
+		body.self-registration-mode .office-list {
+			max-height: none;
+			overflow: visible;
+		}
+
+		body.self-registration-mode .ticket-card {
+			padding: 14px;
+		}
+
+		body.self-registration-mode .qr-box,
+		body.self-registration-mode .qr-box canvas,
+		body.self-registration-mode .qr-box img {
+			width: 88px !important;
+			height: 88px !important;
+		}
+
+		body.self-registration-mode .ticket-info-grid {
+			grid-template-columns: 68px 1fr 1fr;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .ticket-photo-wrap {
+			width: 68px;
+			height: 68px;
+		}
+
+		body.self-registration-mode.kiosk-type-select .self-reg-header-progress {
+			display: none;
+		}
+
+		body.self-registration-mode .self-reg-header-step--center {
+			flex: 1;
+			margin: 0;
+			text-align: center;
+			font-size: 0.95rem;
+			font-weight: 600;
+			color: rgba(255, 255, 255, 0.95);
+		}
+
+		body.self-registration-mode .kiosk-type-picker {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 0;
+			padding: 24px;
+			background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 55%, #ffffff 100%);
+		}
+
+		body.self-registration-mode .kiosk-type-picker-inner {
+			width: min(100%, 960px);
+			text-align: center;
+		}
+
+		body.self-registration-mode .kiosk-type-picker-title {
+			margin: 0 0 8px;
+			font-size: clamp(1.75rem, 3vw, 2.25rem);
+			font-weight: 800;
+			color: #0f172a;
+			letter-spacing: -0.03em;
+		}
+
+		body.self-registration-mode .kiosk-type-picker-subtitle {
+			margin: 0 0 32px;
+			font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+			color: #64748b;
+			line-height: 1.5;
+		}
+
+		body.self-registration-mode .kiosk-type-grid {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 18px;
+		}
+
+		body.self-registration-mode .kiosk-type-card {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			min-height: 220px;
+			padding: 28px 20px;
+			border: 2px solid #dbe2ef;
+			border-radius: 20px;
+			background: #fff;
+			color: inherit;
+			text-decoration: none;
+			box-shadow: 0 8px 28px rgba(36, 60, 150, 0.08);
+			transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		body.self-registration-mode .kiosk-type-card:hover {
+			transform: translateY(-4px);
+			border-color: #243c96;
+			box-shadow: 0 14px 36px rgba(36, 60, 150, 0.14);
+		}
+
+		body.self-registration-mode .kiosk-type-card.is-active {
+			border-color: #243c96;
+			background: linear-gradient(180deg, #f5f7ff 0%, #ffffff 100%);
+			box-shadow: 0 12px 32px rgba(36, 60, 150, 0.16);
+		}
+
+		body.self-registration-mode .kiosk-type-icon {
+			width: 64px;
+			height: 64px;
+			border-radius: 18px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 28px;
+			background: #eef2ff;
+			color: #243c96;
+		}
+
+		body.self-registration-mode .kiosk-type-card[data-type="enrollee"] .kiosk-type-icon {
+			background: #ecfdf5;
+			color: #059669;
+		}
+
+		body.self-registration-mode .kiosk-type-card[data-type="contractor"] .kiosk-type-icon {
+			background: #fff7ed;
+			color: #ea580c;
+		}
+
+		body.self-registration-mode .kiosk-type-name {
+			font-size: 1.15rem;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		body.self-registration-mode .kiosk-type-desc {
+			font-size: 0.88rem;
+			color: #64748b;
+			line-height: 1.45;
+			max-width: 220px;
+		}
+
+		body.self-registration-mode .kiosk-type-switcher {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-bottom: 4px;
+		}
+
+		body.self-registration-mode .kiosk-type-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 5px 10px;
+			border-radius: 999px;
+			border: 1px solid #dbe2ef;
+			background: #f8fafc;
+			color: #475569;
+			font-size: 11px;
+			font-weight: 600;
+			text-decoration: none;
+			transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+		}
+
+		body.self-registration-mode .kiosk-type-pill:hover {
+			border-color: #243c96;
+			color: #243c96;
+			background: #eef2ff;
+		}
+
+		body.self-registration-mode .kiosk-type-pill.active {
+			border-color: #243c96;
+			background: #243c96;
+			color: #fff;
+		}
+
+		body.self-registration-mode .kiosk-type-pill .bi {
+			font-size: 12px;
+		}
+
+		body.self-registration-mode .kiosk-controls-divider {
+			height: 1px;
+			background: #e2e8f0;
+			margin: 4px 0;
+		}
+
+		body.self-registration-mode .kiosk-change-type-label {
+			margin: 0;
+			font-size: 11px;
+			font-weight: 600;
+			color: #94a3b8;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		body.self-registration-mode .kiosk-back-type-link {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			margin-top: 2px;
+			font-size: 12px;
+			font-weight: 600;
+			color: #64748b;
+			text-decoration: none;
+		}
+
+		body.self-registration-mode .kiosk-back-type-link:hover {
+			color: #243c96;
+		}
+
+		body.self-registration-mode .kiosk-controls-type-note {
+			margin: -6px 0 0;
+			font-size: 12px;
+			color: #64748b;
+		}
+
+		@media (max-width: 900px) {
+			body.self-registration-mode .scanner-card:not(.is-hidden) {
+				flex-direction: column;
+			}
+
+			body.self-registration-mode .scanner-zone {
+				flex: 1;
+				min-height: 0;
+			}
+
+			body.self-registration-mode .kiosk-controls {
+				width: 100%;
+				flex-shrink: 0;
+				padding: 16px 18px;
+				gap: 10px;
+				border-left: none;
+				border-top: 1px solid #dbe2ef;
+			}
+
+			body.self-registration-mode .kiosk-controls-title {
+				font-size: 1.1rem;
+			}
+
+			body.self-registration-mode .scan-action,
+			body.self-registration-mode .gallery-action {
+				height: 46px;
+			}
+		}
+
+		@media (max-width: 640px) {
+			body.self-registration-mode .self-registration-header {
+				padding: 0 14px;
+				height: 52px;
+				gap: 10px;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-subtitle {
+				display: none;
+			}
+
+			body.self-registration-mode .self-reg-header-progress {
+				max-width: none;
+			}
+
+			body.self-registration-mode .self-reg-logout-btn span {
+				display: none;
+			}
+
+			body.self-registration-mode .scan-actions-row {
+				flex-direction: row;
+			}
+
+			body.self-registration-mode .scan-action,
+			body.self-registration-mode .gallery-action {
+				flex: 1;
+				height: 44px;
+				font-size: 13px;
+			}
+
+			body.self-registration-mode .id-types-list {
+				display: none;
+			}
+
+			body.self-registration-mode .id-types-title {
+				margin: 0;
+			}
+
+			body.self-registration-mode .kiosk-type-grid {
+				grid-template-columns: 1fr;
+				gap: 12px;
+			}
+
+			body.self-registration-mode .kiosk-type-card {
+				min-height: auto;
+				flex-direction: row;
+				justify-content: flex-start;
+				text-align: left;
+				padding: 16px 18px;
+				gap: 14px;
+			}
+
+			body.self-registration-mode .kiosk-type-icon {
+				width: 52px;
+				height: 52px;
+				font-size: 22px;
+				flex-shrink: 0;
+			}
+
+			body.self-registration-mode .kiosk-type-desc {
+				max-width: none;
+			}
+		}
+
+		@media (max-width: 991.98px) {
+			body.self-registration-mode .layout {
+				height: 100svh !important;
+				max-height: 100svh !important;
+				overflow: hidden !important;
+			}
+
+			body.self-registration-mode .main {
+				margin-left: 0 !important;
+				overflow: hidden !important;
+				height: 100svh !important;
+				max-height: 100svh !important;
+			}
+
+			body.self-registration-mode .visitor-step:not(.is-hidden) {
+				padding: 16px 16px 24px;
+			}
+
+			body.self-registration-mode .visitor-step:not(.is-hidden) > *,
+			body.self-registration-mode .registration-complete:not(.is-hidden) > * {
+				width: min(100%, 560px);
+			}
+
+			body.self-registration-mode .visitor-details-grid {
+				grid-template-columns: 1fr;
+			}
+
+			body.self-registration-mode .visitor-details-grid .visitor-input-group:nth-child(3) {
+				grid-column: auto;
+			}
+		}
+
+		.self-registration-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			padding: 14px 0 18px;
+			margin-bottom: 8px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+
+		.self-registration-brand {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 0;
+		}
+
+		.self-registration-brand .brand-icon {
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			background: #243c96;
+			color: #fff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
+			flex-shrink: 0;
+		}
+
+		.self-registration-brand .brand-title {
+			margin: 0;
+			font-size: 1.15rem;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.2;
+		}
+
+		.self-registration-brand .brand-subtitle {
+			display: block;
+			color: #64748b;
+			font-size: 0.78rem;
+			line-height: 1.3;
+		}
+
+		.self-reg-logout-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			padding: 10px 16px;
+			border: 1px solid #fecaca;
+			border-radius: 12px;
+			background: #fff;
+			color: #ff3b30;
+			font-weight: 700;
+			text-decoration: none;
+			flex-shrink: 0;
+			transition: background 0.2s ease, border-color 0.2s ease;
+		}
+
+		.self-reg-logout-btn:hover {
+			background: #ffe9e9;
+			color: #ff3b30;
+		}
+
 		@media print {
 			@page {
 				size: auto;
@@ -1462,6 +2220,12 @@
 
 			body.print-ticket-mode .guard-nav-backdrop,
 			body.print-ticket-mode .guard-mobile-topbar,
+			body.print-ticket-mode .self-registration-header,
+			body.print-ticket-mode .self-reg-header-progress,
+			body.print-ticket-mode .kiosk-type-picker,
+			body.print-ticket-mode .kiosk-type-switcher,
+			body.print-ticket-mode .kiosk-controls,
+			body.print-ticket-mode .self-reg-subtitle,
 			body.print-ticket-mode .sidebar,
 			body.print-ticket-mode .page-title,
 			body.print-ticket-mode .flow-head,
@@ -1525,15 +2289,31 @@
 		}
 	</style>
 </head>
-<body>
+@php
+	$guardSidebarUser = auth()->user();
+	$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
+	$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
+	$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
+	$registerTypeInput = request('type');
+	$registerType = in_array($registerTypeInput, ['normal', 'contractor', 'enrollee'], true)
+		? $registerTypeInput
+		: ($isSelfRegisteredRole ? null : 'normal');
+	$showKioskTypePicker = $isSelfRegisteredRole && $registerType === null;
+	$registerTypeLabels = [
+		'normal' => 'Normal Visitor',
+		'enrollee' => 'Enrollee',
+		'contractor' => 'Contractor',
+	];
+@endphp
+<body @class([
+	'self-registration-mode' => $isSelfRegisteredRole,
+	'kiosk-type-select' => $showKioskTypePicker,
+])>
 	<div class="layout">
-		<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
-		@php
-			$guardSidebarUser = auth()->user();
-			$guardSidebarName = trim(((string) ($guardSidebarUser->first_name ?? '')).' '.((string) ($guardSidebarUser->last_name ?? '')));
-			$guardSidebarName = $guardSidebarName !== '' ? $guardSidebarName : ((string) ($guardSidebarUser->name ?? $guardSidebarUser->email ?? 'Guard Officer'));
-			$isSelfRegisteredRole = (int) optional($guardSidebarUser)->role_id === 4;
-		@endphp
+		@if (! $isSelfRegisteredRole)
+			<div class="guard-nav-backdrop" id="guardNavBackdrop" aria-hidden="true"></div>
+		@endif
+		@if (! $isSelfRegisteredRole)
 		<aside class="sidebar d-flex flex-column justify-content-between" id="guardSidebarNav">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
@@ -1646,6 +2426,7 @@
 				</form>
 			</div>
 		</aside>
+		@endif
 
 	<div class="confirmation-modal is-hidden" id="existingVisitorModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="existingVisitorModalTitle">
 		<div class="confirmation-modal-card">
@@ -1694,10 +2475,72 @@
 
 
 		<main class="main">
-			@include('guard.partials.guard-mobile-topbar', ['title' => 'Register Visitor'])
-			@php($registerType = request('type', 'normal'))
-			@if (in_array($registerType, ['normal', 'contractor', 'enrollee'], true))
+			@if ($isSelfRegisteredRole)
+				<header class="self-registration-header">
+					<div class="self-registration-brand">
+						<div class="brand-icon">
+							<i class="bi bi-shield-lock-fill"></i>
+						</div>
+						<div>
+							<h4 class="brand-title mb-0">SVMS Guard</h4>
+							<small class="brand-subtitle">Visitor Registration</small>
+						</div>
+					</div>
+					@if ($showKioskTypePicker)
+						<p class="self-reg-header-step self-reg-header-step--center">Select Visitor Type</p>
+					@else
+					<div class="self-reg-header-progress" id="selfRegProgress" aria-label="Registration progress">
+						<p class="self-reg-header-step" id="selfRegHeaderStep">Step 1 of 3 · ID Scan</p>
+						<div class="self-reg-progress-track">
+							<div class="self-reg-progress-fill" id="selfRegProgressFill" style="width: 33.33%;"></div>
+						</div>
+					</div>
+					@endif
+					<a href="{{ route('logout') }}"
+					   class="self-reg-logout-btn"
+					   onclick="event.preventDefault(); document.getElementById('self-reg-logout-form').submit();">
+						<i class="bi bi-box-arrow-right"></i>
+						<span>Logout</span>
+					</a>
+					<form id="self-reg-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+						@csrf
+					</form>
+				</header>
+			@else
+				@include('guard.partials.guard-mobile-topbar', ['title' => 'Register Visitor'])
+			@endif
+			@if ($isSelfRegisteredRole)
+				<div class="self-registration-body">
+			@endif
+			@if ($showKioskTypePicker)
+				<section class="kiosk-type-picker" aria-label="Choose visitor type">
+					<div class="kiosk-type-picker-inner">
+						<h2 class="kiosk-type-picker-title">Welcome to NU Secure</h2>
+						<p class="kiosk-type-picker-subtitle">Tap the option that best describes your visit to begin registration.</p>
+						<div class="kiosk-type-grid">
+							<a href="/guard/register?type=normal" class="kiosk-type-card" data-type="normal">
+								<span class="kiosk-type-icon"><i class="bi bi-person-fill"></i></span>
+								<span class="kiosk-type-name">Normal Visitor</span>
+								<span class="kiosk-type-desc">Guests visiting offices, staff, or departments on campus.</span>
+							</a>
+							<a href="/guard/register?type=enrollee" class="kiosk-type-card" data-type="enrollee">
+								<span class="kiosk-type-icon"><i class="bi bi-mortarboard-fill"></i></span>
+								<span class="kiosk-type-name">Enrollee</span>
+								<span class="kiosk-type-desc">Prospective or incoming students for enrollment-related visits.</span>
+							</a>
+							<a href="/guard/register?type=contractor" class="kiosk-type-card" data-type="contractor">
+								<span class="kiosk-type-icon"><i class="bi bi-briefcase-fill"></i></span>
+								<span class="kiosk-type-name">Contractor</span>
+								<span class="kiosk-type-desc">Vendors and service providers with scheduled work on site.</span>
+							</a>
+						</div>
+					</div>
+				</section>
+			@elseif ($registerType !== null)
 				<h1 class="page-title">Register Visitor</h1>
+				@if ($isSelfRegisteredRole)
+					<p class="self-reg-subtitle">Follow the steps below to complete your visitor check-in.</p>
+				@endif
 				<section class="register-flow">
 					<div class="flow-head">
 						<div class="flow-step-meta">
@@ -1744,6 +2587,26 @@
 								</div>
 							</div>
 						</div>
+						@if ($isSelfRegisteredRole)
+						<div class="kiosk-controls">
+							<div class="kiosk-type-switcher" aria-label="Visitor type">
+								@foreach (['normal', 'enrollee', 'contractor'] as $kioskType)
+									<a href="/guard/register?type={{ $kioskType }}"
+									   class="kiosk-type-pill js-kiosk-type-link {{ $registerType === $kioskType ? 'active' : '' }}"
+									   data-type="{{ $kioskType }}">
+										<i class="bi bi-{{ $kioskType === 'enrollee' ? 'mortarboard-fill' : ($kioskType === 'contractor' ? 'briefcase-fill' : 'person-fill') }}"></i>
+										<span>{{ $registerTypeLabels[$kioskType] }}</span>
+									</a>
+								@endforeach
+							</div>
+							<a href="/guard/register" class="kiosk-back-type-link js-kiosk-type-link">
+								<i class="bi bi-arrow-left"></i>
+								<span>All visitor types</span>
+							</a>
+							<div class="kiosk-controls-divider"></div>
+							<h2 class="kiosk-controls-title" id="kioskControlsTitle">Scan Your ID</h2>
+							<p class="kiosk-controls-type-note">Registering as {{ $registerTypeLabels[$registerType] ?? 'Visitor' }}</p>
+						@endif
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
 						<canvas id="captureCanvas" style="display:none;"></canvas>
 
@@ -1769,6 +2632,9 @@
 								<li>- Passport (Photo page)</li>
 							</ul>
 						</div>
+						@if ($isSelfRegisteredRole)
+						</div>
+						@endif
 					</div>
 
 					@if ($registerType === 'enrollee')
@@ -1968,6 +2834,9 @@
 					</div>
 				</section>
 			@endif
+			@if ($isSelfRegisteredRole)
+				</div>
+			@endif
 		</main>
 	</div>
 
@@ -1981,6 +2850,10 @@
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
 		const flowStepName = document.getElementById('flowStepName');
 		const flowStepCount = document.getElementById('flowStepCount');
+		const selfRegProgressFill = document.getElementById('selfRegProgressFill');
+		const selfRegProgress = document.getElementById('selfRegProgress');
+		const selfRegHeaderStep = document.getElementById('selfRegHeaderStep');
+		const kioskControlsTitle = document.getElementById('kioskControlsTitle');
 		const flowHead = document.querySelector('.flow-head');
 		const scannerZone = document.querySelector('.scanner-zone');
 		const cameraFeed = document.getElementById('cameraFeed');
@@ -2044,6 +2917,7 @@
 		const visitorControlNumber = document.getElementById('visitorControlNumber');
 		const visitReason = document.getElementById('visitReason');
 		const registerType = @json($registerType);
+		const isSelfRegistrationKiosk = @json($isSelfRegisteredRole);
 		const hasFinalStepPanel = Boolean(visitorStepPanel || enrolleeStepPanel);
 		const hasRegisterFlow = Boolean(
 			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
@@ -2107,6 +2981,38 @@
 			confirmButtonText: 'Leave page',
 			cancelButtonText: 'Stay here',
 		};
+
+		const confirmKioskNavigation = (targetHref) => {
+			if (!targetHref) {
+				return;
+			}
+
+			Swal.fire({
+				...leaveRegisterConfirmCopy,
+				icon: 'warning',
+			}).then((result) => {
+				if (result.isConfirmed) {
+					bypassNativeBeforeUnloadPrompt = true;
+					window.location.href = targetHref;
+				}
+			});
+		};
+
+		document.querySelectorAll('.js-kiosk-type-link').forEach((link) => {
+			link.addEventListener('click', (event) => {
+				if (link.classList.contains('active')) {
+					event.preventDefault();
+					return;
+				}
+
+				if (!hasRegisterFlow || !shouldWarnLeaveRegisterFlow()) {
+					return;
+				}
+
+				event.preventDefault();
+				confirmKioskNavigation(link.getAttribute('href'));
+			});
+		});
 
 		const confirmLeaveRegisterFlow = async () => {
 			if (typeof window.Swal?.fire !== 'function') {
@@ -2198,6 +3104,29 @@
 				? 'ID Scan'
 				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Registration Complete'));
 			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : (isPictureStep ? 'Step 3 of 3' : 'Completed'));
+
+			if (selfRegProgressFill) {
+				const progressPercent = isCompleteStep ? 100 : Math.min(100, (currentStep / 3) * 100);
+				selfRegProgressFill.style.width = `${progressPercent}%`;
+			}
+
+			if (selfRegHeaderStep) {
+				const stepLabel = isIdStep
+					? 'Step 1 of 3 · ID Scan'
+					: (isFormStep ? 'Step 2 of 3 · Information' : (isPictureStep ? 'Step 3 of 3 · Face + ID' : 'Registration Complete'));
+				selfRegHeaderStep.textContent = stepLabel;
+			}
+
+			if (kioskControlsTitle) {
+				kioskControlsTitle.textContent = isIdStep
+					? 'Scan Your ID'
+					: (isPictureStep ? 'Capture Face + ID' : 'Scan Your ID');
+				kioskControlsTitle.classList.toggle('is-hidden', isFormStep || isCompleteStep);
+			}
+
+			if (selfRegProgress) {
+				selfRegProgress.classList.toggle('is-hidden', isCompleteStep);
+			}
 
 			scannerCard.classList.toggle('is-hidden', isFormStep || isCompleteStep);
 			if (visitorStepPanel) {
@@ -3809,6 +4738,12 @@ body {
 		};
 
 		newVisitorAfterTicketBtn?.addEventListener('click', () => {
+			if (isSelfRegistrationKiosk) {
+				bypassNativeBeforeUnloadPrompt = true;
+				window.location.href = '/guard/register';
+				return;
+			}
+
 			resetRegistrationFlowToStepOne();
 		});
 
