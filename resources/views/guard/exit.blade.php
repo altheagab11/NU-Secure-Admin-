@@ -402,106 +402,51 @@
 			margin-bottom: 16px;
 		}
 
-		.scanner-preview {
-			position: relative;
+		.scanner-input-zone {
 			width: 100%;
-			min-height: 430px;
 			border-radius: 18px;
-			background: #dfe4ec;
-			border: 1px solid #d2d8e2;
-			overflow: hidden;
-			display: flex;
-			align-items: center;
-			justify-content: center;
+			background: #eef2ff;
+			border: 1px solid #cdd7ff;
+			padding: 26px 24px;
+			display: grid;
+			gap: 14px;
 		}
 
-		.camera-feed {
-			position: absolute;
-			inset: 0;
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			display: none;
-			background: #cbd2dc;
-			z-index: 1;
+		.scanner-instruction {
+			margin: 0;
+			font-size: 14px;
+			color: #475569;
+			line-height: 1.5;
 		}
 
-		.scanner-zone.camera-on .camera-feed {
-			display: block;
-		}
-
-		.scan-frame {
-			position: relative;
-			width: 230px;
-			height: 230px;
-			z-index: 2;
-		}
-
-		.corner {
-			position: absolute;
-			width: 40px;
-			height: 40px;
-			border-color: #3f4db8;
-			border-style: solid;
-			border-width: 0;
-		}
-
-		.top-left {
-			top: 0;
-			left: 0;
-			border-top-width: 5px;
-			border-left-width: 5px;
-			border-top-left-radius: 16px;
-		}
-
-		.top-right {
-			top: 0;
-			right: 0;
-			border-top-width: 5px;
-			border-right-width: 5px;
-			border-top-right-radius: 16px;
-		}
-
-		.bottom-left {
-			bottom: 0;
-			left: 0;
-			border-bottom-width: 5px;
-			border-left-width: 5px;
-			border-bottom-left-radius: 16px;
-		}
-
-		.bottom-right {
-			bottom: 0;
-			right: 0;
-			border-bottom-width: 5px;
-			border-right-width: 5px;
-			border-bottom-right-radius: 16px;
-		}
-
-		.scanner-overlay-text {
-			position: absolute;
-			bottom: 22px;
-			left: 50%;
-			transform: translateX(-50%);
-			background: rgba(17, 24, 39, 0.72);
-			color: #ffffff;
-			padding: 8px 14px;
-			border-radius: 999px;
-			font-size: 12px;
+		.scanner-input {
+			height: 60px;
+			border: 2px solid #c7d2fe;
+			border-radius: 14px;
+			background: #fff;
+			padding: 0 16px;
+			font-size: 20px;
 			font-weight: 600;
 			letter-spacing: 0.02em;
-			z-index: 2;
+			outline: none;
+			transition: 0.15s ease;
+		}
+
+		.scanner-input:focus {
+			border-color: #3f4db8;
+			box-shadow: 0 0 0 4px rgba(63, 77, 184, 0.15);
 		}
 
 		.scanner-helper-text {
-			text-align: center;
+			text-align: left;
 			margin-bottom: 18px;
 		}
 
 		.helper-normal {
 			margin: 0 0 8px;
 			font-size: 13px;
-			color: #6b7280;
+			color: #3f4db8;
+			font-weight: 600;
 		}
 
 		.helper-error {
@@ -518,6 +463,41 @@
 
 		.scan-result.error {
 			color: #dc2626;
+		}
+
+		.scan-feedback-card {
+			display: none;
+			border-radius: 14px;
+			padding: 12px 14px;
+			margin-bottom: 12px;
+			border: 1px solid transparent;
+		}
+
+		.scan-feedback-card.show {
+			display: block;
+		}
+
+		.scan-feedback-card h5 {
+			margin: 0 0 4px;
+			font-size: 14px;
+			font-weight: 700;
+		}
+
+		.scan-feedback-card p {
+			margin: 0;
+			font-size: 13px;
+		}
+
+		.scan-feedback-card.success {
+			background: #ecfdf3;
+			border-color: #86efac;
+			color: #166534;
+		}
+
+		.scan-feedback-card.error {
+			background: #fef2f2;
+			border-color: #fca5a5;
+			color: #991b1b;
 		}
 
 		.scanner-actions {
@@ -670,6 +650,42 @@
 			border-radius: 14px;
 			padding: 24px 16px;
 			text-align: center;
+		}
+
+		.recent-scan-details {
+			display: none;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 12px;
+			background: #f8fafc;
+		}
+
+		.recent-scan-details.show {
+			display: block;
+		}
+
+		.recent-scan-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 6px 0;
+			border-bottom: 1px solid #e5e7eb;
+			font-size: 13px;
+		}
+
+		.recent-scan-row:last-child {
+			border-bottom: none;
+		}
+
+		.recent-scan-row span {
+			color: #64748b;
+			font-weight: 600;
+		}
+
+		.recent-scan-row strong {
+			color: #0f172a;
+			text-align: right;
+			word-break: break-word;
 		}
 
 		.recent-empty-icon {
@@ -1124,7 +1140,7 @@
 				<div class="exit-page-header">
 					<div>
 						<h1 class="exit-page-title">Exit Scan</h1>
-						<p class="exit-page-subtitle">Scan visitor QR code to process exit quickly and securely.</p>
+						<p class="exit-page-subtitle">Use the handheld QR/barcode scanner to process visitor exit quickly and securely.</p>
 					</div>
 
 					<div class="scan-status-pill">
@@ -1138,42 +1154,57 @@
 						<div class="scanner-card">
 							<div class="scanner-card-top">
 								<div>
-									<h3>QR Scanner</h3>
-									<p>Align the QR code inside the frame to continue exit processing.</p>
+									<h3>Scan Visitor QR / Barcode</h3>
+									<p>Scan the visitor pass using the handheld scanner. The code will auto-submit when Enter is received.</p>
 								</div>
-								<span class="scanner-mode-badge">Live Camera</span>
+								<span class="scanner-mode-badge">Hardware Scanner Mode</span>
 							</div>
 
 							<div class="scanner-box">
-								<div id="qr-reader" class="scanner-preview scanner-zone">
-									<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
-									<div class="scan-frame">
-										<span class="corner top-left"></span>
-										<span class="corner top-right"></span>
-										<span class="corner bottom-left"></span>
-										<span class="corner bottom-right"></span>
-									</div>
-
-									<div class="scanner-overlay-text">
-										Position QR code here
-									</div>
+								<div class="scanner-input-zone">
+									<p class="scanner-instruction">
+										Keep the scanner aimed at the visitor QR/barcode. Most scanners automatically press Enter after scan.
+									</p>
+									<input
+										type="text"
+										class="scanner-input"
+										id="scannerInput"
+										placeholder="Waiting for scan..."
+										autocomplete="off"
+										inputmode="text"
+									>
 								</div>
 							</div>
 
 							<div class="scanner-helper-text">
-								<p class="helper-normal" id="cameraStatus">Starting camera...</p>
+								<p class="helper-normal" id="scannerStatus">Scanner input ready.</p>
 								<p class="helper-error scan-result" id="scanResult" aria-live="polite"></p>
 							</div>
 
-							<div class="scanner-actions">
-								<button type="button" class="scan-btn-primary" id="scanButton">
-									<i class="fas fa-camera-retro"></i>
-									<span id="scanButtonText">Scan Exit QR</span>
-								</button>
+							<div id="scanSuccessCard" class="scan-feedback-card success" aria-live="polite">
+								<h5>Exit Successful</h5>
+								<p id="scanSuccessText">Visitor checked out successfully.</p>
+							</div>
 
+							<div id="scanErrorCard" class="scan-feedback-card error" aria-live="polite">
+								<h5>Scan Error</h5>
+								<p id="scanErrorText">Unable to process the scanned code.</p>
+							</div>
+
+							<div class="scanner-actions">
 								<button type="button" class="scan-btn-secondary" id="manualEntryButton">
 									<i class="fas fa-keyboard"></i>
 									Manual Entry
+								</button>
+
+								<button type="button" class="scan-btn-secondary" id="clearScanButton">
+									<i class="fas fa-eraser"></i>
+									Clear
+								</button>
+
+								<button type="button" class="scan-btn-secondary" id="testScannerButton">
+									<i class="fas fa-vial"></i>
+									Test Scanner
 								</button>
 							</div>
 
@@ -1190,8 +1221,6 @@
 									Submit Code
 								</button>
 							</div>
-
-							<canvas id="scanCanvas" style="display:none;"></canvas>
 						</div>
 					</div>
 
@@ -1203,9 +1232,9 @@
 							<div>
 								<h4>Scanning Tips</h4>
 								<ul>
-									<li>Keep the QR code inside the scanning frame.</li>
-									<li>Use proper lighting for faster detection.</li>
-									<li>Hold the device steady for better camera focus.</li>
+									<li>Aim the handheld scanner directly at the visitor QR/barcode.</li>
+									<li>Wait for the scanner beep before moving to the next pass.</li>
+									<li>If a scan fails, use Manual Entry and submit the code.</li>
 								</ul>
 							</div>
 						</div>
@@ -1216,7 +1245,7 @@
 							</div>
 							<div>
 								<h4>Exit Validation</h4>
-								<p>The system will verify visitor record, completion status, and exit readiness before checkout.</p>
+								<p>The system validates active visitor records before checkout and blocks invalid or already exited passes.</p>
 							</div>
 						</div>
 
@@ -1231,6 +1260,15 @@
 									<i class="fas fa-qrcode"></i>
 								</div>
 								<p>No recent successful scan yet.</p>
+							</div>
+
+							<div class="recent-scan-details" id="recentScanDetails">
+								<div class="recent-scan-row"><span>Name</span><strong id="recentScanName">-</strong></div>
+								<div class="recent-scan-row"><span>Control No.</span><strong id="recentScanControl">-</strong></div>
+								<div class="recent-scan-row"><span>Purpose</span><strong id="recentScanPurpose">-</strong></div>
+								<div class="recent-scan-row"><span>Time In</span><strong id="recentScanTimeIn">-</strong></div>
+								<div class="recent-scan-row"><span>Time Out</span><strong id="recentScanTimeOut">-</strong></div>
+								<div class="recent-scan-row"><span>Status</span><strong id="recentScanStatus">-</strong></div>
 							</div>
 						</div>
 					</div>
@@ -1280,8 +1318,8 @@
 					<div class="detail-item">
 						<div class="detail-icon">🏢</div>
 						<div>
-							<span class="detail-label">Office Visited</span>
-							<strong id="exitResultOffice">-</strong>
+							<span class="detail-label">Purpose</span>
+							<strong id="exitResultPurpose">-</strong>
 						</div>
 					</div>
 
@@ -1296,8 +1334,8 @@
 					<div class="detail-item">
 						<div class="detail-icon">⏱</div>
 						<div>
-							<span class="detail-label">Duration</span>
-							<strong id="exitResultDuration">-</strong>
+							<span class="detail-label">Status</span>
+							<strong id="exitResultStatus">-</strong>
 						</div>
 					</div>
 
@@ -1312,8 +1350,8 @@
 					<div class="detail-item">
 						<div class="detail-icon">🪪</div>
 						<div>
-							<span class="detail-label">ID Pass Number</span>
-							<strong id="exitResultPassNumber">-</strong>
+							<span class="detail-label">Time Out</span>
+							<strong id="exitResultTimeOut">-</strong>
 						</div>
 					</div>
 				</div>
@@ -1331,52 +1369,49 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 	<script>
-		const scannerZone = document.querySelector('.scanner-zone');
-		const cameraFeed = document.getElementById('cameraFeed');
-		const scanButton = document.getElementById('scanButton');
-		const scanButtonText = document.getElementById('scanButtonText');
+		const scannerInput = document.getElementById('scannerInput');
 		const manualEntryButton = document.getElementById('manualEntryButton');
+		const clearScanButton = document.getElementById('clearScanButton');
+		const testScannerButton = document.getElementById('testScannerButton');
 		const submitManualEntryButton = document.getElementById('submitManualEntryButton');
 		const manualEntryWrap = document.getElementById('manualEntryWrap');
 		const manualQrInput = document.getElementById('manualQrInput');
-		const cameraStatus = document.getElementById('cameraStatus');
+		const scannerStatus = document.getElementById('scannerStatus');
 		const scanResult = document.getElementById('scanResult');
-		const scanCanvas = document.getElementById('scanCanvas');
+		const scanSuccessCard = document.getElementById('scanSuccessCard');
+		const scanSuccessText = document.getElementById('scanSuccessText');
+		const scanErrorCard = document.getElementById('scanErrorCard');
+		const scanErrorText = document.getElementById('scanErrorText');
+		const recentScanDetails = document.getElementById('recentScanDetails');
+		const recentScanName = document.getElementById('recentScanName');
+		const recentScanControl = document.getElementById('recentScanControl');
+		const recentScanPurpose = document.getElementById('recentScanPurpose');
+		const recentScanTimeIn = document.getElementById('recentScanTimeIn');
+		const recentScanTimeOut = document.getElementById('recentScanTimeOut');
+		const recentScanStatus = document.getElementById('recentScanStatus');
+		const recentScanEmptyState = document.querySelector('.recent-empty-state');
 		const exitResultModal = document.getElementById('exitResultModal');
 		const exitResultDoneButton = document.getElementById('exitResultDoneButton');
 		const exitResultPhoto = document.getElementById('exitResultPhoto');
 		const exitResultPhotoFallback = document.getElementById('exitResultPhotoFallback');
 		const exitResultControlNumber = document.getElementById('exitResultControlNumber');
-		const exitResultOffice = document.getElementById('exitResultOffice');
+		const exitResultPurpose = document.getElementById('exitResultPurpose');
 		const exitResultVisitorName = document.getElementById('exitResultVisitorName');
-		const exitResultDuration = document.getElementById('exitResultDuration');
+		const exitResultStatus = document.getElementById('exitResultStatus');
 		const exitResultTimeIn = document.getElementById('exitResultTimeIn');
-		const exitResultPassNumber = document.getElementById('exitResultPassNumber');
-		const canvasContext = scanCanvas.getContext('2d', { willReadFrequently: true });
+		const exitResultTimeOut = document.getElementById('exitResultTimeOut');
 		const csrfToken = '{{ csrf_token() }}';
 
-		let activeStream = null;
-		let barcodeDetector = null;
-		let scanTimer = null;
 		let isProcessingScan = false;
-		let lastProcessedQr = '';
 		let resumeScanTimeout = null;
+		let processingCooldownUntil = 0;
 
-		if ('BarcodeDetector' in window) {
-			try {
-				barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-			} catch (error) {
-				barcodeDetector = null;
+		const focusScannerInput = () => {
+			if (!scannerInput) {
+				return;
 			}
-		}
-
-		const setScannerState = (isOn, message) => {
-			scannerZone.classList.toggle('camera-on', isOn);
-			scanButtonText.textContent = isOn ? 'Scan Exit QR' : 'Retry Camera';
-			cameraStatus.textContent = message;
-			scanButton.disabled = false;
+			scannerInput.focus({ preventScroll: true });
 		};
 
 		const setResult = (message, type = '') => {
@@ -1385,6 +1420,34 @@
 			if (type) {
 				scanResult.classList.add(type);
 			}
+		};
+
+		const toggleFeedbackCard = (card, shouldShow) => {
+			if (!card) {
+				return;
+			}
+			card.classList.toggle('show', shouldShow);
+		};
+
+		const showSuccessFeedback = (message) => {
+			if (scanSuccessText) {
+				scanSuccessText.textContent = message;
+			}
+			toggleFeedbackCard(scanSuccessCard, true);
+			toggleFeedbackCard(scanErrorCard, false);
+		};
+
+		const showErrorFeedback = (message) => {
+			if (scanErrorText) {
+				scanErrorText.textContent = message;
+			}
+			toggleFeedbackCard(scanErrorCard, true);
+			toggleFeedbackCard(scanSuccessCard, false);
+		};
+
+		const hideFeedbackCards = () => {
+			toggleFeedbackCard(scanSuccessCard, false);
+			toggleFeedbackCard(scanErrorCard, false);
 		};
 
 		const formatDuration = (minutes) => {
@@ -1456,21 +1519,53 @@
 			return `/storage/${value.replace(/^\/+/, '')}`;
 		};
 
+		const updateRecentScanCard = (scanData) => {
+			if (!scanData) {
+				return;
+			}
+
+			if (recentScanName) {
+				recentScanName.textContent = String(scanData.visitor_name || '').trim() || '-';
+			}
+
+			if (recentScanControl) {
+				recentScanControl.textContent = String(scanData.control_number || scanData.qr_data || '').trim() || '-';
+			}
+
+			if (recentScanPurpose) {
+				recentScanPurpose.textContent = String(scanData.purpose_reason || '').trim() || '-';
+			}
+
+			if (recentScanTimeIn) {
+				recentScanTimeIn.textContent = formatDateTime(scanData.entry_time);
+			}
+
+			if (recentScanTimeOut) {
+				recentScanTimeOut.textContent = formatDateTime(scanData.exit_time);
+			}
+
+			if (recentScanStatus) {
+				recentScanStatus.textContent = 'Exited';
+			}
+
+			recentScanEmptyState?.classList.add('d-none');
+			recentScanDetails?.classList.add('show');
+		};
+
 		const showExitResultModal = (scanData) => {
 			if (!exitResultModal || !scanData) {
 				return;
 			}
 
-			const destination = String(scanData.office_name || scanData.destination_text || '').trim() || '-';
 			const photoUrl = resolveVisitorPhotoUrl(scanData.visitor_photo_preview_url || scanData.visitor_photo_with_id_url);
 			const controlNo = String(scanData.control_number || '').trim() || String(scanData.qr_data || '').trim() || '-';
 
 			exitResultControlNumber.textContent = controlNo;
-			exitResultOffice.textContent = destination;
+			exitResultPurpose.textContent = String(scanData.purpose_reason || '').trim() || '-';
 			exitResultVisitorName.textContent = String(scanData.visitor_name || '').trim() || '-';
-			exitResultDuration.textContent = formatDuration(scanData.duration_minutes);
+			exitResultStatus.textContent = 'Exited';
 			exitResultTimeIn.textContent = formatDateTime(scanData.entry_time);
-			exitResultPassNumber.textContent = String(scanData.pass_number || '').trim() || '-';
+			exitResultTimeOut.textContent = formatDateTime(scanData.exit_time);
 
 			if (photoUrl) {
 				exitResultPhoto.src = photoUrl;
@@ -1486,37 +1581,26 @@
 			exitResultModal.setAttribute('aria-hidden', 'false');
 		};
 
-		const resetScanLoop = () => {
-			if (scanTimer) {
-				clearInterval(scanTimer);
-				scanTimer = null;
-			}
-		};
-
-		const releaseCamera = () => {
-			resetScanLoop();
-			if (resumeScanTimeout) {
-				clearTimeout(resumeScanTimeout);
-				resumeScanTimeout = null;
-			}
-
-			if (!activeStream) {
+		const processQrData = async (rawQrData) => {
+			const qrData = String(rawQrData || '').trim();
+			if (!qrData) {
 				return;
 			}
 
-			activeStream.getTracks().forEach((track) => track.stop());
-			activeStream = null;
-			cameraFeed.srcObject = null;
-		};
-
-		const processQrData = async (qrData) => {
-			if (!qrData || isProcessingScan || qrData === lastProcessedQr) {
+			const now = Date.now();
+			if (isProcessingScan || now < processingCooldownUntil) {
+				setResult('Please wait. Still processing previous scan...', 'error');
+				focusScannerInput();
 				return;
 			}
 
 			isProcessingScan = true;
-			lastProcessedQr = qrData;
-			setResult('QR detected. Processing exit...', '');
+			processingCooldownUntil = now + 1200;
+			setResult('Scan received. Processing exit...', '');
+			hideFeedbackCards();
+			if (scannerStatus) {
+				scannerStatus.textContent = 'Validating scan against active visitor records...';
+			}
 
 			try {
 				const response = await fetch('/guard/exit/scan', {
@@ -1534,116 +1618,49 @@
 					throw new Error(payload.message || 'Unable to process scanned QR.');
 				}
 
-				setResult(payload.message + ' (' + payload.qr_data + ')', 'success');
-				cameraStatus.textContent = 'Scan completed. Ready for next QR.';
-				showExitResultModal({
+				const successData = {
 					...(payload.data || {}),
 					qr_data: payload.qr_data || ''
-				});
+				};
+
+				setResult(payload.message + ' (' + payload.qr_data + ')', 'success');
+				showSuccessFeedback(payload.message || 'Exit completed successfully.');
+				if (scannerStatus) {
+					scannerStatus.textContent = 'Exit completed. Ready for next scan.';
+				}
+				updateRecentScanCard(successData);
+				showExitResultModal(successData);
+			} catch (error) {
+				setResult(error.message || 'Scan failed. Please try again.', 'error');
+				showErrorFeedback(error.message || 'Scan failed. Please try again.');
+				if (scannerStatus) {
+					scannerStatus.textContent = 'Scan failed. Please retry scanning the pass.';
+				}
+			} finally {
+				isProcessingScan = false;
+				if (scannerInput) {
+					scannerInput.value = '';
+				}
 				if (manualQrInput) {
 					manualQrInput.value = '';
 				}
-			} catch (error) {
-				lastProcessedQr = '';
-				setResult(error.message || 'Scan failed. Please try again.', 'error');
 			}
 
-			isProcessingScan = false;
 			if (resumeScanTimeout) {
 				clearTimeout(resumeScanTimeout);
 			}
 
 			resumeScanTimeout = setTimeout(() => {
-				lastProcessedQr = '';
 				setResult('');
+				hideFeedbackCards();
+				if (scannerStatus) {
+					scannerStatus.textContent = 'Scanner input ready.';
+				}
+				focusScannerInput();
 			}, 3000);
+
+			focusScannerInput();
 		};
-
-		const detectWithJsQr = () => {
-			if (!window.jsQR || !cameraFeed.videoWidth || !cameraFeed.videoHeight) {
-				return;
-			}
-
-			scanCanvas.width = cameraFeed.videoWidth;
-			scanCanvas.height = cameraFeed.videoHeight;
-			canvasContext.drawImage(cameraFeed, 0, 0, scanCanvas.width, scanCanvas.height);
-			const imageData = canvasContext.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-			const decoded = window.jsQR(imageData.data, imageData.width, imageData.height, {
-				inversionAttempts: 'dontInvert'
-			});
-
-			if (decoded && decoded.data) {
-				processQrData(decoded.data);
-			}
-		};
-
-		const detectWithBarcodeDetector = async () => {
-			if (!barcodeDetector || !cameraFeed.videoWidth || !cameraFeed.videoHeight) {
-				return false;
-			}
-
-			try {
-				const detections = await barcodeDetector.detect(cameraFeed);
-				if (detections.length > 0 && detections[0].rawValue) {
-					processQrData(detections[0].rawValue);
-					return true;
-				}
-			} catch (error) {
-				// Fallback to jsQR on detector errors.
-			}
-
-			return false;
-		};
-
-		const startScanLoop = () => {
-			resetScanLoop();
-			scanTimer = setInterval(async () => {
-				if (!activeStream || isProcessingScan) {
-					return;
-				}
-
-				const detected = await detectWithBarcodeDetector();
-				if (!detected) {
-					detectWithJsQr();
-				}
-			}, 350);
-		};
-
-		const startCamera = async () => {
-			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-				setScannerState(false, 'Camera access is not supported in this browser.');
-				return;
-			}
-
-			try {
-				releaseCamera();
-
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: 'environment' },
-					audio: false
-				});
-
-				activeStream = stream;
-				cameraFeed.srcObject = stream;
-				setScannerState(true, 'Scanner is ready. Position the QR inside the frame.');
-				setResult('');
-				startScanLoop();
-			} catch (error) {
-				setScannerState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
-				setResult('Camera is required for QR scanning.', 'error');
-			}
-		};
-
-		scanButton?.addEventListener('click', () => {
-			if (!activeStream) {
-				startCamera();
-				return;
-			}
-
-			cameraStatus.textContent = 'Scanner is live. Align QR code inside the frame.';
-			setResult('Waiting for QR code...');
-			lastProcessedQr = '';
-		});
 
 		const normalizeManualCode = (rawValue) => String(rawValue || '').trim();
 
@@ -1655,11 +1672,14 @@
 			const code = normalizeManualCode(manualQrInput.value);
 			if (!code) {
 				setResult('Please enter the QR code or control number first.', 'error');
+				showErrorFeedback('Please enter the QR code or control number first.');
 				manualQrInput.focus();
 				return;
 			}
 
-			cameraStatus.textContent = 'Processing manual code...';
+			if (scannerStatus) {
+				scannerStatus.textContent = 'Processing manual entry...';
+			}
 			processQrData(code);
 		};
 
@@ -1676,6 +1696,13 @@
 
 		submitManualEntryButton?.addEventListener('click', submitManualEntry);
 
+		scannerInput?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				processQrData(scannerInput.value);
+			}
+		});
+
 		manualQrInput?.addEventListener('keydown', (event) => {
 			if (event.key === 'Enter') {
 				event.preventDefault();
@@ -1683,8 +1710,33 @@
 			}
 		});
 
+		clearScanButton?.addEventListener('click', () => {
+			if (scannerInput) {
+				scannerInput.value = '';
+			}
+			if (manualQrInput) {
+				manualQrInput.value = '';
+			}
+			setResult('');
+			hideFeedbackCards();
+			if (scannerStatus) {
+				scannerStatus.textContent = 'Scanner input ready.';
+			}
+			focusScannerInput();
+		});
+
+		testScannerButton?.addEventListener('click', () => {
+			if (!scannerInput) {
+				return;
+			}
+			scannerInput.value = 'TEST-SCANNER-INPUT';
+			setResult('Scanner input is active. Press Enter or scan a real pass.', '');
+			focusScannerInput();
+		});
+
 		exitResultDoneButton?.addEventListener('click', () => {
 			closeExitResultModal();
+			focusScannerInput();
 		});
 
 		exitResultPhoto?.addEventListener('error', () => {
@@ -1698,14 +1750,28 @@
 		exitResultModal?.addEventListener('click', (event) => {
 			if (event.target === exitResultModal) {
 				closeExitResultModal();
+				focusScannerInput();
 			}
 		});
 
-		window.addEventListener('beforeunload', () => {
-			releaseCamera();
+		document.addEventListener('visibilitychange', () => {
+			if (!document.hidden) {
+				focusScannerInput();
+			}
 		});
 
-		startCamera();
+		document.addEventListener('click', (event) => {
+			const target = event.target;
+			if (target instanceof HTMLElement && target.closest('button, a, input, textarea, select')) {
+				return;
+			}
+			focusScannerInput();
+		});
+
+		window.addEventListener('load', () => {
+			focusScannerInput();
+			setTimeout(focusScannerInput, 150);
+		});
 	</script>
 	@include('guard.partials.guard-responsive-script')
 </body>

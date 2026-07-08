@@ -73,9 +73,29 @@ class GuardVisitorController extends Controller
             ->first();
 
         if (!$visit) {
+            $alreadyCheckedOut = DB::table('visit as v')
+                ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+                ->whereNotNull('v.exit_time')
+                ->where(function ($query) use ($parsedQr) {
+                    if (!empty($parsedQr['qr_token'])) {
+                        $query->orWhereRaw('LOWER(TRIM(COALESCE(v.qr_token, \'\'))) = ?', [strtolower($parsedQr['qr_token'])]);
+                    }
+
+                    if (!empty($parsedQr['control_number'])) {
+                        $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
+                    }
+
+                    if (!empty($parsedQr['pass_number'])) {
+                        $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
+                    }
+                })
+                ->exists();
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'No active visitor record found for this QR code.',
+                'message' => $alreadyCheckedOut
+                    ? 'This visitor has already been checked out. The QR code is still readable but cannot be used again for exit.'
+                    : 'No active visitor record found for this QR code.',
             ], 404);
         }
 

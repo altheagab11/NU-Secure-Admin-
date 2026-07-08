@@ -1079,17 +1079,31 @@
 		}
 
 		.qr-box {
-			width: 128px;
-			height: 128px;
+			width: 200px;
+			height: 200px;
 			background: #fff;
 			display: grid;
 			place-items: center;
 		}
 
-		.qr-box canvas,
+		.qr-box canvas {
+			display: block;
+			width: 200px !important;
+			height: 200px !important;
+			image-rendering: pixelated;
+		}
+
 		.qr-box img {
-			width: 128px !important;
-			height: 128px !important;
+			display: block;
+			width: 200px !important;
+			height: 200px !important;
+			image-rendering: pixelated;
+		}
+
+		.qr-box table {
+			width: 200px !important;
+			height: 200px !important;
+			border-collapse: collapse;
 		}
 
 		.ticket-control-label {
@@ -2691,10 +2705,7 @@
 								<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
 							</div>
 
-							<div class="visitor-field">
-								<label class="visitor-label" for="visitorControlNumber">Control Number <span class="required-mark">*</span></label>
-								<input class="visitor-input" id="visitorControlNumber" name="control_number" type="text" placeholder="" required>
-							</div>
+							<input id="visitorControlNumber" name="control_number" type="hidden">
 
 							<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
 						</div>
@@ -2748,7 +2759,7 @@
 						</div>
 
 						<div class="visitor-field">
-							<label class="visitor-label" for="destinationOffice">Destination Office <span class="required-mark">*</span></label>
+							<label class="visitor-label" for="destinationOffice">Office to Visit <span class="required-mark">*</span></label>
 							@if ($registerType === 'contractor')
 								<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
 							@else
@@ -2765,20 +2776,17 @@
 							</div>
 						@endif
 
+						<div class="visitor-textarea-wrap">
+							<label class="visitor-label" for="visitReason">Purpose <span class="required-mark">*</span></label>
+							<textarea class="visitor-textarea" id="visitReason" required></textarea>
+						</div>
+
 						<div class="visitor-field">
 							<label class="visitor-label" for="visitorIdPassNumber">ID Pass Number <span class="required-mark">*</span></label>
 							<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
 						</div>
 
-						<div class="visitor-field">
-							<label class="visitor-label" for="visitorControlNumber">Control Number <span class="required-mark">*</span></label>
-							<input class="visitor-input" id="visitorControlNumber" name="control_number" type="text" placeholder="" required>
-						</div>
-
-						<div class="visitor-textarea-wrap">
-							<label class="visitor-label" for="visitReason">Reason For Visit <span class="required-mark">*</span></label>
-							<textarea class="visitor-textarea" id="visitReason" required></textarea>
-						</div>
+						<input id="visitorControlNumber" name="control_number" type="hidden">
 
 						<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
 					</div>
@@ -2794,8 +2802,8 @@
 						<div class="ticket-card" id="registrationTicketCard">
 							<div class="ticket-qr-area">
 								<div class="qr-box" id="qrCodeContainer"></div>
-								<p class="ticket-control-label">Control Number</p>
-								<p class="ticket-control-value" id="ticketControlNumber">-</p>
+								<p class="ticket-control-label" style="display:none;">Control Number</p>
+								<p class="ticket-control-value" id="ticketControlNumber" style="display:none;">-</p>
 							</div>
 
 							<hr class="ticket-separator">
@@ -2931,8 +2939,31 @@
 		let faceIdCapturePublicPath = '';
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
-		/** Same string encoded in the on-screen QR; used for thermal print (must not call createQrMeta() again). */
+		/** Compact scan text in the on-screen / printed QR (must not call createQrMeta() again). */
 		let lastTicketQrPayload = '';
+		const QR_DISPLAY_SIZE = 200;
+		const QR_PRINT_SIZE = 400;
+
+		const renderQrIntoElement = (container, text, size, correctLevel) => {
+			if (!container || !text || typeof QRCode === 'undefined') {
+				return false;
+			}
+
+			container.innerHTML = '';
+			new QRCode(container, {
+				text,
+				width: size,
+				height: size,
+				colorDark: '#000000',
+				colorLight: '#ffffff',
+				correctLevel: correctLevel || QRCode.CorrectLevel.M,
+			});
+
+			// Keep all renderer fallbacks (canvas/img/table) because some browsers only display one correctly.
+			const canvasEl = container.querySelector('canvas');
+
+			return Boolean(canvasEl || container.querySelector('img') || container.querySelector('table'));
+		};
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
 		let existingVisitorModalResolver = null;
@@ -3312,21 +3343,12 @@
 		};
 
 		const renderQrTicket = (qrMeta) => {
-			if (!qrMeta || !qrCodeContainer || typeof QRCode === 'undefined') {
+			const scanText = String(qrMeta?.qr_scan_text || qrMeta?.qr_payload || '').trim();
+			if (!qrMeta || !scanText || !renderQrIntoElement(qrCodeContainer, scanText, QR_DISPLAY_SIZE, QRCode.CorrectLevel.M)) {
 				return false;
 			}
 
-			qrCodeContainer.innerHTML = '';
-			new QRCode(qrCodeContainer, {
-				text: qrMeta.qr_payload,
-				width: 128,
-				height: 128,
-				colorDark: '#000000',
-				colorLight: '#ffffff',
-				correctLevel: QRCode.CorrectLevel.L,
-			});
-
-			lastTicketQrPayload = String(qrMeta.qr_payload || '');
+			lastTicketQrPayload = scanText;
 
 			ticketControlNumber.textContent = qrMeta.control_number || '-';
 			ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
@@ -3587,9 +3609,16 @@
 				issued_at: issuedAt,
 			};
 
+			// Keep full metadata in DB; encode only identifiers in the QR for reliable repeat scans.
+			const qrScanText = JSON.stringify({
+				control_number: controlNumber,
+				qr_token: qrToken,
+			});
+
 			return {
 				control_number: controlNumber,
 				qr_token: qrToken,
+				qr_scan_text: qrScanText,
 				qr_payload: JSON.stringify(qrPayloadData),
 			};
 		};
@@ -4084,15 +4113,9 @@
 			document.body.appendChild(holder);
 
 			try {
-				holder.innerHTML = '';
-				new QRCode(holder, {
-					text: payload,
-					width: 400,
-					height: 400,
-					colorDark: '#000000',
-					colorLight: '#ffffff',
-					correctLevel: QRCode.CorrectLevel.M,
-				});
+				if (!renderQrIntoElement(holder, payload, QR_PRINT_SIZE, QRCode.CorrectLevel.H)) {
+					return '';
+				}
 
 				const c = holder.querySelector('canvas');
 				if (c) {
@@ -4101,11 +4124,6 @@
 					} catch (err) {
 						console.error('Thermal QR canvas export failed:', err);
 					}
-				}
-
-				const imgEl = holder.querySelector('img');
-				if (imgEl?.src) {
-					return imgEl.src;
 				}
 			} catch (err) {
 				console.error('Thermal QR generation failed:', err);
