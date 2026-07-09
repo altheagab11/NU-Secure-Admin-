@@ -1473,6 +1473,10 @@
 			max-height: 100svh;
 			overflow: hidden !important;
 			overscroll-behavior: none;
+			background: #f1f5f9;
+		}
+
+		body.self-registration-mode.kiosk-type-select {
 			background: #1a2d6d;
 		}
 
@@ -1488,11 +1492,12 @@
 			padding: 0 !important;
 			display: flex;
 			flex-direction: column;
+			gap: 0;
 			height: 100svh !important;
 			max-height: 100svh !important;
 			min-height: 0 !important;
 			overflow: hidden !important;
-			background: #eef1f8;
+			background: transparent;
 		}
 
 		body.self-registration-mode .self-registration-header {
@@ -1501,8 +1506,9 @@
 			align-items: center;
 			justify-content: space-between;
 			gap: 20px;
-			padding: 0 20px;
-			height: 56px;
+			padding: 10px 20px;
+			min-height: 72px;
+			margin: 0;
 			background: #243c96;
 			color: #fff;
 			border-bottom: none;
@@ -1510,28 +1516,116 @@
 		}
 
 		body.self-registration-mode .self-registration-brand .brand-icon {
-			width: 36px;
-			height: 36px;
-			border-radius: 10px;
-			background: rgba(255, 255, 255, 0.16);
-			font-size: 17px;
-		}
-
-		body.self-registration-mode .self-registration-brand .brand-title {
-			font-size: 0.95rem;
-			font-weight: 700;
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			background: rgba(255, 255, 255, 0.14);
+			font-size: 22px;
 			color: #fff;
 		}
 
+		body.self-registration-mode .self-registration-brand .brand-title {
+			font-size: 1.35rem;
+			font-weight: 800;
+			color: #ffd84d;
+			line-height: 1.05;
+			letter-spacing: -0.02em;
+		}
+
 		body.self-registration-mode .self-registration-brand .brand-subtitle {
-			font-size: 0.68rem;
-			color: rgba(255, 255, 255, 0.72);
+			display: block;
+			font-size: 0.72rem;
+			color: rgba(255, 255, 255, 0.78);
+			line-height: 1.25;
+			max-width: 11rem;
+			margin-top: 2px;
 		}
 
 		body.self-registration-mode .self-reg-header-progress {
 			flex: 1;
-			max-width: 420px;
+			max-width: 520px;
 			min-width: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		body.self-registration-mode .self-reg-stepper {
+			display: flex;
+			align-items: center;
+			gap: 0;
+			width: min(100%, 420px);
+		}
+
+		body.self-registration-mode .self-reg-step {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 6px;
+			min-width: 72px;
+			opacity: 0.55;
+		}
+
+		body.self-registration-mode .self-reg-step.is-active,
+		body.self-registration-mode .self-reg-step.is-done {
+			opacity: 1;
+		}
+
+		body.self-registration-mode .self-reg-step-num {
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 13px;
+			font-weight: 700;
+			background: rgba(255, 255, 255, 0.18);
+			color: rgba(255, 255, 255, 0.85);
+			border: 2px solid rgba(255, 255, 255, 0.28);
+		}
+
+		body.self-registration-mode .self-reg-step.is-active .self-reg-step-num {
+			background: #3b82f6;
+			border-color: #3b82f6;
+			color: #fff;
+			box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.28);
+		}
+
+		body.self-registration-mode .self-reg-step.is-done .self-reg-step-num {
+			background: #22c55e;
+			border-color: #22c55e;
+			color: #fff;
+			font-size: 0;
+			line-height: 0;
+		}
+
+		body.self-registration-mode .self-reg-step.is-done .self-reg-step-num::before {
+			content: "\F26E";
+			font-family: "bootstrap-icons";
+			font-size: 14px;
+			line-height: 1;
+			font-weight: 700;
+		}
+
+		body.self-registration-mode .self-reg-step-label {
+			font-size: 0.68rem;
+			font-weight: 600;
+			color: rgba(255, 255, 255, 0.88);
+			white-space: nowrap;
+		}
+
+		body.self-registration-mode .self-reg-step-line {
+			flex: 1;
+			height: 2px;
+			min-width: 24px;
+			margin: 0 6px 18px;
+			background: rgba(255, 255, 255, 0.22);
+			border-radius: 999px;
+		}
+
+		body.self-registration-mode .self-reg-step-line.is-done {
+			background: #22c55e;
 		}
 
 		body.self-registration-mode .self-reg-header-step {
@@ -1578,6 +1672,7 @@
 			min-height: 0;
 			overflow: hidden !important;
 			padding: 0;
+			margin: 0;
 			width: 100%;
 			max-width: none;
 		}
@@ -1598,12 +1693,18 @@
 			width: 100%;
 			max-width: none;
 			margin: 0;
+			background: #f1f5f9;
+		}
+
+		body.self-registration-mode .register-flow > .visitor-step:not(.is-hidden) {
+			flex: 1;
+			min-height: 0;
 		}
 
 		body.self-registration-mode .scanner-card:not(.is-hidden) {
 			flex: 1;
 			display: flex;
-			flex-direction: row;
+			flex-direction: column;
 			align-items: stretch;
 			min-height: 0;
 			overflow: hidden !important;
@@ -1612,46 +1713,353 @@
 			border: none;
 			border-radius: 0;
 			box-shadow: none;
-			background: #111827;
+			background: #f1f5f9;
+		}
+
+		body.self-registration-mode .kiosk-scan-layout {
+			flex: 1;
+			display: flex;
+			flex-direction: row;
+			align-items: stretch;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .kiosk-scan-main {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+			min-height: 0;
+			padding: 20px 24px 16px;
+			gap: 16px;
+			overflow-y: auto;
+			scrollbar-width: thin;
+		}
+
+		body.self-registration-mode .kiosk-scan-heading {
+			text-align: center;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-scan-title {
+			margin: 0 0 6px;
+			font-size: clamp(1.2rem, 2vw, 1.5rem);
+			font-weight: 700;
+			color: #0f172a;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .kiosk-scan-title .bi {
+			color: #243c96;
+			font-size: 1.15em;
+		}
+
+		body.self-registration-mode .kiosk-scan-desc {
+			margin: 0;
+			font-size: 0.9rem;
+			color: #64748b;
+			line-height: 1.45;
+		}
+
+		body.self-registration-mode .kiosk-scan-viewport {
+			position: relative;
+			flex: 1;
+			min-height: 220px;
+			display: flex;
+			flex-direction: column;
 		}
 
 		body.self-registration-mode .scanner-zone {
 			flex: 1;
 			min-width: 0;
-			min-height: 0;
+			min-height: 200px;
 			height: auto;
-			border-radius: 0;
+			border-radius: 16px;
 			padding: 0;
+			border: 1px solid #dbe2ef;
+			box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .kiosk-camera-badge {
+			position: absolute;
+			left: 50%;
+			bottom: 14px;
+			transform: translateX(-50%);
+			display: inline-flex;
+			align-items: center;
+			gap: 7px;
+			padding: 6px 14px;
+			border-radius: 999px;
+			background: rgba(15, 23, 42, 0.72);
+			color: #fff;
+			font-size: 12px;
+			font-weight: 600;
+			z-index: 6;
+			backdrop-filter: blur(4px);
+		}
+
+		body.self-registration-mode .kiosk-camera-badge .badge-dot {
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: #94a3b8;
+		}
+
+		body.self-registration-mode .kiosk-camera-badge.is-ready .badge-dot {
+			background: #22c55e;
+			box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+		}
+
+		body.self-registration-mode .kiosk-camera-badge.is-error .badge-dot {
+			background: #ef4444;
+		}
+
+		body.self-registration-mode .kiosk-bottom-panels {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 14px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-info-card {
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 14px;
+			padding: 16px 18px;
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+		}
+
+		body.self-registration-mode .kiosk-info-card-title {
+			margin: 0 0 12px;
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: #0f172a;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .kiosk-info-card-title .bi {
+			color: #243c96;
+		}
+
+		body.self-registration-mode .kiosk-tips-list {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .kiosk-tips-list li {
+			display: flex;
+			align-items: flex-start;
+			gap: 8px;
+			font-size: 0.82rem;
+			color: #475569;
+			line-height: 1.4;
+		}
+
+		body.self-registration-mode .kiosk-tips-list .bi {
+			color: #243c96;
+			margin-top: 2px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-id-chip-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 8px;
+		}
+
+		body.self-registration-mode .kiosk-id-chip {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 10px 12px;
+			border-radius: 10px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			font-size: 0.78rem;
+			font-weight: 600;
+			color: #334155;
+		}
+
+		body.self-registration-mode .kiosk-id-chip .bi {
+			color: #243c96;
+			font-size: 1rem;
+		}
+
+		body.self-registration-mode .kiosk-reg-footer {
+			flex-shrink: 0;
+			padding: 10px 24px 14px;
+			text-align: center;
+			font-size: 0.75rem;
+			color: #94a3b8;
+			background: #f1f5f9;
+			border-top: 1px solid #e2e8f0;
 		}
 
 		body.self-registration-mode .kiosk-controls {
-			width: clamp(300px, 34vw, 400px);
+			width: clamp(300px, 34vw, 380px);
 			flex-shrink: 0;
 			display: flex;
 			flex-direction: column;
-			justify-content: center;
+			justify-content: flex-start;
 			gap: 14px;
-			padding: 28px 24px;
+			padding: 24px 22px;
 			background: #fff;
-			border-left: 1px solid #dbe2ef;
+			border-left: 1px solid #e2e8f0;
 			min-height: 0;
-			overflow: hidden;
+			overflow-y: auto;
+			scrollbar-width: thin;
+		}
+
+		body.self-registration-mode .kiosk-visitor-badge {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+		}
+
+		body.self-registration-mode .kiosk-visitor-avatar {
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: #243c96;
+			color: #fff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 18px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-visitor-name {
+			display: block;
+			font-size: 0.92rem;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.2;
+		}
+
+		body.self-registration-mode .kiosk-visitor-step {
+			display: block;
+			margin-top: 2px;
+			font-size: 0.68rem;
+			font-weight: 700;
+			color: #243c96;
+			letter-spacing: 0.04em;
+		}
+
+		body.self-registration-mode .kiosk-status-label {
+			margin: 0 0 6px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			color: #64748b;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		body.self-registration-mode .kiosk-status-card {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			border: 1px solid #bbf7d0;
+			background: #f0fdf4;
+		}
+
+		body.self-registration-mode .kiosk-status-card.is-error {
+			border-color: #fecaca;
+			background: #fef2f2;
+		}
+
+		body.self-registration-mode .kiosk-status-card .bi {
+			font-size: 1.2rem;
+			color: #16a34a;
+			flex-shrink: 0;
+			margin-top: 1px;
+		}
+
+		body.self-registration-mode .kiosk-status-card.is-error .bi {
+			color: #dc2626;
+		}
+
+		body.self-registration-mode .kiosk-status-title {
+			display: block;
+			font-size: 0.88rem;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.2;
+		}
+
+		body.self-registration-mode .kiosk-status-text {
+			margin: 3px 0 0;
+			font-size: 0.78rem;
+			color: #475569;
+			line-height: 1.4;
+		}
+
+		body.self-registration-mode .kiosk-or-divider {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			color: #94a3b8;
+			font-size: 0.72rem;
+			font-weight: 600;
+			text-transform: uppercase;
+		}
+
+		body.self-registration-mode .kiosk-or-divider::before,
+		body.self-registration-mode .kiosk-or-divider::after {
+			content: "";
+			flex: 1;
+			height: 1px;
+			background: #e2e8f0;
+		}
+
+		body.self-registration-mode .kiosk-supported-list {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		body.self-registration-mode .kiosk-supported-list li {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 0.78rem;
+			color: #475569;
+		}
+
+		body.self-registration-mode .kiosk-supported-list .bi {
+			color: #16a34a;
+			font-size: 0.85rem;
 		}
 
 		body.self-registration-mode .kiosk-controls-title {
 			margin: 0;
-			font-size: 1.35rem;
+			font-size: 1.1rem;
 			font-weight: 700;
 			color: #0f172a;
 			line-height: 1.2;
 		}
 
 		body.self-registration-mode .camera-status {
-			margin: 0;
-			text-align: left;
-			font-size: 0.92rem;
-			color: #475569;
-			line-height: 1.45;
+			display: none;
 		}
 
 		body.self-registration-mode .scan-actions-row {
@@ -1665,9 +2073,67 @@
 		body.self-registration-mode .gallery-action {
 			width: 100%;
 			flex: none;
-			height: 52px;
+			height: 48px;
 			border-radius: 12px;
-			font-size: 15px;
+			font-size: 14px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .id-types:not(.is-hidden) {
+			padding: 0;
+			background: transparent;
+			border: none;
+		}
+
+		body.self-registration-mode .id-types:not(.is-hidden) .id-types-title {
+			margin: 0 0 8px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			color: #64748b;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		@keyframes kioskScanLine {
+			0%, 100% { top: 18%; opacity: 0.35; }
+			50% { top: 78%; opacity: 1; }
+		}
+
+		body.self-registration-mode .id-guide::after {
+			content: "";
+			position: absolute;
+			left: 8%;
+			right: 8%;
+			height: 2px;
+			background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+			box-shadow: 0 0 12px rgba(59, 130, 246, 0.65);
+			animation: kioskScanLine 2.4s ease-in-out infinite;
+			pointer-events: none;
+		}
+
+		body.self-registration-mode .scan-action {
+			background: #243c96;
+			border: none;
+			color: #fff;
+		}
+
+		body.self-registration-mode .scan-action:hover:not(:disabled) {
+			background: #1e3278;
+			color: #fff;
+		}
+
+		body.self-registration-mode .gallery-action {
+			background: #fff;
+			border: 2px solid #243c96;
+			color: #243c96;
+		}
+
+		body.self-registration-mode .gallery-action:hover:not(:disabled) {
+			background: #eef2ff;
 		}
 
 		body.self-registration-mode .gallery-hint {
@@ -1712,26 +2178,428 @@
 			flex: 1;
 			display: flex;
 			flex-direction: column;
-			align-items: center;
-			gap: 10px;
 			min-height: 0;
-			overflow-x: hidden;
-			overflow-y: auto;
+			overflow: hidden;
 			margin: 0;
-			padding: 20px 24px 28px;
-			background: #eef1f8;
+			padding: 0;
+			background: #f1f5f9;
+		}
+
+		body.self-registration-mode .kiosk-verify-layout {
+			flex: 1;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+			gap: 20px;
+			min-height: 0;
+			padding: 20px 24px 24px;
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .kiosk-verify-main {
+			min-height: 0;
+			overflow-y: auto;
 			scrollbar-width: thin;
 		}
 
-		body.self-registration-mode .visitor-step:not(.is-hidden) > * {
-			width: min(100%, 680px);
+		body.self-registration-mode .kiosk-verify-card {
+			background: #fff;
+			border-radius: 16px;
+			border: 1px solid #e2e8f0;
+			box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+			padding: 24px 28px 28px;
+		}
+
+		body.self-registration-mode .kiosk-verify-head {
+			display: flex;
+			align-items: flex-start;
+			gap: 14px;
+			margin-bottom: 24px;
+			padding-bottom: 20px;
+			border-bottom: 1px solid #f1f5f9;
+		}
+
+		body.self-registration-mode .kiosk-verify-head-icon {
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			background: #eef2ff;
+			color: #243c96;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 22px;
 			flex-shrink: 0;
 		}
 
-		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-card,
-		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-textarea-wrap,
-		body.self-registration-mode .visitor-step:not(.is-hidden) .visitor-submit {
-			grid-column: auto;
+		body.self-registration-mode .kiosk-verify-head h2 {
+			margin: 0 0 4px;
+			font-size: 1.35rem;
+			font-weight: 800;
+			color: #0f172a;
+			letter-spacing: -0.02em;
+		}
+
+		body.self-registration-mode .kiosk-verify-head p {
+			margin: 0;
+			font-size: 0.88rem;
+			color: #64748b;
+			line-height: 1.45;
+		}
+
+		body.self-registration-mode .kiosk-form-section {
+			margin-bottom: 22px;
+		}
+
+		body.self-registration-mode .kiosk-form-section-title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0 0 12px;
+			font-size: 0.92rem;
+			font-weight: 700;
+			color: #1e293b;
+		}
+
+		body.self-registration-mode .kiosk-form-section-title .bi {
+			width: 28px;
+			height: 28px;
+			border-radius: 8px;
+			background: #eef2ff;
+			color: #243c96;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 14px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-form-grid {
+			display: grid;
+			gap: 12px 16px;
+		}
+
+		body.self-registration-mode .kiosk-form-grid.cols-2 {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		body.self-registration-mode .kiosk-form-grid.cols-3 {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		body.self-registration-mode .kiosk-field-label {
+			display: block;
+			margin: 0 0 6px;
+			font-size: 12px;
+			font-weight: 600;
+			color: #475569;
+		}
+
+		body.self-registration-mode .kiosk-input-wrap {
+			position: relative;
+		}
+
+		body.self-registration-mode .kiosk-input-wrap .kiosk-input-icon {
+			position: absolute;
+			left: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: #94a3b8;
+			font-size: 14px;
+			pointer-events: none;
+		}
+
+		body.self-registration-mode .kiosk-input-wrap .visitor-input,
+		body.self-registration-mode .kiosk-input-wrap .visitor-textarea {
+			padding-left: 36px;
+		}
+
+		body.self-registration-mode .kiosk-input-wrap.has-suffix .visitor-input {
+			padding-right: 36px;
+		}
+
+		body.self-registration-mode .kiosk-input-suffix {
+			position: absolute;
+			right: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: #94a3b8;
+			font-size: 14px;
+			pointer-events: none;
+		}
+
+		body.self-registration-mode .kiosk-form-section .visitor-input,
+		body.self-registration-mode .kiosk-form-section .visitor-textarea {
+			border: 1px solid #e2e8f0;
+			border-radius: 10px;
+			background: #fff;
+			padding: 10px 12px;
+			font-size: 14px;
+			min-height: 42px;
+			box-shadow: none;
+		}
+
+		body.self-registration-mode .kiosk-form-section .visitor-textarea {
+			min-height: 88px;
+			padding: 10px 12px;
+			resize: vertical;
+		}
+
+		body.self-registration-mode .kiosk-form-section .visitor-input:focus,
+		body.self-registration-mode .kiosk-form-section .visitor-textarea:focus {
+			border-color: #243c96;
+			box-shadow: 0 0 0 3px rgba(36, 60, 150, 0.1);
+		}
+
+		body.self-registration-mode .kiosk-office-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 10px;
+			border: none;
+			background: transparent;
+			padding: 0;
+		}
+
+		body.self-registration-mode .kiosk-office-grid .office-list-note {
+			grid-column: 1 / -1;
+			margin: 0;
+			padding: 12px;
+			text-align: center;
+			font-size: 13px;
+			color: #64748b;
+			background: #f8fafc;
+			border: 1px dashed #e2e8f0;
+			border-radius: 10px;
+		}
+
+		body.self-registration-mode .kiosk-office-tile {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 12px 14px;
+			border: 1.5px solid #e2e8f0;
+			border-radius: 10px;
+			background: #fff;
+			cursor: pointer;
+			transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+			font-size: 13px;
+			font-weight: 500;
+			color: #334155;
+			line-height: 1.3;
+			margin: 0;
+		}
+
+		body.self-registration-mode .kiosk-office-tile:hover {
+			border-color: #c7d2fe;
+			background: #f8fafc;
+		}
+
+		body.self-registration-mode .kiosk-office-tile:has(input:checked) {
+			border-color: #243c96;
+			background: #f5f7ff;
+			box-shadow: 0 0 0 1px rgba(36, 60, 150, 0.12);
+		}
+
+		body.self-registration-mode .kiosk-office-tile input {
+			width: 16px;
+			height: 16px;
+			margin: 0;
+			flex-shrink: 0;
+			accent-color: #243c96;
+		}
+
+		body.self-registration-mode .kiosk-verify-actions {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 14px;
+			margin-top: 28px;
+			padding-top: 22px;
+			border-top: 1px solid #f1f5f9;
+		}
+
+		body.self-registration-mode .kiosk-verify-back {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-width: 180px;
+			height: 48px;
+			padding: 0 20px;
+			border: 2px solid #243c96;
+			border-radius: 12px;
+			background: #fff;
+			color: #243c96;
+			font-size: 14px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: background 0.15s ease;
+		}
+
+		body.self-registration-mode .kiosk-verify-back:hover {
+			background: #eef2ff;
+		}
+
+		body.self-registration-mode .kiosk-verify-proceed {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-width: 260px;
+			height: 48px;
+			padding: 0 22px;
+			border: none;
+			border-radius: 12px;
+			background: #243c96;
+			color: #fff;
+			font-size: 14px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: background 0.15s ease;
+		}
+
+		body.self-registration-mode .kiosk-verify-proceed:hover {
+			background: #1e3278;
+		}
+
+		body.self-registration-mode .kiosk-verify-sidebar {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+			min-height: 0;
+			overflow-y: auto;
+			scrollbar-width: thin;
+		}
+
+		body.self-registration-mode .kiosk-summary-card,
+		body.self-registration-mode .kiosk-verify-tips-card {
+			background: #fff;
+			border-radius: 16px;
+			border: 1px solid #e2e8f0;
+			box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+			padding: 20px;
+		}
+
+		body.self-registration-mode .kiosk-summary-card-title,
+		body.self-registration-mode .kiosk-verify-tips-title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0 0 14px;
+			font-size: 0.95rem;
+			font-weight: 700;
+			color: #0f172a;
+		}
+
+		body.self-registration-mode .kiosk-summary-card-title .bi,
+		body.self-registration-mode .kiosk-verify-tips-title .bi {
+			color: #243c96;
+			font-size: 18px;
+		}
+
+		body.self-registration-mode .kiosk-summary-badge {
+			display: inline-flex;
+			align-items: center;
+			padding: 4px 12px;
+			border-radius: 999px;
+			background: #ecfdf5;
+			color: #059669;
+			font-size: 12px;
+			font-weight: 600;
+			margin-bottom: 16px;
+		}
+
+		body.self-registration-mode .kiosk-summary-progress-label {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin: 0 0 8px;
+			font-size: 12px;
+			font-weight: 600;
+			color: #64748b;
+		}
+
+		body.self-registration-mode .kiosk-summary-progress-label span:last-child {
+			color: #243c96;
+			font-weight: 700;
+		}
+
+		body.self-registration-mode .kiosk-summary-progress-track {
+			height: 8px;
+			background: #e2e8f0;
+			border-radius: 999px;
+			overflow: hidden;
+			margin-bottom: 18px;
+		}
+
+		body.self-registration-mode .kiosk-summary-progress-fill {
+			height: 100%;
+			width: 66%;
+			background: linear-gradient(90deg, #243c96, #3b5bdb);
+			border-radius: 999px;
+			transition: width 0.35s ease;
+		}
+
+		body.self-registration-mode .kiosk-id-scan-status {
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			padding: 14px;
+			border-radius: 12px;
+			background: #f0fdf4;
+			border: 1px solid #bbf7d0;
+		}
+
+		body.self-registration-mode .kiosk-id-scan-status .bi {
+			color: #22c55e;
+			font-size: 22px;
+			flex-shrink: 0;
+			margin-top: 2px;
+		}
+
+		body.self-registration-mode .kiosk-id-scan-status strong {
+			display: block;
+			font-size: 13px;
+			font-weight: 700;
+			color: #0f172a;
+			margin-bottom: 2px;
+		}
+
+		body.self-registration-mode .kiosk-id-scan-status span {
+			display: block;
+			font-size: 13px;
+			font-weight: 600;
+			color: #16a34a;
+		}
+
+		body.self-registration-mode .kiosk-id-scan-status small {
+			display: block;
+			margin-top: 2px;
+			font-size: 11px;
+			color: #64748b;
+		}
+
+		body.self-registration-mode .kiosk-verify-tips-list {
+			margin: 0;
+			padding: 0;
+			list-style: none;
+			display: grid;
+			gap: 10px;
+		}
+
+		body.self-registration-mode .kiosk-verify-tips-list li {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+			font-size: 13px;
+			color: #475569;
+			line-height: 1.4;
+		}
+
+		body.self-registration-mode .kiosk-verify-tips-list .bi {
+			color: #22c55e;
+			font-size: 16px;
+			flex-shrink: 0;
+			margin-top: 1px;
 		}
 
 		body.self-registration-mode .registration-complete:not(.is-hidden) {
@@ -1744,7 +2612,7 @@
 			overflow-x: hidden;
 			overflow-y: auto;
 			padding: 20px 24px 28px;
-			background: #eef1f8;
+			background: #f1f5f9;
 			gap: 12px;
 			scrollbar-width: thin;
 		}
@@ -1858,7 +2726,8 @@
 			justify-content: center;
 			min-height: 0;
 			padding: 24px;
-			background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 55%, #ffffff 100%);
+			background: linear-gradient(rgba(31, 52, 143, 0.72), rgba(31, 52, 143, 0.72)),
+				url('{{ asset('picture/lipa.png') }}') no-repeat center center / cover;
 		}
 
 		body.self-registration-mode .kiosk-type-picker-inner {
@@ -1870,15 +2739,17 @@
 			margin: 0 0 8px;
 			font-size: clamp(1.75rem, 3vw, 2.25rem);
 			font-weight: 800;
-			color: #0f172a;
+			color: #ffffff;
 			letter-spacing: -0.03em;
+			text-shadow: 0 2px 12px rgba(15, 23, 42, 0.35);
 		}
 
 		body.self-registration-mode .kiosk-type-picker-subtitle {
 			margin: 0 0 32px;
 			font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-			color: #64748b;
+			color: rgba(255, 255, 255, 0.88);
 			line-height: 1.5;
+			text-shadow: 0 1px 8px rgba(15, 23, 42, 0.3);
 		}
 
 		body.self-registration-mode .kiosk-type-grid {
@@ -2025,14 +2896,44 @@
 			color: #64748b;
 		}
 
+		@media (max-width: 1100px) {
+			body.self-registration-mode .kiosk-verify-layout {
+				grid-template-columns: 1fr;
+				overflow-y: auto;
+			}
+
+			body.self-registration-mode .kiosk-verify-sidebar {
+				flex-direction: row;
+				flex-wrap: wrap;
+			}
+
+			body.self-registration-mode .kiosk-summary-card,
+			body.self-registration-mode .kiosk-verify-tips-card {
+				flex: 1;
+				min-width: min(100%, 280px);
+			}
+
+			body.self-registration-mode .kiosk-office-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+
 		@media (max-width: 900px) {
-			body.self-registration-mode .scanner-card:not(.is-hidden) {
+			body.self-registration-mode .kiosk-scan-layout {
 				flex-direction: column;
+			}
+
+			body.self-registration-mode .kiosk-scan-main {
+				padding: 16px;
+			}
+
+			body.self-registration-mode .kiosk-bottom-panels {
+				grid-template-columns: 1fr;
 			}
 
 			body.self-registration-mode .scanner-zone {
 				flex: 1;
-				min-height: 0;
+				min-height: 180px;
 			}
 
 			body.self-registration-mode .kiosk-controls {
@@ -2041,7 +2942,7 @@
 				padding: 16px 18px;
 				gap: 10px;
 				border-left: none;
-				border-top: 1px solid #dbe2ef;
+				border-top: 1px solid #e2e8f0;
 			}
 
 			body.self-registration-mode .kiosk-controls-title {
@@ -2052,13 +2953,27 @@
 			body.self-registration-mode .gallery-action {
 				height: 46px;
 			}
+
+			body.self-registration-mode .self-reg-step-label {
+				font-size: 0.6rem;
+			}
 		}
 
 		@media (max-width: 640px) {
 			body.self-registration-mode .self-registration-header {
-				padding: 0 14px;
-				height: 52px;
+				padding: 8px 14px;
+				min-height: 60px;
 				gap: 10px;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-icon {
+				width: 38px;
+				height: 38px;
+				font-size: 18px;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-title {
+				font-size: 1.05rem;
 			}
 
 			body.self-registration-mode .self-registration-brand .brand-subtitle {
@@ -2133,7 +3048,30 @@
 			}
 
 			body.self-registration-mode .visitor-step:not(.is-hidden) {
-				padding: 16px 16px 24px;
+				padding: 0;
+			}
+
+			body.self-registration-mode .kiosk-verify-layout {
+				padding: 16px;
+			}
+
+			body.self-registration-mode .kiosk-form-grid.cols-2,
+			body.self-registration-mode .kiosk-form-grid.cols-3 {
+				grid-template-columns: 1fr;
+			}
+
+			body.self-registration-mode .kiosk-office-grid {
+				grid-template-columns: 1fr;
+			}
+
+			body.self-registration-mode .kiosk-verify-actions {
+				flex-direction: column;
+			}
+
+			body.self-registration-mode .kiosk-verify-back,
+			body.self-registration-mode .kiosk-verify-proceed {
+				width: 100%;
+				min-width: 0;
 			}
 
 			body.self-registration-mode .visitor-step:not(.is-hidden) > *,
@@ -2497,16 +3435,28 @@
 						</div>
 						<div>
 							<h4 class="brand-title mb-0">SVMS Guard</h4>
-							<small class="brand-subtitle">Visitor Registration</small>
+							<small class="brand-subtitle">Smart Visitor Monitoring System</small>
 						</div>
 					</div>
 					@if ($showKioskTypePicker)
 						<p class="self-reg-header-step self-reg-header-step--center">Select Visitor Type</p>
 					@else
 					<div class="self-reg-header-progress" id="selfRegProgress" aria-label="Registration progress">
-						<p class="self-reg-header-step" id="selfRegHeaderStep">Step 1 of 3 · ID Scan</p>
-						<div class="self-reg-progress-track">
-							<div class="self-reg-progress-fill" id="selfRegProgressFill" style="width: 33.33%;"></div>
+						<div class="self-reg-stepper">
+							<div class="self-reg-step is-active" data-step="1">
+								<span class="self-reg-step-num">1</span>
+								<span class="self-reg-step-label">ID Scan</span>
+							</div>
+							<span class="self-reg-step-line" data-after="1"></span>
+							<div class="self-reg-step" data-step="2">
+								<span class="self-reg-step-num">2</span>
+								<span class="self-reg-step-label">Verify Details</span>
+							</div>
+							<span class="self-reg-step-line" data-after="2"></span>
+							<div class="self-reg-step" data-step="3">
+								<span class="self-reg-step-num">3</span>
+								<span class="self-reg-step-label">Complete</span>
+							</div>
 						</div>
 					</div>
 					@endif
@@ -2564,6 +3514,18 @@
 					</div>
 
 					<div class="scanner-card">
+						@if ($isSelfRegisteredRole)
+						<div class="kiosk-scan-layout">
+							<div class="kiosk-scan-main">
+								<div class="kiosk-scan-heading">
+									<h2 class="kiosk-scan-title" id="kioskScanTitle">
+										<i class="bi bi-camera-video-fill"></i>
+										<span id="kioskScanTitleText">Scan Your Identification Card</span>
+									</h2>
+									<p class="kiosk-scan-desc" id="kioskScanDesc">Position your ID card within the frame. Ensure all details are clear and visible.</p>
+								</div>
+								<div class="kiosk-scan-viewport">
+						@endif
 						<div class="scanner-zone">
 							<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
 							<canvas id="frozenFrame" class="frozen-frame"></canvas>
@@ -2602,28 +3564,85 @@
 							</div>
 						</div>
 						@if ($isSelfRegisteredRole)
-						<div class="kiosk-controls">
-							<div class="kiosk-type-switcher" aria-label="Visitor type">
-								@foreach (['normal', 'enrollee', 'contractor'] as $kioskType)
-									<a href="/guard/register?type={{ $kioskType }}"
-									   class="kiosk-type-pill js-kiosk-type-link {{ $registerType === $kioskType ? 'active' : '' }}"
-									   data-type="{{ $kioskType }}">
-										<i class="bi bi-{{ $kioskType === 'enrollee' ? 'mortarboard-fill' : ($kioskType === 'contractor' ? 'briefcase-fill' : 'person-fill') }}"></i>
-										<span>{{ $registerTypeLabels[$kioskType] }}</span>
-									</a>
-								@endforeach
+									<div class="kiosk-camera-badge" id="kioskCameraBadge">
+										<span class="badge-dot"></span>
+										<span id="kioskCameraBadgeText">Starting camera...</span>
+									</div>
+								</div>
+								<div class="kiosk-bottom-panels" id="kioskBottomPanels">
+									<div class="kiosk-info-card">
+										<h3 class="kiosk-info-card-title"><i class="bi bi-lightbulb-fill"></i> Scanning Tips</h3>
+										<ul class="kiosk-tips-list">
+											<li><i class="bi bi-check-circle-fill"></i> Place ID on a flat, well-lit surface</li>
+											<li><i class="bi bi-check-circle-fill"></i> Avoid glare and shadows on the card</li>
+											<li><i class="bi bi-check-circle-fill"></i> Keep all four corners visible in the frame</li>
+											<li><i class="bi bi-check-circle-fill"></i> Hold the camera steady before capturing</li>
+										</ul>
+									</div>
+									<div class="kiosk-info-card">
+										<h3 class="kiosk-info-card-title"><i class="bi bi-credit-card-2-front-fill"></i> Supported ID Types</h3>
+										<div class="kiosk-id-chip-grid">
+											<div class="kiosk-id-chip"><i class="bi bi-person-vcard-fill"></i> National ID</div>
+											<div class="kiosk-id-chip"><i class="bi bi-car-front-fill"></i> Driver's License</div>
+											<div class="kiosk-id-chip"><i class="bi bi-passport-fill"></i> Passport</div>
+											<div class="kiosk-id-chip"><i class="bi bi-building-fill"></i> Employee ID</div>
+										</div>
+									</div>
+								</div>
 							</div>
-							<a href="/guard/register" class="kiosk-back-type-link js-kiosk-type-link">
-								<i class="bi bi-arrow-left"></i>
-								<span>All visitor types</span>
-							</a>
-							<div class="kiosk-controls-divider"></div>
-							<h2 class="kiosk-controls-title" id="kioskControlsTitle">Scan Your ID</h2>
-							<p class="kiosk-controls-type-note">Registering as {{ $registerTypeLabels[$registerType] ?? 'Visitor' }}</p>
-						@endif
+							<div class="kiosk-controls">
+								<div class="kiosk-visitor-badge">
+									<div class="kiosk-visitor-avatar">
+										<i class="bi bi-{{ $registerType === 'enrollee' ? 'mortarboard-fill' : ($registerType === 'contractor' ? 'briefcase-fill' : 'person-fill') }}"></i>
+									</div>
+									<div>
+										<span class="kiosk-visitor-name">{{ $registerTypeLabels[$registerType] ?? 'Visitor' }}</span>
+										<span class="kiosk-visitor-step" id="kioskVisitorStep">STEP 1 OF 3</span>
+									</div>
+								</div>
+								<p class="kiosk-status-label">Camera Status</p>
+								<div class="kiosk-status-card" id="kioskCameraStatusCard">
+									<i class="bi bi-check-circle-fill"></i>
+									<div>
+										<span class="kiosk-status-title" id="kioskCameraStatusTitle">Camera Ready</span>
+										<p class="kiosk-status-text" id="kioskCameraStatusText">Camera is active and ready to scan.</p>
+									</div>
+								</div>
+								<p class="camera-status" id="cameraStatus">Starting camera...</p>
+								<canvas id="captureCanvas" style="display:none;"></canvas>
+								<div class="scan-actions-row">
+									<button type="button" class="scan-action" id="scanAction">
+										<i class="bi bi-arrow-clockwise"></i>
+										<span id="scanActionText">Retry Camera</span>
+									</button>
+									<div class="kiosk-or-divider">or</div>
+									<button type="button" class="gallery-action is-hidden" id="galleryAction">
+										<i class="bi bi-upload"></i>
+										Upload ID Image
+									</button>
+								</div>
+								<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
+								<p class="gallery-hint is-hidden" id="galleryHint">If the camera is unavailable, you can upload a clear photo of your ID.</p>
+								<div class="id-types is-hidden" id="idTypesPanel">
+									<p class="id-types-title">Supported ID Types</p>
+									<ul class="kiosk-supported-list">
+										<li><i class="bi bi-check-circle-fill"></i> National ID / Driver's License</li>
+										<li><i class="bi bi-check-circle-fill"></i> Company ID / Employee Badge</li>
+										<li><i class="bi bi-check-circle-fill"></i> Passport (Photo page)</li>
+										<li><i class="bi bi-check-circle-fill"></i> SSS / GSIS / UMID</li>
+										<li><i class="bi bi-check-circle-fill"></i> School ID / PRC ID</li>
+									</ul>
+								</div>
+								<div class="kiosk-controls-divider"></div>
+								<a href="/guard/register" class="kiosk-back-type-link js-kiosk-type-link">
+									<i class="bi bi-arrow-left"></i>
+									<span>All visitor types</span>
+								</a>
+							</div>
+						</div>
+						@else
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
 						<canvas id="captureCanvas" style="display:none;"></canvas>
-
 						<div class="scan-actions-row">
 							<button type="button" class="scan-action" id="scanAction">
 								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2632,12 +3651,10 @@
 								</svg>
 								<span id="scanActionText">Scan ID Card</span>
 							</button>
-
 							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
 						</div>
-							<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
-							<p class="gallery-hint is-hidden" id="galleryHint">If camera is unavailable, you can upload a clear photo of the ID.</p>
-
+						<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
+						<p class="gallery-hint is-hidden" id="galleryHint">If camera is unavailable, you can upload a clear photo of the ID.</p>
 						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
 							<ul class="id-types-list">
@@ -2646,13 +3663,172 @@
 								<li>- Passport (Photo page)</li>
 							</ul>
 						</div>
-						@if ($isSelfRegisteredRole)
-						</div>
 						@endif
 					</div>
+					@if ($isSelfRegisteredRole)
+					<p class="kiosk-reg-footer">© {{ date('Y') }} SVMS Guard. All rights reserved.</p>
+					@endif
 
 					@if ($registerType === 'enrollee')
 						<div class="visitor-step is-hidden" id="enrolleeStepPanel">
+							@if ($isSelfRegisteredRole)
+							<div class="kiosk-verify-layout">
+								<div class="kiosk-verify-main">
+									<div class="kiosk-verify-card">
+										<header class="kiosk-verify-head">
+											<div class="kiosk-verify-head-icon" aria-hidden="true">
+												<i class="bi bi-person-gear"></i>
+											</div>
+											<div>
+												<h2>Verify Your Information</h2>
+												<p>Please confirm that all details are correct before proceeding.</p>
+											</div>
+										</header>
+
+										<section class="kiosk-form-section">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-person-fill"></i> Personal Information</h3>
+											<div class="kiosk-form-grid cols-2">
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorFirstName">First Name <span class="required-mark">*</span></label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-person kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name" required>
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorLastName">Last Name <span class="required-mark">*</span></label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-person kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
+													</div>
+												</div>
+												<div class="visitor-input-group" style="grid-column: 1 / -1;">
+													<label class="kiosk-field-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
+													<div class="kiosk-input-wrap has-suffix">
+														<i class="bi bi-calendar3 kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
+														<i class="bi bi-calendar-event kiosk-input-suffix" aria-hidden="true"></i>
+													</div>
+												</div>
+											</div>
+										</section>
+
+										<section class="kiosk-form-section">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-telephone-fill"></i> Contact Information</h3>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorPhoneNumber">Phone Number <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-phone kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorPhoneNumber" name="phone_number" type="tel" placeholder="09XXXXXXXXX" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
+												</div>
+											</div>
+										</section>
+
+										<section class="kiosk-form-section">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-geo-alt-fill"></i> Address</h3>
+											<div class="kiosk-form-grid cols-2">
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorHouseNo">House No.</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-house kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorStreet">Street</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-signpost-split kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorBarangay">Barangay</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-pin-map kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorCity">City / Municipality</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-buildings kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorProvince">Province</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-map kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="visitorRegion">Region</label>
+													<div class="kiosk-input-wrap">
+														<i class="bi bi-globe-asia-australia kiosk-input-icon" aria-hidden="true"></i>
+														<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" readonly>
+													</div>
+												</div>
+											</div>
+										</section>
+
+										<section class="kiosk-form-section">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-person-vcard-fill"></i> ID Pass Number <span class="required-mark">*</span></h3>
+											<div class="visitor-input-group">
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-upc-scan kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
+												</div>
+											</div>
+										</section>
+
+										<input id="visitorControlNumber" name="control_number" type="hidden">
+
+										<div class="kiosk-verify-actions">
+											<button type="button" class="kiosk-verify-back" id="kioskVerifyBackBtn">
+												<i class="bi bi-arrow-left"></i>
+												<span>Back to ID Scan</span>
+											</button>
+											<button type="button" class="kiosk-verify-proceed" id="generateQrBtn">
+												<i class="bi bi-camera-video-fill"></i>
+												<span>Proceed to Face + ID Capture</span>
+												<i class="bi bi-arrow-right"></i>
+											</button>
+										</div>
+									</div>
+								</div>
+
+								<aside class="kiosk-verify-sidebar">
+									<div class="kiosk-summary-card">
+										<h3 class="kiosk-summary-card-title"><i class="bi bi-person-fill"></i> Visitor Summary</h3>
+										<span class="kiosk-summary-badge">{{ $registerTypeLabels[$registerType] ?? 'Visitor' }}</span>
+										<div class="kiosk-summary-progress-label">
+											<span>Registration Progress</span>
+											<span class="kiosk-summary-progress-value">66%</span>
+										</div>
+										<div class="kiosk-summary-progress-track">
+											<div class="kiosk-summary-progress-fill"></div>
+										</div>
+										<div class="kiosk-id-scan-status">
+											<i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+											<div>
+												<strong>ID Scan Status</strong>
+												<span>Completed</span>
+												<small>ID data captured successfully</small>
+											</div>
+										</div>
+									</div>
+									<div class="kiosk-verify-tips-card">
+										<h3 class="kiosk-verify-tips-title"><i class="bi bi-lightbulb-fill"></i> Tips</h3>
+										<ul class="kiosk-verify-tips-list">
+											<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Please review your information</li>
+											<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Make sure all details are correct</li>
+											<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> You can go back if you need to edit</li>
+										</ul>
+									</div>
+								</aside>
+							</div>
+							@else
 							<div class="visitor-card">
 								<span class="visitor-card-title">Enrollee Details</span>
 								<div class="visitor-details-grid">
@@ -2708,9 +3884,203 @@
 							<input id="visitorControlNumber" name="control_number" type="hidden">
 
 							<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
+							@endif
 						</div>
 					@else
 					<div class="visitor-step is-hidden" id="visitorStepPanel">
+						@if ($isSelfRegisteredRole)
+						<div class="kiosk-verify-layout">
+							<div class="kiosk-verify-main">
+								<div class="kiosk-verify-card">
+									<header class="kiosk-verify-head">
+										<div class="kiosk-verify-head-icon" aria-hidden="true">
+											<i class="bi bi-person-gear"></i>
+										</div>
+										<div>
+											<h2>Verify Your Information</h2>
+											<p>Please confirm that all details are correct before proceeding.</p>
+										</div>
+									</header>
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-person-fill"></i> Personal Information</h3>
+										<div class="kiosk-form-grid cols-2">
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorFirstName">First Name <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-person kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorFirstName" name="first_name" type="text" placeholder="First name" required>
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorLastName">Last Name <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-person kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Last name" required>
+												</div>
+											</div>
+											<div class="visitor-input-group" style="grid-column: 1 / -1;">
+												<label class="kiosk-field-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap has-suffix">
+													<i class="bi bi-calendar3 kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" required>
+													<i class="bi bi-calendar-event kiosk-input-suffix" aria-hidden="true"></i>
+												</div>
+											</div>
+										</div>
+									</section>
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-telephone-fill"></i> Contact Information</h3>
+										<div class="visitor-input-group">
+											<label class="kiosk-field-label" for="visitorPhoneNumber">Phone Number <span class="required-mark">*</span></label>
+											<div class="kiosk-input-wrap">
+												<i class="bi bi-phone kiosk-input-icon" aria-hidden="true"></i>
+												<input class="visitor-input" id="visitorPhoneNumber" name="phone_number" type="tel" placeholder="09XXXXXXXXX" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
+											</div>
+										</div>
+									</section>
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-geo-alt-fill"></i> Address</h3>
+										<div class="kiosk-form-grid cols-2">
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorHouseNo">House No.</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-house kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorHouseNo" name="house_no" type="text" placeholder="House no.">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorStreet">Street</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-signpost-split kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorStreet" name="street" type="text" placeholder="Street">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorBarangay">Barangay</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-pin-map kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorBarangay" name="barangay" type="text" placeholder="Barangay">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorCity">City / Municipality</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-buildings kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorCity" name="city_municipality" type="text" placeholder="City / municipality">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorProvince">Province</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-map kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorProvince" name="province" type="text" placeholder="Province">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="visitorRegion">Region</label>
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-globe-asia-australia kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="visitorRegion" name="region" type="text" placeholder="Region" readonly>
+												</div>
+											</div>
+										</div>
+									</section>
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-building-fill"></i> Office to Visit <span class="required-mark">*</span></h3>
+										@if ($registerType === 'contractor')
+											<div class="visitor-input-group">
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-building kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
+												</div>
+											</div>
+										@else
+											<div class="kiosk-office-grid" id="destinationOffice">
+												<p class="office-list-note" id="officeListNote">Loading offices...</p>
+											</div>
+										@endif
+									</section>
+
+									@if ($registerType === 'contractor')
+										<section class="kiosk-form-section">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-person-lines-fill"></i> Contact Person <span class="required-mark">*</span></h3>
+											<div class="visitor-input-group">
+												<div class="kiosk-input-wrap">
+													<i class="bi bi-person-badge kiosk-input-icon" aria-hidden="true"></i>
+													<input class="visitor-input" id="contactPerson" name="contact_person" type="text" placeholder="Enter contact person" required>
+												</div>
+											</div>
+										</section>
+									@endif
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-pencil-fill"></i> Purpose <span class="required-mark">*</span></h3>
+										<div class="visitor-input-group">
+											<textarea class="visitor-textarea" id="visitReason" placeholder="Please state the purpose of your visit..." required></textarea>
+										</div>
+									</section>
+
+									<section class="kiosk-form-section">
+										<h3 class="kiosk-form-section-title"><i class="bi bi-person-vcard-fill"></i> ID Pass Number <span class="required-mark">*</span></h3>
+										<div class="visitor-input-group">
+											<div class="kiosk-input-wrap">
+												<i class="bi bi-upc-scan kiosk-input-icon" aria-hidden="true"></i>
+												<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="" required>
+											</div>
+										</div>
+									</section>
+
+									<input id="visitorControlNumber" name="control_number" type="hidden">
+
+									<div class="kiosk-verify-actions">
+										<button type="button" class="kiosk-verify-back" id="kioskVerifyBackBtn">
+											<i class="bi bi-arrow-left"></i>
+											<span>Back to ID Scan</span>
+										</button>
+										<button type="button" class="kiosk-verify-proceed" id="generateQrBtn">
+											<i class="bi bi-camera-video-fill"></i>
+											<span>Proceed to Face + ID Capture</span>
+											<i class="bi bi-arrow-right"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+
+							<aside class="kiosk-verify-sidebar">
+								<div class="kiosk-summary-card">
+									<h3 class="kiosk-summary-card-title"><i class="bi bi-person-fill"></i> Visitor Summary</h3>
+									<span class="kiosk-summary-badge">{{ $registerTypeLabels[$registerType] ?? 'Visitor' }}</span>
+									<div class="kiosk-summary-progress-label">
+										<span>Registration Progress</span>
+										<span class="kiosk-summary-progress-value">66%</span>
+									</div>
+									<div class="kiosk-summary-progress-track">
+										<div class="kiosk-summary-progress-fill"></div>
+									</div>
+									<div class="kiosk-id-scan-status">
+										<i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+										<div>
+											<strong>ID Scan Status</strong>
+											<span>Completed</span>
+											<small>ID data captured successfully</small>
+										</div>
+									</div>
+								</div>
+								<div class="kiosk-verify-tips-card">
+									<h3 class="kiosk-verify-tips-title"><i class="bi bi-lightbulb-fill"></i> Tips</h3>
+									<ul class="kiosk-verify-tips-list">
+										<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Please review your information</li>
+										<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Make sure all details are correct</li>
+										<li><i class="bi bi-check-circle-fill" aria-hidden="true"></i> You can go back if you need to edit</li>
+									</ul>
+								</div>
+							</aside>
+						</div>
+						@else
 						<div class="visitor-card">
 							<span class="visitor-card-title">Visitor Details</span>
 							<div class="visitor-details-grid">
@@ -2789,6 +4159,7 @@
 						<input id="visitorControlNumber" name="control_number" type="hidden">
 
 						<button type="button" class="visitor-submit" id="generateQrBtn">Proceed to Face + ID Capture</button>
+						@endif
 					</div>
 					@endif
 
@@ -2858,10 +4229,19 @@
 		const registerMenuToggle = document.getElementById('registerMenuToggle');
 		const flowStepName = document.getElementById('flowStepName');
 		const flowStepCount = document.getElementById('flowStepCount');
-		const selfRegProgressFill = document.getElementById('selfRegProgressFill');
 		const selfRegProgress = document.getElementById('selfRegProgress');
-		const selfRegHeaderStep = document.getElementById('selfRegHeaderStep');
-		const kioskControlsTitle = document.getElementById('kioskControlsTitle');
+		const selfRegStepperSteps = document.querySelectorAll('.self-reg-step');
+		const selfRegStepperLines = document.querySelectorAll('.self-reg-step-line');
+		const kioskScanTitleText = document.getElementById('kioskScanTitleText');
+		const kioskScanDesc = document.getElementById('kioskScanDesc');
+		const kioskCameraBadge = document.getElementById('kioskCameraBadge');
+		const kioskCameraBadgeText = document.getElementById('kioskCameraBadgeText');
+		const kioskCameraStatusCard = document.getElementById('kioskCameraStatusCard');
+		const kioskCameraStatusTitle = document.getElementById('kioskCameraStatusTitle');
+		const kioskCameraStatusText = document.getElementById('kioskCameraStatusText');
+		const kioskVisitorStep = document.getElementById('kioskVisitorStep');
+		const kioskBottomPanels = document.getElementById('kioskBottomPanels');
+		const kioskRegFooter = document.querySelector('.kiosk-reg-footer');
 		const flowHead = document.querySelector('.flow-head');
 		const scannerZone = document.querySelector('.scanner-zone');
 		const cameraFeed = document.getElementById('cameraFeed');
@@ -3119,6 +4499,24 @@
 			e.returnValue = '';
 		});
 
+		const updateKioskSummaryProgress = () => {
+			if (!isSelfRegistrationKiosk) {
+				return;
+			}
+
+			const progressPercent = currentStep >= 4
+				? 100
+				: (currentStep === 3 ? 100 : (currentStep === 2 ? 66 : 33));
+
+			document.querySelectorAll('.kiosk-summary-progress-fill').forEach((fillEl) => {
+				fillEl.style.width = `${progressPercent}%`;
+			});
+
+			document.querySelectorAll('.kiosk-summary-progress-value').forEach((valueEl) => {
+				valueEl.textContent = `${progressPercent}%`;
+			});
+		};
+
 		const updateStepUI = () => {
 			if (!hasRegisterFlow) {
 				return;
@@ -3136,23 +4534,49 @@
 				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Registration Complete'));
 			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : (isPictureStep ? 'Step 3 of 3' : 'Completed'));
 
-			if (selfRegProgressFill) {
-				const progressPercent = isCompleteStep ? 100 : Math.min(100, (currentStep / 3) * 100);
-				selfRegProgressFill.style.width = `${progressPercent}%`;
+			const activeStep = isCompleteStep ? 3 : Math.min(currentStep, 3);
+
+			if (selfRegStepperSteps.length) {
+				selfRegStepperSteps.forEach((stepEl) => {
+					const stepNum = Number(stepEl.dataset.step || 0);
+					stepEl.classList.toggle('is-active', stepNum === activeStep && !isCompleteStep);
+					stepEl.classList.toggle('is-done', stepNum < activeStep || isCompleteStep);
+				});
 			}
 
-			if (selfRegHeaderStep) {
-				const stepLabel = isIdStep
-					? 'Step 1 of 3 · ID Scan'
-					: (isFormStep ? 'Step 2 of 3 · Information' : (isPictureStep ? 'Step 3 of 3 · Face + ID' : 'Registration Complete'));
-				selfRegHeaderStep.textContent = stepLabel;
+			if (selfRegStepperLines.length) {
+				selfRegStepperLines.forEach((lineEl) => {
+					const afterStep = Number(lineEl.dataset.after || 0);
+					lineEl.classList.toggle('is-done', afterStep < activeStep || isCompleteStep);
+				});
 			}
 
-			if (kioskControlsTitle) {
-				kioskControlsTitle.textContent = isIdStep
-					? 'Scan Your ID'
-					: (isPictureStep ? 'Capture Face + ID' : 'Scan Your ID');
-				kioskControlsTitle.classList.toggle('is-hidden', isFormStep || isCompleteStep);
+			if (kioskVisitorStep) {
+				kioskVisitorStep.textContent = isCompleteStep
+					? 'COMPLETED'
+					: (isFormStep ? 'STEP 2 OF 3' : (isPictureStep ? 'STEP 3 OF 3' : 'STEP 1 OF 3'));
+			}
+
+			if (kioskScanTitleText) {
+				kioskScanTitleText.textContent = isIdStep
+					? 'Scan Your Identification Card'
+					: (isPictureStep ? 'Capture Face and ID' : 'Scan Your Identification Card');
+			}
+
+			if (kioskScanDesc) {
+				kioskScanDesc.textContent = isIdStep
+					? 'Position your ID card within the frame. Ensure all details are clear and visible.'
+					: (isPictureStep
+						? 'Center your face in the oval and hold your ID beside it before capturing.'
+						: 'Position your ID card within the frame. Ensure all details are clear and visible.');
+			}
+
+			if (kioskBottomPanels) {
+				kioskBottomPanels.classList.toggle('is-hidden', !isIdStep);
+			}
+
+			if (kioskRegFooter) {
+				kioskRegFooter.classList.toggle('is-hidden', isFormStep || isCompleteStep);
 			}
 
 			if (selfRegProgress) {
@@ -3183,6 +4607,7 @@
 			galleryAction.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
+			updateKioskSummaryProgress();
 		};
 
 		const getSelectedDestinationText = () => {
@@ -3375,8 +4800,38 @@
 		const setCameraState = (isOn, message) => {
 			scannerZone.classList.toggle('camera-on', isOn);
 			cameraStatus.textContent = message;
+
+			if (kioskCameraBadge) {
+				kioskCameraBadge.classList.toggle('is-ready', isOn);
+				kioskCameraBadge.classList.toggle('is-error', !isOn);
+			}
+
+			if (kioskCameraBadgeText) {
+				kioskCameraBadgeText.textContent = isOn ? 'Camera Ready' : 'Camera Unavailable';
+			}
+
+			if (kioskCameraStatusCard) {
+				kioskCameraStatusCard.classList.toggle('is-error', !isOn);
+				const statusIcon = kioskCameraStatusCard.querySelector('.bi');
+				if (statusIcon) {
+					statusIcon.className = isOn ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill';
+				}
+			}
+
+			if (kioskCameraStatusTitle) {
+				kioskCameraStatusTitle.textContent = isOn ? 'Camera Ready' : 'Camera Unavailable';
+			}
+
+			if (kioskCameraStatusText) {
+				kioskCameraStatusText.textContent = message;
+			}
+
 			if (!isOn) {
 				scanActionText.textContent = 'Retry Camera';
+			} else if (currentStep === 3) {
+				scanActionText.textContent = 'Capture Face + ID';
+			} else {
+				scanActionText.textContent = 'Scan ID Card';
 			}
 			scanAction.disabled = false;
 		};
@@ -4503,6 +5958,16 @@ body {
 			input.value = '';
 		});
 
+		document.getElementById('kioskVerifyBackBtn')?.addEventListener('click', () => {
+			if (hasSavedRegistration) {
+				return;
+			}
+
+			currentStep = 1;
+			updateStepUI();
+			startCamera();
+		});
+
 		generateQrBtn?.addEventListener('click', () => {
 			if (hasSavedRegistration) {
 				alert('Registration has already been completed.');
@@ -4655,19 +6120,30 @@ body {
 
 			normalizedOffices.forEach((office) => {
 				const label = document.createElement('label');
-				label.className = 'office-option';
+				label.className = isSelfRegistrationKiosk ? 'kiosk-office-tile' : 'office-option';
 
-				const checkbox = document.createElement('input');
-				checkbox.type = 'checkbox';
-				checkbox.className = 'office-checkbox';
-				checkbox.value = String(office.office_id);
+				const input = document.createElement('input');
+				if (isSelfRegistrationKiosk) {
+					input.type = 'radio';
+					input.name = 'destination_office_choice';
+					input.className = 'office-checkbox';
+				} else {
+					input.type = 'checkbox';
+					input.className = 'office-checkbox';
+				}
+				input.value = String(office.office_id);
 
-				checkbox.addEventListener('change', () => {
+				input.addEventListener('change', () => {
+					if (isSelfRegistrationKiosk) {
+						selectedOfficeIds = input.checked ? [input.value] : [];
+						return;
+					}
+
 					selectedOfficeIds = Array.from(destinationOffice.querySelectorAll('.office-checkbox:checked'))
 						.map((cb) => cb.value);
 				});
 
-				label.appendChild(checkbox);
+				label.appendChild(input);
 				label.appendChild(document.createTextNode(office.office_name));
 				destinationOffice.appendChild(label);
 			});
