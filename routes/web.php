@@ -11,12 +11,21 @@ use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
+use App\Http\Controllers\EnrolleeProgressController;
  
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
 Route::get('/password/setup/{token}', [AuthController::class, 'showPasswordSetupForm'])->name('password.setup.form');
 Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('password.setup.submit');
+
+// Public enrollee QR progress tracker (opened when enrollee QR is scanned in a browser/camera).
+Route::get('/enrollee/progress/{token}/status', [EnrolleeProgressController::class, 'status'])
+	->where('token', '[^/]+')
+	->name('enrollee.progress.status');
+Route::get('/enrollee/progress/{token}', [EnrolleeProgressController::class, 'show'])
+	->where('token', '[^/]+')
+	->name('enrollee.progress');
  
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
  

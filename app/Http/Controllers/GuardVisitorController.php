@@ -340,6 +340,15 @@ class GuardVisitorController extends Controller
                     ], 'visitor_id');
                 }
 
+                $resumeEnrollee = null;
+                if ($registerType === 'enrollee' && $matchedVisitor && $shouldReuseExistingVisitor) {
+                    $resumeEnrollee = $this->findUnfinishedEnrolleeResume($visitorId);
+                }
+
+                if ($resumeEnrollee && ! empty($resumeEnrollee['source_visit_id'])) {
+                    $this->closeVisitForEnrolleeResume((int) $resumeEnrollee['source_visit_id']);
+                }
+
                 $visitId = DB::table('visit')->insertGetId([
                     'visitor_id' => $visitorId,
                     'guard_user_id' => Auth::id(),
@@ -358,37 +367,55 @@ class GuardVisitorController extends Controller
 
                 $savedOfficeCount = 0;
                 $enrolleeId = null;
+                $resumedEnrollment = false;
 
                 if ($registerType === 'enrollee') {
-                    $pendingEnrolleeStatusId = $this->resolveEnrolleeStatusId('PENDING')
-                        ?? $this->resolveEnrolleeStatusId('ONGOING')
+                    $pendingEnrolleeStatusId = $this->resolveEnrolleeStatusId('ONGOING')
+                        ?? $this->resolveEnrolleeStatusId('PENDING')
                         ?? $this->resolveEnrolleeStatusId('COMPLETED')
                         ?? 1;
 
-                    $enrolleeId = DB::table('enrollee')->insertGetId([
-                        'visitor_id' => $visitorId,
-                        'enrollee_status_id' => $pendingEnrolleeStatusId,
-                        'updated_at' => now(),
-                    ], 'enrollee_id');
+                    if ($resumeEnrollee && ! empty($resumeEnrollee['enrollee_id'])) {
+                        $enrolleeId = (int) $resumeEnrollee['enrollee_id'];
+                        DB::table('enrollee')
+                            ->where('enrollee_id', $enrolleeId)
+                            ->update([
+                                'enrollee_status_id' => $pendingEnrolleeStatusId,
+                                'updated_at' => now(),
+                            ]);
+                        $resumedEnrollment = true;
+                        $savedOfficeCount = (int) ($resumeEnrollee['total_steps'] ?? 0);
+                    } else {
+                        $enrolleeId = DB::table('enrollee')->insertGetId([
+                            'visitor_id' => $visitorId,
+                            'enrollee_status_id' => $pendingEnrolleeStatusId,
+                            'updated_at' => now(),
+                        ], 'enrollee_id');
 
-                    $pendingStepStatusId = $pendingEnrolleeStatusId;
-                    $stepRows = [];
-                    $resolvedStepAssignments = ! empty($enrolleeSteps)
-                        ? $enrolleeSteps
-                        : $this->resolveEnrolleeStepAssignments();
+                        $pendingStepStatusId = $pendingEnrolleeStatusId;
+                        $stepRows = [];
+                        $resolvedStepAssignments = ! empty($enrolleeSteps)
+                            ? $enrolleeSteps
+                            : $this->resolveEnrolleeStepAssignments();
 
-                    foreach ($resolvedStepAssignments as $stepAssignment) {
-                        $stepRows[] = [
-                            'enrollee_id' => $enrolleeId,
-                            'step_id' => (int) $stepAssignment['step_id'],
-                            'step_status_id' => $pendingStepStatusId,
-                            'completed_at' => null,
-                        ];
-                    }
+                        foreach ($resolvedStepAssignments as $stepAssignment) {
+                            $stepRows[] = [
+                                'enrollee_id' => $enrolleeId,
+                                'step_id' => (int) $stepAssignment['step_id'],
+                                'step_status_id' => $pendingStepStatusId,
+                                'completed_at' => null,
+                            ];
+                        }
 
-                    if (! empty($stepRows)) {
-                        DB::table('enrollee_progress')->insert($stepRows);
-                        $savedOfficeCount = count($stepRows);
+                        if (! empty($stepRows)) {
+                            DB::table('enrollee_progress')->insert($stepRows);
+                            $savedOfficeCount = count($stepRows);
+                        }
+
+                        // Still resume office progress even if no prior enrollee row existed.
+                        if ($resumeEnrollee) {
+                            $resumedEnrollment = true;
+                        }
                     }
                 }
 
@@ -398,14 +425,49 @@ class GuardVisitorController extends Controller
 
                 if ($shouldSaveOfficeExpectations) {
                     $pendingExpectationStatusId = $this->resolveExpectationStatusId();
+                    $arrivedExpectationStatusId = $this->resolveArrivedExpectationStatusId();
                     $expectationCreatedAt = now();
+                    $previousByOffice = [];
+
+                    if ($resumedEnrollment && ! empty($resumeEnrollee['source_visit_id'])) {
+                        $previousByOffice = DB::table('office_expectation')
+                            ->where('visit_id', (int) $resumeEnrollee['source_visit_id'])
+                            ->get()
+                            ->keyBy(static fn ($row) => (int) $row->office_id)
+                            ->all();
+                    } elseif ($resumedEnrollment && ! empty($resumeEnrollee['steps'])) {
+                        foreach ($resumeEnrollee['steps'] as $step) {
+                            $stepOfficeId = (int) ($step['office_id'] ?? 0);
+                            if ($stepOfficeId <= 0) {
+                                continue;
+                            }
+
+                            $previousByOffice[$stepOfficeId] = (object) [
+                                'office_id' => $stepOfficeId,
+                                'arrived_at' => (($step['state'] ?? '') === 'done')
+                                    ? ($step['arrived_at'] ?? $expectationCreatedAt)
+                                    : null,
+                                'expectation_status_id' => null,
+                            ];
+                        }
+                    }
+
                     $expectationRows = [];
                     foreach (array_values($officeIds) as $index => $officeId) {
+                        $officeId = (int) $officeId;
+                        $previous = $previousByOffice[$officeId] ?? null;
+                        $arrivedAt = $previous && ! empty($previous->arrived_at)
+                            ? $previous->arrived_at
+                            : null;
+
                         $expectationRows[] = [
                             'visit_id' => $visitId,
-                            'office_id' => (int) $officeId,
+                            'office_id' => $officeId,
                             'expected_order' => $index + 1,
-                            'expectation_status_id' => $pendingExpectationStatusId,
+                            'expectation_status_id' => $arrivedAt !== null
+                                ? (($previous->expectation_status_id ?? null) ?: $arrivedExpectationStatusId ?: $pendingExpectationStatusId)
+                                : $pendingExpectationStatusId,
+                            'arrived_at' => $arrivedAt,
                             'created_at' => $expectationCreatedAt,
                         ];
                     }
@@ -431,12 +493,24 @@ class GuardVisitorController extends Controller
                     'visit_id' => $visitId,
                     'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
                     'saved_office_count' => $savedOfficeCount,
+                    'resumed_enrollment' => $resumedEnrollment,
+                    'resumed_from_visit_id' => $resumedEnrollment
+                        ? ($resumeEnrollee['source_visit_id'] ?? null)
+                        : null,
+                    'completed_steps' => $resumedEnrollment
+                        ? (int) ($resumeEnrollee['completed_steps'] ?? 0)
+                        : 0,
+                    'remaining_steps' => $resumedEnrollment
+                        ? (int) ($resumeEnrollee['remaining_steps'] ?? 0)
+                        : 0,
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'message' => 'Visitor details saved successfully.',
+                'message' => ! empty($result['resumed_enrollment'])
+                    ? 'Enrollment resumed. Previous office progress was carried over to the new QR.'
+                    : 'Visitor details saved successfully.',
                 'data' => $result,
             ]);
         } catch (\Throwable $e) {
@@ -1019,7 +1093,7 @@ class GuardVisitorController extends Controller
             'photo_preview_url' => $previewUrl,
         ]);
 
-        return [
+        $payload = [
             'exists' => true,
             'match_basis' => 'name_birthday',
             'visitor_id' => (int) $record->visitor_id,
@@ -1037,6 +1111,171 @@ class GuardVisitorController extends Controller
             'region' => (string) ($record->region ?? ''),
             'photo_path' => $photoPath,
             'photo_preview_url' => $previewUrl,
+            'unfinished_enrollee' => null,
+        ];
+
+        if (strtolower(trim($registerType)) === 'enrollee') {
+            $payload['unfinished_enrollee'] = $this->findUnfinishedEnrolleeResume((int) $record->visitor_id);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Find the latest unfinished enrollee route for a visitor so registration can resume progress.
+     */
+    protected function findUnfinishedEnrolleeResume(int $visitorId): ?array
+    {
+        if ($visitorId <= 0) {
+            return null;
+        }
+
+        $enrollee = DB::table('enrollee')
+            ->where('visitor_id', $visitorId)
+            ->orderByDesc('enrollee_id')
+            ->first();
+
+        $visits = DB::table('visit as v')
+            ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
+            ->where('v.visitor_id', $visitorId)
+            ->where(function ($query) {
+                $query->whereRaw("LOWER(TRIM(COALESCE(vt.visit_type_name, ''))) = ?", ['enrollee'])
+                    ->orWhereRaw("LOWER(TRIM(COALESCE(v.purpose_reason, ''))) LIKE ?", ['%enrollment%'])
+                    ->orWhereExists(function ($existsQuery) {
+                        $existsQuery->select(DB::raw(1))
+                            ->from('enrollee as e')
+                            ->whereColumn('e.visitor_id', 'v.visitor_id');
+                    });
+            })
+            ->orderByDesc('v.visit_id')
+            ->select([
+                'v.visit_id',
+                'v.qr_token',
+                'v.entry_time',
+                'v.exit_time',
+            ])
+            ->limit(25)
+            ->get();
+
+        foreach ($visits as $visit) {
+            $expectations = DB::table('office_expectation as oe')
+                ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
+                ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
+                ->where('oe.visit_id', (int) $visit->visit_id)
+                ->orderBy('oe.expected_order')
+                ->orderBy('oe.expectation_id')
+                ->select([
+                    'oe.office_id',
+                    'oe.expected_order',
+                    'oe.arrived_at',
+                    'oe.expectation_status_id',
+                    'o.office_name',
+                    'xs.status_name',
+                ])
+                ->get();
+
+            if ($expectations->isEmpty()) {
+                continue;
+            }
+
+            $total = $expectations->count();
+            $completed = $expectations->filter(static fn ($row) => ! empty($row->arrived_at))->count();
+
+            if ($completed >= $total) {
+                continue;
+            }
+
+            $steps = $expectations->map(function ($row, $index) {
+                $isDone = ! empty($row->arrived_at);
+
+                return [
+                    'order' => $row->expected_order !== null ? (int) $row->expected_order : ($index + 1),
+                    'office_id' => $row->office_id !== null ? (int) $row->office_id : null,
+                    'office_name' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
+                    'state' => $isDone ? 'done' : 'pending',
+                    'arrived_at' => $row->arrived_at,
+                ];
+            })->values()->all();
+
+            $current = collect($steps)->firstWhere('state', 'pending');
+
+            return [
+                'has_unfinished' => true,
+                'source_visit_id' => (int) $visit->visit_id,
+                'enrollee_id' => $enrollee ? (int) $enrollee->enrollee_id : null,
+                'total_steps' => $total,
+                'completed_steps' => $completed,
+                'remaining_steps' => max(0, $total - $completed),
+                'percent' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
+                'current_office' => $current['office_name'] ?? null,
+                'steps' => $steps,
+            ];
+        }
+
+        if (! $enrollee) {
+            return null;
+        }
+
+        $progressRows = DB::table('enrollee_progress as ep')
+            ->join('enrollee_step as es', 'es.step_id', '=', 'ep.step_id')
+            ->leftJoin('office as o', 'o.office_id', '=', 'es.office_id')
+            ->leftJoin('enrollee_status as st', 'st.enrollee_status_id', '=', 'ep.step_status_id')
+            ->where('ep.enrollee_id', (int) $enrollee->enrollee_id)
+            ->orderBy('es.step_order')
+            ->orderBy('es.step_id')
+            ->select([
+                'es.office_id',
+                'es.step_order',
+                'o.office_name',
+                'ep.completed_at',
+                'st.status_name',
+            ])
+            ->get();
+
+        if ($progressRows->isEmpty()) {
+            return null;
+        }
+
+        $steps = $progressRows->map(function ($row, $index) {
+            $status = Str::lower(trim((string) ($row->status_name ?? '')));
+            $isDone = ! empty($row->completed_at);
+            if (! $isDone && $status !== '') {
+                foreach (['completed', 'complete', 'done', 'arrived', 'validated', 'finished', 'success'] as $needle) {
+                    if (str_contains($status, $needle)) {
+                        $isDone = true;
+                        break;
+                    }
+                }
+            }
+
+            return [
+                'order' => $row->step_order !== null ? (int) $row->step_order : ($index + 1),
+                'office_id' => $row->office_id !== null ? (int) $row->office_id : null,
+                'office_name' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
+                'state' => $isDone ? 'done' : 'pending',
+                'arrived_at' => $row->completed_at,
+            ];
+        })->values()->all();
+
+        $total = count($steps);
+        $completed = collect($steps)->where('state', 'done')->count();
+
+        if ($completed >= $total) {
+            return null;
+        }
+
+        $current = collect($steps)->firstWhere('state', 'pending');
+
+        return [
+            'has_unfinished' => true,
+            'source_visit_id' => null,
+            'enrollee_id' => (int) $enrollee->enrollee_id,
+            'total_steps' => $total,
+            'completed_steps' => $completed,
+            'remaining_steps' => max(0, $total - $completed),
+            'percent' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
+            'current_office' => $current['office_name'] ?? null,
+            'steps' => $steps,
         ];
     }
 
@@ -2112,6 +2351,15 @@ class GuardVisitorController extends Controller
             return $payload;
         }
 
+        // Enrollee QR may encode the public tracker URL; extract token for exit / office lookups.
+        if (preg_match('#/enrollee/progress/([^/?#]+)#i', $rawQr, $matches)) {
+            $tokenFromUrl = $this->normalizeNullableString(urldecode($matches[1]));
+            if ($tokenFromUrl !== null) {
+                $payload['qr_token'] = $tokenFromUrl;
+                return $payload;
+            }
+        }
+
         $rawValue = $this->normalizeNullableString($rawQr);
         if ($rawValue !== null) {
             if (stripos($rawValue, 'QR-') === 0) {
@@ -2212,6 +2460,65 @@ class GuardVisitorController extends Controller
             ->value('expectation_status_id');
 
         return $fallback ? (int) $fallback : null;
+    }
+
+    /**
+     * Status used when copying already-arrived offices onto a resumed enrollee visit.
+     */
+    protected function resolveArrivedExpectationStatusId(): ?int
+    {
+        $candidates = ['arrived', 'completed', 'complete', 'done', 'validated', 'finished', 'success'];
+        foreach ($candidates as $name) {
+            $id = DB::table('expectation_status')
+                ->whereRaw('LOWER(TRIM(COALESCE(status_name, \'\'))) = ?', [$name])
+                ->value('expectation_status_id');
+            if ($id) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Close a prior enrollee visit when issuing a resumed QR (do not skip unfinished offices).
+     */
+    protected function closeVisitForEnrolleeResume(int $visitId): void
+    {
+        if ($visitId <= 0) {
+            return;
+        }
+
+        $visit = DB::table('visit')
+            ->where('visit_id', $visitId)
+            ->whereNull('exit_time')
+            ->first(['visit_id', 'entry_time', 'exit_status_id']);
+
+        if (! $visit) {
+            return;
+        }
+
+        $exitAt = $this->philippinesNow();
+        $durationMinutes = null;
+
+        if (! empty($visit->entry_time)) {
+            try {
+                $entryAt = Carbon::parse($visit->entry_time, 'Asia/Manila');
+                $durationMinutes = max(0, (int) floor($entryAt->diffInSeconds($exitAt) / 60));
+            } catch (\Throwable $e) {
+                $durationMinutes = null;
+            }
+        }
+
+        $exitedStatusId = $this->resolveExitStatusByNames(['exited', 'checked out', 'completed', 'ready to exit']);
+
+        DB::table('visit')
+            ->where('visit_id', $visitId)
+            ->update([
+                'exit_time' => $exitAt,
+                'duration_minutes' => $durationMinutes,
+                'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
+            ]);
     }
 
     protected function resolveSkippedExpectationStatusId(): ?int

@@ -3415,6 +3415,10 @@
 						<span class="confirmation-summary-label">Saved Address</span>
 						<span class="confirmation-summary-value" id="existingVisitorModalAddressState">-</span>
 					</div>
+					<div class="confirmation-summary-row is-hidden" id="existingVisitorModalProgressRow">
+						<span class="confirmation-summary-label">Enrollment Progress</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalProgress">-</span>
+					</div>
 				</div>
 			</div>
 			<div class="confirmation-modal-footer">
@@ -4281,10 +4285,14 @@
 		const existingVisitorModalPhoto = document.getElementById('existingVisitorModalPhoto');
 		const existingVisitorModalPhotoPlaceholder = document.getElementById('existingVisitorModalPhotoPlaceholder');
 		const existingVisitorModalValidationNote = document.getElementById('existingVisitorModalValidationNote');
+		const existingVisitorModalTitle = document.getElementById('existingVisitorModalTitle');
+		const existingVisitorModalSubtitle = document.getElementById('existingVisitorModalSubtitle');
 		const existingVisitorModalName = document.getElementById('existingVisitorModalName');
 		const existingVisitorModalContact = document.getElementById('existingVisitorModalContact');
 		const existingVisitorModalBirthday = document.getElementById('existingVisitorModalBirthday');
 		const existingVisitorModalAddressState = document.getElementById('existingVisitorModalAddressState');
+		const existingVisitorModalProgressRow = document.getElementById('existingVisitorModalProgressRow');
+		const existingVisitorModalProgress = document.getElementById('existingVisitorModalProgress');
 		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
 		const existingVisitorModalCancel = document.getElementById('existingVisitorModalCancel');
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
@@ -5064,11 +5072,14 @@
 				issued_at: issuedAt,
 			};
 
-			// Keep full metadata in DB; encode only identifiers in the QR for reliable repeat scans.
-			const qrScanText = JSON.stringify({
-				control_number: controlNumber,
-				qr_token: qrToken,
-			});
+			// Enrollee QR opens the public progress tracker in a phone browser.
+			// Other visitor types keep compact JSON for guard exit / office scanning.
+			const qrScanText = registerType === 'enrollee'
+				? `${window.location.origin}/enrollee/progress/${encodeURIComponent(qrToken)}`
+				: JSON.stringify({
+					control_number: controlNumber,
+					qr_token: qrToken,
+				});
 
 			return {
 				control_number: controlNumber,
@@ -5198,7 +5209,20 @@
 			const addressText = formatVisitorAddress(existingVisitor);
 			const previewUrl = String(existingVisitor.photo_preview_url || existingVisitor.photo_path || '').trim();
 			const hasPreviewPhoto = Boolean(previewUrl);
+			const unfinished = existingVisitor.unfinished_enrollee && existingVisitor.unfinished_enrollee.has_unfinished
+				? existingVisitor.unfinished_enrollee
+				: null;
 
+			if (existingVisitorModalTitle) {
+				existingVisitorModalTitle.textContent = unfinished
+					? 'Returning Enrollee Found'
+					: 'Existing Visitor Found';
+			}
+			if (existingVisitorModalSubtitle) {
+				existingVisitorModalSubtitle.textContent = unfinished
+					? 'This enrollee has unfinished office steps. Confirm to resume the same enrollment progress on the new QR pass.'
+					: 'We found a matching visitor record. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.';
+			}
 			if (existingVisitorModalName) {
 				existingVisitorModalName.textContent = fullName;
 			}
@@ -5210,6 +5234,20 @@
 			}
 			if (existingVisitorModalAddressState) {
 				existingVisitorModalAddressState.textContent = addressText;
+			}
+			if (existingVisitorModalProgressRow && existingVisitorModalProgress) {
+				if (unfinished) {
+					const completed = Number(unfinished.completed_steps || 0);
+					const total = Number(unfinished.total_steps || 0);
+					const currentOffice = String(unfinished.current_office || '').trim();
+					existingVisitorModalProgress.textContent = currentOffice
+						? `${completed}/${total} done · Next: ${currentOffice}`
+						: `${completed}/${total} steps completed`;
+					existingVisitorModalProgressRow.classList.remove('is-hidden');
+				} else {
+					existingVisitorModalProgress.textContent = '-';
+					existingVisitorModalProgressRow.classList.add('is-hidden');
+				}
 			}
 			if (existingVisitorModalValidationNote) {
 				existingVisitorModalValidationNote.textContent = hasPreviewPhoto
@@ -5246,9 +5284,14 @@
 			}
 			if (existingVisitorModalConfirm) {
 				existingVisitorModalConfirm.disabled = false;
-				existingVisitorModalConfirm.title = hasPreviewPhoto
-					? 'Continue after visually validating the saved photo.'
-					: 'Continue with limited validation because no saved photo is available.';
+				existingVisitorModalConfirm.textContent = unfinished
+					? 'Yes, Resume Enrollment'
+					: 'Yes, Continue';
+				existingVisitorModalConfirm.title = unfinished
+					? 'Resume unfinished enrollment progress on the new QR.'
+					: (hasPreviewPhoto
+						? 'Continue after visually validating the saved photo.'
+						: 'Continue with limited validation because no saved photo is available.');
 			}
 
 			existingVisitorModal.classList.remove('is-hidden');
@@ -5272,12 +5315,17 @@
 			ticketSaveStatus.classList.remove('error');
 
 			loadingText.textContent = 'Saving visitor details...';
-			await saveNormalVisitorRegistration(qrMeta);
+			const saveResult = await saveNormalVisitorRegistration(qrMeta);
 
 			hasSavedRegistration = true;
-			ticketSaveStatus.textContent = 'Visitor details saved successfully.';
+			const resumedEnrollment = Boolean(saveResult?.data?.resumed_enrollment);
+			ticketSaveStatus.textContent = resumedEnrollment
+				? 'Enrollment resumed. Previous office progress was carried over to this QR.'
+				: 'Visitor details saved successfully.';
 			ticketSaveStatus.classList.remove('error');
-			loadingText.textContent = 'QR generated and visitor saved successfully.';
+			loadingText.textContent = resumedEnrollment
+				? 'QR generated and unfinished enrollment progress resumed.'
+				: 'QR generated and visitor saved successfully.';
 		};
 
 		const parseIdOnlyAndProceed = (capturedIdData, progressText = 'Parsing ID scan...', options = {}) => {
@@ -5317,7 +5365,10 @@
 					currentStep = 2;
 					updateStepUI();
 					if (existingVisitorConfirmed) {
-						cameraStatus.textContent = 'Existing visitor confirmed. Review the details and generate the QR ticket.';
+						const unfinished = existingVisitorMatch?.unfinished_enrollee?.has_unfinished;
+						cameraStatus.textContent = unfinished
+							? 'Returning enrollee confirmed. Generate the QR ticket to resume unfinished enrollment progress.'
+							: 'Existing visitor confirmed. Review the details and generate the QR ticket.';
 					} else {
 						cameraStatus.textContent = parsedSuccessfully
 							? 'ID parsed successfully. Verify details before proceeding.'
