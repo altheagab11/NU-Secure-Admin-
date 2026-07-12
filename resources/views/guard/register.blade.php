@@ -81,10 +81,25 @@
 		}
 
 		.brand-title {
-			font-size: 28px;
-			font-weight: 800;
-			color: #ffd84d;
+			margin: 0;
+			font-size: 0;
 			line-height: 1;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			display: flex;
+			gap: 6px;
+			align-items: baseline;
+		}
+
+		.brand-title span:first-child {
+			color: #ffd84d;
+			font-size: 28px;
+		}
+
+		.brand-title span:last-child {
+			color: #ffffff;
+			font-size: 26px;
+			font-weight: 700;
 		}
 
 		.brand-subtitle {
@@ -1451,8 +1466,12 @@
 				flex-wrap: wrap;
 			}
 
-			.brand-title {
+			.brand-title span:first-child {
 				font-size: 22px;
+			}
+
+			.brand-title span:last-child {
+				font-size: 20px;
 			}
 		}
 
@@ -1525,11 +1544,25 @@
 		}
 
 		body.self-registration-mode .self-registration-brand .brand-title {
-			font-size: 1.35rem;
-			font-weight: 800;
-			color: #ffd84d;
+			margin: 0;
+			font-size: 0;
 			line-height: 1.05;
+			font-weight: 800;
 			letter-spacing: -0.02em;
+			display: flex;
+			gap: 6px;
+			align-items: baseline;
+		}
+
+		body.self-registration-mode .self-registration-brand .brand-title span:first-child {
+			color: #ffd84d;
+			font-size: 1.35rem;
+		}
+
+		body.self-registration-mode .self-registration-brand .brand-title span:last-child {
+			color: #ffffff;
+			font-size: 1.25rem;
+			font-weight: 700;
 		}
 
 		body.self-registration-mode .self-registration-brand .brand-subtitle {
@@ -2972,8 +3005,12 @@
 				font-size: 18px;
 			}
 
-			body.self-registration-mode .self-registration-brand .brand-title {
+			body.self-registration-mode .self-registration-brand .brand-title span:first-child {
 				font-size: 1.05rem;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-title span:last-child {
+				font-size: 0.98rem;
 			}
 
 			body.self-registration-mode .self-registration-brand .brand-subtitle {
@@ -3273,8 +3310,8 @@
 						<i class="bi bi-shield-lock-fill"></i>
 					</div>
 					<div>
-						<h4 class="brand-title mb-0">SVMS Guard</h4>
-						<small class="brand-subtitle">Smart Visitor Monitoring System</small>
+						<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
+						<small class="brand-subtitle">Visitor Monitoring System</small>
 					</div>
 				</div>
 
@@ -3438,8 +3475,8 @@
 							<i class="bi bi-shield-lock-fill"></i>
 						</div>
 						<div>
-							<h4 class="brand-title mb-0">SVMS Guard</h4>
-							<small class="brand-subtitle">Smart Visitor Monitoring System</small>
+							<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
+							<small class="brand-subtitle">Visitor Monitoring System</small>
 						</div>
 					</div>
 					@if ($showKioskTypePicker)
@@ -3670,7 +3707,7 @@
 						@endif
 					</div>
 					@if ($isSelfRegisteredRole)
-					<p class="kiosk-reg-footer">© {{ date('Y') }} SVMS Guard. All rights reserved.</p>
+					<p class="kiosk-reg-footer">© {{ date('Y') }} VMS Guard. All rights reserved.</p>
 					@endif
 
 					@if ($registerType === 'enrollee')

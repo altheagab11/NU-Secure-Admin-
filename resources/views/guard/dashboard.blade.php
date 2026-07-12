@@ -79,10 +79,25 @@
 		}
 
 		.brand-title {
-			font-size: 28px;
-			font-weight: 800;
-			color: #ffd84d;
+			margin: 0;
+			font-size: 0;
 			line-height: 1;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			display: flex;
+			gap: 6px;
+			align-items: baseline;
+		}
+
+		.brand-title span:first-child {
+			color: #ffd84d;
+			font-size: 28px;
+		}
+
+		.brand-title span:last-child {
+			color: #ffffff;
+			font-size: 26px;
+			font-weight: 700;
 		}
 
 		.brand-subtitle {
@@ -980,8 +995,8 @@
 						<i class="bi bi-shield-lock-fill"></i>
 					</div>
 					<div>
-						<h4 class="brand-title mb-0">SVMS Guard</h4>
-						<small class="brand-subtitle">Smart Visitor Monitoring System</small>
+						<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
+						<small class="brand-subtitle">Visitor Monitoring System</small>
 					</div>
 				</div>
 

@@ -80,7 +80,7 @@
 		}
 
 		.brand-title span:last-child {
-			color: #eef2ff;
+			color: #ffffff;
 			font-size: 22px;
 			font-weight: 700;
 		}
@@ -1271,8 +1271,8 @@
 						<i class="bi bi-shield-lock-fill"></i>
 					</div>
 					<div>
-						<h4 class="brand-title mb-0">SVMS Guard</h4>
-						<small class="brand-subtitle">Smart Visitor Monitoring System</small>
+						<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
+						<small class="brand-subtitle">Visitor Monitoring System</small>
 					</div>
 				</div>
 
