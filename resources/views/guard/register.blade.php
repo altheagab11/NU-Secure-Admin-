@@ -145,13 +145,15 @@
 			transform: translateX(4px);
 		}
 
-		.sidebar-link.active {
+		.sidebar-link.active,
+		.sidebar-toggle[aria-expanded="true"] {
 			background: linear-gradient(90deg, #4f62ff, #6678ff);
 			color: #fff;
 			box-shadow: 0 8px 20px rgba(46, 78, 255, 0.28);
 		}
 
-		.sidebar-link.active::before {
+		.sidebar-link.active::before,
+		.sidebar-toggle[aria-expanded="true"]::before {
 			content: "";
 			position: absolute;
 			left: -14px;
@@ -3492,17 +3494,17 @@
 
 							<div class="collapse {{ request()->is('guard/register*') ? 'show' : '' }}" id="registerMenu">
 								<div class="submenu">
-									<a href="/guard/register?type=normal" class="submenu-link {{ request('type', 'normal') === 'normal' ? 'active' : '' }}">
+									<a href="/guard/register?type=normal" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'normal' ? 'active' : '' }}">
 										<i class="bi bi-person"></i>
 										<span>Normal Visitor</span>
 									</a>
 
-									<a href="/guard/register?type=enrollee" class="submenu-link {{ request('type') === 'enrollee' ? 'active' : '' }}">
+									<a href="/guard/register?type=enrollee" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'enrollee' ? 'active' : '' }}">
 										<i class="bi bi-mortarboard-fill"></i>
 										<span>Enrollee</span>
 									</a>
 
-									<a href="/guard/register?type=contractor" class="submenu-link {{ request('type') === 'contractor' ? 'active' : '' }}">
+									<a href="/guard/register?type=contractor" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'contractor' ? 'active' : '' }}">
 										<i class="bi bi-briefcase-fill"></i>
 										<span>Contractor</span>
 									</a>
@@ -3532,7 +3534,7 @@
 					<div class="sidebar-section">
 						<p class="sidebar-label">QUICK ACTION</p>
 
-						<a href="/guard/register?type=normal" class="quick-action-btn">
+						<a href="/guard/register?type=normal" class="quick-action-btn js-privacy-consent-link">
 							<i class="bi bi-qr-code-scan"></i>
 							<span>Register Visitor</span>
 						</a>
@@ -3671,17 +3673,17 @@
 						<h2 class="kiosk-type-picker-title">Welcome to NU Secure</h2>
 						<p class="kiosk-type-picker-subtitle">Tap the option that best describes your visit to begin registration.</p>
 						<div class="kiosk-type-grid">
-							<a href="/guard/register?type=normal" class="kiosk-type-card" data-type="normal">
+							<a href="/guard/register?type=normal" class="kiosk-type-card js-privacy-consent-link" data-type="normal">
 								<span class="kiosk-type-icon"><i class="bi bi-person-fill"></i></span>
 								<span class="kiosk-type-name">Normal Visitor</span>
 								<span class="kiosk-type-desc">Guests visiting offices, staff, or departments on campus.</span>
 							</a>
-							<a href="/guard/register?type=enrollee" class="kiosk-type-card" data-type="enrollee">
+							<a href="/guard/register?type=enrollee" class="kiosk-type-card js-privacy-consent-link" data-type="enrollee">
 								<span class="kiosk-type-icon"><i class="bi bi-mortarboard-fill"></i></span>
 								<span class="kiosk-type-name">Enrollee</span>
 								<span class="kiosk-type-desc">Prospective or incoming students for enrollment-related visits.</span>
 							</a>
-							<a href="/guard/register?type=contractor" class="kiosk-type-card" data-type="contractor">
+							<a href="/guard/register?type=contractor" class="kiosk-type-card js-privacy-consent-link" data-type="contractor">
 								<span class="kiosk-type-icon"><i class="bi bi-briefcase-fill"></i></span>
 								<span class="kiosk-type-name">Contractor</span>
 								<span class="kiosk-type-desc">Vendors and service providers with scheduled work on site.</span>
@@ -3689,52 +3691,6 @@
 						</div>
 					</div>
 				</section>
-
-				<div class="kiosk-privacy-modal is-hidden" id="kioskPrivacyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="kioskPrivacyTitle">
-					<div class="kiosk-privacy-card">
-						<div class="kiosk-privacy-header">
-							<span class="kiosk-privacy-badge"><i class="bi bi-shield-lock-fill"></i> Data Privacy Notice</span>
-							<h2 class="kiosk-privacy-title" id="kioskPrivacyTitle">Consent to Collect and Process Your Data</h2>
-							<p class="kiosk-privacy-subtitle">Please read this notice before continuing with visitor registration.</p>
-						</div>
-						<div class="kiosk-privacy-body">
-							<p>
-								National University uses the Visitor Monitoring System (VMS) to register campus visitors
-								for security and safety. By continuing, you agree that the University may collect and process
-								your personal information for this purpose, in line with the Data Privacy Act of 2012 (RA 10173).
-							</p>
-							<h3>What we collect during registration</h3>
-							<ul>
-								<li>Identification details from your scanned or uploaded ID (such as name, birthday, and address)</li>
-								<li>Contact information and visit details (phone number, destination, reason for visit)</li>
-								<li>A photo of your face with your ID for visitor verification</li>
-								<li>A QR ticket / control number used for entry monitoring and exit scanning</li>
-							</ul>
-							<h3>How we use your information</h3>
-							<ul>
-								<li>To verify your identity and complete visitor check-in</li>
-								<li>To record your visit and destination within the campus</li>
-								<li>To support security monitoring, alerts, and incident response</li>
-								<li>To generate and validate your temporary visitor QR ticket</li>
-							</ul>
-							<h3>Who can access your information</h3>
-							<p>
-								Authorized University personnel (such as security guards and system administrators) may access
-								your registration data only as needed for campus security and visitor management.
-							</p>
-							<h3>Your consent</h3>
-							<p>
-								Registration is voluntary. If you do not agree, please select <strong>Decline</strong> and ask
-								the on-duty guard for assistance. If you select <strong>I Agree</strong>, you confirm that you
-								understand this notice and consent to the collection and processing of your data for visitor registration.
-							</p>
-						</div>
-						<div class="kiosk-privacy-footer">
-							<button type="button" class="kiosk-privacy-btn secondary" id="kioskPrivacyDecline">Decline</button>
-							<button type="button" class="kiosk-privacy-btn primary" id="kioskPrivacyAccept">I Agree</button>
-						</div>
-					</div>
-				</div>
 			@elseif ($registerType !== null)
 				<h1 class="page-title">Register Visitor</h1>
 				@if ($isSelfRegisteredRole)
@@ -4456,6 +4412,7 @@
 
 	@include('guard.partials.guard-responsive-script')
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	@include('guard.partials.guard-privacy-consent')
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -4545,70 +4502,6 @@
 		const visitReason = document.getElementById('visitReason');
 		const registerType = @json($registerType);
 		const isSelfRegistrationKiosk = @json($isSelfRegisteredRole);
-		const showKioskTypePicker = @json($showKioskTypePicker);
-
-		const kioskPrivacyModal = document.getElementById('kioskPrivacyModal');
-		const kioskPrivacyAccept = document.getElementById('kioskPrivacyAccept');
-		const kioskPrivacyDecline = document.getElementById('kioskPrivacyDecline');
-		let pendingKioskTypeHref = '';
-
-		const openKioskPrivacyModal = (href) => {
-			if (!kioskPrivacyModal || !href) {
-				return;
-			}
-
-			pendingKioskTypeHref = href;
-			kioskPrivacyModal.classList.remove('is-hidden');
-			kioskPrivacyModal.setAttribute('aria-hidden', 'false');
-			document.body.style.overflow = 'hidden';
-			kioskPrivacyAccept?.focus();
-		};
-
-		const closeKioskPrivacyModal = () => {
-			if (!kioskPrivacyModal) {
-				return;
-			}
-
-			pendingKioskTypeHref = '';
-			kioskPrivacyModal.classList.add('is-hidden');
-			kioskPrivacyModal.setAttribute('aria-hidden', 'true');
-			document.body.style.overflow = '';
-		};
-
-		if (showKioskTypePicker) {
-			document.querySelectorAll('.kiosk-type-card').forEach((card) => {
-				card.addEventListener('click', (event) => {
-					event.preventDefault();
-					openKioskPrivacyModal(card.getAttribute('href'));
-				});
-			});
-
-			kioskPrivacyAccept?.addEventListener('click', () => {
-				const href = pendingKioskTypeHref;
-				if (!href) {
-					return;
-				}
-
-				closeKioskPrivacyModal();
-				window.location.href = href;
-			});
-
-			kioskPrivacyDecline?.addEventListener('click', () => {
-				closeKioskPrivacyModal();
-			});
-
-			kioskPrivacyModal?.addEventListener('click', (event) => {
-				if (event.target === kioskPrivacyModal) {
-					closeKioskPrivacyModal();
-				}
-			});
-
-			document.addEventListener('keydown', (event) => {
-				if (event.key === 'Escape' && kioskPrivacyModal && !kioskPrivacyModal.classList.contains('is-hidden')) {
-					closeKioskPrivacyModal();
-				}
-			});
-		}
 
 		const hasFinalStepPanel = Boolean(visitorStepPanel || enrolleeStepPanel);
 		const hasRegisterFlow = Boolean(

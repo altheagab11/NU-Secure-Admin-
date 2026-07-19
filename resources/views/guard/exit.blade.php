@@ -140,13 +140,15 @@
 			transform: translateX(4px);
 		}
 
-		.sidebar-link.active {
+		.sidebar-link.active,
+		.sidebar-toggle[aria-expanded="true"] {
 			background: linear-gradient(90deg, #4f62ff, #6678ff);
 			color: #fff;
 			box-shadow: 0 8px 20px rgba(46, 78, 255, 0.28);
 		}
 
-		.sidebar-link.active::before {
+		.sidebar-link.active::before,
+		.sidebar-toggle[aria-expanded="true"]::before {
 			content: "";
 			position: absolute;
 			left: -14px;
@@ -1086,15 +1088,15 @@
 
 							<div class="collapse {{ request()->is('guard/register*') ? 'show' : '' }}" id="registerMenu">
 								<div class="submenu">
-									<a href="/guard/register?type=normal" class="submenu-link {{ request('type', 'normal') === 'normal' ? 'active' : '' }}">
+									<a href="/guard/register?type=normal" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'normal' ? 'active' : '' }}">
 										<i class="bi bi-person"></i>
 										<span>Normal Visitor</span>
 									</a>
-									<a href="/guard/register?type=enrollee" class="submenu-link {{ request('type') === 'enrollee' ? 'active' : '' }}">
+									<a href="/guard/register?type=enrollee" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'enrollee' ? 'active' : '' }}">
 										<i class="bi bi-mortarboard-fill"></i>
 										<span>Enrollee</span>
 									</a>
-									<a href="/guard/register?type=contractor" class="submenu-link {{ request('type') === 'contractor' ? 'active' : '' }}">
+									<a href="/guard/register?type=contractor" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'contractor' ? 'active' : '' }}">
 										<i class="bi bi-briefcase-fill"></i>
 										<span>Contractor</span>
 									</a>
@@ -1119,7 +1121,7 @@
 
 					<div class="sidebar-section">
 						<p class="sidebar-label">QUICK ACTION</p>
-						<a href="/guard/register?type=normal" class="quick-action-btn">
+						<a href="/guard/register?type=normal" class="quick-action-btn js-privacy-consent-link">
 							<i class="bi bi-qr-code-scan"></i>
 							<span>Register Visitor</span>
 						</a>
@@ -1384,6 +1386,7 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+	@include('guard.partials.guard-privacy-consent')
 	<script>
 		const scannerInput = document.getElementById('scannerInput');
 		const manualEntryButton = document.getElementById('manualEntryButton');
