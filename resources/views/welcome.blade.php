@@ -199,7 +199,6 @@
         </h1>
 
         <p class="brand-subtitle">
-            <span class="highlight">S</span>mart
             <span class="highlight">V</span>isitor
             <span class="highlight">M</span>onitoring
             <span class="highlight">S</span>ystem
