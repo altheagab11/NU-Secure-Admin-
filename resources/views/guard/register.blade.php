@@ -1556,15 +1556,9 @@
 			align-items: baseline;
 		}
 
-		body.self-registration-mode .self-registration-brand .brand-title span:first-child {
+		body.self-registration-mode .self-registration-brand .brand-title span {
 			color: #ffd84d;
 			font-size: 1.35rem;
-		}
-
-		body.self-registration-mode .self-registration-brand .brand-title span:last-child {
-			color: #ffffff;
-			font-size: 1.25rem;
-			font-weight: 700;
 		}
 
 		body.self-registration-mode .self-registration-brand .brand-subtitle {
@@ -3154,12 +3148,8 @@
 				font-size: 18px;
 			}
 
-			body.self-registration-mode .self-registration-brand .brand-title span:first-child {
+			body.self-registration-mode .self-registration-brand .brand-title span {
 				font-size: 1.05rem;
-			}
-
-			body.self-registration-mode .self-registration-brand .brand-title span:last-child {
-				font-size: 0.98rem;
 			}
 
 			body.self-registration-mode .self-registration-brand .brand-subtitle {
@@ -3625,7 +3615,7 @@
 							<i class="bi bi-shield-lock-fill"></i>
 						</div>
 						<div>
-							<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
+							<h4 class="brand-title mb-0"><span>VMS</span></h4>
 							<small class="brand-subtitle">Visitor Monitoring System</small>
 						</div>
 					</div>
@@ -3857,7 +3847,7 @@
 						@endif
 					</div>
 					@if ($isSelfRegisteredRole)
-					<p class="kiosk-reg-footer">© {{ date('Y') }} VMS Guard. All rights reserved.</p>
+					<p class="kiosk-reg-footer">© {{ date('Y') }} VMS. All rights reserved.</p>
 					@endif
 
 					@if ($registerType === 'enrollee')
