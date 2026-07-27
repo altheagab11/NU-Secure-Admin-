@@ -583,6 +583,51 @@
 			background: #111827;
 		}
 
+		.camera-feed.is-mirrored {
+			transform: scaleX(-1);
+		}
+
+		.flip-camera-btn {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			z-index: 7;
+			width: 44px;
+			height: 44px;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: rgba(15, 23, 42, 0.72);
+			color: #fff;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			backdrop-filter: blur(4px);
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.scanner-zone.camera-on .flip-camera-btn {
+			display: inline-flex;
+		}
+
+		.flip-camera-btn i {
+			font-size: 1.15rem;
+			line-height: 1;
+		}
+
+		.flip-camera-btn:disabled {
+			opacity: 0.55;
+			cursor: wait;
+		}
+
+		.flip-camera-btn:hover:not(:disabled),
+		.flip-camera-btn:focus-visible:not(:disabled) {
+			background: rgba(15, 23, 42, 0.88);
+			outline: none;
+		}
+
 		.frozen-frame {
 			position: absolute;
 			top: 50%;
@@ -3710,6 +3755,9 @@
 						<div class="scanner-zone">
 							<video id="cameraFeed" class="camera-feed" autoplay playsinline muted></video>
 							<canvas id="frozenFrame" class="frozen-frame"></canvas>
+							<button type="button" class="flip-camera-btn" id="flipCameraBtn" aria-label="Flip camera" title="Flip camera">
+								<i class="bi bi-phone-flip" aria-hidden="true"></i>
+							</button>
 							<div class="scanner-overlay" aria-hidden="true">
 								<div class="picture-guide" id="pictureGuide">
 									<span class="corner tl"></span>
@@ -4427,6 +4475,7 @@
 		const flowHead = document.querySelector('.flow-head');
 		const scannerZone = document.querySelector('.scanner-zone');
 		const cameraFeed = document.getElementById('cameraFeed');
+		const flipCameraBtn = document.getElementById('flipCameraBtn');
 		const pictureGuide = document.getElementById('pictureGuide');
 		const idGuide = document.getElementById('idGuide');
 		const cameraStatus = document.getElementById('cameraStatus');
@@ -4500,6 +4549,8 @@
 			galleryAction && galleryHint && loadingOverlay && loadingText
 		);
 		let activeStream = null;
+		/** @type {'environment'|'user'} */
+		let preferredFacingMode = 'environment';
 		let currentStep = 1;
 		let capturedPictureData = '';
 		let selectedOfficeIds = [];
@@ -5041,6 +5092,88 @@
 			cameraFeed.srcObject = null;
 		};
 
+		const updateFlipCameraUi = () => {
+			if (!flipCameraBtn) {
+				return;
+			}
+
+			const nextLabel = preferredFacingMode === 'environment'
+				? 'Switch to front camera'
+				: 'Switch to back camera';
+			flipCameraBtn.title = nextLabel;
+			flipCameraBtn.setAttribute('aria-label', nextLabel);
+			// Mirror only for selfie preview; keep ID text readable on front cam.
+			cameraFeed.classList.toggle('is-mirrored', preferredFacingMode === 'user' && currentStep === 3);
+		};
+
+		const requestCameraStream = async (facingMode) => {
+			const attempts = [
+				{ video: { facingMode: { exact: facingMode } }, audio: false },
+				{ video: { facingMode: { ideal: facingMode } }, audio: false },
+				{ video: true, audio: false }
+			];
+
+			let lastError = null;
+
+			for (const constraints of attempts) {
+				try {
+					return await navigator.mediaDevices.getUserMedia(constraints);
+				} catch (error) {
+					lastError = error;
+				}
+			}
+
+			throw lastError || new Error('Unable to access camera.');
+		};
+
+		const startCamera = async () => {
+			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+				setCameraState(false, 'Camera access is not supported in this browser.');
+				return;
+			}
+
+			scanAction.disabled = true;
+			if (flipCameraBtn) {
+				flipCameraBtn.disabled = true;
+			}
+
+			try {
+				releaseCamera();
+				updateFlipCameraUi();
+
+				const stream = await requestCameraStream(preferredFacingMode);
+
+				activeStream = stream;
+				cameraFeed.srcObject = stream;
+
+				// Set scanner-zone aspect ratio based on camera stream dimensions
+				cameraFeed.onloadedmetadata = () => {
+					const width = cameraFeed.videoWidth;
+					const height = cameraFeed.videoHeight;
+					setScannerAspectRatio(width, height);
+				};
+
+				setCameraState(true, currentStep === 3
+					? 'Camera is ready. Center your face and hold your ID beside it.'
+					: 'Camera is ready. Position the ID inside the frame.');
+			} catch (error) {
+				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
+			} finally {
+				if (flipCameraBtn) {
+					flipCameraBtn.disabled = false;
+				}
+			}
+		};
+
+		const flipCamera = async () => {
+			preferredFacingMode = preferredFacingMode === 'environment' ? 'user' : 'environment';
+			updateFlipCameraUi();
+			cameraStatus.textContent = preferredFacingMode === 'user'
+				? 'Switching to front camera...'
+				: 'Switching to back camera...';
+			await startCamera();
+		};
+
 		const freezeCurrentFrame = () => {
 			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
 				return false;
@@ -5087,40 +5220,6 @@
 
 		const clearFrozenFrame = () => {
 			frozenFrame.classList.remove('visible');
-		};
-
-		const startCamera = async () => {
-			if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-				setCameraState(false, 'Camera access is not supported in this browser.');
-				return;
-			}
-
-			scanAction.disabled = true;
-
-			try {
-				releaseCamera();
-
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: 'environment' },
-					audio: false
-				});
-
-				activeStream = stream;
-				cameraFeed.srcObject = stream;
-
-				// Set scanner-zone aspect ratio based on camera stream dimensions
-				cameraFeed.onloadedmetadata = () => {
-					const width = cameraFeed.videoWidth;
-					const height = cameraFeed.videoHeight;
-					setScannerAspectRatio(width, height);
-				};
-
-				setCameraState(true, currentStep === 3
-					? 'Camera is ready. Center your face and hold your ID beside it.'
-					: 'Camera is ready. Position the ID inside the frame.');
-			} catch (error) {
-				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
-			}
 		};
 
 		const capturePicture = () => {
@@ -5745,6 +5844,18 @@
 			}
 		});
 
+		flipCameraBtn?.addEventListener('click', () => {
+			if (
+				flipCameraBtn.disabled ||
+				!activeStream ||
+				!loadingOverlay.classList.contains('is-hidden')
+			) {
+				return;
+			}
+
+			flipCamera();
+		});
+
 		downloadQrBtn?.addEventListener('click', async () => {
 			if (!registrationTicketCard) {
 				alert('Ticket is not ready yet.');
@@ -6194,6 +6305,7 @@ body {
 			}
 
 			currentStep = 1;
+			preferredFacingMode = 'environment';
 			updateStepUI();
 			startCamera();
 		});
@@ -6284,6 +6396,7 @@ body {
 
 			if (registerType !== 'normal') {
 				currentStep = 3;
+				preferredFacingMode = 'user';
 				updateStepUI();
 				clearFrozenFrame();
 				cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
@@ -6292,6 +6405,7 @@ body {
 			}
 
 			currentStep = 3;
+			preferredFacingMode = 'user';
 			updateStepUI();
 			clearFrozenFrame();
 			cameraStatus.textContent = 'Proceed to final step: capture your face with ID.';
@@ -6413,6 +6527,7 @@ body {
 			loadingOverlay.classList.add('is-hidden');
 
 			currentStep = 1;
+			preferredFacingMode = 'environment';
 			capturedPictureData = '';
 			faceIdCapturePublicPath = '';
 			faceIdCapturePreviewUrl = '';

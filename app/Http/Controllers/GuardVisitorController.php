@@ -811,8 +811,9 @@ class GuardVisitorController extends Controller
             ];
         }
 
-        $bucket = (string) env('SUPABASE_STORAGE_BUCKET', 'visitor-files');
-        $defaultFolder = $step === 3 ? 'Face_ID_picture' : 'ID_scan';
+        $bucket = (string) env('SUPABASE_STORAGE_BUCKET', 'visitor-file');
+        // Face ID (step 3) goes to visitor-file/Face_ID_Picture
+        $defaultFolder = $step === 3 ? 'Face_ID_Picture' : 'ID_scan';
         $folder = trim((string) env('SUPABASE_STORAGE_FACE_ID_FOLDER', $defaultFolder), '/');
 
         $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $extension;
