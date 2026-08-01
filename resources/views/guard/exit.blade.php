@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Exit Scan</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -988,31 +988,19 @@
 			}
 		}
 
-		@media (max-width: 768px) {
+		@media (max-width: 991.98px) {
+			.exit-page-title {
+				display: none;
+			}
+
 			.exit-page-wrap {
-				padding: 16px;
-			}
-
-			.scanner-preview {
-				min-height: 320px;
-			}
-
-			.scan-frame {
-				width: 180px;
-				height: 180px;
-			}
-
-			.scanner-actions {
-				flex-direction: column;
-			}
-
-			.scan-btn-primary,
-			.scan-btn-secondary {
-				width: 100%;
+				padding: 16px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
 			}
 
 			.exit-success-modal {
-				padding: 30px 24px;
+				padding: 28px 20px 24px;
+				max-width: min(100%, 820px);
+				border-radius: 18px;
 			}
 
 			.visitor-details {
@@ -1027,16 +1015,60 @@
 
 			.done-btn {
 				width: 100%;
-			}
-
-			.modal-header-text h2 {
-				font-size: 28px;
+				max-width: 100%;
 			}
 		}
 
-		@media (max-width: 991.98px) {
-			.exit-page-title {
-				display: none;
+		@media (max-width: 768px) {
+			.exit-page-wrap {
+				padding: 14px max(12px, env(safe-area-inset-right)) 18px max(12px, env(safe-area-inset-left));
+			}
+
+			.scanner-preview {
+				min-height: 280px;
+			}
+
+			.scan-frame {
+				width: min(180px, 55vw);
+				height: min(180px, 55vw);
+			}
+
+			.scanner-actions {
+				flex-direction: column;
+			}
+
+			.scan-btn-primary,
+			.scan-btn-secondary {
+				width: 100%;
+				min-width: 0;
+			}
+
+			.exit-modal-overlay {
+				padding: 12px;
+				align-items: flex-end;
+			}
+
+			.exit-success-modal {
+				padding: 24px 16px 20px;
+				border-radius: 18px 18px 0 0;
+				max-height: min(92dvh, 900px);
+				overflow-y: auto;
+			}
+
+			.modal-header-text h2 {
+				font-size: clamp(1.35rem, 6vw, 1.75rem);
+			}
+
+			.registered-by {
+				margin: 18px 0 14px;
+				font-size: 14px;
+			}
+		}
+
+		@media (max-width: 390px) {
+			.scan-frame {
+				width: min(150px, 60vw);
+				height: min(150px, 60vw);
 			}
 		}
 	</style>
@@ -1230,8 +1262,9 @@
 									type="text"
 									class="manual-input"
 									id="manualQrInput"
-									placeholder="Enter QR code / control number"
+									placeholder="QR-… / 2026-… / or full QR JSON"
 									autocomplete="off"
+									spellcheck="false"
 								>
 								<button type="button" class="scan-btn-primary" id="submitManualEntryButton">
 									<i class="fas fa-check"></i>

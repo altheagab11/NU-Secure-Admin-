@@ -124,7 +124,7 @@ class OfficeController extends Controller
             }
 
             // paginate with current query string so filters persist on links
-            $staffRows = $staffQuery->orderBy('s.office_id')->paginate(10)->withQueryString();
+            $staffRows = $staffQuery->orderBy('s.office_id')->paginate($this->resolvePerPage($request))->withQueryString();
 
             // map over the paginator's collection and then set it back on the paginator
             $mapped = $staffRows->getCollection()->map(function ($r) {

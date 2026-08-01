@@ -586,44 +586,7 @@
 			font-size: 13px;
 		}
 
-		.pagination-wrap {
-			display: flex;
-			justify-content: flex-end;
-			align-items: center;
-			gap: 8px;
-			padding: 12px 16px 16px;
-		}
-
-		.page-link {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 34px;
-			height: 34px;
-			padding: 0 10px;
-			border: 1px solid #dbe1ea;
-			border-radius: 8px;
-			background: #fff;
-			color: #334155;
-			font-size: 13px;
-			font-weight: 600;
-			text-decoration: none;
-		}
-
-		.page-link:hover {
-			background: #f8fafc;
-		}
-
-		.page-link.active {
-			background: #4256b4;
-			color: #fff;
-			border-color: #4256b4;
-		}
-
-		.page-link.disabled {
-			opacity: 0.45;
-			pointer-events: none;
-		}
+		@include('admin.partials.table-pagination-styles')
 
 		.action-link {
 			display: inline-flex;
@@ -1104,6 +1067,14 @@
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
+					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
+						<span class="sidebar-text">Daily Reports</span>
+					</a>
+					<a href="/admin/date-range-reports" class="sidebar-link {{ request()->is('admin/date-range-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-calendar-range-fill"></i></span>
+						<span class="sidebar-text">Date-Range Reports</span>
+					</a>
 				</div>
 
 				@php
@@ -1324,17 +1295,11 @@
 						@endforelse
 					</tbody>
 				</table>
-				@if(($rows ?? null) && method_exists($rows, 'lastPage') && $rows->lastPage() > 1)
-					<div class="pagination-wrap" aria-label="Visitor table pagination">
-						<a class="page-link {{ $rows->onFirstPage() ? 'disabled' : '' }}" href="{{ $rows->onFirstPage() ? '#' : $rows->previousPageUrl() }}">Prev</a>
-
-						@for($page = 1; $page <= $rows->lastPage(); $page++)
-							<a class="page-link {{ $rows->currentPage() === $page ? 'active' : '' }}" href="{{ $rows->url($page) }}">{{ $page }}</a>
-						@endfor
-
-						<a class="page-link {{ $rows->hasMorePages() ? '' : 'disabled' }}" href="{{ $rows->hasMorePages() ? $rows->nextPageUrl() : '#' }}">Next</a>
-					</div>
-				@endif
+				@include('admin.partials.table-pagination', [
+					'paginator' => $rows,
+					'perPageParam' => 'per_page',
+					'ariaLabel' => 'Visitor table pagination',
+				])
 			</div>
 
 			<div class="bottom-grid">
@@ -1362,6 +1327,11 @@
 							</li>
 						@endforelse
 					</ul>
+					@include('admin.partials.table-pagination', [
+						'paginator' => $recentVisitors,
+						'perPageParam' => 'recent_per_page',
+						'ariaLabel' => 'Recent visitors pagination',
+					])
 				</section>
 
 				<div class="right-stack">
@@ -1413,6 +1383,11 @@
 								</li>
 							@endforelse
 						</ul>
+						@include('admin.partials.table-pagination', [
+							'paginator' => $correctOfficeScans,
+							'perPageParam' => 'scans_per_page',
+							'ariaLabel' => 'Correct office scans pagination',
+						])
 					</section>
 				</div>
 			</div>
@@ -1542,6 +1517,8 @@
 	</div>
 
 	<script>
+		@include('admin.partials.table-pagination-script')
+
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
 		const visitorDetailModal = document.getElementById('visitorDetailModal');

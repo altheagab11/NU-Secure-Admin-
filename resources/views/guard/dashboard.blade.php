@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Guard Dashboard</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -855,9 +855,10 @@
 			position: fixed;
 			top: 0;
 			right: -680px;
-			width: 620px;
+			width: min(620px, 100vw);
 			max-width: 100%;
 			height: 100vh;
+			height: 100dvh;
 			background: #f8fafc;
 			box-shadow: -10px 0 40px rgba(15, 23, 42, 0.18);
 			z-index: 999;
@@ -943,9 +944,42 @@
 			}
 		}
 
+		@media (max-width: 991.98px) {
+			.dashboard-header .page-title {
+				display: none;
+			}
+
+			.dashboard-wrap {
+				padding: 16px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
+			}
+
+			.visitor-drawer {
+				width: 100%;
+				right: -100%;
+			}
+
+			.drawer-header,
+			.drawer-body,
+			.drawer-footer {
+				padding-left: max(16px, env(safe-area-inset-left));
+				padding-right: max(16px, env(safe-area-inset-right));
+			}
+
+			.drawer-footer {
+				flex-wrap: wrap;
+				padding-bottom: max(16px, env(safe-area-inset-bottom));
+			}
+
+			.drawer-btn-secondary,
+			.drawer-btn-primary {
+				flex: 1 1 auto;
+				min-width: min(100%, 140px);
+			}
+		}
+
 		@media (max-width: 768px) {
 			.dashboard-wrap {
-				padding: 16px;
+				padding: 14px max(12px, env(safe-area-inset-right)) 18px max(12px, env(safe-area-inset-left));
 			}
 
 			.stats-grid,
@@ -961,6 +995,7 @@
 			.search-input,
 			.filter-select {
 				width: 100%;
+				min-width: 0;
 			}
 
 			.alert-banner {
@@ -972,11 +1007,31 @@
 			.visitor-table tbody td {
 				padding: 14px 16px;
 			}
-		}
 
-		@media (max-width: 991.98px) {
-			.dashboard-header .page-title {
-				display: none;
+			.visitor-table {
+				min-width: 640px;
+			}
+
+			.drawer-info-grid.two-col {
+				grid-template-columns: 1fr;
+			}
+
+			.profile-top {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+
+			.drawer-footer {
+				flex-direction: column;
+			}
+
+			.drawer-btn-secondary,
+			.drawer-btn-primary {
+				width: 100%;
+			}
+
+			.page-title {
+				font-size: clamp(1.25rem, 5vw, 1.75rem);
 			}
 		}
 	</style>

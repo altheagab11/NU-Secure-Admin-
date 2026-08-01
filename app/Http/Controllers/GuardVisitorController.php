@@ -213,15 +213,14 @@ class GuardVisitorController extends Controller
         if ($registerType === 'enrollee') {
             $enrolleeSteps = $this->resolveEnrolleeStepAssignments();
 
-            if (empty($officeIds)) {
-                $officeIds = collect($enrolleeSteps)
-                    ->pluck('office_id')
-                    ->filter(fn ($id) => $id !== null && $id !== '')
-                    ->unique()
-                    ->values()
-                    ->map(fn ($id) => (int) $id)
-                    ->all();
-            }
+            // Keep route order as configured in enrollee_step (Admissions appears twice: start + final).
+            // Do not unique() office IDs — that drops step 9.
+            $officeIds = collect($enrolleeSteps)
+                ->pluck('office_id')
+                ->filter(fn ($id) => $id !== null && $id !== '')
+                ->values()
+                ->map(fn ($id) => (int) $id)
+                ->all();
         }
 
         if ($registerType === 'enrollee') {
@@ -427,23 +426,26 @@ class GuardVisitorController extends Controller
                     $pendingExpectationStatusId = $this->resolveExpectationStatusId();
                     $arrivedExpectationStatusId = $this->resolveArrivedExpectationStatusId();
                     $expectationCreatedAt = now();
-                    $previousByOffice = [];
+                    // Key by expected_order so duplicate offices (e.g. Admissions at 1 and 9) resume correctly.
+                    $previousByOrder = [];
 
                     if ($resumedEnrollment && ! empty($resumeEnrollee['source_visit_id'])) {
-                        $previousByOffice = DB::table('office_expectation')
+                        $previousByOrder = DB::table('office_expectation')
                             ->where('visit_id', (int) $resumeEnrollee['source_visit_id'])
                             ->get()
-                            ->keyBy(static fn ($row) => (int) $row->office_id)
+                            ->keyBy(static fn ($row) => (int) ($row->expected_order ?? 0))
                             ->all();
                     } elseif ($resumedEnrollment && ! empty($resumeEnrollee['steps'])) {
                         foreach ($resumeEnrollee['steps'] as $step) {
+                            $stepOrder = (int) ($step['order'] ?? 0);
                             $stepOfficeId = (int) ($step['office_id'] ?? 0);
-                            if ($stepOfficeId <= 0) {
+                            if ($stepOrder <= 0 || $stepOfficeId <= 0) {
                                 continue;
                             }
 
-                            $previousByOffice[$stepOfficeId] = (object) [
+                            $previousByOrder[$stepOrder] = (object) [
                                 'office_id' => $stepOfficeId,
+                                'expected_order' => $stepOrder,
                                 'arrived_at' => (($step['state'] ?? '') === 'done')
                                     ? ($step['arrived_at'] ?? $expectationCreatedAt)
                                     : null,
@@ -455,15 +457,20 @@ class GuardVisitorController extends Controller
                     $expectationRows = [];
                     foreach (array_values($officeIds) as $index => $officeId) {
                         $officeId = (int) $officeId;
-                        $previous = $previousByOffice[$officeId] ?? null;
-                        $arrivedAt = $previous && ! empty($previous->arrived_at)
+                        $expectedOrder = $index + 1;
+                        $previous = $previousByOrder[$expectedOrder] ?? null;
+
+                        // Only carry arrival if the same office is still at this route order.
+                        $arrivedAt = $previous
+                            && (int) ($previous->office_id ?? 0) === $officeId
+                            && ! empty($previous->arrived_at)
                             ? $previous->arrived_at
                             : null;
 
                         $expectationRows[] = [
                             'visit_id' => $visitId,
                             'office_id' => $officeId,
-                            'expected_order' => $index + 1,
+                            'expected_order' => $expectedOrder,
                             'expectation_status_id' => $arrivedAt !== null
                                 ? (($previous->expectation_status_id ?? null) ?: $arrivedExpectationStatusId ?: $pendingExpectationStatusId)
                                 : $pendingExpectationStatusId,
@@ -2353,7 +2360,8 @@ class GuardVisitorController extends Controller
         }
 
         // Enrollee QR may encode the public tracker URL; extract token for exit / office lookups.
-        if (preg_match('#/enrollee/progress/([^/?#]+)#i', $rawQr, $matches)) {
+        // Use ~ delimiters so '#' inside the character class is not treated as the pattern end.
+        if (preg_match('~/enrollee/progress/([^/?#]+)~i', $rawQr, $matches)) {
             $tokenFromUrl = $this->normalizeNullableString(urldecode($matches[1]));
             if ($tokenFromUrl !== null) {
                 $payload['qr_token'] = $tokenFromUrl;
@@ -2363,10 +2371,12 @@ class GuardVisitorController extends Controller
 
         $rawValue = $this->normalizeNullableString($rawQr);
         if ($rawValue !== null) {
+            // Manual entry accepts QR token (QR-...), control number (2026-...), or pass number.
             if (stripos($rawValue, 'QR-') === 0) {
                 $payload['qr_token'] = $rawValue;
             } else {
                 $payload['control_number'] = $rawValue;
+                $payload['pass_number'] = $rawValue;
             }
         }
 
@@ -2542,10 +2552,10 @@ class GuardVisitorController extends Controller
 
     protected function resolveEnrolleeOfficeIds(): array
     {
+        // Preserve duplicate offices in route order (Admissions at start and end).
         return collect($this->resolveEnrolleeStepAssignments())
             ->pluck('office_id')
             ->filter(fn ($id) => $id !== null && $id !== '')
-            ->unique()
             ->values()
             ->map(static fn ($id) => (int) $id)
             ->all();

@@ -680,99 +680,13 @@
 
 				.table-wrap { overflow-x: auto; }
 
+				@include('admin.partials.table-pagination-styles')
+
 				.alerts-pagination-bar {
-					display: flex;
-					align-items: center;
-					justify-content: flex-end;
-					padding: 12px 16px;
 					border-top: 1px solid #e6edf6;
 					background: #fafbff;
-				}
-
-				.alerts-pagination-inner {
-					display: flex;
-					align-items: center;
-					justify-content: flex-end;
-					flex-wrap: wrap;
-					gap: 12px 16px;
-					max-width: 100%;
-				}
-
-				.alerts-pagination-summary {
-					font-size: 13px;
-					color: #64748b;
-					line-height: 1.35;
-					white-space: nowrap;
-				}
-
-				.alerts-pagination-nav {
-					display: inline-flex;
-					align-items: center;
-					flex-wrap: wrap;
-					gap: 6px;
-				}
-
-				.alerts-pagination-btn {
-					padding: 8px 14px;
-					border-radius: 8px;
-					border: 1px solid #d6deef;
-					background: #fff;
-					color: #334155;
-					font-size: 13px;
-					font-weight: 600;
-					cursor: pointer;
-				}
-
-				.alerts-pagination-btn:hover:not(:disabled) {
-					background: #eef2ff;
-					border-color: #c7d2fe;
-					color: #1e293b;
-				}
-
-				.alerts-pagination-btn:disabled {
-					opacity: 0.45;
-					cursor: not-allowed;
-				}
-
-				.alerts-pagination-pages {
-					display: inline-flex;
-					align-items: center;
-					flex-wrap: wrap;
-					gap: 4px;
-				}
-
-				.alerts-pagination-page {
-					min-width: 36px;
-					height: 36px;
-					padding: 0 8px;
-					border-radius: 8px;
-					border: 1px solid #d6deef;
-					background: #fff;
-					color: #334155;
-					font-size: 13px;
-					font-weight: 600;
-					cursor: pointer;
-					line-height: 1;
-				}
-
-				.alerts-pagination-page:hover {
-					background: #eef2ff;
-					border-color: #c7d2fe;
-					color: #1e293b;
-				}
-
-				.alerts-pagination-page.is-active {
-					background: #4b5cd1;
-					border-color: #4b5cd1;
-					color: #fff;
-					cursor: default;
-				}
-
-				.alerts-pagination-ellipsis {
-					padding: 0 4px;
-					font-size: 13px;
-					color: #94a3b8;
-					user-select: none;
+					margin-top: 0;
+					border-radius: 0 0 12px 12px;
 				}
 
 				/* Alert details modal - card layout (requested UI) */
@@ -1111,6 +1025,14 @@
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
+					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
+						<span class="sidebar-text">Daily Reports</span>
+					</a>
+					<a href="/admin/date-range-reports" class="sidebar-link {{ request()->is('admin/date-range-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-calendar-range-fill"></i></span>
+						<span class="sidebar-text">Date-Range Reports</span>
+					</a>
 				</div>
 
 				@php
@@ -1339,14 +1261,33 @@
 							</tr>
 						</tbody>
 					</table>
-					<div class="alerts-pagination-bar" id="alertsPaginationBar" role="navigation" aria-label="Alert list pagination">
-						<div class="alerts-pagination-inner">
-							<span class="alerts-pagination-summary" id="alertsPaginationSummary"></span>
-							<div class="alerts-pagination-nav">
-								<button type="button" class="alerts-pagination-btn" id="alertsPaginationPrev" aria-label="Previous page">Previous</button>
-								<div class="alerts-pagination-pages" id="alertsPaginationPages" role="group" aria-label="Page numbers"></div>
-								<button type="button" class="alerts-pagination-btn" id="alertsPaginationNext" aria-label="Next page">Next</button>
-							</div>
+					<div class="table-pagination-bar alerts-pagination-bar" id="alertsPaginationBar" role="navigation" aria-label="Alert list pagination">
+						<div class="table-pagination-left">
+							<label class="table-pagination-label" for="alertsPageSize">Page size:</label>
+							<select id="alertsPageSize" class="table-page-size" aria-label="Page size">
+								<option value="5" selected>5</option>
+								<option value="10">10</option>
+								<option value="25">25</option>
+								<option value="50">50</option>
+								<option value="75">75</option>
+								<option value="100">100</option>
+							</select>
+							<span class="table-pagination-range" id="alertsPaginationRange">0 to 0 of 0</span>
+						</div>
+						<div class="table-pagination-right">
+							<button type="button" class="table-pagination-nav" id="alertsPaginationFirst" aria-label="First page">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6L5 12l6 6M19 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							</button>
+							<button type="button" class="table-pagination-nav" id="alertsPaginationPrev" aria-label="Previous page">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							</button>
+							<span class="table-pagination-page" id="alertsPaginationPageLabel">Page <strong>1</strong> of 1</span>
+							<button type="button" class="table-pagination-nav" id="alertsPaginationNext" aria-label="Next page">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							</button>
+							<button type="button" class="table-pagination-nav" id="alertsPaginationLast" aria-label="Last page">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -1555,7 +1496,8 @@
 		const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 		let pendingResolveAlertId = null;
 
-		const ALERTS_PAGE_SIZE = 10;
+		const ALERTS_PAGE_SIZES = [5, 10, 25, 50, 75, 100];
+		let alertsPageSize = 5;
 		const alertsPageByFilter = { unresolved: 1, all: 1, resolved: 1 };
 
 		function rowMatchesAlertTab(row, filter) {
@@ -1599,80 +1541,51 @@
 			return sorted;
 		}
 
-		function buildAlertPaginationSequence(totalPages, currentPage) {
-			if (totalPages <= 9) {
-				return Array.from({ length: totalPages }, (_, i) => i + 1);
+		function setAlertsNavDisabled(btn, disabled) {
+			if (!btn) return;
+			btn.disabled = disabled;
+			btn.classList.toggle('is-disabled', disabled);
+			btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+			if (disabled) {
+				btn.setAttribute('tabindex', '-1');
+			} else {
+				btn.removeAttribute('tabindex');
 			}
-			const add = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1, currentPage - 2, currentPage + 2]);
-			const sorted = [...add].filter((p) => p >= 1 && p <= totalPages).sort((a, b) => a - b);
-			const seq = [];
-			for (let i = 0; i < sorted.length; i++) {
-				if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
-					seq.push('ellipsis');
-				}
-				seq.push(sorted[i]);
-			}
-			return seq;
-		}
-
-		function renderAlertsPaginationPages(filter, page, totalPages, totalMatching) {
-			const pagesEl = document.getElementById('alertsPaginationPages');
-			if (!pagesEl) return;
-			pagesEl.innerHTML = '';
-			if (totalMatching === 0 || totalPages < 1) {
-				return;
-			}
-			const sequence = totalPages === 1 ? [1] : buildAlertPaginationSequence(totalPages, page);
-			sequence.forEach((item) => {
-				if (item === 'ellipsis') {
-					const span = document.createElement('span');
-					span.className = 'alerts-pagination-ellipsis';
-					span.textContent = '…';
-					span.setAttribute('aria-hidden', 'true');
-					pagesEl.appendChild(span);
-					return;
-				}
-				const p = item;
-				const btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'alerts-pagination-page' + (p === page ? ' is-active' : '');
-				btn.textContent = String(p);
-				btn.setAttribute('aria-label', `Page ${p}`);
-				if (p === page) {
-					btn.setAttribute('aria-current', 'page');
-				}
-				btn.addEventListener('click', () => {
-					if (p === alertsPageByFilter[filter]) return;
-					alertsPageByFilter[filter] = p;
-					applyAlertTabFilter(filter);
-				});
-				pagesEl.appendChild(btn);
-			});
 		}
 
 		function updateAlertsPaginationUi(filter, page, totalPages, totalMatching) {
+			const firstBtn = document.getElementById('alertsPaginationFirst');
 			const prevBtn = document.getElementById('alertsPaginationPrev');
 			const nextBtn = document.getElementById('alertsPaginationNext');
-			const summary = document.getElementById('alertsPaginationSummary');
-			if (!prevBtn || !nextBtn || !summary) return;
+			const lastBtn = document.getElementById('alertsPaginationLast');
+			const rangeEl = document.getElementById('alertsPaginationRange');
+			const pageLabel = document.getElementById('alertsPaginationPageLabel');
+			if (!rangeEl || !pageLabel) return;
 
 			if (totalMatching === 0) {
-				summary.textContent = 'No alerts in this view';
-				prevBtn.disabled = true;
-				nextBtn.disabled = true;
-				renderAlertsPaginationPages(filter, page, totalPages, totalMatching);
+				rangeEl.textContent = '0 to 0 of 0';
+				pageLabel.innerHTML = 'Page <strong>1</strong> of 1';
+				setAlertsNavDisabled(firstBtn, true);
+				setAlertsNavDisabled(prevBtn, true);
+				setAlertsNavDisabled(nextBtn, true);
+				setAlertsNavDisabled(lastBtn, true);
 				return;
 			}
 
-			const startIdx = (page - 1) * ALERTS_PAGE_SIZE;
-			const endIdx = Math.min(startIdx + ALERTS_PAGE_SIZE, totalMatching);
-			summary.textContent = `Showing ${startIdx + 1}–${endIdx} of ${totalMatching}`;
-			prevBtn.disabled = page <= 1;
-			nextBtn.disabled = page >= totalPages;
-			renderAlertsPaginationPages(filter, page, totalPages, totalMatching);
+			const startIdx = (page - 1) * alertsPageSize;
+			const endIdx = Math.min(startIdx + alertsPageSize, totalMatching);
+			rangeEl.textContent = `${startIdx + 1} to ${endIdx} of ${totalMatching}`;
+			pageLabel.innerHTML = `Page <strong>${page}</strong> of ${totalPages}`;
+
+			const onFirst = page <= 1;
+			const onLast = page >= totalPages;
+			setAlertsNavDisabled(firstBtn, onFirst);
+			setAlertsNavDisabled(prevBtn, onFirst);
+			setAlertsNavDisabled(nextBtn, onLast);
+			setAlertsNavDisabled(lastBtn, onLast);
 		}
 
-		/** Filter by tab (unresolved / all / resolved), reorder rows, then show 10 per page for that tab. */
+		/** Filter by tab (unresolved / all / resolved), reorder rows, then paginate for that tab. */
 		function applyAlertTabFilter(filter) {
 			const tbody = document.querySelector('.alerts-table tbody');
 			if (!tbody) return;
@@ -1694,18 +1607,18 @@
 			}
 
 			const totalMatching = sortedMatching.length;
-			const totalPages = Math.max(1, Math.ceil(totalMatching / ALERTS_PAGE_SIZE));
+			const totalPages = Math.max(1, Math.ceil(totalMatching / alertsPageSize));
 			let page = parseInt(String(alertsPageByFilter[filter] || '1'), 10);
 			if (Number.isNaN(page) || page < 1) page = 1;
 			if (page > totalPages) page = totalPages;
 			alertsPageByFilter[filter] = page;
 
-			const start = (page - 1) * ALERTS_PAGE_SIZE;
+			const start = (page - 1) * alertsPageSize;
 			nonMatching.forEach((r) => {
 				r.style.display = 'none';
 			});
 			sortedMatching.forEach((r, idx) => {
-				r.style.display = idx >= start && idx < start + ALERTS_PAGE_SIZE ? 'table-row' : 'none';
+				r.style.display = idx >= start && idx < start + alertsPageSize ? 'table-row' : 'none';
 			});
 
 			if (noResults) {
@@ -1713,6 +1626,17 @@
 			}
 
 			updateAlertsPaginationUi(filter, page, totalPages, totalMatching);
+		}
+
+		function getActiveAlertFilter() {
+			const active = document.querySelector('.panel-tabs .tab-link.active');
+			return active ? (active.dataset.filter || 'all') : 'unresolved';
+		}
+
+		function goToAlertsPage(nextPage) {
+			const filter = getActiveAlertFilter();
+			alertsPageByFilter[filter] = nextPage;
+			applyAlertTabFilter(filter);
 		}
 
 		if (userMenuGroup && userMenuToggle) {
@@ -1746,18 +1670,35 @@
 			applyAlertTabFilter(initFilter);
 		}
 
-		document.getElementById('alertsPaginationPrev')?.addEventListener('click', () => {
-			const active = document.querySelector('.panel-tabs .tab-link.active');
-			const filter = active ? (active.dataset.filter || 'all') : 'unresolved';
-			alertsPageByFilter[filter] = Math.max(1, (alertsPageByFilter[filter] || 1) - 1);
+		document.getElementById('alertsPageSize')?.addEventListener('change', (event) => {
+			const value = parseInt(String(event.target.value || '5'), 10);
+			alertsPageSize = ALERTS_PAGE_SIZES.includes(value) ? value : 5;
+			const filter = getActiveAlertFilter();
+			alertsPageByFilter[filter] = 1;
 			applyAlertTabFilter(filter);
 		});
 
+		document.getElementById('alertsPaginationFirst')?.addEventListener('click', () => {
+			goToAlertsPage(1);
+		});
+
+		document.getElementById('alertsPaginationPrev')?.addEventListener('click', () => {
+			const filter = getActiveAlertFilter();
+			goToAlertsPage(Math.max(1, (alertsPageByFilter[filter] || 1) - 1));
+		});
+
 		document.getElementById('alertsPaginationNext')?.addEventListener('click', () => {
-			const active = document.querySelector('.panel-tabs .tab-link.active');
-			const filter = active ? (active.dataset.filter || 'all') : 'unresolved';
-			alertsPageByFilter[filter] = (alertsPageByFilter[filter] || 1) + 1;
-			applyAlertTabFilter(filter);
+			const filter = getActiveAlertFilter();
+			goToAlertsPage((alertsPageByFilter[filter] || 1) + 1);
+		});
+
+		document.getElementById('alertsPaginationLast')?.addEventListener('click', () => {
+			const filter = getActiveAlertFilter();
+			const matchingCount = Array.from(document.querySelectorAll('.alerts-table tbody tr'))
+				.filter((r) => r.id !== 'noResults' && rowMatchesAlertTab(r, filter))
+				.length;
+			const totalPages = Math.max(1, Math.ceil(matchingCount / alertsPageSize));
+			goToAlertsPage(totalPages);
 		});
 
 		// Modal handling -------------------------------------------------

@@ -17,9 +17,9 @@ class GuardController extends Controller
     /**
      * Display a listing of guards for the admin UI.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // load active (non-recycled) guard rows with related user accounts, 10 per page
+        // load active (non-recycled) guard rows with related user accounts
         $guardsQuery = Guard::with('user');
 
         if (Schema::hasColumn('users', 'status')) {
@@ -34,7 +34,7 @@ class GuardController extends Controller
 
         $guards = $guardsQuery
             ->orderByDesc('guard_id')
-            ->paginate(10)
+            ->paginate($this->resolvePerPage($request))
             ->withQueryString()
             ->through(function ($g) {
                 $user = $g->user;

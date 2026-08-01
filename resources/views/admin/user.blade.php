@@ -402,13 +402,7 @@
 			border-bottom: 0;
 		}
 
-		.pagination-wrap {
-			display: flex;
-			justify-content: flex-end;
-			align-items: center;
-			gap: 8px;
-			padding: 12px 16px 16px;
-		}
+		@include('admin.partials.table-pagination-styles')
 
 		/* Filters card (copied-simplified from visitor view) */
 		.filters-card {
@@ -433,38 +427,6 @@
 		.search-wrap { display:flex; align-items:center; gap:8px; }
 
 		.clear-filters-btn { color:#64748b; text-decoration:none; padding:6px 10px; border-radius:8px; border:1px solid transparent; }
-
-
-		.page-link {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 34px;
-			height: 34px;
-			padding: 0 10px;
-			border: 1px solid #dbe1ea;
-			border-radius: 8px;
-			background: #fff;
-			color: #334155;
-			font-size: 13px;
-			font-weight: 600;
-			text-decoration: none;
-		}
-
-		.page-link:hover {
-			background: #f8fafc;
-		}
-
-		.page-link.active {
-			background: #4256b4;
-			color: #fff;
-			border-color: #4256b4;
-		}
-
-		.page-link.disabled {
-			opacity: 0.45;
-			pointer-events: none;
-		}
 
 		.email-cell {
 			display: inline-flex;
@@ -680,6 +642,14 @@
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
+					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
+						<span class="sidebar-text">Daily Reports</span>
+					</a>
+					<a href="/admin/date-range-reports" class="sidebar-link {{ request()->is('admin/date-range-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-calendar-range-fill"></i></span>
+						<span class="sidebar-text">Date-Range Reports</span>
+					</a>
 				</div>
 
 				@php
@@ -843,17 +813,11 @@
 						</tbody>
 					</table>
 
-					@if(isset($guards) && method_exists($guards, 'lastPage') && $guards->lastPage() > 1)
-						<div class="pagination-wrap" aria-label="Guard table pagination">
-							<a class="page-link {{ $guards->onFirstPage() ? 'disabled' : '' }}" href="{{ $guards->onFirstPage() ? '#' : $guards->previousPageUrl() }}">Prev</a>
-
-							@for($page = 1; $page <= $guards->lastPage(); $page++)
-								<a class="page-link {{ $guards->currentPage() === $page ? 'active' : '' }}" href="{{ $guards->url($page) }}">{{ $page }}</a>
-							@endfor
-
-							<a class="page-link {{ $guards->hasMorePages() ? '' : 'disabled' }}" href="{{ $guards->hasMorePages() ? $guards->nextPageUrl() : '#' }}">Next</a>
-						</div>
-					@endif
+					@include('admin.partials.table-pagination', [
+						'paginator' => $guards,
+						'perPageParam' => 'per_page',
+						'ariaLabel' => 'Guard table pagination',
+					])
 				</section>
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
@@ -992,19 +956,13 @@
 							@endforelse
 						</tbody>
 					</table>
+
+					@include('admin.partials.table-pagination', [
+						'paginator' => $offices,
+						'perPageParam' => 'per_page',
+						'ariaLabel' => 'Office table pagination',
+					])
 				</section>
-
-				@if(isset($offices) && method_exists($offices, 'lastPage') && $offices->lastPage() > 1)
-					<div class="pagination-wrap" aria-label="Office table pagination">
-						<a class="page-link {{ $offices->onFirstPage() ? 'disabled' : '' }}" href="{{ $offices->onFirstPage() ? '#' : $offices->previousPageUrl() }}">Prev</a>
-
-						@for($page = 1; $page <= $offices->lastPage(); $page++)
-							<a class="page-link {{ $offices->currentPage() === $page ? 'active' : '' }}" href="{{ $offices->url($page) }}">{{ $page }}</a>
-						@endfor
-
-						<a class="page-link {{ $offices->hasMorePages() ? '' : 'disabled' }}" href="{{ $offices->hasMorePages() ? $offices->nextPageUrl() : '#' }}">Next</a>
-					</div>
-				@endif
 
 				<div class="office-summary-grid">
 					@php
@@ -1051,6 +1009,8 @@
 	</div>
 
 	<script>
+		@include('admin.partials.table-pagination-script')
+
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
 

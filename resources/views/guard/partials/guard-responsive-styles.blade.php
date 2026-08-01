@@ -1,14 +1,32 @@
+html {
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
 body {
 	overflow-x: clip;
+}
+
+img,
+svg {
+	max-width: 100%;
+	height: auto;
+}
+
+video,
+canvas {
+	max-width: 100%;
 }
 
 .layout {
 	min-height: 100vh;
 	min-height: 100dvh;
+	width: 100%;
 }
 
 .main {
 	min-width: 0;
+	width: 100%;
 }
 
 .guard-nav-backdrop {
@@ -18,6 +36,7 @@ body {
 	background: rgba(15, 23, 42, 0.48);
 	z-index: 999;
 	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
 }
 
 body.guard-sidebar-open .guard-nav-backdrop {
@@ -28,10 +47,16 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	display: none;
 	align-items: center;
 	gap: 12px;
-	padding: 10px 0 14px;
+	padding:
+		max(10px, env(safe-area-inset-top))
+		0
+		14px;
 	margin: 0 0 4px;
 	border-bottom: 1px solid #e2e8f0;
 	background: inherit;
+	position: sticky;
+	top: 0;
+	z-index: 50;
 }
 
 .guard-menu-btn {
@@ -48,6 +73,7 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	cursor: pointer;
 	flex-shrink: 0;
 	transition: background 0.15s ease, border-color 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .guard-menu-btn:hover {
@@ -68,8 +94,10 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	min-width: 0;
 }
 
+/* Tablet / mobile: collapsible sidebar drawer */
 @media (max-width: 991.98px) {
 	.layout {
 		flex-direction: row;
@@ -91,6 +119,8 @@ body.guard-sidebar-open .guard-nav-backdrop {
 		transition: transform 0.28s ease, box-shadow 0.28s ease;
 		z-index: 1001;
 		box-shadow: none;
+		padding-top: max(18px, env(safe-area-inset-top));
+		padding-bottom: max(18px, env(safe-area-inset-bottom));
 	}
 
 	body.guard-sidebar-open .sidebar {
@@ -102,10 +132,48 @@ body.guard-sidebar-open .guard-nav-backdrop {
 		margin-left: 0 !important;
 		flex: 1;
 		min-height: 0;
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.guard-mobile-topbar {
 		display: flex;
+	}
+}
+
+/* Compact tablets / large phones */
+@media (max-width: 767.98px) {
+	.brand-title span:first-child {
+		font-size: clamp(1.15rem, 5vw, 1.5rem);
+	}
+
+	.brand-title span:last-child {
+		font-size: clamp(1.05rem, 4.5vw, 1.35rem);
+	}
+
+	.brand-subtitle {
+		font-size: 0.7rem;
+	}
+}
+
+/* Small phones */
+@media (max-width: 390px) {
+	.guard-menu-btn {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+	}
+
+	.guard-mobile-topbar-title {
+		font-size: 0.95rem;
+	}
+}
+
+/* Landscape phones: keep usable drawer height */
+@media (max-height: 500px) and (orientation: landscape) {
+	.sidebar {
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 }
 
@@ -116,5 +184,9 @@ body.guard-sidebar-open .guard-nav-backdrop {
 
 	body.guard-sidebar-open {
 		overflow: unset !important;
+	}
+
+	body.guard-sidebar-open .sidebar {
+		transform: none;
 	}
 }

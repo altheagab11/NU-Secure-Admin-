@@ -455,19 +455,7 @@
 			font-family: inherit;
 		}
 
-		.dashboard-pagination nav .d-none.flex-sm-fill.d-sm-flex.align-items-sm-center.justify-content-sm-between {
-			gap: 14px;
-		}
-
-		.dashboard-pagination nav p.small.text-muted {
-			margin-bottom: 0;
-			margin-right: 10px;
-			white-space: nowrap;
-		}
-
-		.dashboard-pagination nav ul.pagination {
-			margin-bottom: 0;
-		}
+		@include('admin.partials.table-pagination-styles')
 
 		.plot-line {
 			fill: none;
@@ -727,6 +715,14 @@
 						<span class="sidebar-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
+					</a>
+					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
+						<span class="sidebar-text">Daily Reports</span>
+					</a>
+					<a href="/admin/date-range-reports" class="sidebar-link {{ request()->is('admin/date-range-reports*') ? 'active' : '' }}">
+						<span class="sidebar-icon"><i class="bi bi-calendar-range-fill"></i></span>
+						<span class="sidebar-text">Date-Range Reports</span>
 					</a>
 				</div>
 
@@ -1123,11 +1119,11 @@
 										</tbody>
 									</table>
 								</div>
-								@if($liveVisitors->hasPages())
-									<div class="dashboard-pagination mt-3 d-flex justify-content-end">
-										{{ $liveVisitors->onEachSide(1)->links('pagination::bootstrap-5') }}
-									</div>
-								@endif
+								@include('admin.partials.table-pagination', [
+									'paginator' => $liveVisitors,
+									'perPageParam' => 'live_per_page',
+									'ariaLabel' => 'Real-time visitor list pagination',
+								])
 							</div>
 						</div>
 					</div>
@@ -1188,11 +1184,11 @@
 										</tbody>
 									</table>
 								</div>
-								@if($recentAlerts->hasPages())
-									<div class="dashboard-pagination mt-3 d-flex justify-content-end">
-										{{ $recentAlerts->onEachSide(1)->links('pagination::bootstrap-5') }}
-									</div>
-								@endif
+								@include('admin.partials.table-pagination', [
+									'paginator' => $recentAlerts,
+									'perPageParam' => 'alerts_per_page',
+									'ariaLabel' => 'Recent alerts pagination',
+								])
 							</div>
 						</div>
 					</div>
@@ -1244,6 +1240,8 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<script>
+		@include('admin.partials.table-pagination-script')
+
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
 

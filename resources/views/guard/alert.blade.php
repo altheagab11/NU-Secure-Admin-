@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Active Alerts</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -938,7 +938,7 @@
 		}
 
 		.alert-modal-card {
-			width: 940px;
+			width: min(940px, 100%);
 			max-width: calc(100% - 24px);
 			margin: 12px auto;
 			background: #ffffff;
@@ -1067,7 +1067,7 @@
 		}
 
 		.resolve-flow-card {
-			width: 620px;
+			width: min(620px, 100%);
 			max-width: calc(100% - 24px);
 			margin: 24px auto;
 			background: #ffffff;
@@ -1218,11 +1218,69 @@
 				grid-template-columns: 1fr 1fr;
 				justify-content: stretch;
 			}
+
+			.detail-grid,
+			.g-details-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
+		@media (max-width: 991.98px) {
+			.alerts-page-title {
+				display: none;
+			}
+
+			.alerts-page-wrap {
+				padding: 16px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
+			}
+
+			.alert-modal,
+			.resolve-flow-modal,
+			.g-alert-modal,
+			.g-resolve-modal {
+				padding: 10px;
+				align-items: flex-end;
+			}
+
+			.alert-modal-card,
+			.resolve-flow-card,
+			.g-modal-card {
+				width: 100%;
+				max-width: 100%;
+				margin: 0 auto;
+				border-radius: 16px 16px 0 0;
+				max-height: min(92dvh, 900px);
+				display: flex;
+				flex-direction: column;
+			}
+
+			.alert-modal-body,
+			.resolve-flow-body {
+				max-height: none;
+				overflow-y: auto;
+				flex: 1;
+			}
+
+			.alert-modal-footer,
+			.resolve-flow-footer,
+			.g-modal-foot {
+				flex-wrap: wrap;
+				padding-bottom: max(14px, env(safe-area-inset-bottom));
+			}
+
+			.resolve-action-btn,
+			.resolve-btn,
+			.btn-secondary {
+				flex: 1 1 auto;
+				min-width: min(100%, 120px);
+				text-align: center;
+				justify-content: center;
+			}
 		}
 
 		@media (max-width: 768px) {
 			.alerts-page-wrap {
-				padding: 16px;
+				padding: 14px max(12px, env(safe-area-inset-right)) 18px max(12px, env(safe-area-inset-left));
 			}
 
 			.alerts-summary-grid {
@@ -1237,21 +1295,32 @@
 			.alerts-search-input,
 			.alerts-filter-select {
 				width: 100%;
+				min-width: 0;
 			}
 
 			.alert-visitor-item {
 				align-items: flex-start;
+				flex-wrap: wrap;
 			}
 
 			.alert-visitor-right {
 				width: 100%;
 				justify-content: flex-start;
 			}
-		}
 
-		@media (max-width: 991.98px) {
-			.alerts-page-title {
-				display: none;
+			.alert-modal-title {
+				font-size: clamp(1.15rem, 5vw, 1.5rem);
+			}
+
+			.alert-modal-footer,
+			.resolve-flow-footer {
+				flex-direction: column-reverse;
+			}
+
+			.resolve-action-btn,
+			.resolve-btn,
+			.btn-secondary {
+				width: 100%;
 			}
 		}
 	</style>

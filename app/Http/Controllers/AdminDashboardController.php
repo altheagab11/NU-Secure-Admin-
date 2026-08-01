@@ -21,6 +21,16 @@ class AdminDashboardController extends Controller
             $dateFilter = '';
         }
 
+        $allowedPerPage = [5, 10, 25, 50, 75, 100];
+        $livePerPage = (int) $request->query('live_per_page', 5);
+        $alertsPerPage = (int) $request->query('alerts_per_page', 5);
+        if (!in_array($livePerPage, $allowedPerPage, true)) {
+            $livePerPage = 5;
+        }
+        if (!in_array($alertsPerPage, $allowedPerPage, true)) {
+            $alertsPerPage = 5;
+        }
+
         $applyDateFilter = function ($query, string $column) use ($dateFilter) {
             if ($dateFilter === 'today') {
                 $query->whereDate($column, today());
@@ -269,7 +279,7 @@ class AdminDashboardController extends Controller
             ->when(in_array($statusFilter, ['exited', 'completed'], true), fn ($query) => $query->whereNotNull('v.exit_time'))
             ->when($statusFilter === 'in transit', fn ($query) => $query->whereRaw("LOWER(TRIM(COALESCE(vs.status_name, ''))) like ?", ['%transit%']))
             ->orderByDesc('v.entry_time')
-            ->paginate(10, ['*'], 'live_page')
+            ->paginate($livePerPage, ['*'], 'live_page')
             ->withQueryString();
 
         $liveVisitorRows->setCollection(
@@ -335,7 +345,7 @@ class AdminDashboardController extends Controller
             ->when(in_array($statusFilter, ['resolved', 'unresolved'], true), fn ($query) => $query->whereRaw("LOWER(TRIM(COALESCE(a.status, ''))) = ?", [$statusFilter]))
             ->orderByDesc('a.created_at')
             ->orderByDesc('a.alert_id')
-            ->paginate(10, ['*'], 'alerts_page')
+            ->paginate($alertsPerPage, ['*'], 'alerts_page')
             ->withQueryString();
 
         $recentAlertRows->setCollection(

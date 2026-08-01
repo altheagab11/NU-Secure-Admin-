@@ -34,7 +34,20 @@ class VisitorMonitoringController extends Controller
 
         $filteredRows = $this->applyFilters($rows, $filters)->values();
 
-        $perPage = 10;
+        $allowedPerPage = [5, 10, 25, 50, 75, 100];
+        $perPage = (int) $request->query('per_page', 5);
+        if (! in_array($perPage, $allowedPerPage, true)) {
+            $perPage = 5;
+        }
+        $recentPerPage = (int) $request->query('recent_per_page', 5);
+        if (! in_array($recentPerPage, $allowedPerPage, true)) {
+            $recentPerPage = 5;
+        }
+        $scansPerPage = (int) $request->query('scans_per_page', 5);
+        if (! in_array($scansPerPage, $allowedPerPage, true)) {
+            $scansPerPage = 5;
+        }
+
         $currentPage = max(1, (int) $request->query('page', 1));
         $filteredCount = $filteredRows->count();
 
@@ -98,41 +111,67 @@ class VisitorMonitoringController extends Controller
 
         $maxOfficeCount = max(1, (int) $activeByOffice->max('count'));
 
-        $recentVisitors = $filteredRows
-            ->take(3)
+        $recentVisitorsSource = $filteredRows
             ->map(fn ($row) => [
                 'visitor_name' => $row['visitor_name'],
                 'destination' => $row['destination'],
                 'time_label' => $row['entry_time_label_short'],
                 'status' => $row['status'],
                 'status_class' => $row['status_class'],
-            ]);
+            ])
+            ->values();
+
+        $recentPage = max(1, (int) $request->query('recent_page', 1));
+        $recentVisitors = new LengthAwarePaginator(
+            $recentVisitorsSource->forPage($recentPage, $recentPerPage)->values(),
+            $recentVisitorsSource->count(),
+            $recentPerPage,
+            $recentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+                'pageName' => 'recent_page',
+            ]
+        );
 
         $supabaseUrl = env('SUPABASE_URL');
         $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
 
-        $correctOfficeScans = collect([]);
+        $correctOfficeScansSource = collect([]);
         if ($supabaseUrl && $supabaseKey) {
             try {
-                $correctOfficeScans = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey);
+                $correctOfficeScansSource = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey);
             } catch (\Throwable $e) {
                 logger()->warning('Correct office scan fetch failed: '.$e->getMessage());
             }
         }
 
-        if ($correctOfficeScans->isEmpty()) {
+        if ($correctOfficeScansSource->isEmpty()) {
             // Safe fallback so card does not go blank when source tables are unavailable.
-            $correctOfficeScans = $filteredRows
+            $correctOfficeScansSource = $filteredRows
                 ->filter(fn ($row) => ! in_array($row['status'], ['In Transit', 'Overstay'], true))
-                ->take(3)
                 ->map(fn ($row) => [
                     'visitor_name' => $row['visitor_name'],
                     'destination' => $row['destination'],
                     'control_number' => $row['control_number'],
                     'time_label' => $row['entry_time_label_short'],
                     'result' => 'MATCHED',
-                ]);
+                ])
+                ->values();
         }
+
+        $scansPage = max(1, (int) $request->query('scans_page', 1));
+        $correctOfficeScans = new LengthAwarePaginator(
+            $correctOfficeScansSource->forPage($scansPage, $scansPerPage)->values(),
+            $correctOfficeScansSource->count(),
+            $scansPerPage,
+            $scansPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+                'pageName' => 'scans_page',
+            ]
+        );
 
         return view('admin.visitor', [
             'rows' => $paginatedRows,
@@ -393,7 +432,7 @@ class VisitorMonitoringController extends Controller
             'office:office!visit_primary_office_id_fkey(office_name),'.
             'exit_status:exit_status!visit_exit_status_id_fkey(exit_status_name),'.
             'registered_guard:users!visit_guard_user_id_fkey(first_name,last_name),'.
-            'office_expectations:office_expectation!office_expectation_visit_id_fkey(expectation_id,expected_order,arrived_at,office:office!office_expectation_office_id_fkey(office_name),expectation_status:expectation_status!office_expectation_expectation_status_id_fkey(status_name)),'.
+            'office_expectations:office_expectation!office_expectation_visit_id_fkey(expectation_id,expected_order,arrived_at,office:office!office_expectation_office_id_fkey(office_name),expectation_status(status_name)),'.
             'alerts(alert_id,alert_type,severity,message,status,created_at,resolved_at,resolved_by,resolution_notes,resolved_user:users!fk_alerts_resolved_by(first_name,last_name))';
 
         $response = Http::withHeaders([
@@ -412,7 +451,9 @@ class VisitorMonitoringController extends Controller
                 'body' => $response->body(),
             ]);
 
-            return collect([]);
+            throw new \RuntimeException(
+                'Supabase visit fetch failed (HTTP '.$response->status().').'
+            );
         }
 
         $visits = $response->json();
@@ -918,7 +959,6 @@ class VisitorMonitoringController extends Controller
             })
             ->filter()
             ->sortByDesc('raw_scan_time')
-            ->take(3)
             ->values();
     }
 

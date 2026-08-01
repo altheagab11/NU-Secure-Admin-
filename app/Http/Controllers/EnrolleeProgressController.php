@@ -153,7 +153,10 @@ class EnrolleeProgressController extends Controller
                 return [
                     'order' => $row->expected_order !== null ? (int) $row->expected_order : ($index + 1),
                     'title' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
-                    'subtitle' => $this->defaultSubtitleForOffice((string) ($row->office_name ?? '')),
+                    'subtitle' => $this->defaultSubtitleForOffice(
+                        (string) ($row->office_name ?? ''),
+                        $row->expected_order !== null ? (int) $row->expected_order : ($index + 1)
+                    ),
                     'arrived_at' => $row->arrived_at,
                     'status_name' => trim((string) ($row->status_name ?? '')),
                 ];
@@ -183,7 +186,10 @@ class EnrolleeProgressController extends Controller
             return [
                 'order' => $row->step_order !== null ? (int) $row->step_order : ($index + 1),
                 'title' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
-                'subtitle' => $this->defaultSubtitleForOffice((string) ($row->office_name ?? '')),
+                'subtitle' => $this->defaultSubtitleForOffice(
+                    (string) ($row->office_name ?? ''),
+                    $row->step_order !== null ? (int) $row->step_order : ($index + 1)
+                ),
                 'arrived_at' => $row->completed_at,
                 'status_name' => trim((string) ($row->status_name ?? '')),
             ];
@@ -244,12 +250,34 @@ class EnrolleeProgressController extends Controller
         return false;
     }
 
-    protected function defaultSubtitleForOffice(string $officeName): string
+    protected function defaultSubtitleForOffice(string $officeName, ?int $order = null): string
     {
         $name = Str::lower(trim($officeName));
 
         if ($name === '') {
             return 'Proceed to the assigned office and present your QR pass.';
+        }
+
+        // Final Admissions revisit (step 9) — welcome kit / final requirements.
+        if ($order !== null && $order >= 9 && str_contains($name, 'admission')) {
+            return 'Claiming of Welcome Kit and Submission of Final Requirements';
+        }
+
+        $known = [
+            'health' => 'Submit Chest X-ray Report and Additional Health Requirements',
+            'guidance' => 'Submit Guidance Interview Form and Initial Interview',
+            'registrar' => 'Issuance of Assessment and Registration Documents',
+            'treasury' => 'Cashier Payment / Debit Card / Credit Card',
+            'student development' => 'Issuance of ID Lace and Required Forms',
+            'bulldogs' => 'Fitting and Payment of Uniform',
+            'information technology' => 'Printing and Issuance of NU Lipa ID Card',
+            'admission' => 'Proceed to Admissions Office and present your QR pass for validation.',
+        ];
+
+        foreach ($known as $needle => $subtitle) {
+            if (str_contains($name, $needle)) {
+                return $subtitle;
+            }
         }
 
         return 'Proceed to '.$officeName.' and present your QR pass for validation.';

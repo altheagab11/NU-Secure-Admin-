@@ -11,6 +11,8 @@ use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
+use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\DateRangeReportController;
 use App\Http\Controllers\EnrolleeProgressController;
  
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -34,6 +36,22 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
  
     Route::get('/visitor', [VisitorMonitoringController::class, 'index'])->name('admin.visitor');
     Route::get('/visitor/export', [VisitorMonitoringController::class, 'export'])->name('admin.visitor.export');
+
+    Route::get('/daily-reports', [DailyReportController::class, 'index'])->name('admin.daily-reports');
+    Route::post('/daily-reports/generate', [DailyReportController::class, 'generate'])->name('admin.daily-reports.generate');
+    Route::post('/daily-reports/{id}/regenerate', [DailyReportController::class, 'regenerate'])
+        ->whereNumber('id')
+        ->name('admin.daily-reports.regenerate');
+    Route::get('/daily-reports/{id}/download', [DailyReportController::class, 'download'])
+        ->whereNumber('id')
+        ->name('admin.daily-reports.download');
+
+    Route::get('/date-range-reports', [DateRangeReportController::class, 'index'])->name('admin.date-range-reports');
+    Route::post('/date-range-reports/generate', [DateRangeReportController::class, 'generate'])
+        ->name('admin.date-range-reports.generate');
+    Route::get('/date-range-reports/{id}/download', [DateRangeReportController::class, 'download'])
+        ->whereNumber('id')
+        ->name('admin.date-range-reports.download');
  
     Route::get('/alerts', [AlertsController::class, 'index']);
     Route::post('/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
