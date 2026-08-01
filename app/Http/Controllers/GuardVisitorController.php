@@ -45,6 +45,7 @@ class GuardVisitorController extends Controller
                 'v.qr_token',
                 'v.visitor_id',
                 'v.purpose_reason',
+                'v.primary_office_id',
                 'v.destination_text',
                 'vr.first_name',
                 'vr.last_name',
@@ -114,8 +115,20 @@ class GuardVisitorController extends Controller
 
         $exitedStatusId = $this->resolveExitStatusByNames(['exited', 'checked out', 'completed', 'ready to exit']);
         $skippedExpectationStatusId = $this->resolveSkippedExpectationStatusId();
+        $exitOfficeId = $this->resolveExitScanOfficeId($visit);
+        $validValidationStatusId = $this->resolveValidValidationStatusId();
+        $scannedByUserId = Auth::id();
 
-        DB::transaction(function () use ($visit, $exitAt, $durationMinutes, $exitedStatusId, $skippedExpectationStatusId) {
+        DB::transaction(function () use (
+            $visit,
+            $exitAt,
+            $durationMinutes,
+            $exitedStatusId,
+            $skippedExpectationStatusId,
+            $exitOfficeId,
+            $validValidationStatusId,
+            $scannedByUserId
+        ) {
             DB::table('visit')
                 ->where('visit_id', $visit->visit_id)
                 ->update([
@@ -135,6 +148,23 @@ class GuardVisitorController extends Controller
                     ->update([
                         'expectation_status_id' => $skippedExpectationStatusId,
                     ]);
+            }
+
+            if ($exitOfficeId !== null) {
+                DB::table('office_scan')->insert([
+                    'visit_id' => (int) $visit->visit_id,
+                    'office_id' => $exitOfficeId,
+                    'scanned_by_user_id' => $scannedByUserId ? (int) $scannedByUserId : null,
+                    'scan_time' => $exitAt,
+                    'validation_status_id' => $validValidationStatusId,
+                    'remarks' => 'Guard facility exit scan',
+                ]);
+            } else {
+                logger()->warning('Exit scan completed without office_scan row (no resolvable office_id)', [
+                    'visit_id' => (int) $visit->visit_id,
+                    'primary_office_id' => $visit->primary_office_id ?? null,
+                    'destination_text' => $visit->destination_text ?? null,
+                ]);
             }
         });
 
@@ -607,23 +637,13 @@ class GuardVisitorController extends Controller
             $registerType = strtolower(trim((string) request()->query('register_type', 'normal')));
 
             if ($registerType === 'enrollee') {
-                $offices = DB::table('enrollee_step as es')
-                    ->join('office as o', 'o.office_id', '=', 'es.office_id')
-                    ->where('es.is_active', true)
-                    ->where('o.is_active', true)
-                    ->select(
-                        'o.office_id',
-                        'o.office_name',
-                        DB::raw('MIN(es.step_order) as first_step_order')
-                    )
-                    ->groupBy('o.office_id', 'o.office_name')
-                    ->orderBy('first_step_order')
-                    ->orderBy('o.office_name')
-                    ->get()
+                // Keep full route order, including Admissions at step 1 and step 9.
+                $offices = collect($this->resolveEnrolleeStepAssignments())
                     ->map(static function ($row) {
                         return [
-                            'office_id' => (int) $row->office_id,
-                            'office_name' => (string) $row->office_name,
+                            'office_id' => (int) $row['office_id'],
+                            'office_name' => (string) $row['office_name'],
+                            'step_order' => (int) ($row['step_order'] ?? 0),
                         ];
                     })
                     ->values();
@@ -2415,6 +2435,75 @@ class GuardVisitorController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Resolve the office_id used when recording a guard facility exit in office_scan.
+     */
+    protected function resolveExitScanOfficeId(object $visit): ?int
+    {
+        if (! empty($visit->primary_office_id)) {
+            return (int) $visit->primary_office_id;
+        }
+
+        $fromScan = DB::table('office_scan')
+            ->where('visit_id', (int) $visit->visit_id)
+            ->orderByDesc('scan_id')
+            ->value('office_id');
+
+        if ($fromScan) {
+            return (int) $fromScan;
+        }
+
+        $fromExpectation = DB::table('office_expectation')
+            ->where('visit_id', (int) $visit->visit_id)
+            ->orderBy('expected_order')
+            ->orderBy('expectation_id')
+            ->value('office_id');
+
+        if ($fromExpectation) {
+            return (int) $fromExpectation;
+        }
+
+        $destination = trim((string) ($visit->destination_text ?? ''));
+        if ($destination !== '') {
+            $exact = DB::table('office')
+                ->whereRaw('LOWER(TRIM(COALESCE(office_name, \'\'))) = ?', [strtolower($destination)])
+                ->value('office_id');
+
+            if ($exact) {
+                return (int) $exact;
+            }
+
+            $partial = DB::table('office')
+                ->whereRaw('LOWER(TRIM(COALESCE(office_name, \'\'))) like ?', ['%' . strtolower($destination) . '%'])
+                ->orderBy('office_id')
+                ->value('office_id');
+
+            if ($partial) {
+                return (int) $partial;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveValidValidationStatusId(): ?int
+    {
+        $exact = DB::table('validation_status')
+            ->whereRaw('LOWER(TRIM(COALESCE(status_name, \'\'))) = ?', ['valid'])
+            ->value('validation_status_id');
+
+        if ($exact) {
+            return (int) $exact;
+        }
+
+        $fallbackId = 1;
+        $exists = DB::table('validation_status')
+            ->where('validation_status_id', $fallbackId)
+            ->exists();
+
+        return $exists ? $fallbackId : null;
     }
 
     protected function resolveRouteStatusId(string $statusName): ?int

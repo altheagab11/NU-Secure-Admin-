@@ -523,6 +523,10 @@
 			margin: 0 auto;
 		}
 
+		.register-flow:has(#registrationCompletePanel:not(.is-hidden)) {
+			max-width: 1100px;
+		}
+
 		.flow-head {
 			display: flex;
 			justify-content: center;
@@ -1088,165 +1092,475 @@
 		}
 
 		.registration-complete {
-			margin: 12px auto 0;
-			max-width: 760px;
+			margin: 0 auto;
+			max-width: 1100px;
+			width: 100%;
 			display: grid;
+			gap: 14px;
+		}
+
+		.registration-complete.is-hidden {
+			display: none !important;
+		}
+
+		.qr-success {
+			display: grid;
+			gap: 14px;
+			color: #101828;
+		}
+
+		.qr-success-capture {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+		}
+
+		.qr-success-banner {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			min-height: 84px;
+			padding: 14px 22px;
+			border: 1px solid #a7ead0;
+			border-radius: 18px;
+			background: linear-gradient(110deg, #ecfff7, #f5fffb);
+			box-shadow: 0 5px 20px rgba(16, 185, 129, 0.06);
+		}
+
+		.qr-success-banner-left {
+			display: flex;
+			align-items: center;
 			gap: 16px;
+			min-width: 0;
 		}
 
-		.complete-head {
-			display: grid;
-			justify-items: center;
-			gap: 6px;
+		.qr-success-icon-ring {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 58px;
+			height: 58px;
+			flex-shrink: 0;
+			border: 2px solid #abecd4;
+			border-radius: 50%;
+			box-shadow:
+				0 0 0 6px rgba(18, 185, 129, 0.08),
+				0 0 0 11px rgba(18, 185, 129, 0.04);
 		}
 
-		.complete-icon {
-			width: 72px;
-			height: 72px;
+		.qr-success-icon {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 42px;
+			height: 42px;
+			color: #fff;
+			border-radius: 50%;
+			background: #12b981;
+		}
+
+		.qr-success-icon svg {
+			width: 24px;
+			height: 24px;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 2.7;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-banner-text {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
+			min-width: 0;
+		}
+
+		.qr-success-banner-text h2 {
+			margin: 0;
+			font-size: clamp(18px, 1.6vw, 26px);
+			line-height: 1.2;
+			color: #0f172a;
+		}
+
+		.qr-success-type-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 14px;
+			color: #fff;
 			border-radius: 999px;
-			background: #d4f5dd;
-			color: #0a8d3d;
+			background: #12b981;
+			font-size: 13px;
+			font-weight: 800;
+			white-space: nowrap;
+		}
+
+		.qr-success-shield {
+			width: 38px;
+			height: 38px;
+			flex-shrink: 0;
+			fill: none;
+			stroke: #8bdcbc;
+			stroke-width: 1.8;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-primary-grid {
 			display: grid;
-			place-items: center;
-			font-size: 36px;
-			font-weight: 700;
+			grid-template-columns: minmax(0, 1fr) minmax(280px, 0.95fr);
+			gap: 14px;
 		}
 
-		.complete-title {
-			margin: 0;
-			font-size: clamp(1.75rem, 4vw + 1rem, 2.875rem);
-			font-weight: 700;
-			color: #121212;
-			line-height: 1.05;
-			letter-spacing: -0.02em;
-		}
-
-		.complete-subtitle {
-			margin: 0;
-			color: #666;
-			font-size: 14px;
-		}
-
-		.ticket-card {
+		.qr-success-visitor-card,
+		.qr-success-qr-card,
+		.qr-success-info-card,
+		.qr-success-route-card {
+			border: 1px solid #d7e0ec;
+			border-radius: 16px;
 			background: #fff;
-			border: 1px solid #d9dde4;
-			border-radius: 12px;
-			box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
-			padding: 20px 20px 16px;
+			box-shadow: 0 5px 19px rgba(16, 24, 40, 0.05);
 		}
 
-		.ticket-qr-area {
+		.qr-success-visitor-card {
 			display: grid;
-			justify-items: center;
-			gap: 8px;
+			grid-template-columns: minmax(140px, 38%) 1fr;
+			gap: 18px;
+			padding: 18px;
+			min-height: 260px;
+		}
+
+		.qr-success-photo-wrap {
+			width: 100%;
+			min-height: 220px;
+			overflow: hidden;
+			border-radius: 12px;
+			background: #eef2f7;
+			position: relative;
+		}
+
+		.qr-success-photo {
+			width: 100%;
+			height: 100%;
+			min-height: 220px;
+			object-fit: cover;
+			display: block;
+		}
+
+		.qr-success-photo-fallback {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			height: 100%;
+			min-height: 220px;
+			color: #8ca3bd;
+			background: linear-gradient(135deg, #eaf1f8, #f8fbff);
+		}
+
+		.qr-success-photo-fallback svg {
+			width: 64px;
+			height: 64px;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 1.5;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-visitor-details {
+			align-self: center;
+			min-width: 0;
+		}
+
+		.qr-success-detail-row {
+			display: grid;
+			grid-template-columns: 30px 1fr;
+			gap: 12px;
+			align-items: center;
+			padding: 8px 0;
+		}
+
+		.qr-success-detail-icon {
+			color: #0753ad;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.qr-success-detail-icon svg {
+			width: 24px;
+			height: 24px;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 1.8;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-detail-label {
+			display: block;
+			margin-bottom: 2px;
+			color: #667085;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.qr-success-detail-value,
+		.qr-success-info-value {
+			display: block;
+			color: #101828;
+			font-size: 16px;
+			line-height: 1.35;
+			overflow-wrap: anywhere;
+		}
+
+		.qr-success-name {
+			text-transform: uppercase;
+		}
+
+		.qr-success-control {
+			color: #0753ad;
+			letter-spacing: 0.03em;
+		}
+
+		.qr-success-detail-sep {
+			height: 1px;
+			margin-left: 42px;
+			background: #e3e9f0;
+		}
+
+		.qr-success-qr-card {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 260px;
+			padding: 18px;
+		}
+
+		.qr-success-qr-title {
+			margin: 0 0 6px;
+			color: #073f8c;
+			font-size: 17px;
+			font-weight: 800;
+		}
+
+		.qr-success-qr-frame {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 220px;
+			height: 190px;
+			padding: 14px;
 		}
 
 		.qr-box {
-			width: 200px;
-			height: 200px;
+			width: 170px;
+			height: 170px;
 			background: #fff;
 			display: grid;
 			place-items: center;
 		}
 
-		.qr-box canvas {
-			display: block;
-			width: 200px !important;
-			height: 200px !important;
-			image-rendering: pixelated;
-		}
-
+		.qr-box canvas,
 		.qr-box img {
 			display: block;
-			width: 200px !important;
-			height: 200px !important;
+			width: 170px !important;
+			height: 170px !important;
 			image-rendering: pixelated;
 		}
 
 		.qr-box table {
-			width: 200px !important;
-			height: 200px !important;
+			width: 170px !important;
+			height: 170px !important;
 			border-collapse: collapse;
 		}
 
-		.ticket-control-label {
-			margin: 0;
-			font-size: 14px;
-			color: #4b5563;
+		.qr-success-corner {
+			position: absolute;
+			width: 28px;
+			height: 28px;
+			border-color: #0753ad;
 		}
 
-		.ticket-control-value {
-			margin: 0;
-			font-size: clamp(1.75rem, 3.5vw + 1rem, 2.875rem);
-			font-weight: 800;
-			color: #121212;
-			line-height: 1;
-			letter-spacing: -0.01em;
+		.qr-success-corner-tl {
+			top: 1px;
+			left: 1px;
+			border-top: 4px solid;
+			border-left: 4px solid;
+			border-top-left-radius: 8px;
 		}
 
-		.ticket-separator {
-			margin: 16px 0;
-			border: 0;
-			height: 3px;
-			background: #d5d9e0;
+		.qr-success-corner-tr {
+			top: 1px;
+			right: 1px;
+			border-top: 4px solid;
+			border-right: 4px solid;
+			border-top-right-radius: 8px;
 		}
 
-		.ticket-info-grid {
+		.qr-success-corner-bl {
+			bottom: 1px;
+			left: 1px;
+			border-bottom: 4px solid;
+			border-left: 4px solid;
+			border-bottom-left-radius: 8px;
+		}
+
+		.qr-success-corner-br {
+			right: 1px;
+			bottom: 1px;
+			border-right: 4px solid;
+			border-bottom: 4px solid;
+			border-bottom-right-radius: 8px;
+		}
+
+		.qr-success-qr-hint {
+			margin: 8px 0 0;
+			color: #515d6c;
+			font-size: 15px;
+			font-weight: 600;
+		}
+
+		.qr-success-info-card {
 			display: grid;
-			grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr);
-			gap: 14px 18px;
-			align-items: start;
+			grid-template-columns: 0.75fr auto 1.25fr;
+			align-items: center;
+			min-height: 78px;
+			padding: 16px 28px;
 		}
 
-		.ticket-photo-wrap {
-			width: 110px;
-			height: 110px;
+		.qr-success-info-item {
+			display: grid;
+			grid-template-columns: 34px 1fr;
+			align-items: center;
+			gap: 10px;
+			min-width: 0;
+		}
+
+		.qr-success-info-destination {
+			padding-left: 22px;
+		}
+
+		.qr-success-info-divider {
+			width: 1px;
+			height: 44px;
+			background: #d7e0ec;
+		}
+
+		.qr-success-route-card {
+			padding: 18px 20px;
+		}
+
+		.qr-success-route-heading {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+
+		.qr-success-route-heading svg {
+			width: 22px;
+			height: 22px;
+			fill: #0753ad;
+			stroke: #0753ad;
+			stroke-width: 1.3;
+		}
+
+		.qr-success-route-heading h3 {
+			margin: 0;
+			font-size: 18px;
+			color: #0f172a;
+		}
+
+		.qr-success-route-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+			gap: 12px;
+		}
+
+		.qr-success-route-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			min-height: 54px;
+			padding: 8px 14px 8px 10px;
+			border: 1px solid #d7e0ec;
 			border-radius: 12px;
-			border: 1px solid #d9dde4;
-			background: #f1f5f9;
-			overflow: hidden;
-			display: grid;
-			place-items: center;
+			background: #fff;
+			gap: 10px;
 		}
 
-		.ticket-photo-image {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
+		.qr-success-route-item-left {
+			display: flex;
+			align-items: center;
+			min-width: 0;
+			gap: 12px;
 		}
 
-		.ticket-photo-fallback {
-			font-size: 42px;
-		}
-
-		.ticket-meta-label {
-			margin: 0;
-			font-size: 12px;
-			color: #6b7280;
-		}
-
-		.ticket-meta-value {
-			margin: 2px 0 10px;
-			font-size: clamp(1.125rem, 2.5vw + 0.65rem, 2.25rem);
-			font-weight: 700;
-			color: #111827;
-			line-height: 1.25;
-			word-break: break-word;
-		}
-
-		#ticketVisitorName,
-		#ticketPassNumber,
-		#ticketPurpose,
-		#ticketDestination {
+		.qr-success-route-number {
+			display: inline-flex;
+			flex: 0 0 38px;
+			align-items: center;
+			justify-content: center;
+			width: 38px;
+			height: 38px;
+			color: #fff;
+			border-radius: 50%;
+			background: linear-gradient(145deg, #0962c6, #06499d);
 			font-size: 16px;
-			margin-bottom: 8px;
+			font-weight: 800;
 		}
 
-		.ticket-footer {
-			margin: 4px 0 0;
-			text-align: center;
-			font-size: 12px;
-			color: #6b7280;
+		.qr-success-route-item strong {
+			overflow-wrap: anywhere;
+			color: #073f8c;
+			font-size: 15px;
+		}
+
+		.qr-success-route-arrow {
+			flex: 0 0 20px;
+			width: 20px;
+			height: 20px;
+			fill: none;
+			stroke: #344054;
+			stroke-width: 2;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-route-note {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-top: 12px;
+			padding: 10px 14px;
+			border: 1px solid #b8d4ec;
+			border-radius: 10px;
+			background: #f4faff;
+		}
+
+		.qr-success-route-note svg {
+			flex: 0 0 24px;
+			width: 24px;
+			height: 24px;
+			fill: none;
+			stroke: #073f8c;
+			stroke-width: 1.7;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-route-note p {
+			margin: 0;
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.45;
+			color: #334155;
 		}
 
 		.ticket-status {
@@ -1261,34 +1575,142 @@
 			color: #b91c1c;
 		}
 
-		.ticket-actions {
-			display: flex;
-			flex-wrap: wrap;
+		.qr-success-actions {
+			display: grid;
+			grid-template-columns: 1fr 0.9fr 1.45fr;
+			gap: 14px;
+			padding: 14px 16px;
+			border-radius: 14px;
+			background: #fff;
+			box-shadow: 0 6px 22px rgba(16, 24, 40, 0.06);
+		}
+
+		.qr-success-btn {
+			display: inline-flex;
+			align-items: center;
 			justify-content: center;
 			gap: 10px;
-		}
-
-		.ticket-btn {
-			height: 44px;
-			border-radius: 10px;
-			padding: 0 18px;
-			border: 1px solid #d1d5db;
-			background: #fff;
-			color: #111827;
-			font-weight: 600;
+			min-height: 52px;
+			padding: 10px 18px;
 			cursor: pointer;
-			transition: all 0.15s ease;
+			text-decoration: none;
+			border: 1px solid transparent;
+			border-radius: 12px;
+			font: inherit;
+			font-size: 16px;
+			font-weight: 800;
+			transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 		}
 
-		.ticket-btn:hover {
+		.qr-success-btn:hover {
 			transform: translateY(-1px);
-			box-shadow: 0 3px 8px rgba(15, 23, 42, 0.16);
 		}
 
-		.ticket-btn.primary {
-			background: #3e4ba0;
-			border-color: #3e4ba0;
+		.qr-success-btn:disabled {
+			cursor: wait;
+			opacity: 0.75;
+			transform: none;
+		}
+
+		.qr-success-btn svg {
+			width: 22px;
+			height: 22px;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 1.9;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+		}
+
+		.qr-success-btn-primary {
 			color: #fff;
+			background: linear-gradient(120deg, #0757b8, #06499d);
+			box-shadow: 0 6px 16px rgba(7, 83, 173, 0.18);
+		}
+
+		.qr-success-btn-primary:hover {
+			color: #fff;
+		}
+
+		.qr-success-btn-secondary {
+			color: #073f8c;
+			border-color: #d7e3f2;
+			background: #edf4ff;
+		}
+
+		.qr-success-complete-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 28px;
+			height: 28px;
+			color: #0753ad;
+			border-radius: 50%;
+			background: #fff;
+		}
+
+		.qr-success-complete-icon svg {
+			width: 16px;
+			height: 16px;
+			stroke-width: 2.5;
+		}
+
+		@media (max-width: 1050px) {
+			.qr-success-primary-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.qr-success-actions {
+				grid-template-columns: 1fr 1fr;
+			}
+
+			.qr-success-btn-complete {
+				grid-column: 1 / -1;
+			}
+		}
+
+		@media (max-width: 720px) {
+			.qr-success-visitor-card {
+				grid-template-columns: 1fr;
+				min-height: 0;
+			}
+
+			.qr-success-photo-wrap,
+			.qr-success-photo,
+			.qr-success-photo-fallback {
+				min-height: 220px;
+				max-height: 280px;
+			}
+
+			.qr-success-info-card {
+				grid-template-columns: 1fr;
+				gap: 14px;
+				padding: 16px;
+			}
+
+			.qr-success-info-divider {
+				width: 100%;
+				height: 1px;
+			}
+
+			.qr-success-info-destination {
+				padding-left: 0;
+			}
+
+			.qr-success-shield {
+				display: none;
+			}
+
+			.qr-success-actions {
+				grid-template-columns: 1fr 1fr;
+				padding: 0;
+				background: transparent;
+				box-shadow: none;
+			}
+
+			.qr-success-btn-complete {
+				grid-column: 1 / -1;
+			}
 		}
 
 		.type-placeholder {
@@ -2911,13 +3333,14 @@
 			overflow-x: hidden;
 			overflow-y: auto;
 			padding: 20px 24px 28px;
-			background: #f1f5f9;
+			background: #f3f6fc;
 			gap: 12px;
 			scrollbar-width: thin;
+			max-width: none;
 		}
 
 		body.self-registration-mode .registration-complete:not(.is-hidden) > * {
-			width: min(100%, 680px);
+			width: min(100%, 1100px);
 			flex-shrink: 0;
 		}
 
@@ -2984,25 +3407,16 @@
 			overflow: visible;
 		}
 
-		body.self-registration-mode .ticket-card {
-			padding: 14px;
+		body.self-registration-mode .qr-success-qr-frame {
+			width: 200px;
+			height: 180px;
 		}
 
 		body.self-registration-mode .qr-box,
 		body.self-registration-mode .qr-box canvas,
 		body.self-registration-mode .qr-box img {
-			width: 88px !important;
-			height: 88px !important;
-		}
-
-		body.self-registration-mode .ticket-info-grid {
-			grid-template-columns: 68px 1fr 1fr;
-			gap: 8px;
-		}
-
-		body.self-registration-mode .ticket-photo-wrap {
-			width: 68px;
-			height: 68px;
+			width: 150px !important;
+			height: 150px !important;
 		}
 
 		body.self-registration-mode.kiosk-type-select .self-reg-header-progress {
@@ -3911,6 +4325,7 @@
 			body.print-ticket-mode .scanner-card,
 			body.print-ticket-mode .visitor-step,
 			body.print-ticket-mode .ticket-status,
+			body.print-ticket-mode .qr-success-actions,
 			body.print-ticket-mode .ticket-actions,
 			body.print-ticket-mode .confirmation-modal {
 				display: none !important;
@@ -3929,29 +4344,27 @@
 			}
 
 			body.print-ticket-mode #registrationCompletePanel {
-				display: grid !important;
+				display: block !important;
 				visibility: visible !important;
-				gap: 0 !important;
-				justify-items: center !important;
+				max-width: none !important;
 				margin: 0 !important;
 				padding: 0 !important;
 			}
 
-			body.print-ticket-mode #registrationCompletePanel .complete-header,
-			body.print-ticket-mode #registrationCompletePanel #ticketSaveStatus,
-			body.print-ticket-mode #registrationCompletePanel .ticket-actions {
+			body.print-ticket-mode #registrationCompletePanel .ticket-status,
+			body.print-ticket-mode #registrationCompletePanel .qr-success-actions {
 				display: none !important;
 			}
 
+			body.print-ticket-mode #ticketCapture,
 			body.print-ticket-mode #registrationTicketCard {
 				display: block !important;
 				position: static !important;
 				transform: none !important;
-				width: 180mm;
+				width: 100%;
 				max-width: 100% !important;
 				margin: 0 auto !important;
 				box-shadow: none;
-				border: 1px solid #d1d5db;
 				page-break-inside: avoid;
 				-webkit-print-color-adjust: exact;
 				print-color-adjust: exact;
@@ -6139,51 +6552,140 @@
 					@endif
 
 					<div class="registration-complete is-hidden" id="registrationCompletePanel">
-						<div class="complete-head">
-							<div class="complete-icon" aria-hidden="true">✓</div>
-							<p class="complete-title">Registration Complete!</p>
-							<p class="complete-subtitle">QR Ticket Generated Successfully</p>
-						</div>
+						<div class="qr-success" id="registrationTicketCard">
+							<section class="qr-success-capture" id="ticketCapture">
+								<div class="qr-success-banner">
+									<div class="qr-success-banner-left">
+										<div class="qr-success-icon-ring">
+											<div class="qr-success-icon" aria-hidden="true">
+												<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+											</div>
+										</div>
+										<div class="qr-success-banner-text">
+											<h2>Visitor Registered Successfully</h2>
+											<span class="qr-success-type-badge" id="ticketVisitorTypeBadge">
+												@if ($registerType === 'enrollee')
+													Enrollee
+												@elseif ($registerType === 'contractor')
+													Contractor
+												@else
+													Normal Visitor
+												@endif
+											</span>
+										</div>
+									</div>
+									<svg class="qr-success-shield" viewBox="0 0 24 24" aria-hidden="true">
+										<path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/>
+									</svg>
+								</div>
 
-						<div class="ticket-card" id="registrationTicketCard">
-							<div class="ticket-qr-area">
-								<div class="qr-box" id="qrCodeContainer"></div>
-								<p class="ticket-control-label" style="display:none;">Control Number</p>
-								<p class="ticket-control-value" id="ticketControlNumber" style="display:none;">-</p>
+								<div class="qr-success-primary-grid">
+									<section class="qr-success-visitor-card">
+										<div class="qr-success-photo-wrap">
+											<img id="ticketPhoto" class="qr-success-photo is-hidden" alt="Visitor face and ID">
+											<div id="ticketPhotoFallback" class="qr-success-photo-fallback" aria-hidden="true">
+												<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3-7 8-7s8 3 8 7"/></svg>
+											</div>
+										</div>
+										<div class="qr-success-visitor-details">
+											<div class="qr-success-detail-row">
+												<div class="qr-success-detail-icon" aria-hidden="true">
+													<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3-7 8-7s8 3 8 7"/></svg>
+												</div>
+												<div>
+													<span class="qr-success-detail-label">Full Name</span>
+													<strong class="qr-success-detail-value qr-success-name" id="ticketVisitorName">-</strong>
+												</div>
+											</div>
+											<div class="qr-success-detail-sep"></div>
+											<div class="qr-success-detail-row">
+												<div class="qr-success-detail-icon" aria-hidden="true">
+													<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M6 16c.5-1.5 1.5-2 2-2s1.5.5 2 2M13 9h5M13 13h5"/></svg>
+												</div>
+												<div>
+													<span class="qr-success-detail-label">ID Pass Number</span>
+													<strong class="qr-success-detail-value" id="ticketPassNumber">-</strong>
+												</div>
+											</div>
+											<div class="qr-success-detail-sep"></div>
+											<div class="qr-success-detail-row">
+												<div class="qr-success-detail-icon" aria-hidden="true">
+													<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 2h6v4H9zM9 10h6M9 14h6M9 18h4"/></svg>
+												</div>
+												<div>
+													<span class="qr-success-detail-label">Control Number</span>
+													<strong class="qr-success-detail-value qr-success-control" id="ticketControlNumber">-</strong>
+												</div>
+											</div>
+										</div>
+									</section>
+
+									<section class="qr-success-qr-card">
+										<p class="qr-success-qr-title">Present this QR code</p>
+										<div class="qr-success-qr-frame">
+											<span class="qr-success-corner qr-success-corner-tl"></span>
+											<span class="qr-success-corner qr-success-corner-tr"></span>
+											<span class="qr-success-corner qr-success-corner-bl"></span>
+											<span class="qr-success-corner qr-success-corner-br"></span>
+											<div class="qr-box" id="qrCodeContainer"></div>
+										</div>
+										<p class="qr-success-qr-hint">at each stop on your route.</p>
+									</section>
+								</div>
+
+								<section class="qr-success-info-card">
+									<div class="qr-success-info-item">
+										<div class="qr-success-detail-icon" aria-hidden="true">
+											<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/></svg>
+										</div>
+										<div>
+											<span class="qr-success-detail-label">Purpose</span>
+											<strong class="qr-success-info-value" id="ticketPurpose">-</strong>
+										</div>
+									</div>
+									<div class="qr-success-info-divider"></div>
+									<div class="qr-success-info-item qr-success-info-destination">
+										<div class="qr-success-detail-icon" aria-hidden="true">
+											<svg viewBox="0 0 24 24"><path d="M3 8h18v12H3zM8 8V5h8v3"/></svg>
+										</div>
+										<div>
+											<span class="qr-success-detail-label">Destination</span>
+											<strong class="qr-success-info-value" id="ticketDestination">-</strong>
+										</div>
+									</div>
+								</section>
+
+								<section class="qr-success-route-card">
+									<div class="qr-success-route-heading">
+										<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-13A7 7 0 0 0 5 9c0 7 7 13 7 13Z"/><circle cx="12" cy="9" r="2"/></svg>
+										<h3>Visit route (in order)</h3>
+									</div>
+									<div class="qr-success-route-list" id="ticketRouteList"></div>
+									<div class="qr-success-route-note">
+										<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>
+										<p>Keep this pass ready. Staff will scan the code at each office to record your visit.</p>
+									</div>
+								</section>
+							</section>
+
+							<p class="ticket-status" id="ticketSaveStatus">Generating QR and saving details...</p>
+
+							<div class="qr-success-actions ticket-actions">
+								<button type="button" class="qr-success-btn qr-success-btn-primary" id="downloadQrBtn">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+									<span>Download</span>
+								</button>
+								<button type="button" class="qr-success-btn qr-success-btn-secondary" id="printTicketBtn">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg>
+									<span>Print</span>
+								</button>
+								<a href="{{ url('/guard/dashboard') }}" class="qr-success-btn qr-success-btn-primary qr-success-btn-complete" id="newVisitorAfterTicketBtn">
+									<span class="qr-success-complete-icon" aria-hidden="true">
+										<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+									</span>
+									<span>Complete &amp; return</span>
+								</a>
 							</div>
-
-							<hr class="ticket-separator">
-
-							<div class="ticket-info-grid">
-								<div class="ticket-photo-wrap">
-									<img id="ticketPhoto" class="ticket-photo-image is-hidden" alt="Visitor face and ID">
-									<div id="ticketPhotoFallback" class="ticket-photo-fallback">👤</div>
-								</div>
-
-								<div>
-									<p class="ticket-meta-label">Full Name</p>
-									<p class="ticket-meta-value" id="ticketVisitorName">-</p>
-									<p class="ticket-meta-label">ID Pass Number</p>
-									<p class="ticket-meta-value" id="ticketPassNumber">-</p>
-								</div>
-
-								<div>
-									<p class="ticket-meta-label">Purpose</p>
-									<p class="ticket-meta-value" id="ticketPurpose">-</p>
-									<p class="ticket-meta-label">Destination</p>
-									<p class="ticket-meta-value" id="ticketDestination">-</p>
-								</div>
-							</div>
-
-							<p class="ticket-footer">Registered by {{ $guardSidebarName }}</p>
-						</div>
-
-						<p class="ticket-status" id="ticketSaveStatus">Generating QR and saving details...</p>
-
-						<div class="ticket-actions">
-							<button type="button" class="ticket-btn" id="downloadQrBtn">Download QR</button>
-							<button type="button" class="ticket-btn primary" id="printTicketBtn">Print Ticket</button>
-							<button type="button" class="ticket-btn" id="newVisitorAfterTicketBtn">Register another visitor</button>
 						</div>
 					</div>
 				</section>
@@ -6241,18 +6743,21 @@
 		const enrolleeStepPanel = document.getElementById('enrolleeStepPanel');
 		const registrationCompletePanel = document.getElementById('registrationCompletePanel');
 		const registrationTicketCard = document.getElementById('registrationTicketCard');
+		const ticketCapture = document.getElementById('ticketCapture');
 		const qrCodeContainer = document.getElementById('qrCodeContainer');
 		const ticketControlNumber = document.getElementById('ticketControlNumber');
 		const ticketVisitorName = document.getElementById('ticketVisitorName');
 		const ticketPassNumber = document.getElementById('ticketPassNumber');
 		const ticketPurpose = document.getElementById('ticketPurpose');
 		const ticketDestination = document.getElementById('ticketDestination');
+		const ticketRouteList = document.getElementById('ticketRouteList');
 		const ticketPhoto = document.getElementById('ticketPhoto');
 		const ticketPhotoFallback = document.getElementById('ticketPhotoFallback');
 		const ticketSaveStatus = document.getElementById('ticketSaveStatus');
 		const downloadQrBtn = document.getElementById('downloadQrBtn');
 		const printTicketBtn = document.getElementById('printTicketBtn');
 		const newVisitorAfterTicketBtn = document.getElementById('newVisitorAfterTicketBtn');
+		const pageTitleEl = document.querySelector('h1.page-title');
 		const existingVisitorModal = document.getElementById('existingVisitorModal');
 		const existingVisitorModalPhotoFrame = document.getElementById('existingVisitorModalPhotoFrame');
 		const existingVisitorModalPhoto = document.getElementById('existingVisitorModalPhoto');
@@ -6305,7 +6810,7 @@
 		let hasSavedRegistration = false;
 		/** Compact scan text in the on-screen / printed QR (must not call createQrMeta() again). */
 		let lastTicketQrPayload = '';
-		const QR_DISPLAY_SIZE = 200;
+		const QR_DISPLAY_SIZE = 170;
 		const QR_PRINT_SIZE = 400;
 
 		const renderQrIntoElement = (container, text, size, correctLevel) => {
@@ -6515,7 +7020,7 @@
 
 			flowStepName.textContent = isIdStep
 				? 'ID Scan'
-				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Registration Complete'));
+				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Visitor Registered'));
 			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : (isPictureStep ? 'Step 3 of 3' : 'Completed'));
 
 			const activeStep = isCompleteStep ? 3 : Math.min(currentStep, 3);
@@ -6580,6 +7085,9 @@
 			if (flowHead) {
 				flowHead.classList.toggle('is-hidden', isCompleteStep);
 			}
+			if (pageTitleEl) {
+				pageTitleEl.classList.toggle('is-hidden', isCompleteStep);
+			}
 
 			if (isFormStep) {
 				ensureAutoControlNumber();
@@ -6594,21 +7102,48 @@
 			updateKioskSummaryProgress();
 		};
 
-		const getSelectedDestinationText = () => {
+		const getSelectedDestinationOffices = () => {
 			if (registerType === 'contractor') {
-				return (destinationOfficeText?.value || '').trim() || '-';
+				const text = (destinationOfficeText?.value || '').trim();
+				return text ? [text] : [];
 			}
 
 			if (registerType === 'enrollee') {
-				return autoEnrolleeOfficeNames.length ? autoEnrolleeOfficeNames.join(', ') : '-';
+				return autoEnrolleeOfficeNames.filter(Boolean);
 			}
 
-			const labels = Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
+			return Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
 				const text = cb?.parentElement?.textContent || '';
 				return text.trim();
 			}).filter(Boolean);
+		};
 
-			return labels.length ? labels.join(', ') : '-';
+		const getSelectedDestinationText = () => {
+			const offices = getSelectedDestinationOffices();
+			return offices.length ? offices.join(', ') : '-';
+		};
+
+		const renderTicketRouteList = () => {
+			if (!ticketRouteList) {
+				return;
+			}
+
+			const offices = getSelectedDestinationOffices();
+			const items = offices.length ? offices : ['No destination specified'];
+
+			ticketRouteList.innerHTML = items.map((officeName, index) => `
+				<div class="qr-success-route-item">
+					<div class="qr-success-route-item-left">
+						<span class="qr-success-route-number">${index + 1}</span>
+						<strong>${String(officeName)
+							.replace(/&/g, '&amp;')
+							.replace(/</g, '&lt;')
+							.replace(/>/g, '&gt;')
+							.replace(/"/g, '&quot;')}</strong>
+					</div>
+					<svg class="qr-success-route-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+				</div>
+			`).join('');
 		};
 
 		const toTitleCase = (value) => {
@@ -6759,11 +7294,22 @@
 
 			lastTicketQrPayload = scanText;
 
-			ticketControlNumber.textContent = qrMeta.control_number || '-';
-			ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
-			ticketPassNumber.textContent = (visitorIdPassNumber?.value || '').trim() || '-';
-			ticketPurpose.textContent = getPurposeReasonValue() || '-';
-			ticketDestination.textContent = getSelectedDestinationText();
+			if (ticketControlNumber) {
+				ticketControlNumber.textContent = qrMeta.control_number || '-';
+			}
+			if (ticketVisitorName) {
+				ticketVisitorName.textContent = `${toTitleCase(visitorFirstName?.value)} ${toTitleCase(visitorLastName?.value)}`.trim() || '-';
+			}
+			if (ticketPassNumber) {
+				ticketPassNumber.textContent = (visitorIdPassNumber?.value || '').trim() || '-';
+			}
+			if (ticketPurpose) {
+				ticketPurpose.textContent = getPurposeReasonValue() || '-';
+			}
+			if (ticketDestination) {
+				ticketDestination.textContent = getSelectedDestinationText();
+			}
+			renderTicketRouteList();
 
 			if (ticketPhoto && faceIdCapturePreviewUrl) {
 				ticketPhoto.src = faceIdCapturePreviewUrl;
@@ -7612,7 +8158,8 @@
 		});
 
 		downloadQrBtn?.addEventListener('click', async () => {
-			if (!registrationTicketCard) {
+			const captureTarget = ticketCapture || registrationTicketCard;
+			if (!captureTarget) {
 				alert('Ticket is not ready yet.');
 				return;
 			}
@@ -7622,13 +8169,17 @@
 				return;
 			}
 
+			const labelEl = downloadQrBtn.querySelector('span:last-child');
+			const originalLabel = labelEl?.textContent || 'Download';
+
 			try {
 				downloadQrBtn.disabled = true;
-				const originalText = downloadQrBtn.textContent;
-				downloadQrBtn.textContent = 'Preparing...';
+				if (labelEl) {
+					labelEl.textContent = 'Preparing...';
+				}
 
-				const canvas = await html2canvas(registrationTicketCard, {
-					backgroundColor: '#ffffff',
+				const canvas = await html2canvas(captureTarget, {
+					backgroundColor: '#f3f6fc',
 					scale: 2,
 					useCORS: true,
 					allowTaint: false,
@@ -7637,19 +8188,23 @@
 				const link = document.createElement('a');
 				const controlNo = (ticketControlNumber?.textContent || 'visitor-ticket').trim();
 				link.href = canvas.toDataURL('image/png');
-				link.download = `${controlNo}-ticket.png`;
+				link.download = `NU-Secure-QR-Ticket-${controlNo.replace(/[^A-Za-z0-9\-]/g, '-')}.png`;
 				link.style.display = 'none';
 				document.body.appendChild(link);
 				link.click();
 				document.body.removeChild(link);
 
-				downloadQrBtn.textContent = originalText || 'Download QR';
+				if (labelEl) {
+					labelEl.textContent = originalLabel;
+				}
 				downloadQrBtn.disabled = false;
 			} catch (error) {
 				console.error('Failed to download full ticket image:', error);
 				alert('Failed to download ticket image. Please try again.');
 				downloadQrBtn.disabled = false;
-				downloadQrBtn.textContent = 'Download QR';
+				if (labelEl) {
+					labelEl.textContent = originalLabel;
+				}
 			}
 		});
 
@@ -8362,11 +8917,15 @@ body {
 				qrCodeContainer.innerHTML = '';
 			}
 
-			ticketControlNumber.textContent = '-';
-			ticketVisitorName.textContent = '-';
-			ticketPassNumber.textContent = '-';
-			ticketPurpose.textContent = '-';
-			ticketDestination.textContent = '-';
+			if (ticketRouteList) {
+				ticketRouteList.innerHTML = '';
+			}
+
+			if (ticketControlNumber) ticketControlNumber.textContent = '-';
+			if (ticketVisitorName) ticketVisitorName.textContent = '-';
+			if (ticketPassNumber) ticketPassNumber.textContent = '-';
+			if (ticketPurpose) ticketPurpose.textContent = '-';
+			if (ticketDestination) ticketDestination.textContent = '-';
 
 			if (ticketPhoto) {
 				ticketPhoto.src = '';
@@ -8383,14 +8942,13 @@ body {
 			startCamera();
 		};
 
-		newVisitorAfterTicketBtn?.addEventListener('click', () => {
-			if (isSelfRegistrationKiosk) {
-				bypassNativeBeforeUnloadPrompt = true;
-				window.location.href = '/guard/register';
-				return;
-			}
+		newVisitorAfterTicketBtn?.addEventListener('click', (event) => {
+			bypassNativeBeforeUnloadPrompt = true;
 
-			resetRegistrationFlowToStepOne();
+			if (isSelfRegistrationKiosk) {
+				event.preventDefault();
+				window.location.href = '/guard/register';
+			}
 		});
 
 		window.addEventListener('afterprint', () => {

@@ -24,7 +24,7 @@ class VisitorMonitoringController extends Controller
             ->sort()
             ->values();
 
-        $statusOptions = collect(['Arrived', 'In Transit', 'Completed', 'Overstay']);
+        $statusOptions = collect(['Arrived', 'Completed', 'Overstay']);
         $visitTypeOptions = $rows
             ->pluck('visit_type')
             ->filter(fn ($v) => filled($v) && $v !== '—')
@@ -71,7 +71,7 @@ class VisitorMonitoringController extends Controller
         }
 
         $activeCount = $filteredRows
-            ->filter(fn (array $row) => in_array(($row['status'] ?? ''), ['Arrived', 'In Transit', 'Overstay'], true))
+            ->filter(fn (array $row) => in_array(($row['status'] ?? ''), ['Arrived', 'Overstay'], true))
             ->count();
 
         $completedCount = $filteredRows
@@ -149,7 +149,7 @@ class VisitorMonitoringController extends Controller
         if ($correctOfficeScansSource->isEmpty()) {
             // Safe fallback so card does not go blank when source tables are unavailable.
             $correctOfficeScansSource = $filteredRows
-                ->filter(fn ($row) => ! in_array($row['status'], ['In Transit', 'Overstay'], true))
+                ->filter(fn ($row) => ! in_array($row['status'], ['Overstay'], true))
                 ->map(fn ($row) => [
                     'visitor_name' => $row['visitor_name'],
                     'destination' => $row['destination'],
@@ -495,9 +495,9 @@ class VisitorMonitoringController extends Controller
             $supabaseKey
         );
         $officeRouteMap = $this->fetchOfficeRouteMapFromRest($baseUrl, $supabaseKey, $visitIds);
-        $latestOfficeScanMap = $this->fetchLatestOfficeScanMapFromRest($baseUrl, $supabaseKey, $visitIds);
+        $officeScanMap = $this->fetchLatestOfficeScanMapFromRest($baseUrl, $supabaseKey, $visitIds);
 
-        return collect($visits)->map(function (array $visit) use ($addressMap, $photoPathMap, $officeRouteMap, $latestOfficeScanMap) {
+        return collect($visits)->map(function (array $visit) use ($addressMap, $photoPathMap, $officeRouteMap, $officeScanMap) {
             $visitor = $visit['visitor'] ?? [];
             $visitType = $visit['visit_type'] ?? [];
             $office = $visit['office'] ?? [];
@@ -539,19 +539,34 @@ class VisitorMonitoringController extends Controller
                     ->values();
             }
 
-            $latestAlert = $alerts
+            $alertsList = $alerts
                 ->sortByDesc(fn ($a) => $a['created_at'] ?? null)
-                ->first();
+                ->map(function (array $alert) {
+                    $resolvedUser = $this->extractRelation($alert, 'resolved_user');
+                    $resolvedByName = trim(((string) ($resolvedUser['first_name'] ?? '')).' '.((string) ($resolvedUser['last_name'] ?? '')));
+                    $alertCreated = $this->parseDateTime($alert['created_at'] ?? null);
+                    $alertResolved = $this->parseDateTime($alert['resolved_at'] ?? null);
 
+                    return [
+                        'alert_id' => $alert['alert_id'] ?? null,
+                        'alert_type' => (string) ($alert['alert_type'] ?? 'General Alert'),
+                        'severity' => (string) ($alert['severity'] ?? 'Medium'),
+                        'message' => (string) ($alert['message'] ?? '—'),
+                        'status' => (string) ($alert['status'] ?? 'Unresolved'),
+                        'created_at' => $alertCreated ? $alertCreated->format('M d, Y h:i A') : '—',
+                        'resolved_at' => $alertResolved ? $alertResolved->format('M d, Y h:i A') : '—',
+                        'resolved_by' => $resolvedByName !== '' ? $resolvedByName : '—',
+                        'resolution_notes' => (string) ($alert['resolution_notes'] ?? '—'),
+                    ];
+                })
+                ->values();
+
+            $latestAlert = $alertsList->first();
             $latestAlertType = (string) ($latestAlert['alert_type'] ?? '');
-            $resolvedUser = $this->extractRelation(is_array($latestAlert) ? $latestAlert : [], 'resolved_user');
-            $resolvedByName = trim(((string) ($resolvedUser['first_name'] ?? '')).' '.((string) ($resolvedUser['last_name'] ?? '')));
-
-            $alertCreated = $this->parseDateTime($latestAlert['created_at'] ?? null);
-            $alertResolved = $this->parseDateTime($latestAlert['resolved_at'] ?? null);
 
             $status = $this->resolveStatus($visit, $alerts);
-            $scanData = $latestOfficeScanMap->get((string) ($visit['visit_id'] ?? ''), []);
+            $scansList = collect($officeScanMap->get((string) ($visit['visit_id'] ?? ''), []));
+            $scanData = (array) ($scansList->first() ?? []);
 
             $addressId = (string) ($visitor['address_id'] ?? '');
             $address = $addressMap->get($addressId, '—');
@@ -593,16 +608,18 @@ class VisitorMonitoringController extends Controller
                 'alert_severity' => (string) ($latestAlert['severity'] ?? '—'),
                 'alert_message' => (string) ($latestAlert['message'] ?? '—'),
                 'alert_status' => (string) ($latestAlert['status'] ?? '—'),
-                'alert_created_at' => $alertCreated ? $alertCreated->format('M d, Y h:i A') : '—',
-                'alert_resolved_at' => $alertResolved ? $alertResolved->format('M d, Y h:i A') : '—',
-                'alert_resolved_by' => $resolvedByName !== '' ? $resolvedByName : '—',
+                'alert_created_at' => (string) ($latestAlert['created_at'] ?? '—'),
+                'alert_resolved_at' => (string) ($latestAlert['resolved_at'] ?? '—'),
+                'alert_resolved_by' => (string) ($latestAlert['resolved_by'] ?? '—'),
                 'alert_resolution_notes' => (string) ($latestAlert['resolution_notes'] ?? '—'),
+                'alerts_list' => $alertsList->toArray(),
                 'scan_id' => (string) ($scanData['scan_id'] ?? '—'),
                 'scan_time_label' => (string) ($scanData['scan_time_label'] ?? '—'),
                 'scan_remarks' => (string) ($scanData['scan_remarks'] ?? '—'),
                 'scanned_office' => (string) ($scanData['scanned_office'] ?? '—'),
                 'scanned_by' => (string) ($scanData['scanned_by'] ?? '—'),
                 'validation_status' => (string) ($scanData['validation_status'] ?? 'Unknown'),
+                'scans_list' => $scansList->values()->all(),
                 'raw_entry_time' => $entry ? $entry->toIso8601String() : null,
                 'raw_visit_id' => (int) ($visit['visit_id'] ?? 0),
             ];
@@ -808,15 +825,14 @@ class VisitorMonitoringController extends Controller
                 return collect([]);
             }
 
-            $rows = collect($fallback->json())
+            $rowsByVisit = collect($fallback->json())
                 ->filter(fn ($row) => is_array($row) && isset($row['visit_id']))
                 ->sortByDesc(fn ($row) => (string) ($row['scan_time'] ?? ''))
-                ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''))
-                ->map(fn (Collection $group) => (array) $group->first());
+                ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''));
 
-            $officeIds = $rows->pluck('office_id')->filter()->map(fn ($id) => (string) $id)->unique()->values();
-            $userIds = $rows->pluck('scanned_by_user_id')->filter()->map(fn ($id) => (string) $id)->unique()->values();
-            $validationIds = $rows->pluck('validation_status_id')->filter()->map(fn ($id) => (string) $id)->unique()->values();
+            $flatRows = $rowsByVisit->flatten(1);
+            $userIds = $flatRows->pluck('scanned_by_user_id')->filter()->map(fn ($id) => (string) $id)->unique()->values();
+            $validationIds = $flatRows->pluck('validation_status_id')->filter()->map(fn ($id) => (string) $id)->unique()->values();
 
             $officeNameMap = $this->fetchOfficeMap($baseUrl, $supabaseKey);
 
@@ -858,20 +874,23 @@ class VisitorMonitoringController extends Controller
                 }
             }
 
-            return $rows->map(function (array $scan) use ($officeNameMap, $userMap, $validationMap) {
-                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
-                $officeName = (string) ($officeNameMap->get((string) ($scan['office_id'] ?? '')) ?? '');
-                $scannedBy = (string) ($userMap->get((string) ($scan['scanned_by_user_id'] ?? '')) ?? '');
-                $validationStatus = (string) ($validationMap->get((string) ($scan['validation_status_id'] ?? '')) ?? 'Unknown');
+            return $rowsByVisit->map(function (Collection $group) use ($officeNameMap, $userMap, $validationMap) {
+                return $group->map(function ($scanRow) use ($officeNameMap, $userMap, $validationMap) {
+                    $scan = (array) $scanRow;
+                    $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+                    $officeName = (string) ($officeNameMap->get((string) ($scan['office_id'] ?? '')) ?? '');
+                    $scannedBy = (string) ($userMap->get((string) ($scan['scanned_by_user_id'] ?? '')) ?? '');
+                    $validationStatus = (string) ($validationMap->get((string) ($scan['validation_status_id'] ?? '')) ?? 'Unknown');
 
-                return [
-                    'scan_id' => (string) ($scan['scan_id'] ?? '—'),
-                    'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
-                    'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                    'scanned_office' => $officeName !== '' ? $officeName : '—',
-                    'scanned_by' => $scannedBy !== '' ? $scannedBy : '—',
-                    'validation_status' => $validationStatus !== '' ? $validationStatus : 'Unknown',
-                ];
+                    return [
+                        'scan_id' => (string) ($scan['scan_id'] ?? '—'),
+                        'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
+                        'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
+                        'scanned_office' => $officeName !== '' ? $officeName : '—',
+                        'scanned_by' => $scannedBy !== '' ? $scannedBy : '—',
+                        'validation_status' => $validationStatus !== '' ? $validationStatus : 'Unknown',
+                    ];
+                })->values()->all();
             });
         }
 
@@ -879,25 +898,27 @@ class VisitorMonitoringController extends Controller
             ->filter(fn ($row) => is_array($row) && isset($row['visit_id']))
             ->groupBy(fn ($row) => (string) ($row['visit_id'] ?? ''))
             ->map(function (Collection $group) {
-                $scan = (array) $group
+                return $group
                     ->sortByDesc(fn ($row) => (string) ($row['scan_time'] ?? ''))
-                    ->first();
+                    ->map(function ($scanRow) {
+                        $scan = (array) $scanRow;
+                        $officeRel = $this->extractRelation($scan, 'office');
+                        $scannerRel = $this->extractRelation($scan, 'scanner');
+                        $validationRel = $this->extractRelation($scan, 'validation_status');
+                        $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+                        $scannerName = trim(((string) ($scannerRel['first_name'] ?? '')).' '.((string) ($scannerRel['last_name'] ?? '')));
 
-                $officeRel = $this->extractRelation($scan, 'office');
-                $scannerRel = $this->extractRelation($scan, 'scanner');
-                $validationRel = $this->extractRelation($scan, 'validation_status');
-                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
-
-                $scannerName = trim(((string) ($scannerRel['first_name'] ?? '')).' '.((string) ($scannerRel['last_name'] ?? '')));
-
-                return [
-                    'scan_id' => (string) ($scan['scan_id'] ?? '—'),
-                    'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
-                    'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                    'scanned_office' => (string) ($officeRel['office_name'] ?? '—'),
-                    'scanned_by' => $scannerName !== '' ? $scannerName : '—',
-                    'validation_status' => (string) ($validationRel['status_name'] ?? 'Unknown'),
-                ];
+                        return [
+                            'scan_id' => (string) ($scan['scan_id'] ?? '—'),
+                            'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
+                            'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
+                            'scanned_office' => (string) ($officeRel['office_name'] ?? '—'),
+                            'scanned_by' => $scannerName !== '' ? $scannerName : '—',
+                            'validation_status' => (string) ($validationRel['status_name'] ?? 'Unknown'),
+                        ];
+                    })
+                    ->values()
+                    ->all();
             });
     }
 
@@ -1170,17 +1191,12 @@ class VisitorMonitoringController extends Controller
             return 'Overstay';
         }
 
-        if ($alertTypes->contains(fn ($t) => Str::contains($t, 'wrong office') || Str::contains($t, 'transit'))) {
-            return 'In Transit';
-        }
-
         return 'Arrived';
     }
 
     private function statusClass(string $status): string
     {
         return match ($status) {
-            'In Transit' => 'status-transit',
             'Completed' => 'status-completed',
             'Overstay' => 'status-overstay',
             default => 'status-arrived',
@@ -1292,9 +1308,9 @@ class VisitorMonitoringController extends Controller
                     ->groupBy('visit_id');
             }
 
-            $latestScansByVisit = collect([]);
+            $scansByVisit = collect([]);
             if ($visitIds->isNotEmpty()) {
-                $latestScansByVisit = DB::table('office_scan as os')
+                $scansByVisit = DB::table('office_scan as os')
                     ->leftJoin('office as so', 'so.office_id', '=', 'os.office_id')
                     ->leftJoin('users as su', 'su.user_id', '=', 'os.scanned_by_user_id')
                     ->leftJoin('validation_status as vs', 'vs.validation_status_id', '=', 'os.validation_status_id')
@@ -1310,9 +1326,9 @@ class VisitorMonitoringController extends Controller
                     ])
                     ->whereIn('os.visit_id', $visitIds)
                     ->orderByDesc('os.scan_time')
+                    ->orderByDesc('os.scan_id')
                     ->get()
-                    ->groupBy('visit_id')
-                    ->map(fn (Collection $group) => (array) ((array) $group->first()));
+                    ->groupBy('visit_id');
             }
 
             $supabaseUrl = rtrim((string) env('SUPABASE_URL', ''), '/');
@@ -1328,7 +1344,7 @@ class VisitorMonitoringController extends Controller
                 $supabaseKey
             );
 
-            return $visits->map(function ($row) use ($alertsByVisit, $officeExpectationsByVisit, $photoPathMap, $latestScansByVisit) {
+            return $visits->map(function ($row) use ($alertsByVisit, $officeExpectationsByVisit, $photoPathMap, $scansByVisit) {
                 $visit = (array) $row;
                 $visitId = $visit['visit_id'] ?? null;
 
@@ -1360,23 +1376,54 @@ class VisitorMonitoringController extends Controller
                 $exit = $this->parseDateTime($visit['exit_time'] ?? null);
                 $durationMinutes = $this->resolveDurationMinutes($visit, $entry, $exit);
 
-                $latestAlert = $alerts
+                $alertsList = $alerts
                     ->sortByDesc(fn ($a) => $a['created_at'] ?? null)
-                    ->first();
+                    ->map(function (array $alert) {
+                        $resolvedByName = trim(((string) ($alert['resolved_by_first_name'] ?? '')).' '.((string) ($alert['resolved_by_last_name'] ?? '')));
+                        $alertCreated = $this->parseDateTime($alert['created_at'] ?? null);
+                        $alertResolved = $this->parseDateTime($alert['resolved_at'] ?? null);
 
+                        return [
+                            'alert_id' => $alert['alert_id'] ?? null,
+                            'alert_type' => (string) ($alert['alert_type'] ?? 'General Alert'),
+                            'severity' => (string) ($alert['severity'] ?? 'Medium'),
+                            'message' => (string) ($alert['message'] ?? '—'),
+                            'status' => (string) ($alert['status'] ?? 'Unresolved'),
+                            'created_at' => $alertCreated ? $alertCreated->format('M d, Y h:i A') : '—',
+                            'resolved_at' => $alertResolved ? $alertResolved->format('M d, Y h:i A') : '—',
+                            'resolved_by' => $resolvedByName !== '' ? $resolvedByName : '—',
+                            'resolution_notes' => (string) ($alert['resolution_notes'] ?? '—'),
+                        ];
+                    })
+                    ->values();
+
+                $latestAlert = $alertsList->first();
                 $latestAlertType = (string) ($latestAlert['alert_type'] ?? '');
-                $resolvedByName = trim(((string) ($latestAlert['resolved_by_first_name'] ?? '')).' '.((string) ($latestAlert['resolved_by_last_name'] ?? '')));
-                $alertCreated = $this->parseDateTime($latestAlert['created_at'] ?? null);
-                $alertResolved = $this->parseDateTime($latestAlert['resolved_at'] ?? null);
 
                 $status = $this->resolveStatus($visit, $alerts);
                 $rawPhotoPath = (string) ($visit['visitor_photo_with_id_url'] ?? '');
                 $photoUrl = (string) ($photoPathMap->get($rawPhotoPath) ?? '');
                 $registeredBy = trim(((string) ($visit['guard_first_name'] ?? '')).' '.((string) ($visit['guard_last_name'] ?? '')));
                 $exitStatusName = trim((string) ($visit['exit_status_name'] ?? ''));
-                $scan = (array) ($latestScansByVisit->get($visitId, []));
-                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
-                $scanScannedBy = trim(((string) ($scan['scanned_by_first_name'] ?? '')).' '.((string) ($scan['scanned_by_last_name'] ?? '')));
+
+                $scansList = collect($scansByVisit->get($visitId, []))
+                    ->map(function ($scanRow) {
+                        $scan = (array) $scanRow;
+                        $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+                        $scanScannedBy = trim(((string) ($scan['scanned_by_first_name'] ?? '')).' '.((string) ($scan['scanned_by_last_name'] ?? '')));
+
+                        return [
+                            'scan_id' => (string) ($scan['scan_id'] ?? '—'),
+                            'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
+                            'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
+                            'scanned_office' => (string) ($scan['scanned_office_name'] ?? '—'),
+                            'scanned_by' => $scanScannedBy !== '' ? $scanScannedBy : '—',
+                            'validation_status' => (string) ($scan['validation_status_name'] ?? 'Unknown'),
+                        ];
+                    })
+                    ->values();
+
+                $scanData = (array) ($scansList->first() ?? []);
 
                 $address = $this->formatAddress([
                     'house_no' => $visit['address_house_no'] ?? null,
@@ -1417,16 +1464,18 @@ class VisitorMonitoringController extends Controller
                     'alert_severity' => (string) ($latestAlert['severity'] ?? '—'),
                     'alert_message' => (string) ($latestAlert['message'] ?? '—'),
                     'alert_status' => (string) ($latestAlert['status'] ?? '—'),
-                    'alert_created_at' => $alertCreated ? $alertCreated->format('M d, Y h:i A') : '—',
-                    'alert_resolved_at' => $alertResolved ? $alertResolved->format('M d, Y h:i A') : '—',
-                    'alert_resolved_by' => $resolvedByName !== '' ? $resolvedByName : '—',
+                    'alert_created_at' => (string) ($latestAlert['created_at'] ?? '—'),
+                    'alert_resolved_at' => (string) ($latestAlert['resolved_at'] ?? '—'),
+                    'alert_resolved_by' => (string) ($latestAlert['resolved_by'] ?? '—'),
                     'alert_resolution_notes' => (string) ($latestAlert['resolution_notes'] ?? '—'),
-                    'scan_id' => (string) ($scan['scan_id'] ?? '—'),
-                    'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
-                    'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                    'scanned_office' => (string) ($scan['scanned_office_name'] ?? '—'),
-                    'scanned_by' => $scanScannedBy !== '' ? $scanScannedBy : '—',
-                    'validation_status' => (string) ($scan['validation_status_name'] ?? 'Unknown'),
+                    'alerts_list' => $alertsList->toArray(),
+                    'scan_id' => (string) ($scanData['scan_id'] ?? '—'),
+                    'scan_time_label' => (string) ($scanData['scan_time_label'] ?? '—'),
+                    'scan_remarks' => (string) ($scanData['scan_remarks'] ?? '—'),
+                    'scanned_office' => (string) ($scanData['scanned_office'] ?? '—'),
+                    'scanned_by' => (string) ($scanData['scanned_by'] ?? '—'),
+                    'validation_status' => (string) ($scanData['validation_status'] ?? 'Unknown'),
+                    'scans_list' => $scansList->all(),
                     'raw_entry_time' => $entry ? $entry->toIso8601String() : null,
                     'raw_visit_id' => (int) ($visit['visit_id'] ?? 0),
                 ];

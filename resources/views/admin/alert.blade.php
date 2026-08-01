@@ -2000,5 +2000,6 @@
 			}
 		});
 	</script>
+	@include('partials.live-auto-refresh')
 </body>
 </html>

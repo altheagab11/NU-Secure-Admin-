@@ -1611,13 +1611,8 @@
 			<div class="alert-modal-body">
 				<section class="alert-info-card">
 					<h4 class="card-title">Alert Information</h4>
-					<div class="card-content detail-grid">
-						<div><div class="detail-label">Alert ID</div><div class="detail-value" id="m_alert_id">-</div></div>
-						<div><div class="detail-label">Alert Type</div><div class="detail-value" id="m_type">-</div></div>
-						<div><div class="detail-label">Severity</div><div><span id="m_severity" class="badge-pill badge-medium">Medium</span></div></div>
-						<div><div class="detail-label">Status</div><div><span id="m_status" class="badge-pill badge-danger">Unresolved</span></div></div>
-						<div class="full"><div class="detail-label">Message</div><div class="detail-value" id="m_message">-</div></div>
-						<div class="full"><div class="detail-label">Created At</div><div class="detail-value" id="m_created_at">-</div></div>
+					<div class="card-content" id="m_alerts_list">
+						<div class="detail-value" style="color:#64748b;">Loading alerts...</div>
 					</div>
 				</section>
 
@@ -1646,13 +1641,8 @@
 
 				<section class="alert-info-card">
 					<h4 class="card-title">Scan Information</h4>
-					<div class="card-content detail-grid">
-						<div><div class="detail-label">Scan ID</div><div class="detail-value" id="m_scan_id">-</div></div>
-						<div><div class="detail-label">Scanned Office</div><div class="detail-value" id="m_scanned_office">-</div></div>
-						<div><div class="detail-label">Scanned By Guard/Staff</div><div class="detail-value" id="m_scanned_by">-</div></div>
-						<div><div class="detail-label">Scan Time</div><div class="detail-value" id="m_scan_time">-</div></div>
-						<div><div class="detail-label">Validation Status</div><div class="detail-value" id="m_validation_status">-</div></div>
-						<div><div class="detail-label">Remarks</div><div class="detail-value" id="m_remarks">-</div></div>
+					<div class="card-content" id="m_scans_list">
+						<div class="detail-value" style="color:#64748b;">Loading scans...</div>
 					</div>
 				</section>
 
@@ -1740,28 +1730,83 @@
 			return { background: '#fef3c7', color: '#92400e' };
 		}
 
-		function openAlertModal(alertId) {
+		function escapeHtml(value) {
+			return String(value ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#039;');
+		}
+
+		function renderAlertsListHtml(alerts, focusedAlertId) {
+			if (!alerts.length) {
+				return '<div class="detail-value" style="color:#64748b;">No alerts found for this visit.</div>';
+			}
+
+			return alerts.map((item) => {
+				const isFocused = String(item.alert_id) === String(focusedAlertId);
+				const [createdDate, createdTime] = formatDateTime(item.created_at);
+				const createdLabel = createdDate === '-' ? '-' : `${createdDate} ${createdTime}`;
+				const [resolvedDate, resolvedTime] = formatDateTime(item.resolved_at);
+				const resolvedLabel = resolvedDate === '-' ? '—' : `${resolvedDate} ${resolvedTime}`;
+				const border = isFocused ? '2px solid #f97316' : '1px solid #e2e8f0';
+
+				return `
+					<div style="border:${border}; border-radius:12px; padding:12px; margin-bottom:10px; background:${isFocused ? '#fff7ed' : '#f8fafc'};">
+						<div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+							<strong>Alert #${escapeHtml(item.alert_id ?? '-')} · ${escapeHtml(item.alert_type || 'General Alert')}</strong>
+							<div style="display:flex; gap:6px; flex-wrap:wrap;">
+								<span class="${getSeverityClass(item.severity)}">${escapeHtml(item.severity || 'Medium')}</span>
+								<span class="${getStatusClass(item.status)}">${escapeHtml(item.status || 'Unresolved')}</span>
+							</div>
+						</div>
+						<div class="detail-value" style="margin-bottom:8px;">${escapeHtml(item.message || '—')}</div>
+						<div class="detail-grid">
+							<div><div class="detail-label">Created At</div><div class="detail-value">${escapeHtml(createdLabel)}</div></div>
+							<div><div class="detail-label">Resolved At</div><div class="detail-value">${escapeHtml(resolvedLabel)}</div></div>
+							<div><div class="detail-label">Resolved By</div><div class="detail-value">${escapeHtml(item.resolved_by || '—')}</div></div>
+							<div class="full"><div class="detail-label">Resolution Notes</div><div class="detail-value">${escapeHtml(item.resolution_notes || '—')}</div></div>
+						</div>
+					</div>
+				`;
+			}).join('');
+		}
+
+		function renderScansListHtml(scans) {
+			if (!scans.length) {
+				return '<div class="detail-value" style="color:#64748b;">No scan records found.</div>';
+			}
+
+			return scans.map((scan) => {
+				const [scanDate, scanTime] = formatDateTime(scan.scan_time);
+				const scanLabel = scanDate === '-' ? '-' : `${scanDate} ${scanTime}`;
+				return `
+					<div style="border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:10px; background:#f8fafc;">
+						<div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+							<strong>Scan #${escapeHtml(scan.scan_id ?? '-')} · ${escapeHtml(scan.office_name || 'Unknown Office')}</strong>
+							<span class="badge-pill ${String(scan.validation_status || '').toLowerCase().includes('valid') && !String(scan.validation_status || '').toLowerCase().includes('invalid') ? 'badge-success' : 'badge-danger'}">${escapeHtml(scan.validation_status || 'Unknown')}</span>
+						</div>
+						<div class="detail-grid">
+							<div><div class="detail-label">Scanned By</div><div class="detail-value">${escapeHtml(scan.scanned_by || '—')}</div></div>
+							<div><div class="detail-label">Scan Time</div><div class="detail-value">${escapeHtml(scanLabel)}</div></div>
+							<div class="full"><div class="detail-label">Remarks</div><div class="detail-value">${escapeHtml(scan.remarks || '—')}</div></div>
+						</div>
+					</div>
+				`;
+			}).join('');
+		}
+
+		async function openAlertModal(alertId) {
 			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
 			if (!alert) return;
 			const modal = document.getElementById('alertModal');
 			if (!modal) return;
 
-			const [createdDate, createdTime] = formatDateTime(alert.created_at);
 			const [entryDate, entryTime] = formatDateTime(alert.entry_time);
 			const [exitDate, exitTime] = formatDateTime(alert.exit_time);
 			const [resolvedDate, resolvedTime] = formatDateTime(alert.resolved_at);
 			const isResolved = String(alert.status || '').toLowerCase() === 'resolved';
-
-			document.getElementById('m_alert_id').textContent = alert.alert_id || '-';
-			document.getElementById('m_type').textContent = alert.alert_type || '-';
-			document.getElementById('m_message').textContent = alert.message || '-';
-			document.getElementById('m_created_at').textContent = createdDate === '-' ? '-' : `${createdDate} ${createdTime}`;
-			const severityEl = document.getElementById('m_severity');
-			severityEl.textContent = alert.severity || 'Medium';
-			severityEl.className = getSeverityClass(alert.severity);
-			const statusEl = document.getElementById('m_status');
-			statusEl.textContent = alert.status || 'Unresolved';
-			statusEl.className = getStatusClass(alert.status);
 
 			document.getElementById('m_visitor_name').textContent = alert.visitor_name || '-';
 			document.getElementById('m_pass_no').textContent = alert.pass_number || '-';
@@ -1776,16 +1821,22 @@
 			document.getElementById('m_duration').textContent = alert.duration_minutes !== null && alert.duration_minutes !== undefined ? `${alert.duration_minutes} mins` : '-';
 			document.getElementById('m_primary_office').textContent = alert.expected_office || '-';
 
-			document.getElementById('m_scan_id').textContent = alert.scan_id || '-';
-			document.getElementById('m_scanned_office').textContent = alert.scanned_office || '-';
-			document.getElementById('m_scanned_by').textContent = alert.scanned_by || '-';
-			document.getElementById('m_scan_time').textContent = alert.time || '-';
-			document.getElementById('m_validation_status').textContent = isResolved ? 'Resolved' : 'Unresolved';
-			document.getElementById('m_remarks').textContent = alert.scan_remarks || '-';
+			document.getElementById('m_alerts_list').innerHTML = renderAlertsListHtml([alert], alert.alert_id);
+			document.getElementById('m_scans_list').innerHTML = `
+				<div style="border:1px solid #e2e8f0; border-radius:12px; padding:12px; background:#f8fafc;">
+					<div class="detail-grid">
+						<div><div class="detail-label">Scan ID</div><div class="detail-value">${escapeHtml(alert.scan_id || '-')}</div></div>
+						<div><div class="detail-label">Scanned Office</div><div class="detail-value">${escapeHtml(alert.scanned_office || '-')}</div></div>
+						<div><div class="detail-label">Scanned By</div><div class="detail-value">${escapeHtml(alert.scanned_by || '-')}</div></div>
+						<div><div class="detail-label">Scan Time</div><div class="detail-value">${escapeHtml(alert.time || '-')}</div></div>
+						<div class="full"><div class="detail-label">Remarks</div><div class="detail-value">${escapeHtml(alert.scan_remarks || '-')}</div></div>
+					</div>
+				</div>
+			`;
 
 			document.getElementById('m_unresolved_text').style.display = isResolved ? 'none' : 'block';
 			document.getElementById('m_resolved_details').style.display = isResolved ? 'block' : 'none';
-			document.getElementById('m_resolved_by').textContent = isResolved ? 'Guard Officer' : '-';
+			document.getElementById('m_resolved_by').textContent = isResolved ? (alert.resolved_by || 'Guard Officer') : '-';
 			document.getElementById('m_resolved_at').textContent = resolvedDate === '-' ? '-' : `${resolvedDate} ${resolvedTime}`;
 			document.getElementById('m_resolution_notes').textContent = isResolved ? (alert.resolution_notes || '-') : '-';
 
@@ -1795,6 +1846,35 @@
 			resolveBtn.disabled = isResolved;
 
 			modal.style.display = 'block';
+
+			if (!alert.visit_id) return;
+
+			try {
+				const response = await fetch(`/guard/dashboard/visits/${encodeURIComponent(alert.visit_id)}/details`, {
+					headers: { Accept: 'application/json' },
+				});
+				const details = await response.json().catch(() => ({}));
+				if (!response.ok) return;
+
+				const visit = details.visit || {};
+				document.getElementById('m_visit_type').textContent = visit.visit_type || '-';
+				if (visit.primary_office) {
+					document.getElementById('m_primary_office').textContent = visit.primary_office;
+				}
+				if (visit.duration_label) {
+					document.getElementById('m_duration').textContent = visit.duration_label;
+				}
+
+				const alerts = Array.isArray(details.alerts) && details.alerts.length
+					? details.alerts
+					: [alert];
+				document.getElementById('m_alerts_list').innerHTML = renderAlertsListHtml(alerts, alert.alert_id);
+
+				const scans = Array.isArray(details.scans) ? details.scans : [];
+				document.getElementById('m_scans_list').innerHTML = renderScansListHtml(scans);
+			} catch (error) {
+				// Keep fallback single alert/scan already rendered.
+			}
 		}
 
 		function closeAlertModal() {
@@ -1951,5 +2031,6 @@
 		);
 	</script>
 	@include('guard.partials.guard-responsive-script')
+	@include('partials.live-auto-refresh')
 </body>
 </html>

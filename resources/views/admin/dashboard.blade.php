@@ -1100,8 +1100,6 @@
 													<td>
 														@if($visitor['status'] === 'Inside')
 															<span class="badge bg-success">Inside</span>
-														@elseif($visitor['status'] === 'In Transit')
-															<span class="badge bg-primary">In Transit</span>
 														@elseif($visitor['status'] === 'Exited')
 															<span class="badge bg-secondary">Exited</span>
 														@else
@@ -1377,5 +1375,6 @@
 			});
 		}
 	</script>
+	@include('partials.live-auto-refresh')
 </body>
 </html>

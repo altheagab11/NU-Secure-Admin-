@@ -19,11 +19,6 @@ class GuardAlertController extends Controller
             ->leftJoin('visit as v', 'v.visit_id', '=', 'al.visit_id')
             ->leftJoin('office_scan as os', 'os.scan_id', '=', 'al.scan_id')
             ->leftJoin('office as so', 'so.office_id', '=', 'os.office_id')
-            ->leftJoin('office_expectation as oe', function ($join) {
-                $join->on('oe.visit_id', '=', 'al.visit_id')
-                    ->where('oe.expected_order', '=', 1);
-            })
-            ->leftJoin('office as eo', 'eo.office_id', '=', 'oe.office_id')
             ->leftJoin('office as po', 'po.office_id', '=', 'v.primary_office_id')
             ->leftJoin('users as su', 'su.user_id', '=', 'os.scanned_by_user_id')
             ->select([
@@ -46,7 +41,6 @@ class GuardAlertController extends Controller
                 'v.entry_time',
                 'v.exit_time',
                 'v.duration_minutes',
-                'eo.office_name as expected_office_name',
                 'po.office_name as primary_office_name',
                 'so.office_name as scanned_office_name',
                 'os.scan_time',
@@ -60,7 +54,17 @@ class GuardAlertController extends Controller
             ->limit(20)
             ->get();
 
-        $unresolvedAlerts = $unresolvedAlertsRows->map(function ($row) {
+        $pendingExpectedOfficesByVisit = $this->resolveCurrentExpectedOfficesByVisit(
+            $unresolvedAlertsRows
+                ->pluck('visit_id')
+                ->filter(fn ($visitId) => (int) $visitId > 0)
+                ->map(fn ($visitId) => (int) $visitId)
+                ->unique()
+                ->values()
+                ->all()
+        );
+
+        $unresolvedAlerts = $unresolvedAlertsRows->map(function ($row) use ($pendingExpectedOfficesByVisit) {
             $firstName = trim((string) ($row->first_name ?? ''));
             $lastName = trim((string) ($row->last_name ?? ''));
             $visitorName = trim($firstName . ' ' . $lastName);
@@ -70,7 +74,12 @@ class GuardAlertController extends Controller
                 $passNumber = trim((string) ($row->control_number ?? ''));
             }
 
-            $expectedOffice = trim((string) ($row->expected_office_name ?? ''));
+            $message = trim((string) ($row->message ?? ''));
+            $visitId = (int) ($row->visit_id ?? 0);
+            $expectedOffice = $this->extractExpectedOfficeFromMessage($message);
+            if ($expectedOffice === '' && $visitId > 0) {
+                $expectedOffice = trim((string) ($pendingExpectedOfficesByVisit[$visitId] ?? ''));
+            }
             if ($expectedOffice === '') {
                 $expectedOffice = trim((string) ($row->primary_office_name ?? ''));
             }
@@ -94,7 +103,6 @@ class GuardAlertController extends Controller
                 ? ucwords(strtolower($alertType))
                 : 'General Alert';
 
-            $message = trim((string) ($row->message ?? ''));
             if ($message === '') {
                 $message = $alertTypeLabel . ' detected';
             }
@@ -245,6 +253,65 @@ class GuardAlertController extends Controller
             'completedVisitors' => $completedVisitors,
             'unresolvedAlerts' => $unresolvedAlerts,
         ]);
+    }
+
+    /**
+     * Prefer the office named in unauthorized alert messages (accurate at alert time).
+     */
+    private function extractExpectedOfficeFromMessage(string $message): string
+    {
+        if ($message === '') {
+            return '';
+        }
+
+        if (preg_match('/was expected at\s+(.+?)\.?\s*$/i', $message, $matches) === 1) {
+            return trim((string) ($matches[1] ?? ''));
+        }
+
+        return '';
+    }
+
+    /**
+     * First unfinished office_expectation per visit (current enrollee/visitor route step).
+     *
+     * @param  array<int>  $visitIds
+     * @return array<int, string> visit_id => office_name
+     */
+    private function resolveCurrentExpectedOfficesByVisit(array $visitIds): array
+    {
+        if ($visitIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('office_expectation as oe')
+            ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
+            ->whereIn('oe.visit_id', $visitIds)
+            ->whereNull('oe.arrived_at')
+            ->select([
+                'oe.visit_id',
+                'oe.expected_order',
+                'oe.expectation_id',
+                'o.office_name',
+            ])
+            ->orderBy('oe.visit_id')
+            ->orderBy('oe.expected_order')
+            ->orderBy('oe.expectation_id')
+            ->get();
+
+        $byVisit = [];
+        foreach ($rows as $row) {
+            $visitId = (int) ($row->visit_id ?? 0);
+            if ($visitId <= 0 || isset($byVisit[$visitId])) {
+                continue;
+            }
+
+            $officeName = trim((string) ($row->office_name ?? ''));
+            if ($officeName !== '') {
+                $byVisit[$visitId] = $officeName;
+            }
+        }
+
+        return $byVisit;
     }
 
     /**

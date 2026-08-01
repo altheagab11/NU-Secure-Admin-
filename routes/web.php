@@ -14,6 +14,7 @@ use App\Http\Controllers\VisitorMonitoringController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DateRangeReportController;
 use App\Http\Controllers\EnrolleeProgressController;
+use App\Http\Controllers\LiveDataController;
  
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
@@ -30,6 +31,9 @@ Route::get('/enrollee/progress/{token}', [EnrolleeProgressController::class, 'sh
 	->name('enrollee.progress');
  
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::middleware(['auth', 'role:1,2'])->get('/live/status', [LiveDataController::class, 'status'])
+    ->name('live.status');
  
 Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);

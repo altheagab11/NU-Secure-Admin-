@@ -277,7 +277,6 @@ class AdminDashboardController extends Controller
             ->when($visitorTypeFilter > 0, fn ($query) => $query->where('v.visit_type_id', $visitorTypeFilter))
             ->when($statusFilter === 'inside', fn ($query) => $query->whereNull('v.exit_time'))
             ->when(in_array($statusFilter, ['exited', 'completed'], true), fn ($query) => $query->whereNotNull('v.exit_time'))
-            ->when($statusFilter === 'in transit', fn ($query) => $query->whereRaw("LOWER(TRIM(COALESCE(vs.status_name, ''))) like ?", ['%transit%']))
             ->orderByDesc('v.entry_time')
             ->paginate($livePerPage, ['*'], 'live_page')
             ->withQueryString();
@@ -290,11 +289,8 @@ class AdminDashboardController extends Controller
                 }
 
                 $status = 'Inside';
-                $validationStatus = strtolower(trim((string) ($row->validation_status_name ?? '')));
                 if (!empty($row->exit_time)) {
                     $status = 'Exited';
-                } elseif (str_contains($validationStatus, 'transit')) {
-                    $status = 'In Transit';
                 }
 
                 $timeIn = '—';
@@ -396,7 +392,6 @@ class AdminDashboardController extends Controller
 
         $statusOptions = [
             'Inside',
-            'In Transit',
             'Exited',
             'Completed',
             'Resolved',

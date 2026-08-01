@@ -1295,7 +1295,6 @@
 							<select class="filter-select">
 								<option>All Status</option>
 								<option>Arrived</option>
-								<option>In Transit</option>
 								<option>Ready to Exit</option>
 							</select>
 						</div>
@@ -1435,7 +1434,10 @@
 			const visit = details?.visit || {};
 			const route = Array.isArray(details?.expected_route) ? details.expected_route : [];
 			const scans = Array.isArray(details?.scans) ? details.scans : [];
-			const alert = details?.alert || null;
+			const alerts = Array.isArray(details?.alerts)
+				? details.alerts
+				: (details?.alert ? [details.alert] : []);
+			const hasUnresolvedAlert = alerts.some((item) => String(item.status || '').toLowerCase() === 'unresolved');
 
 			const photoHtml = visitor.photo_url
 				? `<img src="${escapeHtml(visitor.photo_url)}" alt="Visitor Photo">`
@@ -1444,7 +1446,7 @@
 			const routeHtml = route.length > 0
 				? route.map((item) => {
 					const routeStatus = item.status || 'Pending';
-					const isCompleted = String(routeStatus).toLowerCase().includes('arrived') || String(routeStatus).toLowerCase().includes('done');
+					const isCompleted = String(routeStatus).toLowerCase().includes('arrived') || String(routeStatus).toLowerCase().includes('done') || String(routeStatus).toLowerCase().includes('completed');
 					return `
 						<div class="timeline-item ${isCompleted ? 'completed' : 'pending'}">
 							<div class="timeline-dot"></div>
@@ -1481,30 +1483,40 @@
 				}).join('')
 				: '<div class="drawer-empty">No scan records found.</div>';
 
-			const alertHtml = alert
+			const alertsHtml = alerts.length > 0
 				? `
 					<div class="drawer-card drawer-alert-card">
 						<div class="drawer-section-title">
 							<h3>Alert Information</h3>
-							<span class="drawer-status-badge orange">${escapeHtml(alert.severity || 'Medium')}</span>
+							<span class="drawer-status-badge orange">${escapeHtml(alerts.length)} alert${alerts.length === 1 ? '' : 's'}</span>
 						</div>
-						<div class="drawer-section-title" style="margin-bottom:10px;">
-							<h3 style="font-size:15px;">${escapeHtml(alert.alert_type || 'General Alert')}</h3>
-							<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(alert.status || 'Unresolved'))}">${escapeHtml(alert.status || 'Unresolved')}</span>
+						<div class="scan-list">
+							${alerts.map((alert) => `
+								<div class="scan-card">
+									<div class="scan-head">
+										<div>
+											<h4>Alert #${escapeHtml(alert.alert_id ?? '-')} · ${escapeHtml(alert.alert_type || 'General Alert')}</h4>
+											<p>${escapeHtml(formatTime(alert.created_at))}</p>
+										</div>
+										<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+											<span class="drawer-status-badge orange">${escapeHtml(alert.severity || 'Medium')}</span>
+											<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(alert.status || 'Unresolved'))}">${escapeHtml(alert.status || 'Unresolved')}</span>
+										</div>
+									</div>
+									<p class="drawer-alert-message" style="margin-top:10px;">${escapeHtml(alert.message || '—')}</p>
+									<div class="drawer-info-grid two-col" style="margin-top:10px;">
+										<div><span>Resolved At</span><strong>${escapeHtml(formatTime(alert.resolved_at))}</strong></div>
+										<div><span>Resolved By</span><strong>${escapeHtml(alert.resolved_by || '—')}</strong></div>
+									</div>
+									<div class="drawer-full-info"><span>Resolution Notes</span><strong>${escapeHtml(alert.resolution_notes || '—')}</strong></div>
+								</div>
+							`).join('')}
 						</div>
-						<p class="drawer-alert-message">${escapeHtml(alert.message || '—')}</p>
-						<div class="drawer-info-grid two-col">
-							<div><span>Alert ID</span><strong>${escapeHtml(alert.alert_id ?? '-')}</strong></div>
-							<div><span>Created At</span><strong>${escapeHtml(formatTime(alert.created_at))}</strong></div>
-							<div><span>Resolved At</span><strong>${escapeHtml(formatTime(alert.resolved_at))}</strong></div>
-							<div><span>Resolved By</span><strong>${escapeHtml(alert.resolved_by || '—')}</strong></div>
-						</div>
-						<div class="drawer-full-info"><span>Resolution Notes</span><strong>${escapeHtml(alert.resolution_notes || '—')}</strong></div>
 					</div>`
 				: `
 					<div class="drawer-card">
 						<div class="drawer-section-title"><h3>Alert Information</h3></div>
-						<div class="drawer-empty">No active alerts found.</div>
+						<div class="drawer-empty">No alerts found.</div>
 					</div>`;
 
 			drawerBody.innerHTML = `
@@ -1550,10 +1562,10 @@
 					<div class="scan-list">${scansHtml}</div>
 				</div>
 
-				${alertHtml}
+				${alertsHtml}
 			`;
 
-			drawerResolveAlertBtn.style.display = alert ? 'inline-block' : 'none';
+			drawerResolveAlertBtn.style.display = hasUnresolvedAlert ? 'inline-block' : 'none';
 			drawerResolveAlertBtn.onclick = () => window.location.href = '/guard/alert';
 		}
 
@@ -1656,5 +1668,6 @@
 		}
 	</script>
 	@include('guard.partials.guard-responsive-script')
+	@include('partials.live-auto-refresh')
 </body>
 </html>

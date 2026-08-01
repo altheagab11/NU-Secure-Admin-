@@ -183,7 +183,6 @@ class GuardDashboardController extends Controller
             }
 
             $exitStatus = strtolower(trim((string) ($row->exit_status_name ?? '')));
-            $validationStatus = strtolower(trim((string) ($row->validation_status_name ?? '')));
             $alertType = trim((string) ($row->unresolved_alert_type ?? ''));
             $alertLabel = $alertType !== '' ? ucwords(strtolower($alertType)) : 'None';
 
@@ -195,9 +194,6 @@ class GuardDashboardController extends Controller
             if ($exitStatus === 'ready to exit' || $isReadyToExitByExpectation) {
                 $statusLabel = 'Ready to Exit';
                 $statusClass = 'exit';
-            } elseif (str_contains($validationStatus, 'transit')) {
-                $statusLabel = 'In Transit';
-                $statusClass = 'transit';
             }
 
             return [
@@ -298,7 +294,7 @@ class GuardDashboardController extends Controller
             ->orderByDesc('os.scan_id')
             ->get();
 
-        $latestAlert = DB::table('alerts as al')
+        $alerts = DB::table('alerts as al')
             ->leftJoin('users as ru', 'ru.user_id', '=', 'al.resolved_by')
             ->where('al.visit_id', $visitId)
             ->select([
@@ -313,8 +309,9 @@ class GuardDashboardController extends Controller
                 'ru.first_name as resolved_by_first_name',
                 'ru.last_name as resolved_by_last_name',
             ])
+            ->orderByDesc('al.created_at')
             ->orderByDesc('al.alert_id')
-            ->first();
+            ->get();
 
         $addressParts = array_filter([
             trim((string) ($visit->house_no ?? '')),
@@ -351,6 +348,24 @@ class GuardDashboardController extends Controller
         if ($statusLabel === '') {
             $statusLabel = empty($visit->exit_time) ? 'Still Inside' : 'Exited';
         }
+
+        $alertPayload = $alerts->map(function ($row) {
+            return [
+                'alert_id' => (int) ($row->alert_id ?? 0),
+                'alert_type' => trim((string) ($row->alert_type ?? '')) ?: 'General Alert',
+                'severity' => trim((string) ($row->severity ?? '')) ?: 'Medium',
+                'message' => trim((string) ($row->message ?? '')) ?: '—',
+                'status' => trim((string) ($row->status ?? '')) ?: 'Unresolved',
+                'created_at' => $row->created_at,
+                'resolved_at' => $row->resolved_at,
+                'resolved_by' => trim(((string) ($row->resolved_by_first_name ?? '')) . ' ' . ((string) ($row->resolved_by_last_name ?? ''))) ?: '—',
+                'resolution_notes' => trim((string) ($row->resolution_notes ?? '')) ?: '—',
+            ];
+        })->values();
+
+        $primaryAlert = $alertPayload->first(function ($alert) {
+            return strtolower(trim((string) ($alert['status'] ?? ''))) === 'unresolved';
+        }) ?: $alertPayload->first();
 
         return response()->json([
             'visitor' => [
@@ -394,17 +409,9 @@ class GuardDashboardController extends Controller
                     'remarks' => trim((string) ($row->remarks ?? '')) ?: '—',
                 ];
             })->values(),
-            'alert' => $latestAlert ? [
-                'alert_id' => (int) ($latestAlert->alert_id ?? 0),
-                'alert_type' => trim((string) ($latestAlert->alert_type ?? '')) ?: 'General Alert',
-                'severity' => trim((string) ($latestAlert->severity ?? '')) ?: 'Medium',
-                'message' => trim((string) ($latestAlert->message ?? '')) ?: '—',
-                'status' => trim((string) ($latestAlert->status ?? '')) ?: 'Unresolved',
-                'created_at' => $latestAlert->created_at,
-                'resolved_at' => $latestAlert->resolved_at,
-                'resolved_by' => trim(((string) ($latestAlert->resolved_by_first_name ?? '')) . ' ' . ((string) ($latestAlert->resolved_by_last_name ?? ''))) ?: '—',
-                'resolution_notes' => trim((string) ($latestAlert->resolution_notes ?? '')) ?: '—',
-            ] : null,
+            'alerts' => $alertPayload,
+            // Backward-compatible single alert (first unresolved, else latest).
+            'alert' => $primaryAlert,
         ]);
     }
 

@@ -778,13 +778,19 @@
 		.vd-alert-box {
 			border: 1px solid #e2e8f0;
 			border-radius: 10px;
-			padding: 10px;
+			padding: 12px;
+			background: #fff7ed;
+		}
+
+		.vd-alerts-list {
+			display: grid;
+			gap: 10px;
 		}
 
 		.vd-alert-box p {
 			margin: 0 0 6px;
-			font-size: 12px;
-			line-height: 1.45;
+			font-size: 13px;
+			color: #334155;
 		}
 
 		.vd-alert-box p:last-child {
@@ -1279,6 +1285,8 @@
 										data-scanned-by="{{ $row['scanned_by'] ?? '—' }}"
 										data-validation-status="{{ $row['validation_status'] ?? 'Unknown' }}"
 										data-office-route='@json($row['office_route'] ?? [])'
+										data-alerts-list='@json($row['alerts_list'] ?? [])'
+										data-scans-list='@json($row['scans_list'] ?? [])'
 									>
 										<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="2"/>
@@ -1431,17 +1439,7 @@
 							<h3 class="vd-card-title">Alert Information</h3>
 							<div class="vd-card-body">
 								<div id="vdNoAlertsBox" class="vd-badge vd-badge-success">No alerts found.</div>
-								<div id="vdAlertBox" class="vd-alert-box" style="display:none; margin-top:10px;">
-									<p><strong>Alert #</strong><span id="vdAlertId">3001</span></p>
-									<p><strong>Status:</strong> <span id="vdAlertStatusBadge" class="vd-badge vd-badge-danger">Unresolved</span></p>
-									<p><strong>Type:</strong> <span id="vdAlertType">Wrong Office</span></p>
-									<p><strong>Severity:</strong> <span id="vdAlertSeverityBadge" class="vd-badge vd-badge-warning">Medium</span></p>
-									<p><strong>Message:</strong> <span id="vdAlertMessage">Visitor scanned at wrong office.</span></p>
-									<p><strong>Created At:</strong> <span id="vdAlertCreatedAt">—</span></p>
-									<p><strong>Resolved At:</strong> <span id="vdResolvedAt">—</span></p>
-									<p><strong>Resolved By:</strong> <span id="vdResolvedBy">—</span></p>
-									<p><strong>Resolution Notes:</strong> <span id="vdResolutionNotes">—</span></p>
-								</div>
+								<div id="vdAlertsList" class="vd-alerts-list" style="display:none;"></div>
 							</div>
 						</section>
 					</div>
@@ -1497,16 +1495,7 @@
 											<th>Remarks</th>
 										</tr>
 									</thead>
-									<tbody>
-										<tr>
-											<td id="vdScanId">—</td>
-											<td id="vdScannedOffice">—</td>
-											<td id="vdScannedBy">Admin Reyes</td>
-											<td id="vdScanTime">—</td>
-											<td><span id="vdValidationBadge" class="vd-badge vd-badge-secondary">Unknown</span></td>
-											<td id="vdRemarks">—</td>
-										</tr>
-									</tbody>
+									<tbody id="vdScanBody"></tbody>
 								</table>
 							</div>
 						</section>
@@ -1638,6 +1627,133 @@
 			});
 		};
 
+		const parseJsonList = (raw, fallback = []) => {
+			try {
+				const parsed = JSON.parse(getText(raw, '[]'));
+				return Array.isArray(parsed) ? parsed : fallback;
+			} catch (error) {
+				return fallback;
+			}
+		};
+
+		const renderAlertsList = (trigger) => {
+			const noAlertsBox = document.getElementById('vdNoAlertsBox');
+			const alertsList = document.getElementById('vdAlertsList');
+			if (!noAlertsBox || !alertsList) return;
+
+			let alerts = parseJsonList(trigger.dataset.alertsList, []);
+			if (!alerts.length && getText(trigger.dataset.alertId, '') !== '' && getText(trigger.dataset.alertId, '') !== '—') {
+				alerts = [{
+					alert_id: trigger.dataset.alertId,
+					alert_type: trigger.dataset.alertType,
+					severity: trigger.dataset.alertSeverity,
+					message: trigger.dataset.alertMessage,
+					status: trigger.dataset.alertStatus,
+					created_at: trigger.dataset.alertCreatedAt,
+					resolved_at: trigger.dataset.alertResolvedAt,
+					resolved_by: trigger.dataset.alertResolvedBy,
+					resolution_notes: trigger.dataset.alertResolutionNotes,
+				}];
+			}
+
+			alertsList.innerHTML = '';
+
+			if (!alerts.length) {
+				noAlertsBox.style.display = 'inline-flex';
+				alertsList.style.display = 'none';
+				return;
+			}
+
+			noAlertsBox.style.display = 'none';
+			alertsList.style.display = 'grid';
+
+			alerts.forEach((alert) => {
+				const box = document.createElement('div');
+				box.className = 'vd-alert-box';
+
+				const alertStatusText = getText(alert.status, 'Unresolved');
+				const isResolved = alertStatusText.toLowerCase().includes('resolved');
+				const severityText = getText(alert.severity, 'Medium');
+
+				box.innerHTML = `
+					<p><strong>Alert #</strong>${getText(alert.alert_id, '—')}</p>
+					<p><strong>Status:</strong> <span class="${isResolved ? 'vd-badge vd-badge-success' : 'vd-badge vd-badge-danger'}">${alertStatusText}</span></p>
+					<p><strong>Type:</strong> ${getText(alert.alert_type, '—')}</p>
+					<p><strong>Severity:</strong> <span class="${severityBadgeClass(severityText)}">${severityText}</span></p>
+					<p><strong>Message:</strong> ${getText(alert.message, '—')}</p>
+					<p><strong>Created At:</strong> ${getText(alert.created_at, '—')}</p>
+					<p><strong>Resolved At:</strong> ${getText(alert.resolved_at, '—')}</p>
+					<p><strong>Resolved By:</strong> ${getText(alert.resolved_by, '—')}</p>
+					<p><strong>Resolution Notes:</strong> ${getText(alert.resolution_notes, '—')}</p>
+				`;
+				alertsList.appendChild(box);
+			});
+		};
+
+		const renderScansList = (trigger) => {
+			const tbody = document.getElementById('vdScanBody');
+			if (!tbody) return;
+
+			let scans = parseJsonList(trigger.dataset.scansList, []);
+			if (!scans.length && getText(trigger.dataset.scanId, '—') !== '—') {
+				scans = [{
+					scan_id: trigger.dataset.scanId,
+					scanned_office: trigger.dataset.scannedOffice || trigger.dataset.primaryOffice,
+					scanned_by: trigger.dataset.scannedBy || trigger.dataset.registeredBy,
+					scan_time_label: trigger.dataset.scanTime || trigger.dataset.entryTime,
+					validation_status: trigger.dataset.validationStatus,
+					scan_remarks: trigger.dataset.scanRemarks,
+				}];
+			}
+
+			tbody.innerHTML = '';
+
+			if (!scans.length) {
+				const tr = document.createElement('tr');
+				const td = document.createElement('td');
+				td.colSpan = 6;
+				td.textContent = 'No scan records found.';
+				td.style.color = '#64748b';
+				tr.appendChild(td);
+				tbody.appendChild(tr);
+				return;
+			}
+
+			scans.forEach((scan) => {
+				const tr = document.createElement('tr');
+
+				const scanIdTd = document.createElement('td');
+				scanIdTd.textContent = getText(scan.scan_id, '—');
+
+				const officeTd = document.createElement('td');
+				officeTd.textContent = getText(scan.scanned_office, '—');
+
+				const byTd = document.createElement('td');
+				byTd.textContent = getText(scan.scanned_by, '—');
+
+				const timeTd = document.createElement('td');
+				timeTd.textContent = getText(scan.scan_time_label || scan.scan_time, '—');
+
+				const validationTd = document.createElement('td');
+				const validationBadge = document.createElement('span');
+				const validationStatus = getText(scan.validation_status, 'Unknown');
+				validationBadge.textContent = validationStatus;
+				validationBadge.className = validationBadgeClass(validationStatus);
+				validationTd.appendChild(validationBadge);
+
+				const remarksTd = document.createElement('td');
+				remarksTd.textContent = getText(scan.scan_remarks || scan.remarks, '—');
+
+				tr.appendChild(scanIdTd);
+				tr.appendChild(officeTd);
+				tr.appendChild(byTd);
+				tr.appendChild(timeTd);
+				tr.appendChild(validationTd);
+				tr.appendChild(remarksTd);
+				tbody.appendChild(tr);
+			});
+		};
+
 		const SUPABASE_URL = @json(rtrim((string) env('SUPABASE_URL', ''), '/'));
 
 		const normalizePhotoUrl = (rawValue) => {
@@ -1671,7 +1787,6 @@
 			if (!visitorDetailModal || !trigger) return;
 
 			const status = getText(trigger.dataset.status, 'Pending');
-			const alertText = getText(trigger.dataset.alert, 'None');
 
 			setTextById('vdHeaderName', trigger.dataset.visitorName);
 			setTextById('vdHeaderControl', trigger.dataset.controlNumber);
@@ -1717,60 +1832,8 @@
 			setTextById('vdRegisteredByGuard', trigger.dataset.registeredBy, '—');
 
 			renderOfficeRouteRows(trigger, status);
-
-			const scanId = getText(trigger.dataset.scanId, '—');
-			const scannedOffice = getText(trigger.dataset.scannedOffice, getText(trigger.dataset.primaryOffice, '—'));
-			const scannedBy = getText(trigger.dataset.scannedBy, getText(trigger.dataset.registeredBy, '—'));
-			const scanTime = getText(trigger.dataset.scanTime, getText(trigger.dataset.entryTime, '—'));
-			const scanRemarks = getText(trigger.dataset.scanRemarks, alertText === 'None' ? '—' : alertText);
-			const validationStatus = getText(trigger.dataset.validationStatus, alertText === 'None' ? 'Matched' : 'Requires Review');
-
-			setTextById('vdScanId', scanId);
-			setTextById('vdScannedOffice', scannedOffice);
-			setTextById('vdScannedBy', scannedBy);
-			setTextById('vdScanTime', scanTime);
-			setTextById('vdRemarks', scanRemarks);
-
-			const validationEl = document.getElementById('vdValidationBadge');
-			if (validationEl) {
-				validationEl.textContent = validationStatus;
-				validationEl.className = validationBadgeClass(validationStatus);
-			}
-
-			const noAlertsBox = document.getElementById('vdNoAlertsBox');
-			const alertBox = document.getElementById('vdAlertBox');
-			const hasAlert = getText(trigger.dataset.alertId, '') !== '' && getText(trigger.dataset.alertId, '') !== '—';
-
-			if (!hasAlert) {
-				if (noAlertsBox) noAlertsBox.style.display = 'inline-flex';
-				if (alertBox) alertBox.style.display = 'none';
-			} else {
-				if (noAlertsBox) noAlertsBox.style.display = 'none';
-				if (alertBox) alertBox.style.display = 'block';
-
-				setTextById('vdAlertId', trigger.dataset.alertId, '—');
-				setTextById('vdAlertType', trigger.dataset.alertType, '—');
-				setTextById('vdAlertMessage', trigger.dataset.alertMessage, '—');
-				setTextById('vdAlertCreatedAt', trigger.dataset.alertCreatedAt, '—');
-				setTextById('vdResolvedAt', trigger.dataset.alertResolvedAt, '—');
-				setTextById('vdResolvedBy', trigger.dataset.alertResolvedBy, '—');
-				setTextById('vdResolutionNotes', trigger.dataset.alertResolutionNotes, '—');
-
-				const alertStatusBadge = document.getElementById('vdAlertStatusBadge');
-				if (alertStatusBadge) {
-					const alertStatusText = getText(trigger.dataset.alertStatus, 'Unresolved');
-					alertStatusBadge.textContent = alertStatusText;
-					const isResolved = alertStatusText.toLowerCase().includes('resolved');
-					setBadgeClass(alertStatusBadge, isResolved ? 'vd-badge vd-badge-success' : 'vd-badge vd-badge-danger');
-				}
-
-				const severityEl = document.getElementById('vdAlertSeverityBadge');
-				if (severityEl) {
-					const severityText = getText(trigger.dataset.alertSeverity, 'Medium');
-					severityEl.textContent = severityText;
-					setBadgeClass(severityEl, severityBadgeClass(severityText));
-				}
-			}
+			renderAlertsList(trigger);
+			renderScansList(trigger);
 
 			const headerStatus = document.getElementById('vdStatusBadge');
 			if (headerStatus) {
@@ -1816,5 +1879,6 @@
 			}
 		});
 	</script>
+	@include('partials.live-auto-refresh')
 </body>
 </html>
