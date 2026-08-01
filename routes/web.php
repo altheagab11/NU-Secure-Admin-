@@ -39,7 +39,6 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
  
     Route::get('/visitor', [VisitorMonitoringController::class, 'index'])->name('admin.visitor');
-    Route::get('/visitor/export', [VisitorMonitoringController::class, 'export'])->name('admin.visitor.export');
 
     Route::get('/daily-reports', [DailyReportController::class, 'index'])->name('admin.daily-reports');
     Route::post('/daily-reports/generate', [DailyReportController::class, 'generate'])->name('admin.daily-reports.generate');

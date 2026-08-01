@@ -470,26 +470,6 @@
 			gap: 8px;
 		}
 
-		.export-excel-btn {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			height: 38px;
-			padding: 0 14px;
-			border-radius: 8px;
-			background: #1d4ed8;
-			color: #ffffff;
-			border: 1px solid #1e40af;
-			font-size: 13px;
-			font-weight: 700;
-			text-decoration: none;
-			white-space: nowrap;
-		}
-
-		.export-excel-btn:hover {
-			background: #1e40af;
-		}
-
 		.table-card {
 			margin-top: 22px;
 			overflow-x: auto;
@@ -1158,7 +1138,6 @@
 						|| !empty($filters['visit_type'])
 						|| !empty($filters['date_from'])
 						|| !empty($filters['date_to']);
-					$exportQuery = array_filter($filters ?? [], fn ($value) => $value !== null && $value !== '');
 				@endphp
 				<form method="GET" action="{{ route('admin.visitor') }}">
 					<div class="filters-row">
@@ -1190,7 +1169,6 @@
 						<input class="filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
 						<input class="filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
 						<div class="filter-actions">
-							<a href="{{ route('admin.visitor.export', $exportQuery) }}" class="export-excel-btn" aria-label="Export visitors to Excel">Export Excel</a>
 							<a href="{{ route('admin.visitor') }}" class="clear-filters-btn {{ $hasActiveFilters ? '' : 'disabled' }}" aria-label="Clear filters">Clear</a>
 						</div>
 					</div>
