@@ -7818,8 +7818,12 @@
 					? digits.replace(/^0+/, '').slice(0, 10)
 					: digits.slice(0, 11);
 			}
-			if (visitorControlNumber && existingVisitor.control_number) {
-				visitorControlNumber.value = String(existingVisitor.control_number).trim();
+			if (visitorIdPassNumber && existingVisitor.pass_number) {
+				visitorIdPassNumber.value = String(existingVisitor.pass_number).trim();
+			}
+			// control_number is per-visit; leave blank so a new one is generated
+			if (visitorControlNumber) {
+				visitorControlNumber.value = '';
 			}
 		};
 

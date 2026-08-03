@@ -76,8 +76,8 @@ class EnrolleeProgressController extends Controller
                 'vr.visitor_id',
                 'vr.first_name',
                 'vr.last_name',
-                'vr.control_number',
-                'vr.pass_number',
+                'v.control_number',
+                'v.pass_number',
                 'e.enrollee_id',
                 'vt.visit_type_name',
             ])

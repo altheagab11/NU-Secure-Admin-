@@ -47,10 +47,10 @@ class GuardVisitorController extends Controller
                 'v.purpose_reason',
                 'v.primary_office_id',
                 'v.destination_text',
+                'v.control_number',
+                'v.pass_number',
                 'vr.first_name',
                 'vr.last_name',
-                'vr.control_number',
-                'vr.pass_number',
                 'vr.visitor_photo_with_id_url',
                 'o.office_name as primary_office_name',
                 'es.exit_status_name'
@@ -62,11 +62,11 @@ class GuardVisitorController extends Controller
                 }
 
                 if (!empty($parsedQr['control_number'])) {
-                    $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(v.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
                 }
 
                 if (!empty($parsedQr['pass_number'])) {
-                    $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
+                    $query->orWhereRaw('LOWER(TRIM(COALESCE(v.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
                 }
             })
             ->orderByDesc('v.entry_time')
@@ -83,11 +83,11 @@ class GuardVisitorController extends Controller
                     }
 
                     if (!empty($parsedQr['control_number'])) {
-                        $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
+                        $query->orWhereRaw('LOWER(TRIM(COALESCE(v.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
                     }
 
                     if (!empty($parsedQr['pass_number'])) {
-                        $query->orWhereRaw('LOWER(TRIM(COALESCE(vr.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
+                        $query->orWhereRaw('LOWER(TRIM(COALESCE(v.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
                     }
                 })
                 ->exists();
@@ -348,7 +348,6 @@ class GuardVisitorController extends Controller
                             'birthday' => $validated['birthday'],
                             'address_id' => $addressId,
                             'contact_no' => $validated['contact_no'],
-                            'pass_number' => $validated['pass_number'],
                             'visitor_photo_with_id_url' => $photoPath !== ''
                                 ? $photoPath
                                 : ($matchedVisitor->visitor_photo_with_id_url ?? null),
@@ -362,8 +361,6 @@ class GuardVisitorController extends Controller
                         'birthday' => $validated['birthday'],
                         'address_id' => $addressId,
                         'contact_no' => $validated['contact_no'],
-                        'pass_number' => $validated['pass_number'],
-                        'control_number' => $validated['control_number'],
                         'visitor_photo_with_id_url' => $validated['visitor_photo_with_id_url'] ?? null,
                         'created_at' => now(),
                     ], 'visitor_id');
@@ -387,6 +384,8 @@ class GuardVisitorController extends Controller
                     'destination_text' => $registerType === 'contractor'
                         ? trim((string) ($validated['destination_office_text'] ?? ''))
                         : null,
+                    'pass_number' => $validated['pass_number'],
+                    'control_number' => $validated['control_number'],
                     'qr_token' => trim((string) ($validated['qr_token'] ?? '')) !== ''
                         ? trim((string) $validated['qr_token'])
                         : strtoupper(Str::random(12)),
@@ -1072,9 +1071,7 @@ class GuardVisitorController extends Controller
                     'v.first_name',
                     'v.last_name',
                     'v.birthday',
-                    'v.control_number',
                     'v.contact_no',
-                    'v.pass_number',
                     'v.visitor_photo_with_id_url',
                     'a.house_no',
                     'a.street',
@@ -1121,6 +1118,11 @@ class GuardVisitorController extends Controller
             'photo_preview_url' => $previewUrl,
         ]);
 
+        $latestPassNumber = (string) (DB::table('visit')
+            ->where('visitor_id', (int) $record->visitor_id)
+            ->orderByDesc('visit_id')
+            ->value('pass_number') ?? '');
+
         $payload = [
             'exists' => true,
             'match_basis' => 'name_birthday',
@@ -1128,9 +1130,9 @@ class GuardVisitorController extends Controller
             'first_name' => (string) ($record->first_name ?? ''),
             'last_name' => (string) ($record->last_name ?? ''),
             'birthday' => $this->normalizeBirthdayValue($record->birthday),
-            'control_number' => (string) ($record->control_number ?? ''),
+            'control_number' => '',
             'contact_no' => (string) ($record->contact_no ?? ''),
-            'pass_number' => (string) ($record->pass_number ?? ''),
+            'pass_number' => $latestPassNumber,
             'house_no' => (string) ($record->house_no ?? ''),
             'street' => (string) ($record->street ?? ''),
             'barangay' => (string) ($record->barangay ?? ''),

@@ -327,8 +327,8 @@ class VisitorMonitoringController extends Controller
 
     private function fetchVisitorMonitoringRows(string $supabaseUrl, string $supabaseKey): Collection
     {
-        $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,'.
-            'visitor:visitor!visit_visitor_id_fkey(visitor_id,first_name,last_name,pass_number,control_number,contact_no,visitor_photo_with_id_url,address_id),'.
+        $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,'.
+            'visitor:visitor!visit_visitor_id_fkey(visitor_id,first_name,last_name,contact_no,visitor_photo_with_id_url,address_id),'.
             'visit_type:visit_type!visit_visit_type_id_fkey(visit_type_name),'.
             'office:office!visit_primary_office_id_fkey(office_name),'.
             'exit_status:exit_status!visit_exit_status_id_fkey(exit_status_name),'.
@@ -483,8 +483,8 @@ class VisitorMonitoringController extends Controller
                 'visit_id' => $visit['visit_id'] ?? null,
                 'visitor_id' => $visitor['visitor_id'] ?? ($visit['visitor_id'] ?? null),
                 'visitor_name' => $fullName !== '' ? $fullName : 'Unknown Visitor',
-                'pass_number' => (string) ($visitor['pass_number'] ?? '—'),
-                'control_number' => (string) ($visitor['control_number'] ?? '—'),
+                'pass_number' => (string) ($visit['pass_number'] ?? '—'),
+                'control_number' => (string) ($visit['control_number'] ?? '—'),
                 'contact_no' => (string) ($visitor['contact_no'] ?? '—'),
                 'visitor_photo_with_id_url' => $photoUrl,
                 'address' => $address,
@@ -864,7 +864,7 @@ class VisitorMonitoringController extends Controller
                 $visitorRel = $this->extractRelation($visitRel, 'visitor');
 
                 $visitorName = trim(((string) ($visitorRel['first_name'] ?? '')).' '.((string) ($visitorRel['last_name'] ?? '')));
-                $controlNo = (string) ($visitorRel['control_number'] ?? '—');
+                $controlNo = (string) ($visitRel['control_number'] ?? '—');
 
                 $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
 
@@ -961,7 +961,7 @@ class VisitorMonitoringController extends Controller
         ];
 
         $primary = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', [
-            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name),office(office_name),visit(visit_id,visitor(first_name,last_name,control_number))',
+            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name),office(office_name),visit(visit_id,control_number,visitor(first_name,last_name))',
             'order' => 'scan_time.desc',
             'limit' => 500,
         ]);
@@ -996,7 +996,7 @@ class VisitorMonitoringController extends Controller
         }
 
         $visitResponse = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/visit', [
-            'select' => 'visit_id,visitor(first_name,last_name,control_number)',
+            'select' => 'visit_id,control_number,visitor(first_name,last_name)',
             'visit_id' => 'in.('.$visitIds->implode(',').')',
             'limit' => 1000,
         ]);
@@ -1140,8 +1140,8 @@ class VisitorMonitoringController extends Controller
                     'vr.visitor_id',
                     'vr.first_name as visitor_first_name',
                     'vr.last_name as visitor_last_name',
-                    'vr.pass_number',
-                    'vr.control_number',
+                    'v.pass_number',
+                    'v.control_number',
                     'vr.contact_no',
                     'vr.visitor_photo_with_id_url',
                     'a.house_no as address_house_no',

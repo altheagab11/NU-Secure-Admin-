@@ -57,9 +57,9 @@ class AlertsController extends Controller
             // PostgREST relationships have different names.
             $select = 'alert_id,created_at,alert_type,severity,status,resolved_at,resolution_notes,' .
                 // visitor fields
-                'visitor(first_name,last_name,pass_number,control_number,contact_no),' .
+                'visitor(first_name,last_name,contact_no),' .
                 // visit fields + visit_type + primary office mapping
-                'visit(visit_id,purpose_reason,entry_time,exit_time,duration_minutes,primary_office_id,visit_type(visit_type_name),office(office_name)),' .
+                'visit(visit_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,primary_office_id,visit_type(visit_type_name),office(office_name)),' .
                 // office_scan fields + office + scanned_by user + validation status
                 'office_scan(scan_id,scan_time,remarks,office(office_name),users(first_name,last_name),validation_status(status_name)),' .
                 // resolved_by user
@@ -141,8 +141,8 @@ class AlertsController extends Controller
                         $scanOffice = $this->extractOfficeName($scan['office'] ?? null);
 
                         $visitorName = trim(((string) ($visitor['first_name'] ?? '')) . ' ' . ((string) ($visitor['last_name'] ?? '')));
-                        $passNumber = (string) ($visitor['pass_number'] ?? '');
-                        $controlNumber = (string) ($visitor['control_number'] ?? '');
+                        $passNumber = (string) ($visit['pass_number'] ?? '');
+                        $controlNumber = (string) ($visit['control_number'] ?? '');
 
                         $matchesSearch = true;
                         if ($search !== '') {

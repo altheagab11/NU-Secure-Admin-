@@ -1232,8 +1232,8 @@
 										@endif
 									</td>
 									<td style="padding:10px 8px;">{{ ($alert['visitor']['first_name'] ?? '') . ' ' . ($alert['visitor']['last_name'] ?? '') }}</td>
-									<td style="padding:10px 8px;">{{ $alert['visitor']['pass_number'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['visitor']['control_number'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['visit']['pass_number'] ?? '' }}</td>
+									<td style="padding:10px 8px;">{{ $alert['visit']['control_number'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['visit']['office']['office_name'] ?? ($alert['visit']['primary_office_id'] ?? '') }}</td>
 									<td style="padding:10px 8px;">{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
@@ -1761,8 +1761,8 @@
 
 			// Visitor
 			modal.querySelector('#m_visitor_name').textContent = ((alert.visitor && (alert.visitor.first_name || alert.visitor.last_name)) ? ((alert.visitor.first_name || '') + ' ' + (alert.visitor.last_name || '')).trim() : '-');
-			modal.querySelector('#m_pass_no').textContent = (alert.visitor && alert.visitor.pass_number) ? alert.visitor.pass_number : (alert.pass_number || '-');
-			modal.querySelector('#m_control_no').textContent = (alert.visitor && alert.visitor.control_number) ? alert.visitor.control_number : (alert.control_number || '-');
+			modal.querySelector('#m_pass_no').textContent = (alert.visit && alert.visit.pass_number) ? alert.visit.pass_number : (alert.pass_number || '-');
+			modal.querySelector('#m_control_no').textContent = (alert.visit && alert.visit.control_number) ? alert.visit.control_number : (alert.control_number || '-');
 			modal.querySelector('#m_contact').textContent = alert.visitor && alert.visitor.contact_no ? alert.visitor.contact_no : '-';
 
 			// Visit
