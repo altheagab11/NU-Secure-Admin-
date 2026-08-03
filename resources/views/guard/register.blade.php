@@ -521,10 +521,14 @@
 		.register-flow {
 			max-width: 720px;
 			margin: 0 auto;
+			width: 100%;
 		}
 
 		.register-flow:has(#registrationCompletePanel:not(.is-hidden)) {
 			max-width: 1100px;
+			margin-left: auto;
+			margin-right: auto;
+			width: 100%;
 		}
 
 		.flow-head {
@@ -1097,6 +1101,8 @@
 			width: 100%;
 			display: grid;
 			gap: 14px;
+			justify-items: stretch;
+			box-sizing: border-box;
 		}
 
 		.registration-complete.is-hidden {
@@ -2204,6 +2210,12 @@
 			background: #f1f5fa;
 		}
 
+		body.self-registration-mode .register-flow:has(#registrationCompletePanel:not(.is-hidden)) {
+			align-items: center;
+			justify-content: flex-start;
+			background: #f3f6fc;
+		}
+
 		body.self-registration-mode .register-flow > .visitor-step:not(.is-hidden) {
 			flex: 1;
 			min-height: 0;
@@ -3010,12 +3022,13 @@
 			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 		}
 
+		body.self-registration-mode .kiosk-office-choice .checkbox-indicator,
 		body.self-registration-mode .kiosk-office-choice .radio-indicator {
 			width: 19px;
 			height: 19px;
 			flex-shrink: 0;
 			border: 2px solid #a4afbf;
-			border-radius: 50%;
+			border-radius: 5px;
 			background: #fff;
 		}
 
@@ -3064,8 +3077,11 @@
 			box-shadow: 0 0 0 3px rgba(41, 69, 165, 0.08);
 		}
 
+		body.self-registration-mode .kiosk-office-choice > input:checked + label .checkbox-indicator,
 		body.self-registration-mode .kiosk-office-choice > input:checked + label .radio-indicator {
-			border: 5px solid #2945a5;
+			border-color: #2945a5;
+			background: #2945a5;
+			box-shadow: inset 0 0 0 2px #fff;
 		}
 
 		body.self-registration-mode .kiosk-office-choice > input:checked + label .office-check {
@@ -3324,24 +3340,35 @@
 		}
 
 		body.self-registration-mode .registration-complete:not(.is-hidden) {
-			flex: 1;
-			display: flex;
+			flex: 1 1 auto;
+			display: flex !important;
 			flex-direction: column;
-			align-items: center;
+			align-items: stretch;
 			justify-content: flex-start;
+			align-self: center;
+			width: min(100%, 1100px);
+			max-width: 1100px;
 			min-height: 0;
 			overflow-x: hidden;
 			overflow-y: auto;
-			padding: 20px 24px 28px;
-			background: #f3f6fc;
-			gap: 12px;
+			margin: 0 auto;
+			padding: 24px 28px 32px;
+			background: transparent;
+			gap: 14px;
 			scrollbar-width: thin;
-			max-width: none;
+			box-sizing: border-box;
 		}
 
 		body.self-registration-mode .registration-complete:not(.is-hidden) > * {
-			width: min(100%, 1100px);
+			width: 100%;
+			max-width: 1100px;
 			flex-shrink: 0;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		body.self-registration-mode .registration-complete:not(.is-hidden) .qr-success {
+			width: 100%;
 		}
 
 		body.self-registration-mode .visitor-card,
@@ -4214,9 +4241,19 @@
 				padding: 0;
 			}
 
-			body.self-registration-mode .visitor-step:not(.is-hidden) > *:not(.kiosk-verify-layout):not(.kiosk-mobile-progress):not(.kiosk-mobile-action-bar),
-			body.self-registration-mode .registration-complete:not(.is-hidden) > * {
+			body.self-registration-mode .visitor-step:not(.is-hidden) > *:not(.kiosk-verify-layout):not(.kiosk-mobile-progress):not(.kiosk-mobile-action-bar) {
 				width: min(100%, 560px);
+			}
+
+			body.self-registration-mode .registration-complete:not(.is-hidden) {
+				width: min(100%, 100%);
+				max-width: 100%;
+				padding: 16px 16px 24px;
+			}
+
+			body.self-registration-mode .registration-complete:not(.is-hidden) > * {
+				width: 100%;
+				max-width: 100%;
 			}
 
 			body.self-registration-mode .visitor-details-grid {
@@ -4423,6 +4460,32 @@
 			margin: 0;
 		}
 
+		body.self-registration-mode .self-registration-brand {
+			grid-column: 1;
+			justify-self: start;
+		}
+
+		body.self-registration-mode .self-reg-header-progress {
+			grid-column: 2;
+			justify-self: center;
+			max-width: none;
+			flex: none;
+		}
+
+		body.self-registration-mode .self-reg-logout-btn {
+			grid-column: 3;
+			justify-self: end;
+			align-self: center;
+			min-height: 40px;
+			padding: 0 14px;
+			border: 1px solid rgba(255, 255, 255, 0.55);
+			border-radius: 12px;
+			background: rgba(255, 255, 255, 0.08);
+			color: #fff;
+			font-size: 12px;
+			font-weight: 750;
+		}
+
 		body.self-registration-mode.kiosk-type-select .self-registration-header {
 			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 			align-items: center;
@@ -4448,12 +4511,6 @@
 			align-self: center;
 		}
 
-		body.self-registration-mode .self-reg-header-progress {
-			justify-self: center;
-			max-width: none;
-			flex: none;
-		}
-
 		body.self-registration-mode .self-reg-stepper {
 			width: 430px;
 			min-width: 0;
@@ -4477,7 +4534,9 @@
 		}
 
 		body.self-registration-mode .self-reg-logout-btn {
+			grid-column: 3;
 			justify-self: end;
+			align-self: center;
 			min-height: 40px;
 			padding: 0 14px;
 			border: 1px solid rgba(255, 255, 255, 0.55);
@@ -7113,8 +7172,14 @@
 			}
 
 			return Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
-				const text = cb?.parentElement?.textContent || '';
-				return text.trim();
+				const label = cb?.closest('label') || cb?.parentElement;
+				const named = label?.querySelector('.office-details strong, strong');
+				if (named?.textContent) {
+					return named.textContent.trim();
+				}
+
+				const text = label?.textContent || cb?.parentElement?.textContent || '';
+				return text.replace(/\s*Tap to select\s*/gi, '').trim();
 			}).filter(Boolean);
 		};
 
@@ -8795,21 +8860,22 @@ body {
 
 					const inputId = `kiosk_office_${office.office_id}`;
 					const input = document.createElement('input');
-					input.type = 'radio';
+					input.type = 'checkbox';
 					input.id = inputId;
-					input.name = 'destination_office_choice';
+					input.name = 'destination_office_choice[]';
 					input.className = 'office-checkbox';
 					input.value = String(office.office_id);
 
 					input.addEventListener('change', () => {
-						selectedOfficeIds = input.checked ? [input.value] : [];
+						selectedOfficeIds = Array.from(destinationOffice.querySelectorAll('.office-checkbox:checked'))
+							.map((cb) => cb.value);
 					});
 
 					const label = document.createElement('label');
 					label.htmlFor = inputId;
 
 					const indicator = document.createElement('span');
-					indicator.className = 'radio-indicator';
+					indicator.className = 'checkbox-indicator';
 					indicator.setAttribute('aria-hidden', 'true');
 
 					const details = document.createElement('span');
