@@ -5961,9 +5961,10 @@
 										</div>
 										<div class="desktop-id-grid kiosk-id-chip-grid">
 											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-person-vcard-fill"></i> National ID</div>
-											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-car-front-fill"></i> Driver's License</div>
-											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-passport-fill"></i> Passport</div>
-											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-building-fill"></i> Employee ID</div>
+											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-credit-card-2-front-fill"></i> UMID</div>
+											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-check2-square"></i> Voters ID</div>
+											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-car-front-fill"></i> Drivers License</div>
+											<div class="desktop-id-item kiosk-id-chip"><i class="bi bi-person-hearts"></i> Senior ID</div>
 										</div>
 									</section>
 								</div>
@@ -6016,11 +6017,11 @@
 								<section class="sidebar-section supported-section id-types is-hidden" id="idTypesPanel">
 									<h2 class="sidebar-section-title id-types-title">Supported ID Types</h2>
 									<ul class="supported-list kiosk-supported-list">
-										<li><span class="supported-check">✓</span> National ID / Driver's License</li>
-										<li><span class="supported-check">✓</span> Company ID / Employee Badge</li>
-										<li><span class="supported-check">✓</span> Passport (Photo page)</li>
-										<li><span class="supported-check">✓</span> SSS / GSIS / UMID</li>
-										<li><span class="supported-check">✓</span> School ID / PRC ID</li>
+										<li><span class="supported-check">✓</span> National ID</li>
+										<li><span class="supported-check">✓</span> UMID</li>
+										<li><span class="supported-check">✓</span> Voters ID</li>
+										<li><span class="supported-check">✓</span> Drivers License</li>
+										<li><span class="supported-check">✓</span> Senior ID</li>
 									</ul>
 								</section>
 
@@ -6091,9 +6092,11 @@
 						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
 							<ul class="id-types-list">
-								<li>- National ID / Driver's License</li>
-								<li>- Company ID / Employee Badge</li>
-								<li>- Passport (Photo page)</li>
+								<li>- National ID</li>
+								<li>- UMID</li>
+								<li>- Voters ID</li>
+								<li>- Drivers License</li>
+								<li>- Senior ID</li>
 							</ul>
 						</div>
 						@endif

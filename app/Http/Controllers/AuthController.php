@@ -49,7 +49,7 @@ class AuthController extends Controller
 
         $roleId = (int) $user->role_id;
 
-        if (! in_array($roleId, [1, 2, 4], true)) {
+        if (! in_array($roleId, [1, 2, 3, 4], true)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
@@ -57,6 +57,23 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => 'This account is not allowed in the web app.',
             ]);
+        }
+
+        if ($roleId === 3) {
+            $hasOffice = DB::table('office_staff')
+                ->where('user_id', (int) $user->user_id)
+                ->whereNotNull('office_id')
+                ->exists();
+
+            if (! $hasOffice) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                throw ValidationException::withMessages([
+                    'email' => 'Your account is not assigned to an office. Contact an administrator.',
+                ]);
+            }
         }
 
         return $this->redirectByRole($roleId);
@@ -134,6 +151,10 @@ class AuthController extends Controller
     {
         if ($roleId === 1) {
             return redirect()->to('/admin/dashboard');
+        }
+
+        if ($roleId === 3) {
+            return redirect()->route('office.dashboard');
         }
 
         if ($roleId === 4) {

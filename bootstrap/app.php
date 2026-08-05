@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'office.staff' => \App\Http\Middleware\EnsureOfficeStaff::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

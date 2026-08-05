@@ -15,6 +15,11 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DateRangeReportController;
 use App\Http\Controllers\EnrolleeProgressController;
 use App\Http\Controllers\LiveDataController;
+use App\Http\Controllers\Office\OfficeDashboardController;
+use App\Http\Controllers\Office\OfficeScannerController;
+use App\Http\Controllers\Office\OfficeVisitorController;
+use App\Http\Controllers\Office\OfficeVisitHistoryController;
+use App\Http\Controllers\Office\OfficeProfileController;
  
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
@@ -32,8 +37,29 @@ Route::get('/enrollee/progress/{token}', [EnrolleeProgressController::class, 'sh
  
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
-Route::middleware(['auth', 'role:1,2'])->get('/live/status', [LiveDataController::class, 'status'])
+Route::middleware(['auth', 'role:1,2,3'])->get('/live/status', [LiveDataController::class, 'status'])
     ->name('live.status');
+
+Route::middleware(['auth', 'office.staff'])->prefix('office')->name('office.')->group(function () {
+    Route::get('/dashboard', [OfficeDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/live', [OfficeDashboardController::class, 'liveData'])->name('dashboard.live');
+
+    Route::get('/scanner', [OfficeScannerController::class, 'index'])->name('scanner');
+    Route::post('/scanner/verify', [OfficeScannerController::class, 'verify'])->middleware('throttle:30,1')->name('scanner.verify');
+    Route::post('/scanner/check-in', [OfficeScannerController::class, 'checkIn'])->middleware('throttle:20,1')->name('scanner.check-in');
+
+    Route::get('/expected-visitors', [OfficeVisitorController::class, 'expected'])->name('expected-visitors');
+    Route::get('/visitors/{visit}', [OfficeVisitorController::class, 'show'])->whereNumber('visit')->name('visitors.show');
+    Route::get('/visitors/{visit}/details', [OfficeVisitorController::class, 'detailsJson'])->whereNumber('visit')->name('visitors.details');
+
+    Route::get('/visit-history', [OfficeVisitHistoryController::class, 'index'])->name('visit-history');
+    Route::get('/visit-history/export', [OfficeVisitHistoryController::class, 'export'])->name('visit-history.export');
+
+    Route::get('/notifications', [OfficeProfileController::class, 'notifications'])->name('notifications');
+    Route::post('/notifications/{notifId}/read', [OfficeProfileController::class, 'markNotificationRead'])
+        ->whereNumber('notifId')
+        ->name('notifications.read');
+});
  
 Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
