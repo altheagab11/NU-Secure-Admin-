@@ -96,7 +96,6 @@
 				</tbody>
 			</table>
 		</div>
-		@include('admin.partials.table-pagination-styles')
 		@include('admin.partials.table-pagination', [
 			'paginator' => $history,
 			'perPageParam' => 'per_page',
@@ -106,8 +105,16 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+	@include('admin.partials.table-pagination-styles')
+</style>
+@endpush
+
 @push('scripts')
-@include('admin.partials.table-pagination-script')
+<script>
+	@include('admin.partials.table-pagination-script')
+</script>
 <script>
 (function () {
 	const input = document.getElementById('search');

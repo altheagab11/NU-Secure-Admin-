@@ -57,7 +57,6 @@
 	])
 
 	@if(method_exists($visitors, 'links'))
-		@include('admin.partials.table-pagination-styles')
 		@include('admin.partials.table-pagination', [
 			'paginator' => $visitors,
 			'perPageParam' => 'per_page',
@@ -67,8 +66,16 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+	@include('admin.partials.table-pagination-styles')
+</style>
+@endpush
+
 @push('scripts')
-@include('admin.partials.table-pagination-script')
+<script>
+	@include('admin.partials.table-pagination-script')
+</script>
 @include('partials.live-auto-refresh', ['liveRefreshIntervalMs' => 20000])
 <script>
 (function () {
