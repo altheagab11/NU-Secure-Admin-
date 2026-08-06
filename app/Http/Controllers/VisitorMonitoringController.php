@@ -787,7 +787,7 @@ class VisitorMonitoringController extends Controller
                         'scan_id' => (string) ($scan['scan_id'] ?? '—'),
                         'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
                         'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                        'scanned_office' => $officeName !== '' ? $officeName : '—',
+                        'scanned_office' => $this->formatScannedOffice($officeName, (string) ($scan['remarks'] ?? '')),
                         'scanned_by' => $scannedBy !== '' ? $scannedBy : '—',
                         'validation_status' => $validationStatus !== '' ? $validationStatus : 'Unknown',
                     ];
@@ -813,7 +813,10 @@ class VisitorMonitoringController extends Controller
                             'scan_id' => (string) ($scan['scan_id'] ?? '—'),
                             'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
                             'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                            'scanned_office' => (string) ($officeRel['office_name'] ?? '—'),
+                            'scanned_office' => $this->formatScannedOffice(
+                                (string) ($officeRel['office_name'] ?? ''),
+                                (string) ($scan['remarks'] ?? '')
+                            ),
                             'scanned_by' => $scannerName !== '' ? $scannerName : '—',
                             'validation_status' => (string) ($validationRel['status_name'] ?? 'Unknown'),
                         ];
@@ -1120,6 +1123,21 @@ class VisitorMonitoringController extends Controller
         return $hours.' hr '.$remaining.' mins';
     }
 
+    /**
+     * Facility exit scans are not office destination scans — keep Scanned Office blank.
+     */
+    private function formatScannedOffice(?string $officeName, ?string $remarks = null): string
+    {
+        $remarksText = Str::lower(trim((string) $remarks));
+        if ($remarksText !== '' && (str_contains($remarksText, 'facility exit') || str_contains($remarksText, 'exit scan'))) {
+            return '—';
+        }
+
+        $name = trim((string) $officeName);
+
+        return $name !== '' ? $name : '—';
+    }
+
     private function fetchVisitorMonitoringRowsFromDatabase(): Collection
     {
         try {
@@ -1317,7 +1335,10 @@ class VisitorMonitoringController extends Controller
                             'scan_id' => (string) ($scan['scan_id'] ?? '—'),
                             'scan_time_label' => $scanTime ? $scanTime->format('M d, Y h:i A') : '—',
                             'scan_remarks' => (string) ($scan['remarks'] ?? '—'),
-                            'scanned_office' => (string) ($scan['scanned_office_name'] ?? '—'),
+                            'scanned_office' => $this->formatScannedOffice(
+                                (string) ($scan['scanned_office_name'] ?? ''),
+                                (string) ($scan['remarks'] ?? '')
+                            ),
                             'scanned_by' => $scanScannedBy !== '' ? $scanScannedBy : '—',
                             'validation_status' => (string) ($scan['validation_status_name'] ?? 'Unknown'),
                         ];

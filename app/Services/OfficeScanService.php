@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class OfficeScanService
@@ -79,6 +80,10 @@ class OfficeScanService
             return $this->error('INACTIVE_VISIT', 'This visit has no office route configured.', 422);
         }
 
+        if (! $this->isSequentialRoute($visit)) {
+            return $this->verifyFlexibleRoute($visit, $route, $officeContext, $officeId, $userId, $scanMethod);
+        }
+
         $current = $this->resolveCurrentExpectation($route);
         $staffOfficeExpectations = $route->where('office_id', $officeId)->values();
 
@@ -137,11 +142,14 @@ class OfficeScanService
                     'The visitor must complete the previous office check-in before proceeding.'
                         .($previousOffice ? ' Previous office: '.$previousOffice.'.' : ''),
                     422,
-                    ['expected_office' => (string) ($current->office_name ?? '')]
+                    [
+                        'expected_office' => (string) ($current->office_name ?? ''),
+                        'data' => $this->buildVisitorPayload($visit, $route, $current, $officeContext),
+                    ]
                 );
             }
 
-            $this->recordFailedScan(
+            $scanId = $this->recordFailedScan(
                 $visit,
                 $officeId,
                 $userId,
@@ -149,7 +157,7 @@ class OfficeScanService
                 'Wrong office scan. Next expected: '.($current->office_name ?? 'Unknown'),
                 $scanMethod
             );
-            $this->createWrongOfficeAlert($visit, $officeId, $userId, (string) ($current->office_name ?? 'Unknown'));
+            $this->createWrongOfficeAlert($visit, $officeId, (string) ($current->office_name ?? 'Unknown'), $scanId);
             $this->audit('wrong_office_scan_attempt', [
                 'office_id' => $officeId,
                 'user_id' => $userId,
@@ -162,7 +170,10 @@ class OfficeScanService
                 'This visitor is not currently expected at your office. The next expected destination is '
                     .trim((string) ($current->office_name ?? 'another office')).'.',
                 422,
-                ['expected_office' => (string) ($current->office_name ?? '')]
+                [
+                    'expected_office' => (string) ($current->office_name ?? ''),
+                    'data' => $this->buildVisitorPayload($visit, $route, $current, $officeContext),
+                ]
             );
         }
 
@@ -211,8 +222,10 @@ class OfficeScanService
             return $this->error('INVALID_QR', 'Unable to confirm check-in for this visitor.', 422);
         }
 
+        $advanceProgress = null;
+
         try {
-            $result = DB::transaction(function () use ($visitId, $expectationId, $officeId, $userId, $scanMethod, $remarks, $officeContext) {
+            $result = DB::transaction(function () use ($visitId, $expectationId, $officeId, $userId, $scanMethod, $remarks, $officeContext, &$advanceProgress) {
                 $expectation = DB::table('office_expectation')
                     ->where('expectation_id', $expectationId)
                     ->where('visit_id', $visitId)
@@ -231,32 +244,36 @@ class OfficeScanService
                     return $this->error('DUPLICATE_SCAN', 'This visitor has already checked in at this office.', 409);
                 }
 
-                // Re-check previous steps under lock.
-                $previousIncomplete = DB::table('office_expectation as oe')
-                    ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
-                    ->where('oe.visit_id', $visitId)
-                    ->where('oe.expected_order', '<', (int) $expectation->expected_order)
-                    ->whereNull('oe.arrived_at')
-                    ->where(function ($q) {
-                        $q->whereNull('xs.status_name')
-                            ->orWhereRaw("LOWER(TRIM(COALESCE(xs.status_name, ''))) NOT IN (?, ?, ?, ?)", [
-                                'arrived', 'completed', 'complete', 'skipped',
-                            ]);
-                    })
-                    ->exists();
+                $visit = $this->findVisitById($visitId);
+                if ($visit && $this->isSequentialRoute($visit)) {
+                    // Re-check previous steps under lock (enrollee / sequential routes only).
+                    $previousIncomplete = DB::table('office_expectation as oe')
+                        ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
+                        ->where('oe.visit_id', $visitId)
+                        ->where('oe.expected_order', '<', (int) $expectation->expected_order)
+                        ->whereNull('oe.arrived_at')
+                        ->where(function ($q) {
+                            $q->whereNull('xs.status_name')
+                                ->orWhereRaw("LOWER(TRIM(COALESCE(xs.status_name, ''))) NOT IN (?, ?, ?, ?)", [
+                                    'arrived', 'completed', 'complete', 'skipped',
+                                ]);
+                        })
+                        ->exists();
 
-                if ($previousIncomplete) {
-                    return $this->error(
-                        'PREVIOUS_INCOMPLETE',
-                        'The visitor must complete the previous office check-in before proceeding.',
-                        422
-                    );
+                    if ($previousIncomplete) {
+                        return $this->error(
+                            'PREVIOUS_INCOMPLETE',
+                            'The visitor must complete the previous office check-in before proceeding.',
+                            422
+                        );
+                    }
                 }
 
                 $now = $this->philippinesNow();
                 $arrivedStatusId = $this->resolveExpectationStatusId(['arrived', 'completed', 'complete', 'done'])
-                    ?? $this->resolveExpectationStatusId(['pending']);
-                $validValidationId = $this->resolveValidationStatusId(['valid']);
+                    ?? $this->resolveExpectationStatusId(['pending'])
+                    ?? 1;
+                $validValidationId = $this->resolveValidationStatusId(['valid']) ?? 1;
 
                 DB::table('office_expectation')
                     ->where('expectation_id', $expectationId)
@@ -274,11 +291,17 @@ class OfficeScanService
                     'remarks' => $remarks ?: ('Office check-in via '.$scanMethod),
                 ], 'scan_id');
 
-                $this->advanceEnrolleeProgress($visitId, $officeId, (int) $expectation->expected_order, $now);
+                $advanceProgress = [
+                    'visit_id' => $visitId,
+                    'office_id' => $officeId,
+                    'expected_order' => (int) $expectation->expected_order,
+                    'checked_at' => $now,
+                ];
 
                 $visit = $this->findVisitById($visitId);
                 $route = $this->loadRoute($visitId);
-                $current = $this->resolveCurrentExpectation($route);
+                $checkedInStep = $route->firstWhere('expectation_id', $expectationId);
+                $displayStep = $checkedInStep ?: $expectation;
 
                 $this->audit('successful_office_check_in', [
                     'office_id' => $officeId,
@@ -289,12 +312,16 @@ class OfficeScanService
                     'scan_method' => $scanMethod,
                 ]);
 
+                $payload = $this->buildVisitorPayload($visit, $route, $displayStep, $officeContext);
+                $payload['authorized'] = true;
+                $payload['checked_in'] = true;
+
                 return [
                     'success' => true,
                     'message' => 'Office check-in recorded successfully.',
                     'http' => 200,
                     'data' => array_merge(
-                        $this->buildVisitorPayload($visit, $route, $current, $officeContext),
+                        $payload,
                         [
                             'scan_id' => $scanId,
                             'checked_in_at' => $now->toDateTimeString(),
@@ -302,6 +329,15 @@ class OfficeScanService
                     ),
                 ];
             });
+
+            if (($result['success'] ?? false) && is_array($advanceProgress)) {
+                $this->advanceEnrolleeProgress(
+                    (int) $advanceProgress['visit_id'],
+                    (int) $advanceProgress['office_id'],
+                    (int) $advanceProgress['expected_order'],
+                    $advanceProgress['checked_at']
+                );
+            }
 
             return $result;
         } catch (\Throwable $e) {
@@ -311,7 +347,11 @@ class OfficeScanService
                 'visit_id' => $visitId,
             ]);
 
-            return $this->error('NETWORK_ERROR', 'Unable to verify the QR code. Please check your connection and try again.', 500);
+            return $this->error(
+                'CHECKIN_FAILED',
+                'Unable to record office check-in. Please try again.',
+                500
+            );
         }
     }
 
@@ -539,6 +579,113 @@ class OfficeScanService
         return null;
     }
 
+    public function isSequentialRoute(object $visit): bool
+    {
+        $visitType = Str::lower(trim((string) ($visit->visit_type_name ?? '')));
+        if ($visitType === 'enrollee') {
+            return true;
+        }
+
+        if ($visitType === 'visitor') {
+            return false;
+        }
+
+        $visitId = (int) ($visit->visit_id ?? 0);
+        if ($visitId <= 0) {
+            return false;
+        }
+
+        return DB::table('enrollee')->where('visit_id', $visitId)->exists();
+    }
+
+    public function resolveStaffOfficeExpectation($route, int $officeId): ?object
+    {
+        return $route
+            ->where('office_id', $officeId)
+            ->filter(fn ($row) => ! $this->isExpectationDone($row))
+            ->sortBy('expected_order')
+            ->first();
+    }
+
+    protected function verifyFlexibleRoute(
+        object $visit,
+        $route,
+        object $officeContext,
+        int $officeId,
+        int $userId,
+        string $scanMethod
+    ): array {
+        $staffOfficeExpectations = $route->where('office_id', $officeId)->values();
+        $firstPending = $this->resolveCurrentExpectation($route);
+
+        if (! $firstPending) {
+            return $this->error('INACTIVE_VISIT', 'This visit is no longer active.', 422);
+        }
+
+        if ($staffOfficeExpectations->isEmpty()) {
+            $pendingNames = $route
+                ->filter(fn ($row) => ! $this->isExpectationDone($row))
+                ->pluck('office_name')
+                ->filter()
+                ->unique()
+                ->values();
+
+            $expectedLabel = $pendingNames->isNotEmpty()
+                ? $pendingNames->join(', ')
+                : 'another office';
+
+            $scanId = $this->recordFailedScan(
+                $visit,
+                $officeId,
+                $userId,
+                'Unauthorized',
+                'Wrong office scan. Expected: '.$expectedLabel,
+                $scanMethod
+            );
+            $this->createWrongOfficeAlert($visit, $officeId, $expectedLabel, $scanId);
+            $this->audit('wrong_office_scan_attempt', [
+                'office_id' => $officeId,
+                'user_id' => $userId,
+                'visit_id' => (int) $visit->visit_id,
+            ]);
+
+            return $this->error(
+                'WRONG_OFFICE',
+                'This visitor is not registered for your office. Expected destination'
+                    .($pendingNames->count() > 1 ? 's are ' : ' is ')
+                    .$expectedLabel.'.',
+                422,
+                [
+                    'expected_office' => $expectedLabel,
+                    'data' => $this->buildVisitorPayload($visit, $route, $firstPending, $officeContext),
+                ]
+            );
+        }
+
+        if ($staffOfficeExpectations->every(fn ($row) => $this->isExpectationDone($row))) {
+            $this->recordFailedScan($visit, $officeId, $userId, 'Unauthorized', 'Duplicate office scan attempt', $scanMethod);
+            $this->audit('duplicate_scan_attempt', [
+                'office_id' => $officeId,
+                'user_id' => $userId,
+                'visit_id' => (int) $visit->visit_id,
+            ]);
+
+            return $this->error('DUPLICATE_SCAN', 'This visitor has already checked in at this office.', 409);
+        }
+
+        $target = $this->resolveStaffOfficeExpectation($route, $officeId);
+        if (! $target) {
+            return $this->error('DUPLICATE_SCAN', 'This visitor has already checked in at this office.', 409);
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Visitor verified successfully.',
+            'http' => 200,
+            'data' => $this->buildVisitorPayload($visit, $route, $target, $officeContext),
+        ];
+    }
+
     public function isExpectationDone(object $row): bool
     {
         if (! empty($row->arrived_at)) {
@@ -563,6 +710,8 @@ class OfficeScanService
     {
         $fullName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? '')));
         $photoPath = trim((string) ($visit->visitor_photo_with_id_url ?? ''));
+        $flexibleRoute = ! $this->isSequentialRoute($visit);
+        $staffOfficeId = (int) $officeContext->office_id;
 
         $classified = [];
         $foundCurrent = false;
@@ -570,6 +719,8 @@ class OfficeScanService
             $done = $this->isExpectationDone($step);
             if ($done) {
                 $state = 'done';
+            } elseif ($flexibleRoute) {
+                $state = 'current';
             } elseif (! $foundCurrent) {
                 $state = 'current';
                 $foundCurrent = true;
@@ -635,7 +786,10 @@ class OfficeScanService
             'remaining_route' => $remaining,
             'route' => $classified,
             'current_expectation_id' => $current ? (int) $current->expectation_id : null,
-            'authorized' => $current && (int) $current->office_id === (int) $officeContext->office_id,
+            'authorized' => $current
+                && (int) $current->office_id === $staffOfficeId
+                && ! $this->isExpectationDone($current),
+            'flexible_route' => $flexibleRoute,
         ];
     }
 
@@ -649,7 +803,7 @@ class OfficeScanService
         return $previous ? trim((string) ($previous->office_name ?? '')) : null;
     }
 
-    protected function recordFailedScan(object $visit, int $officeId, int $userId, string $validationName, string $remarks, string $scanMethod): void
+    protected function recordFailedScan(object $visit, int $officeId, int $userId, string $validationName, string $remarks, string $scanMethod): ?int
     {
         try {
             $validationId = $this->resolveValidationStatusId([$validationName, 'unauthorized', 'invalid']) ?? 3;
@@ -671,23 +825,32 @@ class OfficeScanService
                 'sent_at' => $this->philippinesNow(),
                 'read_at' => null,
             ]);
+
+            return (int) $scanId;
         } catch (\Throwable $e) {
             Log::warning('Failed to record office failed scan audit: '.$e->getMessage());
+
+            return null;
         }
     }
 
-    protected function createWrongOfficeAlert(object $visit, int $officeId, int $userId, string $expectedOfficeName): void
+    protected function createWrongOfficeAlert(object $visit, int $officeId, string $expectedOfficeName, ?int $scanId = null): void
     {
         try {
             $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'Office';
+            $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? '')));
+            if ($visitorName === '') {
+                $visitorName = 'Visitor';
+            }
+
             DB::table('alerts')->insert([
                 'visit_id' => (int) $visit->visit_id,
                 'visitor_id' => (int) $visit->visitor_id,
-                'scan_id' => null,
+                'scan_id' => $scanId,
                 'alert_type' => 'Wrong Office',
-                'severity' => 'medium',
-                'message' => 'Visitor scanned at '.$officeName.' but next expected office is '.$expectedOfficeName.'.',
-                'status' => 'unresolved',
+                'severity' => 'Medium',
+                'message' => $visitorName.' checked in at '.$officeName.' but was expected at '.$expectedOfficeName.'.',
+                'status' => 'Unresolved',
                 'created_at' => $this->philippinesNow(),
             ]);
         } catch (\Throwable $e) {
@@ -726,9 +889,8 @@ class OfficeScanService
                 return;
             }
 
-            $completedStatusId = DB::table('enrollee_status')
-                ->whereRaw('LOWER(TRIM(COALESCE(status_name, \'\'))) = ?', ['completed'])
-                ->value('enrollee_status_id');
+            $completedStepStatusId = $this->resolveStepStatusId(['done', 'completed', 'complete']) ?? 2;
+            $pendingStepStatusId = $this->resolveStepStatusId(['pending', 'ongoing', 'in progress', 'in_progress']) ?? 1;
 
             $existing = DB::table('enrollee_progress')
                 ->where('enrollee_id', (int) $enrollee->enrollee_id)
@@ -739,14 +901,14 @@ class OfficeScanService
                 DB::table('enrollee_progress')
                     ->where('progress_id', (int) $existing->progress_id)
                     ->update([
-                        'step_status_id' => $completedStatusId ?: $existing->step_status_id,
+                        'step_status_id' => $completedStepStatusId,
                         'completed_at' => $now,
                     ]);
             } else {
                 DB::table('enrollee_progress')->insert([
                     'enrollee_id' => (int) $enrollee->enrollee_id,
                     'step_id' => (int) $step->step_id,
-                    'step_status_id' => $completedStatusId,
+                    'step_status_id' => $completedStepStatusId,
                     'completed_at' => $now,
                 ]);
             }
@@ -773,6 +935,29 @@ class OfficeScanService
         } catch (\Throwable $e) {
             Log::warning('Unable to advance enrollee progress: '.$e->getMessage());
         }
+    }
+
+    protected function resolveStepStatusId(array $names): ?int
+    {
+        foreach ($names as $name) {
+            $normalized = strtolower(trim($name));
+
+            foreach (['step_status_name', 'status_name'] as $column) {
+                if (! Schema::hasColumn('step_status', $column)) {
+                    continue;
+                }
+
+                $id = DB::table('step_status')
+                    ->whereRaw("LOWER(TRIM(COALESCE({$column}, ''))) = ?", [$normalized])
+                    ->value('step_status_id');
+
+                if ($id) {
+                    return (int) $id;
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function resolveExpectationStatusId(array $names): ?int

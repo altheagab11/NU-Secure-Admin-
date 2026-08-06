@@ -14,7 +14,7 @@
 						<div id="scanVisitorPhotoFallback" class="rounded-4 d-flex align-items-center justify-content-center mb-2" style="height: 160px; background: #eef4ff; color: #064A9F;">
 							<i class="bi bi-person-bounding-box" style="font-size: 3rem;" aria-hidden="true"></i>
 						</div>
-						<div id="scanAuthBadge" class="badge-status badge-success">Authorized to check in</div>
+						<div id="scanAuthBadge" class="badge-status badge-success">Correct destination</div>
 					</div>
 					<div class="col-md-8">
 						<dl class="row mb-0 small">
@@ -25,6 +25,7 @@
 							<dt class="col-sm-4 text-muted">Destination</dt><dd class="col-sm-8" id="scanDestination">—</dd>
 							<dt class="col-sm-4 text-muted">Previous office</dt><dd class="col-sm-8" id="scanPreviousOffice">—</dd>
 							<dt class="col-sm-4 text-muted">Expected office</dt><dd class="col-sm-8" id="scanCurrentOffice">—</dd>
+							<dt class="col-sm-4 text-muted" id="scanStaffOfficeLabel">Scanned office</dt><dd class="col-sm-8" id="scanStaffOffice">—</dd>
 							<dt class="col-sm-4 text-muted">Visit date</dt><dd class="col-sm-8" id="scanVisitDate">—</dd>
 							<dt class="col-sm-4 text-muted">Status</dt><dd class="col-sm-8" id="scanVisitStatus">—</dd>
 						</dl>
@@ -32,12 +33,23 @@
 							<div class="text-muted small mb-1">Remaining route</div>
 							<div id="scanRemainingRoute" class="d-flex flex-wrap gap-2"></div>
 						</div>
+						<div id="scanWrongOfficeGuidance" class="alert alert-warning mt-3 mb-0 d-none" role="note">
+							<div class="fw-semibold mb-1">What to do:</div>
+							<ul class="mb-0 ps-3 small">
+								<li>Ask visitor to wait for security</li>
+								<li>Do not allow entry without verification</li>
+								<li>Provide directions to correct office if needed</li>
+							</ul>
+						</div>
 					</div>
 				</div>
 			</div>
 			<div class="modal-footer border-0 pt-0">
-				<button type="button" class="btn btn-nu-outline" data-bs-dismiss="modal" id="scanCancelBtn">Cancel</button>
-				<button type="button" class="btn btn-nu-primary" id="scanConfirmBtn">Confirm Check-in</button>
+				<button type="button" class="btn btn-nu-outline d-none" data-bs-dismiss="modal" id="scanCancelBtn">Cancel</button>
+				<button type="button" class="btn btn-nu-primary" id="scanConfirmBtn">
+					<i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
+					Done
+				</button>
 			</div>
 		</div>
 	</div>

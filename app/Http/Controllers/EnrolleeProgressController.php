@@ -170,7 +170,7 @@ class EnrolleeProgressController extends Controller
         $progressRows = DB::table('enrollee_progress as ep')
             ->join('enrollee_step as es', 'es.step_id', '=', 'ep.step_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'es.office_id')
-            ->leftJoin('enrollee_status as st', 'st.enrollee_status_id', '=', 'ep.step_status_id')
+            ->leftJoin('step_status as st', 'st.step_status_id', '=', 'ep.step_status_id')
             ->where('ep.enrollee_id', $enrolleeId)
             ->select([
                 'es.step_order',

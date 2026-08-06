@@ -12,10 +12,20 @@
 		'.visitor-drawer.active',
 		'.resolve-flow-modal',
 		'.alert-modal',
+		'.modal.show',
+		'#scanResultModal.show',
+		'#manualPayloadModal.show',
+		'#exitResultModal.show',
+		'#exitResultModal.open',
 	];
 @endphp
 <script>
 (function () {
+	if (window.__nuSecureLiveRefreshBound) {
+		return;
+	}
+	window.__nuSecureLiveRefreshBound = true;
+
 	const pollUrl = @json(url('/live/status'));
 	const intervalMs = @json($__liveRefreshIntervalMs);
 	const pauseSelectors = @json($__liveRefreshPauseSelectors);

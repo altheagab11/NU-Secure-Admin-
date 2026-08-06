@@ -1825,5 +1825,14 @@
 		});
 	</script>
 	@include('guard.partials.guard-responsive-script')
+	@include('partials.live-auto-refresh', [
+		'liveRefreshIntervalMs' => 12000,
+		'liveRefreshPauseSelectors' => [
+			'#exitResultModal',
+			'#exitResultModal.show',
+			'#exitResultModal.open',
+			'.modal.show',
+		],
+	])
 </body>
 </html>

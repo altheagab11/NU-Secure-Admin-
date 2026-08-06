@@ -53,11 +53,17 @@ class OfficeVisitorQueryService
 
     public function countPendingOfficeScans(int $officeId): int
     {
-        // Next expected destination is this office; not yet checked in.
         $activeVisitIds = DB::table('visit')->whereNull('exit_time')->pluck('visit_id');
         if ($activeVisitIds->isEmpty()) {
             return 0;
         }
+
+        $visits = DB::table('visit as v')
+            ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
+            ->whereIn('v.visit_id', $activeVisitIds)
+            ->select('v.visit_id', 'vt.visit_type_name')
+            ->get()
+            ->keyBy('visit_id');
 
         $count = 0;
         $routes = DB::table('office_expectation as oe')
@@ -76,7 +82,23 @@ class OfficeVisitorQueryService
             ->get()
             ->groupBy('visit_id');
 
-        foreach ($routes as $steps) {
+        foreach ($routes as $visitId => $steps) {
+            $visit = $visits->get($visitId);
+            if (! $visit) {
+                continue;
+            }
+
+            if (! $this->scanService->isSequentialRoute($visit)) {
+                $pendingAtOffice = $steps->first(fn ($step) => (int) $step->office_id === $officeId
+                    && ! $this->scanService->isExpectationDone($step));
+
+                if ($pendingAtOffice) {
+                    $count++;
+                }
+
+                continue;
+            }
+
             $current = null;
             foreach ($steps as $step) {
                 if (! $this->scanService->isExpectationDone($step)) {
@@ -226,6 +248,7 @@ class OfficeVisitorQueryService
         return DB::table('office_expectation as oe')
             ->join('visit as v', 'v.visit_id', '=', 'oe.visit_id')
             ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+            ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
             ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
             ->where('oe.office_id', $officeId)
@@ -254,6 +277,7 @@ class OfficeVisitorQueryService
                 'vr.last_name',
                 'o.office_name',
                 'xs.status_name',
+                'vt.visit_type_name',
             ])
             ->orderBy('oe.expected_order')
             ->orderBy('v.entry_time')
@@ -264,12 +288,24 @@ class OfficeVisitorQueryService
     {
         $row->visitor_name = trim(trim((string) $row->first_name).' '.trim((string) $row->last_name));
         $route = $this->scanService->loadRoute((int) $row->visit_id);
+        $visit = (object) [
+            'visit_id' => (int) $row->visit_id,
+            'visit_type_name' => (string) ($row->visit_type_name ?? ''),
+        ];
+        $sequential = $this->scanService->isSequentialRoute($visit);
         $current = $this->scanService->resolveCurrentExpectation($route);
 
         $previous = collect($route)
             ->filter(fn ($step) => (int) $step->expected_order < (int) $row->expected_order)
             ->sortByDesc('expected_order')
-            ->first();
+            ->first(fn ($step) => $this->scanService->isExpectationDone($step));
+
+        if (! $previous) {
+            $previous = collect($route)
+                ->filter(fn ($step) => (int) $step->expected_order < (int) $row->expected_order)
+                ->sortByDesc('expected_order')
+                ->first();
+        }
 
         $row->previous_office = $previous->office_name ?? '—';
         $row->previous_office_id = $previous->office_id ?? null;
@@ -278,11 +314,15 @@ class OfficeVisitorQueryService
             $row->route_status = 'Checked In';
             $row->route_status_key = 'checked_in';
             $row->badge = 'success';
-        } elseif ($current && (int) $current->office_id === $officeId && (int) $current->expectation_id === (int) $row->expectation_id) {
+        } elseif (! $sequential && (int) $row->office_id === $officeId) {
             $row->route_status = 'Ready for Office Check-in';
             $row->route_status_key = 'ready';
             $row->badge = 'info';
-        } elseif ($current && (int) $current->expected_order < (int) $row->expected_order) {
+        } elseif ($sequential && $current && (int) $current->office_id === $officeId && (int) $current->expectation_id === (int) $row->expectation_id) {
+            $row->route_status = 'Ready for Office Check-in';
+            $row->route_status_key = 'ready';
+            $row->badge = 'info';
+        } elseif ($sequential && $current && (int) $current->expected_order < (int) $row->expected_order) {
             $row->route_status = 'Waiting for Previous Office';
             $row->route_status_key = 'waiting';
             $row->badge = 'warning';
@@ -395,8 +435,9 @@ class OfficeVisitorQueryService
         if ($activeVisitIds->isNotEmpty()) {
             $visits = DB::table('visit as v')
                 ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+                ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
                 ->whereIn('v.visit_id', $activeVisitIds)
-                ->select('v.visit_id', 'v.control_number', 'v.purpose_reason', 'v.entry_time', 'vr.first_name', 'vr.last_name')
+                ->select('v.visit_id', 'v.control_number', 'v.purpose_reason', 'v.entry_time', 'vr.first_name', 'vr.last_name', 'vt.visit_type_name')
                 ->get()
                 ->keyBy('visit_id');
 
@@ -420,6 +461,7 @@ class OfficeVisitorQueryService
                     continue;
                 }
 
+                $sequential = $this->scanService->isSequentialRoute($visit);
                 $current = null;
                 $lastDone = null;
                 foreach ($steps as $step) {
@@ -430,8 +472,19 @@ class OfficeVisitorQueryService
                     }
                 }
 
-                if (! $current || (int) $current->office_id !== $officeId) {
-                    continue;
+                if ($sequential) {
+                    if (! $current || (int) $current->office_id !== $officeId) {
+                        continue;
+                    }
+                } else {
+                    $pendingAtOffice = $steps->first(fn ($step) => (int) $step->office_id === $officeId
+                        && ! $this->scanService->isExpectationDone($step));
+
+                    if (! $pendingAtOffice) {
+                        continue;
+                    }
+
+                    $current = $pendingAtOffice;
                 }
 
                 $name = trim(trim((string) $visit->first_name).' '.trim((string) $visit->last_name));
@@ -546,8 +599,13 @@ class OfficeVisitorQueryService
         }
 
         $current = $this->scanService->resolveCurrentExpectation($route);
+        $flexibleRoute = ! $this->scanService->isSequentialRoute($visit);
         foreach ($timeline as &$item) {
-            if ($item['state'] === 'pending' && $current && (int) $current->expected_order === (int) $item['order']) {
+            if ($flexibleRoute) {
+                if ($item['state'] === 'pending') {
+                    $item['state'] = 'current';
+                }
+            } elseif ($item['state'] === 'pending' && $current && (int) $current->expected_order === (int) $item['order']) {
                 $item['state'] = 'current';
             }
         }

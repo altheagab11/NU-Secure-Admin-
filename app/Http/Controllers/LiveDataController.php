@@ -30,6 +30,25 @@ class LiveDataController extends Controller
             ->whereNotNull('arrived_at')
             ->max('expectation_id') ?? 0);
 
+        $maxNotificationId = 0;
+        $maxNotificationSent = '';
+        $maxEnrolleeProgressCompleted = '';
+        $doneEnrolleeSteps = 0;
+
+        try {
+            $maxNotificationId = (int) (DB::table('notification')->max('notif_id') ?? 0);
+            $maxNotificationSent = (string) (DB::table('notification')->max('sent_at') ?? '');
+        } catch (\Throwable $e) {
+            // Optional tables / columns should not break live polling.
+        }
+
+        try {
+            $maxEnrolleeProgressCompleted = (string) (DB::table('enrollee_progress')->max('completed_at') ?? '');
+            $doneEnrolleeSteps = (int) DB::table('enrollee_progress')->whereNotNull('completed_at')->count();
+        } catch (\Throwable $e) {
+            // Optional tables / columns should not break live polling.
+        }
+
         $fingerprint = implode('|', [
             $activeVisits,
             $maxVisitId,
@@ -42,6 +61,10 @@ class LiveDataController extends Controller
             $maxScanId,
             $maxScanTime,
             $maxArrivedExpectationId,
+            $maxNotificationId,
+            $maxNotificationSent,
+            $maxEnrolleeProgressCompleted,
+            $doneEnrolleeSteps,
         ]);
 
         return response()->json([

@@ -1,13 +1,12 @@
 <script>
 window.OfficeScan = (function () {
 	const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-	const verifyUrl = @json(route('office.scanner.verify'));
 	const checkInUrl = @json(route('office.scanner.check-in'));
 
 	let pendingPayload = null;
 	let pendingMethod = 'camera';
-	let verifying = false;
-	let confirming = false;
+	let pendingAuthorized = false;
+	let processingScan = false;
 	let onSuccess = null;
 	let onResume = null;
 
@@ -29,11 +28,19 @@ window.OfficeScan = (function () {
 		el.textContent = '';
 	}
 
+	function setDoneButtonLabel(btn, label) {
+		if (!btn) return;
+		btn.innerHTML = '<i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i> ' + label;
+	}
+
 	function fillModal(data) {
 		const visitor = data.visitor || {};
 		const visit = data.visit || {};
 		const previous = data.previous_office || {};
 		const current = data.current_office || {};
+		const staff = data.staff_office || {};
+		const authorized = !!data.authorized;
+		pendingAuthorized = authorized;
 
 		document.getElementById('scanVisitorName').textContent = visitor.full_name || 'Visitor';
 		document.getElementById('scanControlNumber').textContent = visit.control_number || '—';
@@ -44,6 +51,16 @@ window.OfficeScan = (function () {
 		document.getElementById('scanCurrentOffice').textContent = current.office_name || '—';
 		document.getElementById('scanVisitDate').textContent = visit.entry_time || '—';
 		document.getElementById('scanVisitStatus').textContent = visit.exit_status || 'Active';
+
+		const staffOfficeEl = document.getElementById('scanStaffOffice');
+		const staffOfficeLabel = document.getElementById('scanStaffOfficeLabel');
+		if (staffOfficeEl) {
+			staffOfficeEl.textContent = staff.office_name || '—';
+		}
+		if (staffOfficeLabel && staffOfficeEl) {
+			staffOfficeLabel.classList.toggle('d-none', authorized);
+			staffOfficeEl.classList.toggle('d-none', authorized);
+		}
 
 		const photo = document.getElementById('scanVisitorPhoto');
 		const fallback = document.getElementById('scanVisitorPhotoFallback');
@@ -57,14 +74,28 @@ window.OfficeScan = (function () {
 		}
 
 		const badge = document.getElementById('scanAuthBadge');
-		if (data.authorized) {
+		const confirmBtn = document.getElementById('scanConfirmBtn');
+		const cancelBtn = document.getElementById('scanCancelBtn');
+		const guidance = document.getElementById('scanWrongOfficeGuidance');
+
+		if (authorized) {
 			badge.className = 'badge-status badge-success';
-			badge.textContent = 'Authorized to check in';
-			document.getElementById('scanConfirmBtn').disabled = false;
+			badge.textContent = 'Correct destination';
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				setDoneButtonLabel(confirmBtn, 'Done');
+			}
+			cancelBtn?.classList.add('d-none');
+			guidance?.classList.add('d-none');
 		} else {
-			badge.className = 'badge-status badge-danger';
-			badge.textContent = 'Not authorized for this office';
-			document.getElementById('scanConfirmBtn').disabled = true;
+			badge.className = 'badge-status badge-warning';
+			badge.textContent = 'Wrong office destination';
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				setDoneButtonLabel(confirmBtn, 'Done');
+			}
+			cancelBtn?.classList.add('d-none');
+			guidance?.classList.remove('d-none');
 		}
 
 		const remaining = document.getElementById('scanRemainingRoute');
@@ -77,15 +108,59 @@ window.OfficeScan = (function () {
 		});
 	}
 
+	function openResultModal() {
+		const modal = bootstrap.Modal.getOrCreateInstance(modalEl());
+		modal.show();
+	}
+
+	function dismissModal() {
+		const modal = bootstrap.Modal.getInstance(modalEl());
+		if (modal) modal.hide();
+	}
+
+	function handleScanResult(result, responseOk) {
+		const code = result.code || '';
+		const hasVisitorData = !!(result.data && (result.data.visitor || result.data.visit));
+		const isWrongOfficeResult = ['WRONG_OFFICE', 'PREVIOUS_INCOMPLETE'].includes(code) && hasVisitorData;
+
+		if (responseOk && result.success && hasVisitorData) {
+			fillModal(result.data);
+			showAlert(result.message || 'Office check-in recorded successfully.', 'success');
+			openResultModal();
+			toast(result.message || 'Office check-in recorded successfully.', 'success');
+			if (typeof onSuccess === 'function') onSuccess(result);
+			return result;
+		}
+
+		if (isWrongOfficeResult) {
+			fillModal(result.data);
+			showAlert(result.message || 'Wrong office destination.', 'warning');
+			openResultModal();
+			return result;
+		}
+
+		const message = result.message || 'Unable to record this scan. Please try again.';
+		toast(message, 'danger');
+		if (typeof onResume === 'function') onResume(false);
+		return result;
+	}
+
 	async function verify(payload, scanMethod) {
-		if (verifying || !payload) return;
-		verifying = true;
+		if (processingScan || !payload) return;
+		processingScan = true;
 		pendingPayload = payload;
 		pendingMethod = scanMethod || 'camera';
+		pendingAuthorized = false;
 		hideAlert();
 
+		const confirmBtn = document.getElementById('scanConfirmBtn');
+		if (confirmBtn) {
+			confirmBtn.disabled = true;
+			confirmBtn.innerHTML = 'Saving...';
+		}
+
 		try {
-			const response = await fetch(verifyUrl, {
+			const response = await fetch(checkInUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -100,76 +175,16 @@ window.OfficeScan = (function () {
 			});
 
 			const result = await response.json().catch(() => ({}));
-
-			if (!response.ok || !result.success) {
-				const message = result.message || 'Unable to verify the QR code. Please check your connection and try again.';
-				toast(message, 'danger');
-				if (typeof onResume === 'function') onResume(false);
-				return result;
-			}
-
-			fillModal(result.data || {});
-			showAlert(result.message || 'Visitor verified successfully.', 'success');
-			const modal = bootstrap.Modal.getOrCreateInstance(modalEl());
-			modal.show();
-			return result;
+			return handleScanResult(result, response.ok);
 		} catch (error) {
-			toast('Unable to verify the QR code. Please check your connection and try again.', 'danger');
+			toast('Unable to record this scan. Please check your connection and try again.', 'danger');
 			if (typeof onResume === 'function') onResume(false);
 			return null;
 		} finally {
-			verifying = false;
-		}
-	}
-
-	async function confirmCheckIn() {
-		if (confirming || !pendingPayload) return;
-		confirming = true;
-		const btn = document.getElementById('scanConfirmBtn');
-		if (btn) {
-			btn.disabled = true;
-			btn.textContent = 'Recording...';
-		}
-
-		try {
-			const response = await fetch(checkInUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json',
-					'X-CSRF-TOKEN': csrf,
-				},
-				credentials: 'same-origin',
-				body: JSON.stringify({
-					qr_payload: pendingPayload,
-					scan_method: pendingMethod || 'camera',
-				}),
-			});
-			const result = await response.json().catch(() => ({}));
-
-			if (!response.ok || !result.success) {
-				showAlert(result.message || 'Check-in failed.', 'danger');
-				toast(result.message || 'Check-in failed.', 'danger');
-				if (typeof onResume === 'function') onResume(false);
-				return;
-			}
-
-			showAlert(result.message || 'Office check-in recorded successfully.', 'success');
-			toast(result.message || 'Office check-in recorded successfully.', 'success');
-			if (typeof onSuccess === 'function') onSuccess(result);
-
-			setTimeout(() => {
-				const modal = bootstrap.Modal.getInstance(modalEl());
-				if (modal) modal.hide();
-			}, 900);
-		} catch (error) {
-			showAlert('Unable to verify the QR code. Please check your connection and try again.', 'danger');
-			if (typeof onResume === 'function') onResume(false);
-		} finally {
-			confirming = false;
-			if (btn) {
-				btn.disabled = false;
-				btn.textContent = 'Confirm Check-in';
+			processingScan = false;
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				setDoneButtonLabel(confirmBtn, 'Done');
 			}
 		}
 	}
@@ -199,8 +214,9 @@ window.OfficeScan = (function () {
 	}
 
 	function bind() {
-		document.getElementById('scanConfirmBtn')?.addEventListener('click', confirmCheckIn);
+		document.getElementById('scanConfirmBtn')?.addEventListener('click', dismissModal);
 		modalEl()?.addEventListener('hidden.bs.modal', () => {
+			pendingAuthorized = false;
 			if (typeof onResume === 'function') onResume(true);
 		});
 

@@ -535,5 +535,13 @@
 })();
 </script>
 @stack('scripts')
+@include('partials.live-auto-refresh', [
+	'liveRefreshIntervalMs' => 10000,
+	'liveRefreshPauseSelectors' => [
+		'#scanResultModal.show',
+		'#manualPayloadModal.show',
+		'.modal.show',
+	],
+])
 </body>
 </html>

@@ -115,7 +115,6 @@ class GuardVisitorController extends Controller
 
         $exitedStatusId = $this->resolveExitStatusByNames(['exited', 'checked out', 'completed', 'ready to exit']);
         $skippedExpectationStatusId = $this->resolveSkippedExpectationStatusId();
-        $exitOfficeId = $this->resolveExitScanOfficeId($visit);
         $validValidationStatusId = $this->resolveValidValidationStatusId();
         $scannedByUserId = Auth::id();
 
@@ -125,7 +124,6 @@ class GuardVisitorController extends Controller
             $durationMinutes,
             $exitedStatusId,
             $skippedExpectationStatusId,
-            $exitOfficeId,
             $validValidationStatusId,
             $scannedByUserId
         ) {
@@ -150,22 +148,15 @@ class GuardVisitorController extends Controller
                     ]);
             }
 
-            if ($exitOfficeId !== null) {
-                DB::table('office_scan')->insert([
-                    'visit_id' => (int) $visit->visit_id,
-                    'office_id' => $exitOfficeId,
-                    'scanned_by_user_id' => $scannedByUserId ? (int) $scannedByUserId : null,
-                    'scan_time' => $exitAt,
-                    'validation_status_id' => $validValidationStatusId,
-                    'remarks' => 'Guard facility exit scan',
-                ]);
-            } else {
-                logger()->warning('Exit scan completed without office_scan row (no resolvable office_id)', [
-                    'visit_id' => (int) $visit->visit_id,
-                    'primary_office_id' => $visit->primary_office_id ?? null,
-                    'destination_text' => $visit->destination_text ?? null,
-                ]);
-            }
+            // Facility exit is not tied to a destination office (especially contractors).
+            DB::table('office_scan')->insert([
+                'visit_id' => (int) $visit->visit_id,
+                'office_id' => null,
+                'scanned_by_user_id' => $scannedByUserId ? (int) $scannedByUserId : null,
+                'scan_time' => $exitAt,
+                'validation_status_id' => $validValidationStatusId,
+                'remarks' => 'Guard facility exit scan',
+            ]);
         });
 
         $fullName = trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? '')));
@@ -400,7 +391,6 @@ class GuardVisitorController extends Controller
                 if ($registerType === 'enrollee') {
                     $pendingEnrolleeStatusId = $this->resolveEnrolleeStatusId('ONGOING')
                         ?? $this->resolveEnrolleeStatusId('PENDING')
-                        ?? $this->resolveEnrolleeStatusId('COMPLETED')
                         ?? 1;
 
                     if ($resumeEnrollee && ! empty($resumeEnrollee['enrollee_id'])) {
@@ -420,19 +410,26 @@ class GuardVisitorController extends Controller
                             'updated_at' => now(),
                         ], 'enrollee_id');
 
-                        $pendingStepStatusId = $pendingEnrolleeStatusId;
+                        $pendingStepStatusId = $this->resolveStepStatusId(['pending', 'ongoing', 'in progress', 'in_progress', 'not started', 'waiting'])
+                            ?? $this->resolveStepStatusId(['scheduled', 'expected'])
+                            ?? 1;
                         $stepRows = [];
                         $resolvedStepAssignments = ! empty($enrolleeSteps)
                             ? $enrolleeSteps
                             : $this->resolveEnrolleeStepAssignments();
 
                         foreach ($resolvedStepAssignments as $stepAssignment) {
-                            $stepRows[] = [
+                            $row = [
                                 'enrollee_id' => $enrolleeId,
                                 'step_id' => (int) $stepAssignment['step_id'],
-                                'step_status_id' => $pendingStepStatusId,
                                 'completed_at' => null,
                             ];
+
+                            if ($pendingStepStatusId) {
+                                $row['step_status_id'] = $pendingStepStatusId;
+                            }
+
+                            $stepRows[] = $row;
                         }
 
                         if (! empty($stepRows)) {
@@ -1249,7 +1246,7 @@ class GuardVisitorController extends Controller
         $progressRows = DB::table('enrollee_progress as ep')
             ->join('enrollee_step as es', 'es.step_id', '=', 'ep.step_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'es.office_id')
-            ->leftJoin('enrollee_status as st', 'st.enrollee_status_id', '=', 'ep.step_status_id')
+            ->leftJoin('step_status as st', 'st.step_status_id', '=', 'ep.step_status_id')
             ->where('ep.enrollee_id', (int) $enrollee->enrollee_id)
             ->orderBy('es.step_order')
             ->orderBy('es.step_id')
@@ -2540,6 +2537,43 @@ class GuardVisitorController extends Controller
             ->value('enrollee_status_id');
 
         return $fallback ? (int) $fallback : null;
+    }
+
+    protected function resolveStepStatusId(array $names): ?int
+    {
+        foreach ($names as $name) {
+            $normalized = strtolower(trim($name));
+            foreach (['status_name', 'step_status_name'] as $column) {
+                if (! \Illuminate\Support\Facades\Schema::hasColumn('step_status', $column)) {
+                    continue;
+                }
+
+                $id = DB::table('step_status')
+                    ->whereRaw("LOWER(TRIM(COALESCE({$column}, ''))) = ?", [$normalized])
+                    ->value('step_status_id');
+
+                if ($id) {
+                    return (int) $id;
+                }
+            }
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('step_status')) {
+            $query = DB::table('step_status');
+            if (\Illuminate\Support\Facades\Schema::hasColumn('step_status', 'status_name')) {
+                $query->whereRaw("LOWER(TRIM(COALESCE(status_name, ''))) NOT IN (?, ?, ?, ?)", [
+                    'completed', 'complete', 'done', 'finished',
+                ]);
+            }
+
+            $fallback = $query->orderBy('step_status_id')->value('step_status_id');
+
+            if ($fallback) {
+                return (int) $fallback;
+            }
+        }
+
+        return null;
     }
 
     /**

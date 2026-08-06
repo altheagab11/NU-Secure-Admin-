@@ -147,10 +147,6 @@
 
 @push('scripts')
 @include('office.partials.scan-scripts')
-@include('partials.live-auto-refresh', [
-	'liveRefreshIntervalMs' => 15000,
-	'liveRefreshPauseSelectors' => ['#scanResultModal.show', '#manualPayloadModal.show'],
-])
 <script>
 OfficeScan.init({
 	onSuccess: function () {

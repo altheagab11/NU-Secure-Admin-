@@ -76,7 +76,6 @@
 <script>
 	@include('admin.partials.table-pagination-script')
 </script>
-@include('partials.live-auto-refresh', ['liveRefreshIntervalMs' => 20000])
 <script>
 (function () {
 	const input = document.getElementById('search');
