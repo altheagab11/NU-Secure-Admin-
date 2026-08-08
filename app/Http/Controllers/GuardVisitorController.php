@@ -1115,11 +1115,6 @@ class GuardVisitorController extends Controller
             'photo_preview_url' => $previewUrl,
         ]);
 
-        $latestPassNumber = (string) (DB::table('visit')
-            ->where('visitor_id', (int) $record->visitor_id)
-            ->orderByDesc('visit_id')
-            ->value('pass_number') ?? '');
-
         $payload = [
             'exists' => true,
             'match_basis' => 'name_birthday',
@@ -1129,7 +1124,8 @@ class GuardVisitorController extends Controller
             'birthday' => $this->normalizeBirthdayValue($record->birthday),
             'control_number' => '',
             'contact_no' => (string) ($record->contact_no ?? ''),
-            'pass_number' => $latestPassNumber,
+            // pass_number is per-visit; never reuse the previous visit's number
+            'pass_number' => '',
             'house_no' => (string) ($record->house_no ?? ''),
             'street' => (string) ($record->street ?? ''),
             'barangay' => (string) ($record->barangay ?? ''),
