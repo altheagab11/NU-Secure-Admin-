@@ -13,16 +13,24 @@ Artisan::command('inspire', function () {
 | Daily Visitor Report Scheduler
 |--------------------------------------------------------------------------
 |
-| Generates the Excel report for the current Asia/Manila calendar day at
-| 11:59 PM. Requires the server cron:
+| End-of-day generation at 11:59 PM Asia/Manila, plus an hourly catch-up
+| so missed days are filled when the scheduler is running.
 |
+| Windows (local): run every minute via Task Scheduler, or keep this open:
+|   php artisan schedule:work
+|
+| Linux / production cron:
 |   * * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
-|
-| Replace /path-to-project with this application's absolute path.
 |
 */
 Schedule::command('generate:daily-visitor-report')
     ->dailyAt('23:59')
+    ->timezone('Asia/Manila')
+    ->withoutOverlapping(30)
+    ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));
+
+Schedule::command('generate:daily-visitor-report --catch-up=7')
+    ->hourly()
     ->timezone('Asia/Manila')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));

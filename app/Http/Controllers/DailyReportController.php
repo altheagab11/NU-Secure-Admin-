@@ -25,6 +25,9 @@ class DailyReportController extends Controller
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
         ]);
 
+        // Catch up missing automated reports when the OS scheduler is not running.
+        $this->catchUpMissingReports();
+
         $query = DailyReport::query()
             ->with(['generator:user_id,first_name,last_name,email'])
             ->where('report_type', DailyReport::TYPE_DAILY_VISITOR)
@@ -188,5 +191,29 @@ class DailyReportController extends Controller
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]
         );
+    }
+
+    /**
+     * Fill missing daily reports for recent days when the OS scheduler is idle.
+     * Throttled so page loads stay responsive.
+     */
+    protected function catchUpMissingReports(): void
+    {
+        $cacheKey = 'daily-visitor-report:page-catch-up';
+
+        if (cache()->has($cacheKey)) {
+            return;
+        }
+
+        cache()->put($cacheKey, true, now()->addMinutes(10));
+
+        try {
+            $this->reportService->ensureMissingDailyReports(7, null);
+        } catch (Throwable $e) {
+            Log::warning('Daily report page catch-up failed.', [
+                'action' => 'daily_report_page_catchup_failed',
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

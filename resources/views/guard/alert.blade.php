@@ -1434,26 +1434,14 @@
 						<small>Guard Officer</small>
 					</div>
 				</div>
-
-				<a href="{{ route('logout') }}"
-				   class="logout-btn"
-				   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
 			<div class="alerts-page-wrap">
-				@include('guard.partials.guard-mobile-topbar', ['title' => 'Active Alerts'])
+				@include('guard.partials.guard-topbar', ['title' => 'Active Alerts'])
 				<div class="alerts-page-header">
 					<div>
-						<h1 class="alerts-page-title">Active Alerts</h1>
 						<p class="alerts-page-subtitle">Monitor visitor alerts and completed visits that are ready for exit processing.</p>
 					</div>
 

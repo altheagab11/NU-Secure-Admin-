@@ -985,6 +985,8 @@
 					.alert-divider { display: none; }
 					.resolve-flow-footer { flex-direction: column-reverse; align-items: stretch; }
 				}
+
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -1085,19 +1087,11 @@
 					</div>
 				</div>
 
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">Security Alerts</h1>
+			@include('admin.partials.admin-topbar', ['title' => 'Security Alerts'])
 
 			<div class="alert-stats">
 				<div class="stat-card unresolved">

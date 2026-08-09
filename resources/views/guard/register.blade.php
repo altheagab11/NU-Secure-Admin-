@@ -4349,6 +4349,7 @@
 
 			body.print-ticket-mode .guard-nav-backdrop,
 			body.print-ticket-mode .guard-mobile-topbar,
+			body.print-ticket-mode .guard-topbar,
 			body.print-ticket-mode .self-registration-header,
 			body.print-ticket-mode .self-reg-header-progress,
 			body.print-ticket-mode .kiosk-type-picker,
@@ -5735,17 +5736,6 @@
 						<small>Guard Officer</small>
 					</div>
 				</div>
-
-				<a href="{{ route('logout') }}"
-				   class="logout-btn"
-				   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 		@endif
@@ -5845,7 +5835,7 @@
 					</form>
 				</header>
 			@else
-				@include('guard.partials.guard-mobile-topbar', ['title' => 'Register Visitor'])
+				@include('guard.partials.guard-topbar', ['title' => 'Register Visitor'])
 			@endif
 			@if ($isSelfRegisteredRole)
 				<div class="self-registration-body">
@@ -5875,8 +5865,8 @@
 					</div>
 				</section>
 			@elseif ($registerType !== null)
-				<h1 class="page-title">Register Visitor</h1>
 				@if ($isSelfRegisteredRole)
+					<h1 class="page-title">Register Visitor</h1>
 					<p class="self-reg-subtitle">Follow the steps below to complete your visitor check-in.</p>
 				@endif
 				<section class="register-flow">
@@ -6820,6 +6810,7 @@
 		const printTicketBtn = document.getElementById('printTicketBtn');
 		const newVisitorAfterTicketBtn = document.getElementById('newVisitorAfterTicketBtn');
 		const pageTitleEl = document.querySelector('h1.page-title');
+		const guardTopbarEl = document.querySelector('.guard-topbar');
 		const existingVisitorModal = document.getElementById('existingVisitorModal');
 		const existingVisitorModalPhotoFrame = document.getElementById('existingVisitorModalPhotoFrame');
 		const existingVisitorModalPhoto = document.getElementById('existingVisitorModalPhoto');
@@ -7026,17 +7017,53 @@
 						return;
 					}
 					bypassNativeBeforeUnloadPrompt = true;
-
-					if (anchor.classList.contains('logout-btn')) {
-						document.getElementById('logout-form')?.submit();
-						return;
-					}
-
 					window.location.assign(anchor.href);
 				})
 				.catch(() => {
 					// no-op: stay on page on any modal error
 				});
+		}, true);
+
+		document.querySelector('.guard-topbar #logout-form')?.addEventListener('submit', (e) => {
+			if (!shouldWarnLeaveRegisterFlow()) {
+				return;
+			}
+			e.preventDefault();
+			const form = e.currentTarget;
+			confirmLeaveRegisterFlow()
+				.then((shouldLeave) => {
+					if (!shouldLeave) {
+						return;
+					}
+					bypassNativeBeforeUnloadPrompt = true;
+					form.submit();
+				})
+				.catch(() => {});
+		});
+
+		document.querySelector('.guard-topbar')?.addEventListener('click', (e) => {
+			const anchor = e.target.closest?.('a[href]');
+			if (!anchor || !anchor.href) {
+				return;
+			}
+			const hrefAttr = anchor.getAttribute('href') || '';
+			if (hrefAttr.startsWith('#') || hrefAttr.startsWith('javascript:')) {
+				return;
+			}
+			if (!shouldWarnLeaveRegisterFlow()) {
+				return;
+			}
+			e.preventDefault();
+			e.stopPropagation();
+			confirmLeaveRegisterFlow()
+				.then((shouldLeave) => {
+					if (!shouldLeave) {
+						return;
+					}
+					bypassNativeBeforeUnloadPrompt = true;
+					window.location.assign(anchor.href);
+				})
+				.catch(() => {});
 		}, true);
 
 		window.addEventListener('beforeunload', (e) => {
@@ -7149,6 +7176,9 @@
 			}
 			if (pageTitleEl) {
 				pageTitleEl.classList.toggle('is-hidden', isCompleteStep);
+			}
+			if (guardTopbarEl) {
+				guardTopbarEl.classList.toggle('is-hidden', isCompleteStep);
 			}
 
 			if (isFormStep) {

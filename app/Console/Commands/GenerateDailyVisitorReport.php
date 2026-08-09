@@ -11,12 +11,19 @@ class GenerateDailyVisitorReport extends Command
 {
     protected $signature = 'generate:daily-visitor-report
                             {date? : Report date in YYYY-MM-DD format (defaults to today in Asia/Manila)}
-                            {--force : Regenerate even if a completed report already exists}';
+                            {--force : Regenerate even if a completed report already exists}
+                            {--catch-up=0 : Also generate missing reports for the last N Asia/Manila days}';
 
     protected $description = 'Generate the NU-Secure daily visitor Excel report and store it securely';
 
     public function handle(DailyVisitorReportService $service): int
     {
+        $catchUpDays = max(0, (int) $this->option('catch-up'));
+
+        if ($catchUpDays > 0) {
+            return $this->runCatchUp($service, $catchUpDays);
+        }
+
         $dateInput = $this->argument('date') ?: now('Asia/Manila')->toDateString();
         $force = (bool) $this->option('force');
         $lockKey = 'daily-visitor-report:'.$dateInput;
@@ -43,6 +50,36 @@ class GenerateDailyVisitorReport extends Command
                 : self::FAILURE;
         } catch (Throwable $e) {
             $this->error('Failed to generate daily visitor report: '.$e->getMessage());
+
+            return self::FAILURE;
+        } finally {
+            optional($lock)->release();
+        }
+    }
+
+    private function runCatchUp(DailyVisitorReportService $service, int $days): int
+    {
+        $lock = Cache::lock('daily-visitor-report:catch-up', 600);
+
+        if (! $lock->get()) {
+            $this->warn('Another catch-up process is already running.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            $stats = $service->ensureMissingDailyReports($days, null);
+
+            $this->info('Daily visitor report catch-up finished.');
+            $this->line('Generated: '.$stats['generated']);
+            $this->line('Skipped (already complete): '.$stats['skipped']);
+            $this->line('Failed: '.$stats['failed']);
+
+            return $stats['failed'] > 0 && $stats['generated'] === 0
+                ? self::FAILURE
+                : self::SUCCESS;
+        } catch (Throwable $e) {
+            $this->error('Catch-up failed: '.$e->getMessage());
 
             return self::FAILURE;
         } finally {

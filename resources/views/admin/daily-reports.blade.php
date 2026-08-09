@@ -392,6 +392,7 @@
 		}
 
 		@include('admin.partials.table-pagination-styles')
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -491,21 +492,14 @@
 					</div>
 				</div>
 
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
+			@include('admin.partials.admin-topbar', ['title' => 'Daily Reports'])
 			<div class="toolbar">
 				<div>
-					<h1 class="page-title">Daily Reports</h1>
-					<p class="page-subtitle">Automated and manually generated daily visitor Excel reports</p>
+					<p class="page-subtitle mb-0">Automated and manually generated daily visitor Excel reports</p>
 				</div>
 				<div class="d-flex flex-wrap gap-2">
 					<a href="{{ route('admin.date-range-reports') }}" class="btn btn-outline-primary">
@@ -571,7 +565,7 @@
 					<div class="empty-state">
 						<i class="bi bi-folder2-open"></i>
 						<h5 class="mb-1">No daily reports found</h5>
-						<p class="mb-3">Generate a report manually or wait for the automatic 11:59 PM schedule.</p>
+						<p class="mb-3">Missing reports are auto-filled when you open this page. End-of-day generation also runs at 11:59 PM Asia/Manila when the scheduler is active.</p>
 						<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateReportModal">
 							Generate Daily Report
 						</button>

@@ -1013,6 +1013,8 @@
 				font-size: 20px;
 			}
 		}
+
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -1112,19 +1114,11 @@
 					</div>
 				</div>
 
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
-			<h1 class="page-title">Visitor Monitoring</h1>
+			@include('admin.partials.admin-topbar', ['title' => 'Visitor Monitoring'])
 			@if (!empty($fetchError))
 				<p class="fetch-error">{{ $fetchError }}</p>
 			@endif

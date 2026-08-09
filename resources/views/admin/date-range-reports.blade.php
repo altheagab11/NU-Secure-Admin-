@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
@@ -447,6 +447,7 @@
 		}
 
 		@include('admin.partials.table-pagination-styles')
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -546,21 +547,14 @@
 					</div>
 				</div>
 
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
+			@include('admin.partials.admin-topbar', ['title' => 'Date-Range Reports'])
 			<div class="toolbar">
 				<div>
-					<h1 class="page-title">Date-Range Reports</h1>
-					<p class="page-subtitle">Generate and download multi-day visitor Excel reports (6:00 AM to 11:59 PM per day)</p>
+					<p class="page-subtitle mb-0">Generate and download multi-day visitor Excel reports (6:00 AM to 11:59 PM per day)</p>
 				</div>
 				<a href="{{ route('admin.daily-reports') }}" class="btn btn-outline-primary">
 					<i class="bi bi-file-earmark-excel me-1"></i> Daily Reports

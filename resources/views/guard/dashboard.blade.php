@@ -1141,24 +1141,14 @@
 						<small>Guard Officer</small>
 					</div>
 				</div>
-
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
 			<div class="dashboard-wrap">
-				@include('guard.partials.guard-mobile-topbar', ['title' => 'Guard Dashboard'])
+				@include('guard.partials.guard-topbar', ['title' => 'Dashboard'])
 				<div class="dashboard-header">
 					<div>
-						<h1 class="page-title">Guard Dashboard</h1>
 						<p class="page-subtitle">Monitor visitors, alerts, and campus activity in real time.</p>
 					</div>
 

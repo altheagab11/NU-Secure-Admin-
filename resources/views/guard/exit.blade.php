@@ -1172,24 +1172,14 @@
 						<small>Guard Officer</small>
 					</div>
 				</div>
-
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
 			<div class="exit-page-wrap">
-				@include('guard.partials.guard-mobile-topbar', ['title' => 'Exit Scan'])
+				@include('guard.partials.guard-topbar', ['title' => 'Exit Scan'])
 				<div class="exit-page-header">
 					<div>
-						<h1 class="exit-page-title">Exit Scan</h1>
 						<p class="exit-page-subtitle">Use the handheld QR/barcode scanner to process visitor exit quickly and securely.</p>
 					</div>
 

@@ -137,6 +137,48 @@ class DailyVisitorReportService
     }
 
     /**
+     * Create any missing (or failed) daily visitor reports for the last N Asia/Manila days.
+     *
+     * @return array{generated: int, skipped: int, failed: int}
+     */
+    public function ensureMissingDailyReports(int $days = 7, ?int $generatedByUserId = null): array
+    {
+        $days = max(1, min($days, 31));
+        $today = now('Asia/Manila')->startOfDay();
+        $stats = ['generated' => 0, 'skipped' => 0, 'failed' => 0];
+
+        for ($offset = $days - 1; $offset >= 0; $offset--) {
+            $date = $today->copy()->subDays($offset);
+            $dateString = $date->toDateString();
+
+            $existing = DailyReport::query()
+                ->where('report_type', self::REPORT_TYPE)
+                ->whereDate('report_date', $dateString)
+                ->first();
+
+            if ($existing && $existing->generation_status === DailyReport::STATUS_COMPLETED) {
+                $stats['skipped']++;
+
+                continue;
+            }
+
+            try {
+                $this->generate($dateString, $generatedByUserId, false);
+                $stats['generated']++;
+            } catch (Throwable $e) {
+                $stats['failed']++;
+                Log::warning('Daily visitor report catch-up failed for date.', [
+                    'action' => 'daily_report_catchup_failed',
+                    'report_date' => $dateString,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
      * Generate a manual multi-day visitor Excel report (6:00 AM–11:59:59 PM per day).
      *
      * @param  string|\DateTimeInterface  $startDate

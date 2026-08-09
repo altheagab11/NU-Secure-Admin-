@@ -676,6 +676,7 @@
 				font-size: 18px;
 			}
 		}
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -774,23 +775,14 @@
 						<small>{{ $sidebarRoleLabel }}</small>
 					</div>
 				</div>
-
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
 			<div class="container-fluid pt-0 pb-4">
+				@include('admin.partials.admin-topbar', ['title' => 'Dashboard'])
 
-				<div class="d-flex justify-content-between align-items-center mb-4">
-					<h2 class="fw-bold mb-0">Dashboard Overview</h2>
+				<div class="d-flex justify-content-end align-items-center mb-4">
 					<div class="text-muted small">Last updated: just now</div>
 				</div>
 

@@ -602,6 +602,8 @@
 				font-size: 18px;
 			}
 		}
+
+		@include('admin.partials.admin-topbar-styles')
 	</style>
 </head>
 <body>
@@ -701,21 +703,18 @@
 					</div>
 				</div>
 
-				<a href="{{ route('logout') }}" class="logout-btn" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-					<i class="bi bi-box-arrow-right"></i>
-					<span>Logout</span>
-				</a>
-
-				<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-					@csrf
-				</form>
 			</div>
 		</aside>
 
 		<main class="main">
+			@include('admin.partials.admin-topbar', [
+				'title' => $activeSection === 'guards'
+					? 'Guard Management'
+					: ($activeSection === 'offices' ? 'Office User Management' : 'User Management'),
+			])
 			@if ($activeSection === 'guards')
 				<div class="header-row">
-					<h1 class="page-title">Guard Management</h1>
+					<div></div>
 					<div style="display:flex;gap:8px;align-items:center;">
 						<button type="button" id="openGuardRecycleBinBtn" class="add-guard-btn" style="background:#334155;">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -821,7 +820,7 @@
 				</section>
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
-					<h1 class="page-title">Office User Management</h1>
+					<div></div>
 					<div style="display:flex;gap:8px;align-items:center;">
 						<button type="button" id="openRecycleBinBtn" class="add-guard-btn" style="background:#334155;">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -996,9 +995,6 @@
 				</div>
 
 			@else
-				<h1 class="page-title">
-					User Management
-				</h1>
 				<p class="page-subtitle">
 					Manage user accounts from this section.
 				</p>
