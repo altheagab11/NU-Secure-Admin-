@@ -13,8 +13,10 @@ Artisan::command('inspire', function () {
 | Daily Visitor Report Scheduler
 |--------------------------------------------------------------------------
 |
-| End-of-day generation at 11:59 PM Asia/Manila, plus an hourly catch-up
-| so missed days are filled when the scheduler is running.
+| Generate the COMPLETE previous day's report at 12:01 AM Asia/Manila,
+| plus an hourly catch-up so missed days are filled when the scheduler
+| is running. Hostinger cron should call `php artisan schedule:run`
+| every minute; do not add a second cron mechanism here.
 |
 | Windows (local): run every minute via Task Scheduler, or keep this open:
 |   php artisan schedule:work
@@ -24,7 +26,7 @@ Artisan::command('inspire', function () {
 |
 */
 Schedule::command('generate:daily-visitor-report')
-    ->dailyAt('23:59')
+    ->dailyAt('00:01')
     ->timezone('Asia/Manila')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));

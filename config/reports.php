@@ -16,17 +16,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Operating Hours (Asia/Manila)
+    | Report Day Coverage (Asia/Manila)
     |--------------------------------------------------------------------------
     |
-    | Visitor monitoring operations are reported from 06:00:00 through
-    | 23:59:59 on each selected calendar day. Records between midnight and
-    | 05:59:59 are excluded for every included date.
+    | Daily and date-range reports include ALL visitor records for each
+    | complete calendar day: 00:00:00 through 23:59:59 Asia/Manila.
+    | There is no early-morning cutoff.
     |
     */
-
-    'operating_hour_start' => 6,
-    'operating_minute_start' => 0,
-    'operating_second_start' => 0,
 
 ];

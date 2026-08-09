@@ -565,7 +565,7 @@
 					<div class="empty-state">
 						<i class="bi bi-folder2-open"></i>
 						<h5 class="mb-1">No daily reports found</h5>
-						<p class="mb-3">Missing reports are auto-filled when you open this page. End-of-day generation also runs at 11:59 PM Asia/Manila when the scheduler is active.</p>
+						<p class="mb-3">Missing reports are auto-filled when you open this page. Automatic generation for the previous complete day also runs at 12:01 AM Asia/Manila when the scheduler is active.</p>
 						<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateReportModal">
 							Generate Daily Report
 						</button>

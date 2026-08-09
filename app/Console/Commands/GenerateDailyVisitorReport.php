@@ -10,9 +10,9 @@ use Throwable;
 class GenerateDailyVisitorReport extends Command
 {
     protected $signature = 'generate:daily-visitor-report
-                            {date? : Report date in YYYY-MM-DD format (defaults to today in Asia/Manila)}
+                            {date? : Report date in YYYY-MM-DD format (defaults to yesterday in Asia/Manila)}
                             {--force : Regenerate even if a completed report already exists}
-                            {--catch-up=0 : Also generate missing reports for the last N Asia/Manila days}';
+                            {--catch-up=0 : Also generate missing reports for the last N complete Asia/Manila days}';
 
     protected $description = 'Generate the NU-Secure daily visitor Excel report and store it securely';
 
@@ -24,7 +24,9 @@ class GenerateDailyVisitorReport extends Command
             return $this->runCatchUp($service, $catchUpDays);
         }
 
-        $dateInput = $this->argument('date') ?: now('Asia/Manila')->toDateString();
+        // Scheduler runs at 00:01 Asia/Manila; default to yesterday's complete calendar day.
+        $dateInput = $this->argument('date')
+            ?: now('Asia/Manila')->subDay()->toDateString();
         $force = (bool) $this->option('force');
         $lockKey = 'daily-visitor-report:'.$dateInput;
 
@@ -37,6 +39,8 @@ class GenerateDailyVisitorReport extends Command
         }
 
         try {
+            $this->info('Starting automatic daily visitor report generation for '.$dateInput.'.');
+
             $report = $service->generate($dateInput, null, $force);
 
             $this->info('Daily visitor report ready.');

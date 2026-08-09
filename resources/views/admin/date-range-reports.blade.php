@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
@@ -554,7 +554,7 @@
 			@include('admin.partials.admin-topbar', ['title' => 'Date-Range Reports'])
 			<div class="toolbar">
 				<div>
-					<p class="page-subtitle mb-0">Generate and download multi-day visitor Excel reports (6:00 AM to 11:59 PM per day)</p>
+					<p class="page-subtitle mb-0">Generate and download multi-day visitor Excel reports for complete calendar days.</p>
 				</div>
 				<a href="{{ route('admin.daily-reports') }}" class="btn btn-outline-primary">
 					<i class="bi bi-file-earmark-excel me-1"></i> Daily Reports
@@ -624,7 +624,7 @@
 						<p><strong>Report Type:</strong> Date-Range Visitor Report</p>
 						<p><strong>Start Date:</strong> <span id="summaryStart">â€”</span></p>
 						<p><strong>End Date:</strong> <span id="summaryEnd">â€”</span></p>
-						<p><strong>Operating Hours:</strong> 6:00 AM to 11:59 PM per day</p>
+						<p><strong>Coverage:</strong> Complete calendar days (12:00:00 AM to 11:59:59 PM)</p>
 						<p class="mb-0"><strong>Selected Range:</strong> <span id="summaryDays">â€”</span></p>
 					</div>
 
@@ -639,8 +639,7 @@
 						<button type="button" class="btn btn-outline-secondary" id="resetDateRangeForm">Cancel / Reset</button>
 					</div>
 					<p class="small text-muted mt-3 mb-0">
-						Select at least two calendar days and at most {{ $maxRangeDays }} days. Future dates are not allowed.
-						Visitor records between 12:00 AM and 5:59:59 AM are excluded on every included date.
+						Select at least two calendar days and at most {{ $maxRangeDays }} days. Future dates are not allowed. All visitor records from 12:00 AM to 11:59:59 PM are included for each selected date.
 					</p>
 				</form>
 			</div>

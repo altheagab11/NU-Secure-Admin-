@@ -14,7 +14,7 @@ use Tests\TestCase;
 class DateRangeVisitorReportServiceTest extends TestCase
 {
     #[Test]
-    public function it_builds_per_day_operating_windows_excluding_early_morning(): void
+    public function it_builds_per_day_complete_calendar_windows(): void
     {
         $service = new DailyVisitorReportService;
         $start = Carbon::parse('2026-08-01', 'Asia/Manila')->startOfDay();
@@ -23,15 +23,14 @@ class DateRangeVisitorReportServiceTest extends TestCase
         $windows = $service->buildOperatingDayWindows($start, $end);
 
         $this->assertCount(3, $windows);
-        $this->assertSame(['2026-08-01 06:00:00', '2026-08-01 23:59:59'], $windows[0]);
-        $this->assertSame(['2026-08-02 06:00:00', '2026-08-02 23:59:59'], $windows[1]);
-        $this->assertSame(['2026-08-03 06:00:00', '2026-08-03 23:59:59'], $windows[2]);
+        $this->assertSame(['2026-08-01 00:00:00', '2026-08-01 23:59:59'], $windows[0]);
+        $this->assertSame(['2026-08-02 00:00:00', '2026-08-02 23:59:59'], $windows[1]);
+        $this->assertSame(['2026-08-03 00:00:00', '2026-08-03 23:59:59'], $windows[2]);
 
-        // Continuous midnight range would incorrectly include Aug 2 03:00; windows must not.
         foreach ($windows as [$windowStart, $windowEnd]) {
-            $this->assertStringContainsString('06:00:00', $windowStart);
+            $this->assertStringContainsString('00:00:00', $windowStart);
             $this->assertStringContainsString('23:59:59', $windowEnd);
-            $this->assertStringNotContainsString('00:00:00', $windowStart);
+            $this->assertStringNotContainsString('06:00:00', $windowStart);
         }
     }
 
@@ -120,7 +119,8 @@ class DateRangeVisitorReportServiceTest extends TestCase
         $this->assertSame('NU-Secure Visitor Date-Range Report', $sheet->getCell('A1')->getValue());
         $this->assertStringContainsString('August 1, 2026', (string) $sheet->getCell('A2')->getValue());
         $this->assertStringContainsString('August 3, 2026', (string) $sheet->getCell('A3')->getValue());
-        $this->assertStringContainsString('6:00 AM to 11:59 PM', (string) $sheet->getCell('A4')->getValue());
+        $this->assertStringContainsString('Complete calendar days', (string) $sheet->getCell('A4')->getValue());
+        $this->assertStringContainsString('12:00:00 AM to 11:59:59 PM', (string) $sheet->getCell('A4')->getValue());
         $this->assertStringContainsString('System Admin', (string) $sheet->getCell('A6')->getValue());
         $this->assertSame('Visit ID', $sheet->getCell('A8')->getValue());
         $this->assertSame('Control Number', $sheet->getCell('B8')->getValue());
