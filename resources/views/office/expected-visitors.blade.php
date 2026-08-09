@@ -4,7 +4,7 @@
 @section('title', 'Expected Visitors')
 
 @section('content')
-<div class="office-card mb-3">
+<div class="office-card">
 	<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 		<div>
 			<h2>Expected Visitors</h2>
@@ -16,41 +16,39 @@
 		</div>
 	</div>
 
-	<form method="GET" action="{{ route('office.expected-visitors') }}" class="row g-2 align-items-end">
-		<div class="col-md-3">
-			<label for="search" class="form-label fw-semibold">Search</label>
-			<input type="search" id="search" name="search" value="{{ $filters['search'] }}" class="form-control" placeholder="Name, control no., purpose" autocomplete="off">
-		</div>
-		<div class="col-md-2">
-			<label for="date" class="form-label fw-semibold">Date</label>
-			<input type="date" id="date" name="date" value="{{ $filters['date'] }}" class="form-control">
-		</div>
-		<div class="col-md-2">
-			<label for="status" class="form-label fw-semibold">Status</label>
-			<select id="status" name="status" class="form-select">
-				<option value="">All</option>
-				<option value="ready" @selected($filters['status'] === 'ready')>Ready for Office Check-in</option>
-				<option value="waiting" @selected($filters['status'] === 'waiting')>Waiting for Previous Office</option>
-				<option value="expected" @selected($filters['status'] === 'expected')>Expected</option>
-				<option value="checked_in" @selected($filters['status'] === 'checked_in')>Checked In</option>
-			</select>
-		</div>
-		<div class="col-md-3">
-			<label for="previous_office" class="form-label fw-semibold">Previous office</label>
-			<select id="previous_office" name="previous_office" class="form-select">
-				<option value="">All offices</option>
-				@foreach($offices as $o)
-					<option value="{{ $o->office_id }}" @selected((string) $filters['previous_office'] === (string) $o->office_id)>{{ $o->office_name }}</option>
-				@endforeach
-			</select>
-		</div>
-		<div class="col-md-2 d-grid">
-			<button type="submit" class="btn btn-nu-primary">Apply Filters</button>
+	<form method="GET" action="{{ route('office.expected-visitors') }}" class="expected-filters mb-3">
+		<div class="expected-filters__fields">
+			<div class="expected-filters__field expected-filters__field--search">
+				<label for="search" class="visually-hidden">Search</label>
+				<input type="search" id="search" name="search" value="{{ $filters['search'] }}" class="form-control form-control-sm" placeholder="Search name, control no., purpose" autocomplete="off">
+			</div>
+			<div class="expected-filters__field">
+				<label for="date" class="visually-hidden">Date</label>
+				<input type="date" id="date" name="date" value="{{ $filters['date'] }}" class="form-control form-control-sm" title="Date">
+			</div>
+			<div class="expected-filters__field">
+				<label for="status" class="visually-hidden">Status</label>
+				<select id="status" name="status" class="form-select form-select-sm" title="Status">
+					<option value="">All statuses</option>
+					<option value="ready" @selected($filters['status'] === 'ready')>Ready for Office Check-in</option>
+					<option value="waiting" @selected($filters['status'] === 'waiting')>Waiting for Previous Office</option>
+					<option value="expected" @selected($filters['status'] === 'expected')>Expected</option>
+					<option value="checked_in" @selected($filters['status'] === 'checked_in')>Checked In</option>
+				</select>
+			</div>
+			<div class="expected-filters__field">
+				<label for="previous_office" class="visually-hidden">Previous office</label>
+				<select id="previous_office" name="previous_office" class="form-select form-select-sm" title="Previous office">
+					<option value="">All offices</option>
+					@foreach($offices as $o)
+						<option value="{{ $o->office_id }}" @selected((string) $filters['previous_office'] === (string) $o->office_id)>{{ $o->office_name }}</option>
+					@endforeach
+				</select>
+			</div>
+			<button type="submit" class="btn btn-nu-primary btn-sm">Apply</button>
 		</div>
 	</form>
-</div>
 
-<div class="office-card">
 	@include('office.components.visitor-table', [
 		'rows' => $visitors,
 		'emptyMessage' => 'No visitors are currently expected at your office.',
@@ -69,6 +67,25 @@
 @push('styles')
 <style>
 	@include('admin.partials.table-pagination-styles')
+
+	.expected-filters__fields {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: .5rem;
+	}
+	.expected-filters__field {
+		min-width: 9rem;
+		flex: 1 1 9rem;
+	}
+	.expected-filters__field--search {
+		flex: 2 1 14rem;
+		min-width: 12rem;
+	}
+	.expected-filters .btn {
+		flex: 0 0 auto;
+		white-space: nowrap;
+	}
 </style>
 @endpush
 

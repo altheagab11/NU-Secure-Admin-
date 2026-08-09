@@ -304,7 +304,6 @@
 			box-shadow: var(--shadow-soft);
 			border: 1px solid rgba(6, 74, 159, .06);
 			padding: 20px;
-			height: 100%;
 		}
 		.office-card h2, .office-card h3 {
 			margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: var(--nu-text);
