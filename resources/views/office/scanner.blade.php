@@ -248,6 +248,12 @@
 	@media (max-width: 992px) {
 		.scan-layout { grid-template-columns: 1fr; }
 	}
+
+	@include('admin.partials.table-pagination-styles')
+
+	.side-card .table-pagination-bar {
+		margin-top: 12px;
+	}
 </style>
 @endpush
 
@@ -375,13 +381,15 @@
 
 		<div class="side-card">
 			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h3 class="mb-0">Recent Scans</h3>
+				<h3 class="mb-0">Today's Recent Scans</h3>
 				<a href="{{ route('office.visit-history') }}" class="btn btn-sm btn-nu-outline">History</a>
 			</div>
+			<div id="scannerRecentScans">
 			@if($recentScans->isEmpty())
 				<div class="empty-state py-3">
 					<i class="bi bi-qr-code" aria-hidden="true"></i>
-					<p class="mb-0">No scan results yet.</p>
+					<p class="mb-0">No scans yet today.</p>
+					<p class="card-muted mb-0">Today's QR scans at this office will appear here.</p>
 				</div>
 			@else
 				<div class="table-scroll">
@@ -394,13 +402,13 @@
 							</tr>
 						</thead>
 						<tbody>
-							@foreach($recentScans->take(5) as $row)
+							@foreach($recentScans as $row)
 								<tr>
 									<td>
 										<div class="fw-semibold">{{ $row->visitor_name }}</div>
 										<div class="small text-muted">{{ $row->control_number ?: '—' }}</div>
 									</td>
-									<td>{{ $row->scan_time ? \Carbon\Carbon::parse($row->scan_time)->timezone('Asia/Manila')->format('g:i A') : '—' }}</td>
+									<td>{{ $row->scan_time_label ?? ($row->scan_time ? \Carbon\Carbon::parse($row->scan_time)->timezone('Asia/Manila')->format('g:i A') : '—') }}</td>
 									<td>
 										@include('office.components.status-badge', [
 											'tone' => strtolower((string) $row->validation_status),
@@ -413,6 +421,14 @@
 					</table>
 				</div>
 			@endif
+			</div>
+			<div id="scannerRecentPagination">
+				@include('admin.partials.table-pagination', [
+					'paginator' => $recentScans,
+					'perPageParam' => 'scans_per_page',
+					'ariaLabel' => "Today's recent scans pagination",
+				])
+			</div>
 		</div>
 	</div>
 </div>
@@ -465,6 +481,109 @@
 	function setCameraStatus(status, hint) {
 		if (cameraStatus) cameraStatus.textContent = status;
 		if (cameraHint) cameraHint.textContent = hint || '';
+	}
+
+	function escapeHtml(value) {
+		return String(value ?? '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	function scanBadgeClass(status) {
+		const key = String(status || '').toLowerCase();
+		const map = {
+			valid: 'badge-success',
+			invalid: 'badge-danger',
+			unauthorized: 'badge-danger',
+			success: 'badge-success',
+			danger: 'badge-danger',
+			warning: 'badge-warning',
+		};
+		if (key.includes('wrong') || key.includes('unauthor')) return 'badge-danger';
+		return map[key] || 'badge-info';
+	}
+
+	function renderRecentScans(payload) {
+		const wrap = document.getElementById('scannerRecentScans');
+		const pagination = document.getElementById('scannerRecentPagination');
+		if (!wrap) return;
+		const rows = Array.isArray(payload) ? payload : (payload?.data || []);
+		const meta = Array.isArray(payload) ? null : (payload?.meta || null);
+		if (!Array.isArray(rows) || rows.length === 0) {
+			wrap.innerHTML = `
+				<div class="empty-state py-3">
+					<i class="bi bi-qr-code" aria-hidden="true"></i>
+					<p class="mb-0">No scans yet today.</p>
+					<p class="card-muted mb-0">Today's QR scans at this office will appear here.</p>
+				</div>
+			`;
+			if (meta) updateScannerPagination(pagination, meta);
+			return;
+		}
+		wrap.innerHTML = `
+			<div class="table-scroll">
+				<table class="table-office">
+					<thead>
+						<tr>
+							<th>Visitor</th>
+							<th>Time</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						${rows.map((row) => `
+							<tr>
+								<td>
+									<div class="fw-semibold">${escapeHtml(row.visitor_name)}</div>
+									<div class="small text-muted">${escapeHtml(row.control_number)}</div>
+								</td>
+								<td>${escapeHtml(row.time_label)}</td>
+								<td><span class="badge-status ${scanBadgeClass(row.validation_status)}">${escapeHtml(row.validation_status)}</span></td>
+							</tr>
+						`).join('')}
+					</tbody>
+				</table>
+			</div>
+		`;
+		if (meta) updateScannerPagination(pagination, meta);
+	}
+
+	function updateScannerPagination(root, meta) {
+		if (!root || !meta) return;
+		const range = root.querySelector('.table-pagination-range');
+		const pageLabel = root.querySelector('.table-pagination-page');
+		const pageSize = root.querySelector('.table-page-size');
+		const links = root.querySelectorAll('.table-pagination-nav');
+		if (range) {
+			range.textContent = (meta.from || 0) + ' to ' + (meta.to || 0) + ' of ' + (meta.total || 0);
+		}
+		if (pageLabel) {
+			pageLabel.innerHTML = 'Page <strong>' + (meta.current_page || 1) + '</strong> of ' + (meta.last_page || 1);
+		}
+		if (pageSize && String(pageSize.value) !== String(meta.per_page)) {
+			pageSize.value = String(meta.per_page);
+		}
+		const onFirst = (meta.current_page || 1) <= 1;
+		const onLast = (meta.current_page || 1) >= (meta.last_page || 1);
+		const setNav = function (link, disabled, href) {
+			if (!link) return;
+			link.classList.toggle('is-disabled', disabled);
+			if (disabled) {
+				link.setAttribute('aria-disabled', 'true');
+				link.setAttribute('tabindex', '-1');
+				link.setAttribute('href', '#');
+			} else {
+				link.removeAttribute('aria-disabled');
+				link.removeAttribute('tabindex');
+				if (href) link.setAttribute('href', href);
+			}
+		};
+		setNav(links[0], onFirst, meta.first_url);
+		setNav(links[1], onFirst, meta.prev_url);
+		setNav(links[2], onLast, meta.next_url);
+		setNav(links[3], onLast, meta.last_url);
 	}
 
 	function showCameraError(message) {
@@ -722,7 +841,9 @@
 			} else {
 				setCameraStatus('Check-in recorded.', 'Ready for the next scan.');
 			}
-			setTimeout(() => window.location.reload(), 900);
+		},
+		onRecentScans: function (rows) {
+			renderRecentScans(rows);
 		},
 		onResume: function () {
 			resumeScanning();
@@ -737,5 +858,8 @@
 
 	focusScannerInput();
 })();
+</script>
+<script>
+	@include('admin.partials.table-pagination-script')
 </script>
 @endpush

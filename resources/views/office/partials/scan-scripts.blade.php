@@ -9,6 +9,7 @@ window.OfficeScan = (function () {
 	let processingScan = false;
 	let onSuccess = null;
 	let onResume = null;
+	let onRecentScans = null;
 
 	const modalEl = () => document.getElementById('scanResultModal');
 	const manualEl = () => document.getElementById('manualPayloadModal');
@@ -118,10 +119,18 @@ window.OfficeScan = (function () {
 		if (modal) modal.hide();
 	}
 
+	function notifyRecentScans(result) {
+		if (typeof onRecentScans === 'function' && result && result.recent_scans) {
+			onRecentScans(result.recent_scans);
+		}
+	}
+
 	function handleScanResult(result, responseOk) {
 		const code = result.code || '';
 		const hasVisitorData = !!(result.data && (result.data.visitor || result.data.visit));
 		const isWrongOfficeResult = ['WRONG_OFFICE', 'PREVIOUS_INCOMPLETE'].includes(code) && hasVisitorData;
+
+		notifyRecentScans(result);
 
 		if (responseOk && result.success && hasVisitorData) {
 			fillModal(result.data);
@@ -171,6 +180,7 @@ window.OfficeScan = (function () {
 				body: JSON.stringify({
 					qr_payload: payload,
 					scan_method: scanMethod || 'camera',
+					scans_per_page: Number(document.querySelector('#scans_per_page')?.value || 5) || 5,
 				}),
 			});
 
@@ -258,6 +268,7 @@ window.OfficeScan = (function () {
 		init(options) {
 			onSuccess = options?.onSuccess || null;
 			onResume = options?.onResume || null;
+			onRecentScans = options?.onRecentScans || null;
 			bind();
 		},
 		verify,

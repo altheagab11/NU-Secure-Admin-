@@ -274,7 +274,7 @@ class ActivityLogController extends Controller
     {
         $validated = $request->validate([
             'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'in:20,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,75,100'],
             'search' => ['nullable', 'string', 'max:255'],
             'user_id' => ['nullable', 'string', 'max:50'],
             'role_id' => ['nullable', 'string', 'max:20'],
@@ -290,7 +290,7 @@ class ActivityLogController extends Controller
 
         return [
             'page' => (int) ($validated['page'] ?? 1),
-            'per_page' => (int) ($validated['per_page'] ?? 20),
+            'per_page' => (int) ($validated['per_page'] ?? 5),
             'search' => trim((string) ($validated['search'] ?? '')),
             'user_id' => trim((string) ($validated['user_id'] ?? '')),
             'role_id' => trim((string) ($validated['role_id'] ?? '')),

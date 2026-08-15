@@ -426,36 +426,12 @@
 			font-size: 13px;
 		}
 
-		.activity-pagination {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-			flex-wrap: wrap;
-			padding: 12px 16px;
+		.activity-pagination-bar {
+			border: 0;
 			border-top: 1px solid #e8ecf1;
-		}
-
-		.page-btn {
-			min-width: 34px;
-			height: 34px;
-			border: 1px solid #d6dde8;
+			border-radius: 0 0 12px 12px;
+			margin-top: 0;
 			background: #fff;
-			border-radius: 8px;
-			color: #334155;
-			font-weight: 600;
-			font-size: 13px;
-		}
-
-		.page-btn.active {
-			background: #39459a;
-			border-color: #39459a;
-			color: #fff;
-		}
-
-		.page-btn:disabled {
-			opacity: 0.45;
-			cursor: not-allowed;
 		}
 
 		.diff-changed {
@@ -750,7 +726,35 @@
 						</tbody>
 					</table>
 				</div>
-				<div class="activity-pagination" id="activityPagination"></div>
+				<div class="table-pagination-bar activity-pagination-bar" id="activityPagination" role="navigation" aria-label="Activity logs pagination">
+					<div class="table-pagination-left">
+						<label class="table-pagination-label" for="activityPageSize">Page size:</label>
+						<select id="activityPageSize" class="table-page-size" aria-label="Page size">
+							<option value="5" selected>5</option>
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50">50</option>
+							<option value="75">75</option>
+							<option value="100">100</option>
+						</select>
+						<span class="table-pagination-range" id="activityPaginationRange">0 to 0 of 0</span>
+					</div>
+					<div class="table-pagination-right">
+						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationFirst" aria-label="First page" aria-disabled="true" disabled>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6L5 12l6 6M19 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationPrev" aria-label="Previous page" aria-disabled="true" disabled>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+						<span class="table-pagination-page" id="activityPaginationPageLabel">Page <strong>1</strong> of 1</span>
+						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationNext" aria-label="Next page" aria-disabled="true" disabled>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationLast" aria-label="Last page" aria-disabled="true" disabled>
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						</button>
+					</div>
+				</div>
 			</div>
 		</main>
 	</div>
@@ -773,7 +777,8 @@
 
 			const state = {
 				page: 1,
-				perPage: 20,
+				lastPage: 1,
+				perPage: 5,
 				sortBy: 'created_at',
 				sortDirection: 'desc',
 				searchTimer: null,
@@ -785,6 +790,13 @@
 			const els = {
 				body: document.getElementById('activityLogsBody'),
 				pagination: document.getElementById('activityPagination'),
+				pageSize: document.getElementById('activityPageSize'),
+				range: document.getElementById('activityPaginationRange'),
+				pageLabel: document.getElementById('activityPaginationPageLabel'),
+				first: document.getElementById('activityPaginationFirst'),
+				prev: document.getElementById('activityPaginationPrev'),
+				next: document.getElementById('activityPaginationNext'),
+				last: document.getElementById('activityPaginationLast'),
 				error: document.getElementById('pageError'),
 				lastUpdated: document.getElementById('lastUpdatedLabel'),
 				dateRange: document.getElementById('date_range'),
@@ -933,47 +945,39 @@
 				renderPagination(payload.meta || {});
 			}
 
+			function setNavDisabled(button, disabled) {
+				if (!button) return;
+				button.classList.toggle('is-disabled', disabled);
+				button.disabled = disabled;
+				button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+			}
+
 			function renderPagination(meta) {
 				const total = Number(meta.total || 0);
 				const from = Number(meta.from || 0);
 				const to = Number(meta.to || 0);
 				const page = Number(meta.current_page || 1);
-				const last = Number(meta.last_page || 1);
+				const last = Math.max(1, Number(meta.last_page || 1));
 				state.page = page;
+				state.lastPage = last;
 				state.perPage = Number(meta.per_page || state.perPage);
 
-				const pages = [];
-				const windowSize = 2;
-				for (let i = 1; i <= last; i++) {
-					if (i === 1 || i === last || (i >= page - windowSize && i <= page + windowSize)) {
-						pages.push(i);
-					} else if (pages[pages.length - 1] !== '...') {
-						pages.push('...');
-					}
+				if (els.range) {
+					els.range.textContent = from + ' to ' + to + ' of ' + total;
+				}
+				if (els.pageLabel) {
+					els.pageLabel.innerHTML = 'Page <strong>' + page + '</strong> of ' + last;
+				}
+				if (els.pageSize && els.pageSize.value !== String(state.perPage)) {
+					els.pageSize.value = String(state.perPage);
 				}
 
-				els.pagination.innerHTML = `
-					<div class="d-flex align-items-center gap-2 flex-wrap">
-						<span class="text-muted small">Showing ${from}-${to} of ${total} activities</span>
-						<label class="small text-muted mb-0">
-							<select id="perPageSelect" class="filter-select" style="width:auto;height:32px;">
-								<option value="20">20</option>
-								<option value="50">50</option>
-								<option value="100">100</option>
-							</select>
-						</label>
-					</div>
-					<div class="d-flex align-items-center gap-1 flex-wrap">
-						<button type="button" class="page-btn" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>Previous</button>
-						${pages.map((item) => item === '...'
-							? '<span class="px-1">...</span>'
-							: `<button type="button" class="page-btn ${item === page ? 'active' : ''}" data-page="${item}">${item}</button>`
-						).join('')}
-						<button type="button" class="page-btn" data-page="${page + 1}" ${page >= last ? 'disabled' : ''}>Next</button>
-					</div>
-				`;
-				const perPageSelect = document.getElementById('perPageSelect');
-				if (perPageSelect) perPageSelect.value = String(state.perPage);
+				const onFirst = page <= 1;
+				const onLast = page >= last;
+				setNavDisabled(els.first, onFirst);
+				setNavDisabled(els.prev, onFirst);
+				setNavDisabled(els.next, onLast);
+				setNavDisabled(els.last, onLast);
 			}
 
 			function renderDetail(data) {
@@ -1126,22 +1130,41 @@
 				const button = event.target.closest('.view-log-btn');
 				if (button) openLog(button.getAttribute('data-log-id'));
 			});
-			els.pagination.addEventListener('click', function (event) {
-				const button = event.target.closest('.page-btn');
-				if (!button || button.disabled) return;
-				const nextPage = Number(button.getAttribute('data-page'));
-				if (Number.isFinite(nextPage) && nextPage > 0) {
-					state.page = nextPage;
-					loadLogs();
-				}
-			});
-			els.pagination.addEventListener('change', function (event) {
-				if (event.target.id === 'perPageSelect') {
-					state.perPage = Number(event.target.value) || 20;
+			if (els.first) {
+				els.first.addEventListener('click', function () {
+					if (state.page <= 1) return;
 					state.page = 1;
 					loadLogs();
-				}
-			});
+				});
+			}
+			if (els.prev) {
+				els.prev.addEventListener('click', function () {
+					if (state.page <= 1) return;
+					state.page -= 1;
+					loadLogs();
+				});
+			}
+			if (els.next) {
+				els.next.addEventListener('click', function () {
+					if (state.page >= state.lastPage) return;
+					state.page += 1;
+					loadLogs();
+				});
+			}
+			if (els.last) {
+				els.last.addEventListener('click', function () {
+					if (state.page >= state.lastPage) return;
+					state.page = state.lastPage;
+					loadLogs();
+				});
+			}
+			if (els.pageSize) {
+				els.pageSize.addEventListener('change', function () {
+					state.perPage = Number(els.pageSize.value) || 5;
+					state.page = 1;
+					loadLogs();
+				});
+			}
 			document.querySelectorAll('th.sortable').forEach(function (th) {
 				th.addEventListener('click', function () {
 					const sortBy = th.getAttribute('data-sort');

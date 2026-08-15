@@ -54,13 +54,11 @@
 		'emptyMessage' => 'No visitors are currently expected at your office.',
 	])
 
-	@if(method_exists($visitors, 'links'))
-		@include('admin.partials.table-pagination', [
-			'paginator' => $visitors,
-			'perPageParam' => 'per_page',
-			'ariaLabel' => 'Expected visitors pagination',
-		])
-	@endif
+	@include('admin.partials.table-pagination', [
+		'paginator' => $visitors,
+		'perPageParam' => 'per_page',
+		'ariaLabel' => 'Expected visitors pagination',
+	])
 </div>
 @endsection
 

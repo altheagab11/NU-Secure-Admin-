@@ -133,15 +133,22 @@ class OfficeVisitorQueryService
             ->value('aggregate') ?? 0);
     }
 
-    public function recentActivity(int $officeId, int $limit = 10)
+    public function recentActivity(int $officeId, int $limit = 10, bool $todayOnly = false)
     {
-        return DB::table('office_scan as os')
+        $query = DB::table('office_scan as os')
             ->join('visit as v', 'v.visit_id', '=', 'os.visit_id')
             ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'os.office_id')
             ->leftJoin('validation_status as vs', 'vs.validation_status_id', '=', 'os.validation_status_id')
             ->leftJoin('users as u', 'u.user_id', '=', 'os.scanned_by_user_id')
-            ->where('os.office_id', $officeId)
+            ->where('os.office_id', $officeId);
+
+        if ($todayOnly) {
+            [$start, $end] = $this->philippinesTodayBounds();
+            $query->whereBetween('os.scan_time', [$start, $end]);
+        }
+
+        return $query
             ->select([
                 'os.scan_id',
                 'os.scan_time',
@@ -165,19 +172,28 @@ class OfficeVisitorQueryService
                 $row->visitor_name = trim(trim((string) $row->first_name).' '.trim((string) $row->last_name));
                 $row->staff_name = trim(trim((string) ($row->staff_first_name ?? '')).' '.trim((string) ($row->staff_last_name ?? '')));
                 $row->previous_office = $this->previousOfficeName((int) $row->visit_id, (int) ($row->scan_id ?? 0));
+                $scanTime = filled($row->scan_time ?? null)
+                    ? Carbon::parse($row->scan_time)->timezone('Asia/Manila')
+                    : null;
+                $row->scan_time_label = $scanTime ? $scanTime->format('g:i A') : '—';
 
                 return $row;
             });
     }
 
-    public function expectedVisitorsPreview(int $officeId, int $limit = 8)
+    public function expectedVisitorsPreview(int $officeId, ?int $limit = 8)
     {
-        return $this->expectedVisitorsQuery($officeId)
+        $rows = $this->expectedVisitorsQuery($officeId)
             ->get()
             ->unique('visit_id')
-            ->take($limit)
             ->values()
             ->map(fn ($row) => $this->enrichExpectedRow($row, $officeId));
+
+        if ($limit !== null) {
+            $rows = $rows->take($limit)->values();
+        }
+
+        return $rows;
     }
 
     public function expectedVisitorsPaginated(Request $request, int $officeId, int $perPage = 10)
