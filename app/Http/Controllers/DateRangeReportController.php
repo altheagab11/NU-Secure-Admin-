@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GenerateDateRangeReportRequest;
 use App\Models\DailyReport;
+use App\Services\ActivityLogService;
 use App\Services\DailyVisitorReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -153,6 +154,21 @@ class DateRangeReportController extends Controller
             'user_id' => $request->user()?->getAuthIdentifier(),
             'generation_status' => $report->generation_status,
         ]);
+
+        if (! $fromGenerate) {
+            ActivityLogService::log(
+                action: 'Report Downloaded',
+                module: 'Reports',
+                description: ActivityLogService::actorLabel().' downloaded '.$safeFileName.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                newValues: [
+                    'file_name' => $safeFileName,
+                    'start_date' => $report->report_date?->toDateString(),
+                    'end_date' => $report->date_range_end?->toDateString(),
+                ]
+            );
+        }
 
         if ($fromGenerate) {
             session()->flash(

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
@@ -280,7 +281,7 @@ class AlertsController extends Controller
                 'Prefer' => 'return=representation',
             ])->withQueryParameters([
                 'alert_id' => 'eq.' . $alertId,
-                'select' => 'alert_id,status,resolved_at,resolution_notes,resolved_by(first_name,last_name)',
+                'select' => 'alert_id,status,alert_type,resolved_at,resolution_notes,visitor(first_name,last_name),resolved_by(first_name,last_name)',
             ])->patch(rtrim($supabaseUrl, '/') . '/rest/v1/alerts', [
                 'status' => 'Resolved',
                 'resolved_at' => $resolvedAt,
@@ -302,6 +303,29 @@ class AlertsController extends Controller
 
             $updated = $response->json();
             $updatedAlert = is_array($updated) && array_key_exists(0, $updated) ? $updated[0] : $updated;
+
+            $visitor = is_array($updatedAlert['visitor'] ?? null) ? $updatedAlert['visitor'] : [];
+            if (isset($visitor[0]) && is_array($visitor[0])) {
+                $visitor = $visitor[0];
+            }
+            $visitorName = trim(((string) ($visitor['first_name'] ?? '')).' '.((string) ($visitor['last_name'] ?? '')));
+            $alertType = trim((string) ($updatedAlert['alert_type'] ?? 'Alert'));
+            $actor = ActivityLogService::actorLabel();
+            $forVisitor = $visitorName !== '' ? ' for '.$visitorName : '';
+
+            ActivityLogService::log(
+                action: 'Resolved Alert',
+                module: 'Alerts',
+                description: $actor.' resolved '.($alertType !== '' ? $alertType.' ' : '').'Alert #'.$alertId.$forVisitor.'.',
+                entityType: 'Alert',
+                entityId: (int) $alertId,
+                oldValues: ['status' => 'Unresolved'],
+                newValues: [
+                    'status' => 'Resolved',
+                    'resolution_notes' => $validated['resolution_notes'],
+                    'resolved_at' => $resolvedAt,
+                ]
+            );
 
             return response()->json([
                 'message' => 'Alert resolved successfully.',

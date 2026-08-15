@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogService;
 use App\Services\OCRService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -161,6 +162,23 @@ class GuardVisitorController extends Controller
 
         $fullName = trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? '')));
         $displayName = $fullName !== '' ? $fullName : 'Visitor';
+
+        ActivityLogService::log(
+            action: 'Visitor Exited',
+            module: 'Visitor Monitoring',
+            description: ActivityLogService::actorLabel().' recorded the exit of visitor '.$displayName.'.',
+            entityType: 'Visit',
+            entityId: (int) $visit->visit_id,
+            newValues: [
+                'visitor_id' => (int) $visit->visitor_id,
+                'visitor_name' => $displayName,
+                'control_number' => trim((string) ($visit->control_number ?? '')),
+                'pass_number' => trim((string) ($visit->pass_number ?? '')),
+                'exit_time' => $exitAt->toDateTimeString(),
+                'duration_minutes' => $durationMinutes,
+            ]
+        );
+
         $entryTime = null;
         $photoPath = trim((string) ($visit->visitor_photo_with_id_url ?? ''));
         $photoPreviewUrl = $this->resolveVisitorPhotoUrl($photoPath);
@@ -538,6 +556,29 @@ class GuardVisitorController extends Controller
                         : 0,
                 ];
             });
+
+            $visitorName = trim($validated['first_name'].' '.$validated['last_name']);
+            $controlNumber = trim((string) ($validated['control_number'] ?? ''));
+            $passNumber = trim((string) ($validated['pass_number'] ?? ''));
+            $controlSuffix = $controlNumber !== '' ? ' with Control Number '.$controlNumber : '';
+
+            ActivityLogService::log(
+                action: 'Visitor Registered',
+                module: 'Visitor Monitoring',
+                description: ActivityLogService::actorLabel().' registered visitor '.$visitorName.$controlSuffix.'.',
+                entityType: 'Visitor',
+                entityId: $result['visitor_id'] ?? null,
+                newValues: [
+                    'visitor_id' => $result['visitor_id'] ?? null,
+                    'visit_id' => $result['visit_id'] ?? null,
+                    'visitor_name' => $visitorName,
+                    'register_type' => $registerType,
+                    'pass_number' => $passNumber,
+                    'control_number' => $controlNumber,
+                    'purpose_reason' => $validated['purpose_reason'],
+                    'visitor_action' => $result['visitor_action'] ?? null,
+                ]
+            );
 
             return response()->json([
                 'success' => true,

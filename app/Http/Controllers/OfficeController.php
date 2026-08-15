@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserMail;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -455,6 +456,27 @@ class OfficeController extends Controller
 
             DB::commit();
 
+            $officeName = DB::table('office')->where('office_id', $data['office_id'])->value('office_name')
+                ?: (DB::table('office')->where('id', $data['office_id'])->value('office_name') ?: 'an office');
+
+            ActivityLogService::log(
+                action: 'Created User',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel().' created user '.$fullName.' with role Office Staff.',
+                entityType: 'User',
+                entityId: $userId,
+                newValues: [
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'email' => $data['email'],
+                    'role' => 'Office Staff',
+                    'office_id' => $data['office_id'],
+                    'office_name' => $officeName,
+                    'position' => $data['position'] ?? null,
+                    'status' => 'Active',
+                ]
+            );
+
             return redirect()->back()->with('success', 'Office user created successfully. Login details and password setup link were sent by email.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -488,6 +510,24 @@ class OfficeController extends Controller
                 return redirect()->back()->withErrors(['error' => 'User not found.']);
             }
 
+            $targetName = ActivityLogService::userDisplayName($userModel);
+            $uId = $userModel->user_id ?? $userModel->id ?? null;
+            $oldStaff = $uId ? DB::table('office_staff')->where('user_id', $uId)->first() : null;
+            $oldOfficeId = $oldStaff->office_id ?? null;
+            $oldOfficeName = $oldOfficeId
+                ? (DB::table('office')->where('office_id', $oldOfficeId)->value('office_name') ?: '—')
+                : '—';
+            $newOfficeName = DB::table('office')->where('office_id', $data['office_id'])->value('office_name') ?: '—';
+
+            $oldValues = [
+                'first_name' => $userModel->first_name ?? null,
+                'last_name' => $userModel->last_name ?? null,
+                'name' => $userModel->name ?? null,
+                'office_id' => $oldOfficeId,
+                'office_name' => $oldOfficeName,
+                'position' => $oldStaff->position ?? null,
+            ];
+
             // Update name fields depending on schema
             if (Schema::hasColumn('users', 'first_name') && Schema::hasColumn('users', 'last_name')) {
                 $userModel->first_name = $data['first_name'];
@@ -502,7 +542,6 @@ class OfficeController extends Controller
             $userModel->save();
 
             // Update or insert office_staff row
-            $uId = $userModel->user_id ?? $userModel->id ?? null;
             if ($uId) {
                 $updated = DB::table('office_staff')->where('user_id', $uId)->update([
                     'office_id' => $data['office_id'],
@@ -528,6 +567,23 @@ class OfficeController extends Controller
             }
 
             DB::commit();
+
+            ActivityLogService::log(
+                action: 'Updated User',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel().' updated the account information of '.$targetName.'.',
+                entityType: 'User',
+                entityId: $uId,
+                oldValues: $oldValues,
+                newValues: [
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'office_id' => $data['office_id'],
+                    'office_name' => $newOfficeName,
+                    'position' => $data['position'] ?? null,
+                ]
+            );
+
             return redirect()->back()->with('success', 'Office user updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -552,6 +608,11 @@ class OfficeController extends Controller
                 return redirect()->back()->withErrors(['error' => 'User not found.']);
             }
 
+            $targetName = ActivityLogService::userDisplayName($userModel);
+            $previousStatus = Schema::hasColumn('users', 'status')
+                ? ((string) ($userModel->status ?? 'Active') ?: 'Active')
+                : 'Active';
+
             if (Schema::hasColumn('users', 'status')) {
                 $userModel->status = 'recycle_bin';
             } elseif (Schema::hasColumn('users', 'deleted_at')) {
@@ -563,6 +624,17 @@ class OfficeController extends Controller
             $userModel->save();
 
             DB::commit();
+
+            ActivityLogService::log(
+                action: 'Changed User Status',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel()." changed {$targetName}'s account status from {$previousStatus} to Inactive.",
+                entityType: 'User',
+                entityId: $userModel->user_id ?? $id,
+                oldValues: ['status' => $previousStatus],
+                newValues: ['status' => 'Inactive']
+            );
+
             return redirect()->back()->with('success', 'Office user moved to recycle bin.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -587,6 +659,8 @@ class OfficeController extends Controller
                 return redirect()->back()->withErrors(['error' => 'User not found.']);
             }
 
+            $targetName = ActivityLogService::userDisplayName($userModel);
+
             if (Schema::hasColumn('users', 'status')) {
                 $userModel->status = 'active';
             } elseif (Schema::hasColumn('users', 'deleted_at')) {
@@ -598,6 +672,17 @@ class OfficeController extends Controller
             $userModel->save();
 
             DB::commit();
+
+            ActivityLogService::log(
+                action: 'Changed User Status',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel()." changed {$targetName}'s account status from Inactive to Active.",
+                entityType: 'User',
+                entityId: $userModel->user_id ?? $id,
+                oldValues: ['status' => 'Inactive'],
+                newValues: ['status' => 'Active']
+            );
+
             return redirect()->back()->with('success', 'Office user restored from recycle bin.');
         } catch (\Exception $e) {
             DB::rollBack();

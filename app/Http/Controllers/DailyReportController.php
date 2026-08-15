@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyReport;
+use App\Services\ActivityLogService;
 use App\Services\DailyVisitorReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -183,6 +184,18 @@ class DailyReportController extends Controller
             'report_date' => $report->report_date?->toDateString(),
             'user_id' => $request->user()?->getAuthIdentifier(),
         ]);
+
+        ActivityLogService::log(
+            action: 'Report Downloaded',
+            module: 'Reports',
+            description: ActivityLogService::actorLabel().' downloaded '.$report->file_name.'.',
+            entityType: 'DailyReport',
+            entityId: $report->id,
+            newValues: [
+                'file_name' => $report->file_name,
+                'report_date' => $report->report_date?->toDateString(),
+            ]
+        );
 
         return $disk->download(
             $normalized,

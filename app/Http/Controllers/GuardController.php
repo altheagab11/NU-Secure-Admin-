@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\UserMail;
 use App\Models\User;
 use App\Models\Guard;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -221,6 +222,23 @@ class GuardController extends Controller
 
             DB::commit();
 
+            ActivityLogService::log(
+                action: 'Created User',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel().' created user '.$fullName.' with role Guard.',
+                entityType: 'User',
+                entityId: $userId,
+                newValues: [
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'email' => $data['email'],
+                    'role' => 'Guard',
+                    'badge_number' => $data['badge_number'] ?? null,
+                    'station' => $data['station'] ?? null,
+                    'status' => 'Active',
+                ]
+            );
+
             return redirect()->back()->with('success', 'Guard account created successfully. Login details and password setup link were sent by email.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -246,6 +264,11 @@ class GuardController extends Controller
                 return redirect()->back()->withErrors(['error' => 'Guard user not found.']);
             }
 
+            $targetName = ActivityLogService::userDisplayName($user);
+            $previousStatus = Schema::hasColumn('users', 'status')
+                ? ((string) ($user->status ?? 'Active') ?: 'Active')
+                : 'Active';
+
             if (Schema::hasColumn('users', 'status')) {
                 $user->status = 'recycle_bin';
             } elseif (Schema::hasColumn('users', 'deleted_at')) {
@@ -258,6 +281,17 @@ class GuardController extends Controller
             $user->save();
 
             DB::commit();
+
+            ActivityLogService::log(
+                action: 'Changed User Status',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel()." changed {$targetName}'s account status from {$previousStatus} to Inactive.",
+                entityType: 'User',
+                entityId: $user->user_id ?? $id,
+                oldValues: ['status' => $previousStatus],
+                newValues: ['status' => 'Inactive']
+            );
+
             return redirect()->back()->with('success', 'Guard account moved to recycle bin.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -283,6 +317,8 @@ class GuardController extends Controller
                 return redirect()->back()->withErrors(['error' => 'Guard user not found.']);
             }
 
+            $targetName = ActivityLogService::userDisplayName($user);
+
             if (Schema::hasColumn('users', 'status')) {
                 $user->status = 'Active';
             } elseif (Schema::hasColumn('users', 'deleted_at')) {
@@ -295,6 +331,17 @@ class GuardController extends Controller
             $user->save();
 
             DB::commit();
+
+            ActivityLogService::log(
+                action: 'Changed User Status',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel()." changed {$targetName}'s account status from Inactive to Active.",
+                entityType: 'User',
+                entityId: $user->user_id ?? $id,
+                oldValues: ['status' => 'Inactive'],
+                newValues: ['status' => 'Active']
+            );
+
             return redirect()->back()->with('success', 'Guard account restored from recycle bin.');
         } catch (\Exception $e) {
             DB::rollBack();

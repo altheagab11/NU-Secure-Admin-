@@ -1092,6 +1092,7 @@
 							</a>
 						</div>
 					</div>
+					@include('admin.partials.sidebar-activity-logs-link')
 				</div>
 			</div>
 

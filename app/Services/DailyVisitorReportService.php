@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DailyReport;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,24 @@ class DailyVisitorReportService
                 'user_id' => $generatedByUserId,
             ]);
 
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            $prettyDate = $reportDate->format('F j, Y');
+            $recordLabel = (int) $report->record_count.' visitor record'.((int) $report->record_count === 1 ? '' : 's');
+            ActivityLogService::log(
+                action: $regenerate ? 'Regenerated Report' : 'Generated Daily Report',
+                module: 'Reports',
+                description: $actor.' generated the Daily Visitor Report for '.$prettyDate.' containing '.$recordLabel.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                userId: $generatedByUserId,
+                newValues: [
+                    'report_date' => $dateString,
+                    'file_name' => $fileName,
+                    'record_count' => $report->record_count,
+                    'generation_status' => $report->generation_status,
+                ]
+            );
+
             return $report->fresh();
         } catch (Throwable $e) {
             $report->fill([
@@ -131,6 +150,17 @@ class DailyVisitorReportService
                 'user_id' => $generatedByUserId,
                 'error' => $e->getMessage(),
             ]);
+
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            ActivityLogService::log(
+                action: 'Failed Report Generation',
+                module: 'Reports',
+                description: $actor.' failed to generate the Daily Visitor Report for '.$dateString.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: $generatedByUserId
+            );
 
             throw $e;
         }
@@ -253,6 +283,23 @@ class DailyVisitorReportService
                 'generation_status' => DailyReport::STATUS_COMPLETED,
             ]);
 
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            $recordLabel = (int) $report->record_count.' visitor record'.((int) $report->record_count === 1 ? '' : 's');
+            ActivityLogService::log(
+                action: 'Generated Date-Range Report',
+                module: 'Reports',
+                description: $actor.' generated the Date-Range Visitor Report from '.$start->format('F j, Y').' to '.$end->format('F j, Y').' containing '.$recordLabel.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                userId: $generatedByUserId,
+                newValues: [
+                    'start_date' => $startString,
+                    'end_date' => $endString,
+                    'file_name' => $fileName,
+                    'record_count' => $report->record_count,
+                ]
+            );
+
             return $report->fresh();
         } catch (Throwable $e) {
             $report->fill([
@@ -271,6 +318,17 @@ class DailyVisitorReportService
                 'generation_status' => DailyReport::STATUS_FAILED,
                 'error' => $e->getMessage(),
             ]);
+
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            ActivityLogService::log(
+                action: 'Failed Report Generation',
+                module: 'Reports',
+                description: $actor.' failed to generate the Date-Range Visitor Report from '.$startString.' to '.$endString.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: $generatedByUserId
+            );
 
             throw $e;
         }

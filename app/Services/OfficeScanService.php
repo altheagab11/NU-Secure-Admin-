@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use App\Services\ActivityLogService;
 
 class OfficeScanService
 {
@@ -164,6 +165,23 @@ class OfficeScanService
                 'visit_id' => (int) $visit->visit_id,
                 'expected_office_id' => (int) $current->office_id,
             ]);
+
+            $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? ''))) ?: 'visitor';
+            $scannedOffice = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'this office';
+            ActivityLogService::log(
+                action: 'Wrong Office Detected',
+                module: 'Office Scanning',
+                description: ActivityLogService::actorLabel().' scanned '.$visitorName.' at '.$scannedOffice.' but the visitor was expected at '.trim((string) ($current->office_name ?? 'another office')).'.',
+                entityType: 'Visit',
+                entityId: (int) $visit->visit_id,
+                status: ActivityLogService::STATUS_WARNING,
+                newValues: [
+                    'visit_id' => (int) $visit->visit_id,
+                    'scanned_office_id' => $officeId,
+                    'expected_office' => (string) ($current->office_name ?? ''),
+                    'scan_id' => $scanId,
+                ]
+            );
 
             return $this->error(
                 'WRONG_OFFICE',
@@ -336,6 +354,26 @@ class OfficeScanService
                     (int) $advanceProgress['office_id'],
                     (int) $advanceProgress['expected_order'],
                     $advanceProgress['checked_at']
+                );
+
+                $visitorName = (string) ($result['data']['visitor']['full_name'] ?? 'visitor');
+                $officeName = (string) ($officeContext->office_name ?? $result['data']['staff_office']['office_name'] ?? 'the office');
+                $scanId = $result['data']['scan_id'] ?? null;
+
+                ActivityLogService::log(
+                    action: 'QR Scan',
+                    module: 'Office Scanning',
+                    description: ActivityLogService::actorLabel().' scanned visitor '.$visitorName.' at '.$officeName.'.',
+                    entityType: 'OfficeScan',
+                    entityId: is_numeric($scanId) ? (int) $scanId : null,
+                    newValues: [
+                        'visit_id' => $visitId,
+                        'office_id' => $officeId,
+                        'office_name' => $officeName,
+                        'visitor_name' => $visitorName,
+                        'scan_method' => $scanMethod,
+                        'validation' => 'Valid',
+                    ]
                 );
             }
 
@@ -826,6 +864,24 @@ class OfficeScanService
                 'read_at' => null,
             ]);
 
+            if (! str_contains(strtolower($remarks), 'wrong office')) {
+                $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? ''))) ?: 'visitor';
+                $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'the office';
+                ActivityLogService::log(
+                    action: 'Scan Rejected',
+                    module: 'Office Scanning',
+                    description: ActivityLogService::actorLabel().' rejected a scan for '.$visitorName.' at '.$officeName.'.',
+                    entityType: 'OfficeScan',
+                    entityId: (int) $scanId,
+                    status: ActivityLogService::STATUS_WARNING,
+                    newValues: [
+                        'visit_id' => (int) $visit->visit_id,
+                        'office_id' => $officeId,
+                        'remarks' => $remarks,
+                    ]
+                );
+            }
+
             return (int) $scanId;
         } catch (\Throwable $e) {
             Log::warning('Failed to record office failed scan audit: '.$e->getMessage());
@@ -853,6 +909,28 @@ class OfficeScanService
                 'status' => 'Unresolved',
                 'created_at' => $this->philippinesNow(),
             ]);
+
+            $alertId = DB::table('alerts')
+                ->where('visit_id', (int) $visit->visit_id)
+                ->where('scan_id', $scanId)
+                ->orderByDesc('alert_id')
+                ->value('alert_id');
+
+            ActivityLogService::log(
+                action: 'Alert Generated',
+                module: 'Alerts',
+                description: 'Unauthorized visitor alert generated for '.$visitorName.'.',
+                entityType: 'Alert',
+                entityId: $alertId ? (int) $alertId : null,
+                newValues: [
+                    'alert_type' => 'Wrong Office',
+                    'severity' => 'Medium',
+                    'visitor_name' => $visitorName,
+                    'visit_id' => (int) $visit->visit_id,
+                    'scanned_office' => $officeName,
+                    'expected_office' => $expectedOfficeName,
+                ]
+            );
         } catch (\Throwable $e) {
             Log::warning('Failed to create wrong-office alert: '.$e->getMessage());
         }
@@ -932,6 +1010,29 @@ class OfficeScanService
                         'updated_at' => $now,
                     ]);
             }
+
+            $visitorName = DB::table('visit as v')
+                ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+                ->where('v.visit_id', $visitId)
+                ->selectRaw("TRIM(CONCAT(COALESCE(vr.first_name, ''), ' ', COALESCE(vr.last_name, ''))) as visitor_name")
+                ->value('visitor_name') ?: 'enrollee';
+            $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'office verification';
+            $stepName = trim((string) ($step->step_name ?? $step->step_label ?? $officeName));
+
+            ActivityLogService::log(
+                action: 'Enrollee Progress Updated',
+                module: 'Enrollee Processing',
+                description: ActivityLogService::actorLabel().' marked '.$stepName.' as Completed for enrollee '.$visitorName.'.',
+                entityType: 'Enrollee',
+                entityId: (int) $enrollee->enrollee_id,
+                oldValues: ['step_status' => 'Pending'],
+                newValues: [
+                    'step_status' => 'Completed',
+                    'office_id' => $officeId,
+                    'office_name' => $officeName,
+                    'visit_id' => $visitId,
+                ]
+            );
         } catch (\Throwable $e) {
             Log::warning('Unable to advance enrollee progress: '.$e->getMessage());
         }

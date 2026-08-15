@@ -9,6 +9,7 @@ use App\Http\Controllers\GuardDashboardController;
 use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\VisitorMonitoringController;
 use App\Http\Controllers\DailyReportController;
@@ -99,6 +100,22 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::put('/user/offices/{id}', [OfficeController::class, 'update']);
     Route::delete('/user/offices/{id}', [OfficeController::class, 'recycle']);
     Route::post('/user/offices/{id}/restore', [OfficeController::class, 'restore']);
+
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('admin.activity-logs');
+    Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary'])->name('admin.activity-logs.summary');
+    Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters'])->name('admin.activity-logs.filters');
+    Route::get('/activity-logs/{log}', [ActivityLogController::class, 'show'])
+        ->whereNumber('log')
+        ->name('admin.activity-logs.show');
+});
+
+Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
+    Route::get('/activity-logs', [ActivityLogController::class, 'list'])->name('api.admin.activity-logs');
+    Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary'])->name('api.admin.activity-logs.summary');
+    Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters'])->name('api.admin.activity-logs.filters');
+    Route::get('/activity-logs/{log}', [ActivityLogController::class, 'show'])
+        ->whereNumber('log')
+        ->name('api.admin.activity-logs.show');
 });
  
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {

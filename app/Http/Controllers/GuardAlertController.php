@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -362,6 +363,34 @@ class GuardAlertController extends Controller
                 'message' => 'Alert not found or already updated.',
             ], 404);
         }
+
+        $alert = DB::table('alerts as al')
+            ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'al.visitor_id')
+            ->where('al.alert_id', (int) $alertId)
+            ->select([
+                'al.alert_id',
+                'al.alert_type',
+                'vr.first_name',
+                'vr.last_name',
+            ])
+            ->first();
+
+        $visitorName = trim(((string) ($alert->first_name ?? '')).' '.((string) ($alert->last_name ?? '')));
+        $alertType = trim((string) ($alert->alert_type ?? 'Alert'));
+        $forVisitor = $visitorName !== '' ? ' for '.$visitorName : '';
+
+        ActivityLogService::log(
+            action: 'Resolved Alert',
+            module: 'Alerts',
+            description: ActivityLogService::actorLabel().' resolved '.($alertType !== '' ? $alertType.' ' : '').'Alert #'.$alertId.$forVisitor.'.',
+            entityType: 'Alert',
+            entityId: (int) $alertId,
+            oldValues: ['status' => 'Unresolved'],
+            newValues: [
+                'status' => 'Resolved',
+                'resolution_notes' => $validated['resolution_notes'],
+            ]
+        );
 
         return response()->json([
             'message' => 'Alert resolved successfully.',

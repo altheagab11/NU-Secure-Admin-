@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,16 @@ class AuthController extends Controller
         $user = User::query()->where('email', $credentials['email'])->first();
 
         if (! $user || ! is_string($user->password_hash) || ! $this->isValidPassword($user, $credentials['password'])) {
+            ActivityLogService::log(
+                action: 'Failed Login',
+                module: 'Authentication',
+                description: 'Failed login attempt for '.$credentials['email'].'.',
+                entityType: 'User',
+                entityId: $user?->user_id,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: null
+            );
+
             throw ValidationException::withMessages([
                 'email' => 'Invalid email or password.',
             ]);
@@ -53,6 +64,16 @@ class AuthController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            ActivityLogService::log(
+                action: 'Failed Login',
+                module: 'Authentication',
+                description: 'Failed login attempt for '.$credentials['email'].'. This account is not allowed in the web app.',
+                entityType: 'User',
+                entityId: $user->user_id ?? null,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: null
+            );
 
             throw ValidationException::withMessages([
                 'email' => 'This account is not allowed in the web app.',
@@ -70,17 +91,45 @@ class AuthController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
+                ActivityLogService::log(
+                    action: 'Failed Login',
+                    module: 'Authentication',
+                    description: 'Failed login attempt for '.$credentials['email'].'. Account is not assigned to an office.',
+                    entityType: 'User',
+                    entityId: $user->user_id ?? null,
+                    status: ActivityLogService::STATUS_FAILED,
+                    userId: null
+                );
+
                 throw ValidationException::withMessages([
                     'email' => 'Your account is not assigned to an office. Contact an administrator.',
                 ]);
             }
         }
 
+        ActivityLogService::log(
+            action: 'Login',
+            module: 'Authentication',
+            description: ActivityLogService::actorLabel($user).' successfully logged in.',
+            entityType: 'User',
+            entityId: $user->user_id ?? null
+        );
+
         return $this->redirectByRole($roleId);
     }
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        ActivityLogService::log(
+            action: 'Logout',
+            module: 'Authentication',
+            description: ActivityLogService::actorLabel($user instanceof User ? $user : null).' logged out of the system.',
+            entityType: 'User',
+            entityId: $user->user_id ?? null
+        );
+
         Auth::logout();
 
         $request->session()->invalidate();
@@ -136,6 +185,15 @@ class AuthController extends Controller
         $user->save();
 
         DB::table('password_reset_tokens')->where('email', $data['email'])->delete();
+
+        ActivityLogService::log(
+            action: 'Password Setup',
+            module: 'Authentication',
+            description: ActivityLogService::userDisplayName($user).' completed password setup.',
+            entityType: 'User',
+            entityId: $user->user_id ?? null,
+            userId: (int) ($user->user_id ?? 0) ?: null
+        );
 
         // Ensure clean auth/session state before sending user back to login page.
         if (Auth::check()) {
