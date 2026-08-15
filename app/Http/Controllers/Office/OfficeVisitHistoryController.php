@@ -7,7 +7,6 @@ use App\Services\OfficeVisitorQueryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OfficeVisitHistoryController extends Controller
 {
@@ -42,49 +41,6 @@ class OfficeVisitHistoryController extends Controller
                 'staff' => (string) $request->query('staff', ''),
             ],
             'notifications' => $this->queries->unreadNotifications((int) $office->user_id, 10),
-        ]);
-    }
-
-    public function export(Request $request): StreamedResponse
-    {
-        $office = $request->attributes->get('office_context');
-        $officeId = (int) $office->office_id;
-
-        // Reuse filtered query with a high page size for CSV export.
-        $request->query->set('per_page', 100);
-        $rows = $this->queries->visitHistoryPaginated($request, $officeId, 5000);
-
-        $filename = 'office-visit-history-'.Carbon::now('Asia/Manila')->format('Ymd-His').'.csv';
-
-        return response()->streamDownload(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            fputcsv($out, [
-                'Date/Time',
-                'Control Number',
-                'Visitor Name',
-                'Purpose',
-                'Office',
-                'Staff',
-                'Status',
-                'Remarks',
-            ]);
-
-            foreach ($rows as $row) {
-                fputcsv($out, [
-                    $row->scan_time,
-                    $row->control_number,
-                    $row->visitor_name,
-                    $row->purpose_reason,
-                    $row->office_name,
-                    $row->staff_name,
-                    $row->validation_status,
-                    $row->remarks,
-                ]);
-            }
-
-            fclose($out);
-        }, $filename, [
-            'Content-Type' => 'text/csv',
         ]);
     }
 }

@@ -209,6 +209,12 @@
                 <img src="{{ asset('picture/nu-logo.png') }}" alt="NU Logo">
             </div>
 
+            @if (session('status'))
+                <div class="alert-box" style="background:#ecfdf5;color:#065f46;border-color:#a7f3d0;">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             @if (session('error'))
                 <div class="alert-box">
                     {{ session('error') }}
@@ -255,7 +261,7 @@
                         Remember me
                     </label>
 
-                    <a href="#" class="forgot-link">
+                    <a href="{{ route('password.request') }}" class="forgot-link">
                         Forgot password?
                     </a>
                 </div>

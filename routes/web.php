@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\GuardController;
 use App\Http\Controllers\GuardDashboardController;
@@ -24,6 +25,12 @@ use App\Http\Controllers\Office\OfficeProfileController;
  
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+
+Route::get('/forgot-password', [PasswordResetController::class, 'create'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'store'])->name('password.email');
+Route::get('/reset-password/success', [PasswordResetController::class, 'success'])->name('password.reset.success');
+Route::get('/reset-password', [PasswordResetController::class, 'edit'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 
 Route::get('/password/setup/{token}', [AuthController::class, 'showPasswordSetupForm'])->name('password.setup.form');
 Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('password.setup.submit');
@@ -54,7 +61,6 @@ Route::middleware(['auth', 'office.staff'])->prefix('office')->name('office.')->
     Route::get('/visitors/{visit}/details', [OfficeVisitorController::class, 'detailsJson'])->whereNumber('visit')->name('visitors.details');
 
     Route::get('/visit-history', [OfficeVisitHistoryController::class, 'index'])->name('visit-history');
-    Route::get('/visit-history/export', [OfficeVisitHistoryController::class, 'export'])->name('visit-history.export');
 
     Route::get('/notifications', [OfficeProfileController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{notifId}/read', [OfficeProfileController::class, 'markNotificationRead'])

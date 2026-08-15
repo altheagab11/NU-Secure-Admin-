@@ -10,9 +10,6 @@
 			<h2>Visit History</h2>
 			<p class="card-muted mb-0">Office scans recorded for {{ $office->office_name }}</p>
 		</div>
-		<a href="{{ route('office.visit-history.export', request()->query()) }}" class="btn btn-nu-outline btn-sm">
-			<i class="bi bi-download me-1" aria-hidden="true"></i>Export CSV
-		</a>
 	</div>
 
 	<form method="GET" action="{{ route('office.visit-history') }}" class="row g-2 align-items-end">

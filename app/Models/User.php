@@ -46,10 +46,31 @@ class User extends Authenticatable
     const UPDATED_AT = null;
 
     /**
+     * Use users.password_hash as the auth password field.
+     */
+    public function getAuthPasswordName(): string
+    {
+        return 'password_hash';
+    }
+
+    /**
      * Use Supabase password_hash as the auth password field.
      */
     public function getAuthPassword(): string
     {
-        return (string) $this->password_hash;
+        return (string) ($this->getAttributes()['password_hash'] ?? $this->password_hash ?? '');
+    }
+
+    public static function findByEmail(string $email): ?self
+    {
+        $email = strtolower(trim($email));
+
+        if ($email === '') {
+            return null;
+        }
+
+        return static::query()
+            ->whereRaw("LOWER(TRIM(COALESCE(email, ''))) = ?", [$email])
+            ->first();
     }
 }

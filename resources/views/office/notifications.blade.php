@@ -50,18 +50,23 @@
 				</tbody>
 			</table>
 		</div>
-		@include('admin.partials.table-pagination', [
-			'paginator' => $notificationList,
-			'perPageParam' => 'per_page',
-			'ariaLabel' => 'Notifications pagination',
-		])
 	@endif
+
+	@include('admin.partials.table-pagination', [
+		'paginator' => $notificationList,
+		'perPageParam' => 'per_page',
+		'ariaLabel' => 'Notifications pagination',
+	])
 </div>
 @endsection
 
 @push('styles')
 <style>
 	@include('admin.partials.table-pagination-styles')
+
+	.office-card .table-pagination-bar {
+		margin-top: 12px;
+	}
 </style>
 @endpush
 
