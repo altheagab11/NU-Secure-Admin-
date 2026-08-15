@@ -602,13 +602,8 @@
 			}
 		}
 		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
-			}
-
-			.main {
-				display: none;
+			.alert-filters-row {
+				grid-template-columns: 1fr;
 			}
 		}
 
@@ -987,6 +982,7 @@
 				}
 
 		@include('admin.partials.admin-topbar-styles')
+		@include('admin.partials.admin-responsive-styles')
 	</style>
 </head>
 <body>
@@ -1996,5 +1992,6 @@
 		});
 	</script>
 	@include('partials.live-auto-refresh')
+	@include('admin.partials.admin-responsive-script')
 </body>
 </html>

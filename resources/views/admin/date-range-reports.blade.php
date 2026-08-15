@@ -18,13 +18,13 @@
 			margin: 0;
 			background: #eef2ff;
 			color: #0f172a;
-			overflow-x: auto;
+			overflow-x: clip;
 		}
 
 		.layout {
 			display: block;
 			min-height: 100vh;
-			min-width: 1180px;
+			min-width: 0;
 		}
 
 		.sidebar {
@@ -426,13 +426,6 @@
 		}
 
 		@media (max-width: 992px) {
-			.sidebar {
-				position: relative;
-				width: 100%;
-				height: auto;
-				min-height: 0;
-			}
-
 			.main {
 				margin-left: 0;
 				padding: 16px;
@@ -448,6 +441,7 @@
 
 		@include('admin.partials.table-pagination-styles')
 		@include('admin.partials.admin-topbar-styles')
+		@include('admin.partials.admin-responsive-styles')
 	</style>
 </head>
 <body>
@@ -887,5 +881,6 @@
 			validateRange(false);
 		})();
 	</script>
+	@include('admin.partials.admin-responsive-script')
 </body>
 </html>

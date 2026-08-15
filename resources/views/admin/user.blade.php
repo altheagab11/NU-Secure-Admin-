@@ -589,21 +589,13 @@
 				grid-template-columns: 1fr;
 			}
 
-			.sidebar {
-				width: 220px;
-				padding: 10px 8px;
-			}
-
-			.main {
-				margin-left: 220px;
-			}
-
 			.brand-title {
 				font-size: 18px;
 			}
 		}
 
 		@include('admin.partials.admin-topbar-styles')
+		@include('admin.partials.admin-responsive-styles')
 	</style>
 </head>
 <body>
@@ -1452,5 +1444,6 @@
 			})();
 	</script>
 
+	@include('admin.partials.admin-responsive-script')
 	</body>
 	</html>

@@ -16,6 +16,9 @@
 @endphp
 <header class="admin-topbar">
 	<div class="admin-topbar-left">
+		<button type="button" class="admin-menu-btn" id="adminNavOpen" aria-label="Open navigation" aria-expanded="false">
+			<i class="bi bi-list" aria-hidden="true"></i>
+		</button>
 		<div class="admin-topbar-copy">
 			<h1 class="admin-topbar-title">{{ $topTitle }}</h1>
 			<p class="admin-topbar-date">{{ $topbarDate }}</p>

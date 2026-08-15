@@ -97,7 +97,11 @@ class VisitorMonitoringController extends Controller
             ]
         );
 
-        $activeRows = $filteredRows->filter(fn ($r) => ($r['status'] ?? '') !== 'Completed');
+        $manilaToday = Carbon::now('Asia/Manila')->toDateString();
+
+        // Currently inside campus: entered and not yet exited (Arrived / Overstay).
+        // Do not use the main table date filter — overnight visitors still inside must count.
+        $activeRows = $rows->filter(fn (array $row) => $this->isCurrentlyActiveVisit($row));
 
         $activeByOffice = $activeRows
             ->groupBy(fn ($r) => $r['destination'] ?: 'Unknown Office')
@@ -111,7 +115,15 @@ class VisitorMonitoringController extends Controller
 
         $maxOfficeCount = max(1, (int) $activeByOffice->max('count'));
 
-        $recentVisitorsSource = $filteredRows
+        $recentCardFilters = $filters;
+        $recentCardFilters['date_from'] = $manilaToday;
+        $recentCardFilters['date_to'] = $manilaToday;
+
+        $recentVisitorsSource = $this->applyFilters($rows, $recentCardFilters)
+            ->sortBy([
+                ['raw_entry_time', 'desc'],
+                ['raw_visit_id', 'desc'],
+            ])
             ->map(fn ($row) => [
                 'visitor_name' => $row['visitor_name'],
                 'destination' => $row['destination'],
@@ -140,25 +152,17 @@ class VisitorMonitoringController extends Controller
         $correctOfficeScansSource = collect([]);
         if ($supabaseUrl && $supabaseKey) {
             try {
-                $correctOfficeScansSource = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey);
+                $correctOfficeScansSource = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey, $manilaToday);
             } catch (\Throwable $e) {
                 logger()->warning('Correct office scan fetch failed: '.$e->getMessage());
             }
         }
 
         if ($correctOfficeScansSource->isEmpty()) {
-            // Safe fallback so card does not go blank when source tables are unavailable.
-            $correctOfficeScansSource = $filteredRows
-                ->filter(fn ($row) => ! in_array($row['status'], ['Overstay'], true))
-                ->map(fn ($row) => [
-                    'visitor_name' => $row['visitor_name'],
-                    'destination' => $row['destination'],
-                    'control_number' => $row['control_number'],
-                    'time_label' => $row['entry_time_label_short'],
-                    'result' => 'MATCHED',
-                ])
-                ->values();
+            $correctOfficeScansSource = $this->fetchCorrectOfficeScansFromDatabase($manilaToday);
         }
+
+        $correctOfficeScansSource = $this->applyCorrectScanCardFilters($correctOfficeScansSource, $filters);
 
         $scansPage = max(1, (int) $request->query('scans_page', 1));
         $correctOfficeScans = new LengthAwarePaginator(
@@ -826,21 +830,34 @@ class VisitorMonitoringController extends Controller
             });
     }
 
-    private function fetchCorrectOfficeScans(string $supabaseUrl, string $supabaseKey): Collection
+    private function fetchCorrectOfficeScans(string $supabaseUrl, string $supabaseKey, string $todayDate): Collection
     {
         $baseUrl = rtrim($supabaseUrl, '/');
 
         $officeMap = $this->fetchOfficeMap($baseUrl, $supabaseKey);
         $expectationMap = $this->fetchOfficeExpectationMap($baseUrl, $supabaseKey, $officeMap);
 
-        $scanRows = $this->fetchOfficeScansWithRelations($baseUrl, $supabaseKey);
+        $scanRows = $this->fetchOfficeScansWithRelations($baseUrl, $supabaseKey, $todayDate);
 
         return $scanRows
-            ->map(function (array $scan) use ($expectationMap, $officeMap) {
+            ->map(function (array $scan) use ($expectationMap, $officeMap, $todayDate) {
+                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+                if (! $this->isManilaDate($scanTime, $todayDate)) {
+                    return null;
+                }
+
+                if ($this->isFacilityExitScan($scan['remarks'] ?? null)) {
+                    return null;
+                }
+
                 $visitId = $scan['visit_id'] ?? null;
 
                 $validation = $this->extractRelation($scan, 'validation_status');
                 $validationName = (string) ($validation['status_name'] ?? $scan['validation_status'] ?? '');
+
+                if ($this->isFailedScanStatus($validationName)) {
+                    return null;
+                }
 
                 $scannedOfficeRel = $this->extractRelation($scan, 'office');
                 $scannedOfficeName = (string) ($scannedOfficeRel['office_name'] ?? '');
@@ -854,7 +871,7 @@ class VisitorMonitoringController extends Controller
                     $scannedOfficeName = (string) ($officeMap->get((string) $scannedOfficeId) ?? '');
                 }
 
-                $isMatchedByStatus = Str::contains(Str::lower($validationName), 'match');
+                $isMatchedByStatus = $this->isCorrectScanStatus($validationName);
                 $isMatchedByOffice = $expectedOfficeId !== null
                     && (string) $expectedOfficeId !== ''
                     && (string) $expectedOfficeId === (string) $scannedOfficeId;
@@ -868,8 +885,6 @@ class VisitorMonitoringController extends Controller
 
                 $visitorName = trim(((string) ($visitorRel['first_name'] ?? '')).' '.((string) ($visitorRel['last_name'] ?? '')));
                 $controlNo = (string) ($visitRel['control_number'] ?? '—');
-
-                $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
 
                 return [
                     'visitor_name' => $visitorName !== '' ? $visitorName : 'Unknown Visitor',
@@ -955,7 +970,7 @@ class VisitorMonitoringController extends Controller
             });
     }
 
-    private function fetchOfficeScansWithRelations(string $baseUrl, string $supabaseKey): Collection
+    private function fetchOfficeScansWithRelations(string $baseUrl, string $supabaseKey, ?string $todayDate = null): Collection
     {
         $headers = [
             'apikey' => $supabaseKey,
@@ -963,22 +978,38 @@ class VisitorMonitoringController extends Controller
             'Accept' => 'application/json',
         ];
 
-        $primary = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', [
-            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name),office(office_name),visit(visit_id,control_number,visitor(first_name,last_name))',
+        $query = [
+            'select' => 'scan_id,scan_time,visit_id,office_id,remarks,validation_status(validation_status_id,status_name),office(office_name),visit(visit_id,control_number,visitor(first_name,last_name))',
             'order' => 'scan_time.desc',
             'limit' => 500,
-        ]);
+        ];
+
+        if (filled($todayDate)) {
+            $query['scan_time'] = 'gte.'.Carbon::now('Asia/Manila')->startOfDay()->format('Y-m-d\TH:i:s');
+        }
+
+        $primary = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', $query);
+
+        if ((! $primary->ok() || ! is_array($primary->json())) && isset($query['scan_time'])) {
+            unset($query['scan_time']);
+            $primary = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', $query);
+        }
 
         if ($primary->ok() && is_array($primary->json())) {
             return collect($primary->json())->filter(fn ($r) => is_array($r))->values();
         }
 
         // Fallback query when relation nesting varies in PostgREST metadata.
-        $fallback = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', [
-            'select' => 'scan_id,scan_time,visit_id,office_id,validation_status(validation_status_id,status_name)',
+        $fallbackQuery = [
+            'select' => 'scan_id,scan_time,visit_id,office_id,remarks,validation_status(validation_status_id,status_name)',
             'order' => 'scan_time.desc',
             'limit' => 500,
-        ]);
+        ];
+        if (filled($todayDate)) {
+            $fallbackQuery['scan_time'] = 'gte.'.Carbon::now('Asia/Manila')->startOfDay()->format('Y-m-d\TH:i:s');
+        }
+
+        $fallback = Http::withHeaders($headers)->timeout(20)->get($baseUrl.'/rest/v1/office_scan', $fallbackQuery);
 
         if (! $fallback->ok() || ! is_array($fallback->json())) {
             logger()->warning('office_scan fetch failed', [
@@ -1058,6 +1089,146 @@ class VisitorMonitoringController extends Controller
             return Carbon::parse($value)->timezone('Asia/Manila');
         } catch (\Throwable $e) {
             return null;
+        }
+    }
+
+    private function isManilaDate(?Carbon $dateTime, string $date): bool
+    {
+        return $dateTime !== null && $dateTime->timezone('Asia/Manila')->toDateString() === $date;
+    }
+
+    private function isCurrentlyActiveVisit(array $row): bool
+    {
+        return in_array(($row['status'] ?? ''), ['Arrived', 'Overstay'], true);
+    }
+
+    private function isCorrectScanStatus(?string $statusName): bool
+    {
+        $normalized = Str::lower(trim((string) $statusName));
+        if ($normalized === '' || $this->isFailedScanStatus($normalized)) {
+            return false;
+        }
+
+        return Str::contains($normalized, ['match', 'valid', 'correct']);
+    }
+
+    private function isFailedScanStatus(?string $statusName): bool
+    {
+        $normalized = Str::lower(trim((string) $statusName));
+
+        return $normalized !== '' && Str::contains($normalized, ['invalid', 'unauthor', 'wrong', 'mismatch', 'failed', 'reject']);
+    }
+
+    private function isFacilityExitScan(?string $remarks): bool
+    {
+        $remarksText = Str::lower(trim((string) $remarks));
+
+        return $remarksText !== '' && (str_contains($remarksText, 'facility exit') || str_contains($remarksText, 'exit scan'));
+    }
+
+    private function applyCorrectScanCardFilters(Collection $scans, array $filters): Collection
+    {
+        $search = trim((string) ($filters['search'] ?? ''));
+        $officeFilter = trim((string) ($filters['office'] ?? ''));
+
+        if ($search === '' && $officeFilter === '') {
+            return $scans->values();
+        }
+
+        return $scans->filter(function (array $scan) use ($search, $officeFilter) {
+            $matchesOffice = $officeFilter === '' || ($scan['destination'] ?? '') === $officeFilter;
+            $matchesSearch = true;
+            if ($search !== '') {
+                $haystack = Str::lower(implode(' ', [
+                    $scan['visitor_name'] ?? '',
+                    $scan['control_number'] ?? '',
+                    $scan['destination'] ?? '',
+                ]));
+                $matchesSearch = Str::contains($haystack, Str::lower($search));
+            }
+
+            return $matchesOffice && $matchesSearch;
+        })->values();
+    }
+
+    private function fetchCorrectOfficeScansFromDatabase(string $todayDate): Collection
+    {
+        try {
+            $rows = DB::table('office_scan as os')
+                ->leftJoin('validation_status as vs', 'vs.validation_status_id', '=', 'os.validation_status_id')
+                ->leftJoin('office as o', 'o.office_id', '=', 'os.office_id')
+                ->leftJoin('visit as v', 'v.visit_id', '=', 'os.visit_id')
+                ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+                ->leftJoin('office as po', 'po.office_id', '=', 'v.primary_office_id')
+                ->select([
+                    'os.scan_id',
+                    'os.scan_time',
+                    'os.office_id',
+                    'os.remarks',
+                    'vs.status_name as validation_status_name',
+                    'o.office_name as scanned_office_name',
+                    'v.control_number',
+                    'v.primary_office_id',
+                    'vr.first_name as visitor_first_name',
+                    'vr.last_name as visitor_last_name',
+                    'po.office_name as primary_office_name',
+                ])
+                ->whereDate('os.scan_time', $todayDate)
+                ->orderByDesc('os.scan_time')
+                ->orderByDesc('os.scan_id')
+                ->limit(500)
+                ->get();
+
+            return collect($rows)
+                ->map(function ($row) use ($todayDate) {
+                    $scan = (array) $row;
+                    $scanTime = $this->parseDateTime($scan['scan_time'] ?? null);
+                    if (! $this->isManilaDate($scanTime, $todayDate)) {
+                        return null;
+                    }
+
+                    if ($this->isFacilityExitScan($scan['remarks'] ?? null)) {
+                        return null;
+                    }
+
+                    $validationName = (string) ($scan['validation_status_name'] ?? '');
+                    if ($this->isFailedScanStatus($validationName)) {
+                        return null;
+                    }
+
+                    $scannedOfficeId = $scan['office_id'] ?? null;
+                    $primaryOfficeId = $scan['primary_office_id'] ?? null;
+                    $isMatchedByStatus = $this->isCorrectScanStatus($validationName);
+                    $isMatchedByOffice = $scannedOfficeId !== null
+                        && $primaryOfficeId !== null
+                        && (string) $scannedOfficeId === (string) $primaryOfficeId;
+
+                    if (! $isMatchedByStatus && ! $isMatchedByOffice) {
+                        return null;
+                    }
+
+                    $visitorName = trim(((string) ($scan['visitor_first_name'] ?? '')).' '.((string) ($scan['visitor_last_name'] ?? '')));
+                    $scannedOfficeName = trim((string) ($scan['scanned_office_name'] ?? ''));
+                    $primaryOfficeName = trim((string) ($scan['primary_office_name'] ?? ''));
+
+                    return [
+                        'visitor_name' => $visitorName !== '' ? $visitorName : 'Unknown Visitor',
+                        'destination' => $primaryOfficeName !== ''
+                            ? $primaryOfficeName
+                            : ($scannedOfficeName !== '' ? $scannedOfficeName : '—'),
+                        'control_number' => (string) ($scan['control_number'] ?? '—'),
+                        'time_label' => $scanTime ? $scanTime->format('h:i A') : '—',
+                        'result' => 'MATCHED',
+                        'raw_scan_time' => $scanTime ? $scanTime->getTimestamp() : 0,
+                    ];
+                })
+                ->filter()
+                ->sortByDesc('raw_scan_time')
+                ->values();
+        } catch (\Throwable $e) {
+            logger()->warning('Correct office scan DB fallback failed: '.$e->getMessage());
+
+            return collect([]);
         }
     }
 

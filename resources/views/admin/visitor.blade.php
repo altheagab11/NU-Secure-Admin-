@@ -988,13 +988,8 @@
 		}
 
 		@media (max-width: 1024px) {
-			.sidebar {
-				width: 100%;
-				min-height: 100vh;
-			}
-
-			.main {
-				display: none;
+			.filters-row {
+				grid-template-columns: 1fr;
 			}
 		}
 
@@ -1015,6 +1010,7 @@
 		}
 
 		@include('admin.partials.admin-topbar-styles')
+		@include('admin.partials.admin-responsive-styles')
 	</style>
 </head>
 <body>
@@ -1285,7 +1281,7 @@
 
 			<div class="bottom-grid">
 				<section class="panel-card recent-panel">
-					<h2 class="panel-title">Recent Visitors</h2>
+					<h2 class="panel-title">Today's Recent Visitors</h2>
 					<ul class="recent-list">
 						@forelse(($recentVisitors ?? []) as $recent)
 							<li class="recent-item">
@@ -1303,7 +1299,7 @@
 						@empty
 							<li class="recent-item">
 								<div class="recent-left">
-									<div class="recent-meta">No recent visitor data.</div>
+									<div class="recent-meta">No visitors yet today.</div>
 								</div>
 							</li>
 						@endforelse
@@ -1311,7 +1307,7 @@
 					@include('admin.partials.table-pagination', [
 						'paginator' => $recentVisitors,
 						'perPageParam' => 'recent_per_page',
-						'ariaLabel' => 'Recent visitors pagination',
+						'ariaLabel' => "Today's recent visitors pagination",
 					])
 				</section>
 
@@ -1348,7 +1344,7 @@
 					</section>
 
 					<section class="panel-card stack-panel">
-						<h2 class="panel-title">Correct Office Scans</h2>
+						<h2 class="panel-title">Today's Correct Office Scans</h2>
 						<ul class="correct-list" aria-label="Correct office scan results">
 							@forelse(($correctOfficeScans ?? []) as $scan)
 								<li class="correct-item">
@@ -1360,14 +1356,14 @@
 								</li>
 							@empty
 								<li class="correct-item">
-									<p class="correct-meta">No matched office scans yet.</p>
+									<p class="correct-meta">No correct office scans yet today.</p>
 								</li>
 							@endforelse
 						</ul>
 						@include('admin.partials.table-pagination', [
 							'paginator' => $correctOfficeScans,
 							'perPageParam' => 'scans_per_page',
-							'ariaLabel' => 'Correct office scans pagination',
+							'ariaLabel' => "Today's correct office scans pagination",
 						])
 					</section>
 				</div>
@@ -1853,5 +1849,6 @@
 		});
 	</script>
 	@include('partials.live-auto-refresh')
+	@include('admin.partials.admin-responsive-script')
 </body>
 </html>

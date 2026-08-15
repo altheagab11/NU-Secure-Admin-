@@ -25,13 +25,13 @@
 			margin: 0;
 			background: #eef2ff;
 			color: #0f172a;
-			overflow-x: auto;
+			overflow-x: clip;
 		}
 
 		.layout {
 			display: block;
 			min-height: 100vh;
-			min-width: 1180px;
+			min-width: 0;
 		}
 
 		.sidebar {
@@ -622,7 +622,7 @@
 
 		@media (max-width: 1440px) {
 			.layout {
-				min-width: 1040px;
+				min-width: 0;
 			}
 
 			.main {
@@ -660,16 +660,7 @@
 			}
 
 			.layout {
-				min-width: 900px;
-			}
-
-			.sidebar {
-				width: 220px;
-				padding: 10px 8px;
-			}
-
-			.main {
-				margin-left: 220px;
+				min-width: 0;
 			}
 
 			.brand-title {
@@ -677,6 +668,7 @@
 			}
 		}
 		@include('admin.partials.admin-topbar-styles')
+		@include('admin.partials.admin-responsive-styles')
 	</style>
 </head>
 <body>
@@ -1369,5 +1361,6 @@
 		}
 	</script>
 	@include('partials.live-auto-refresh')
+	@include('admin.partials.admin-responsive-script')
 </body>
 </html>
