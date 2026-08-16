@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -118,6 +119,139 @@ class AuthController extends Controller
         return $this->redirectByRole($roleId);
     }
 
+    public function apiLogin(Request $request): JsonResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $user = User::findByEmail($credentials['email']);
+
+        if (! $user || ! $this->isValidPassword($user, $credentials['password'])) {
+            ActivityLogService::log(
+                action: 'Failed Login',
+                module: 'Authentication',
+                description: 'Failed mobile login attempt for '.$credentials['email'].'.',
+                entityType: 'User',
+                entityId: $user?->user_id,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: null
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email or password.',
+            ], 422);
+        }
+
+        if (! $this->isAccountActive($user)) {
+            ActivityLogService::log(
+                action: 'Failed Login',
+                module: 'Authentication',
+                description: 'Failed mobile login attempt for '.$credentials['email'].'. Account is inactive.',
+                entityType: 'User',
+                entityId: $user->user_id ?? null,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: null
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is inactive. Contact an administrator.',
+            ], 403);
+        }
+
+        $roleId = (int) $user->role_id;
+
+        if (! in_array($roleId, [1, 2, 3, 4], true)) {
+            ActivityLogService::log(
+                action: 'Failed Login',
+                module: 'Authentication',
+                description: 'Failed mobile login attempt for '.$credentials['email'].'. This account is not allowed in the mobile application.',
+                entityType: 'User',
+                entityId: $user->user_id ?? null,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: null
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This account is not allowed to use the mobile application.',
+            ], 403);
+        }
+
+        if ($roleId === 3) {
+            $hasOffice = DB::table('office_staff')
+                ->where('user_id', (int) $user->user_id)
+                ->whereNotNull('office_id')
+                ->exists();
+
+            if (! $hasOffice) {
+                ActivityLogService::log(
+                    action: 'Failed Login',
+                    module: 'Authentication',
+                    description: 'Failed mobile login attempt for '.$credentials['email'].'. Account is not assigned to an office.',
+                    entityType: 'User',
+                    entityId: $user->user_id ?? null,
+                    status: ActivityLogService::STATUS_FAILED,
+                    userId: null
+                );
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is not assigned to an office. Contact an administrator.',
+                ], 403);
+            }
+        }
+
+        $deviceName = $credentials['device_name'] ?? 'NU-Secure Mobile';
+
+        $token = $user->createToken(
+            $deviceName,
+            ['mobile']
+        )->plainTextToken;
+
+        ActivityLogService::log(
+            action: 'Login',
+            module: 'Authentication',
+            description: ActivityLogService::actorLabel($user).' successfully logged in using the mobile application.',
+            entityType: 'User',
+            entityId: $user->user_id ?? null,
+            userId: (int) $user->user_id
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful.',
+            'token_type' => 'Bearer',
+            'token' => $token,
+            'user' => $user->toApiUser(),
+        ]);
+    }
+
+    public function apiLogout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        ActivityLogService::log(
+            action: 'Logout',
+            module: 'Authentication',
+            description: ActivityLogService::actorLabel($user instanceof User ? $user : null).' logged out from the mobile application.',
+            entityType: 'User',
+            entityId: $user?->user_id,
+            userId: $user?->user_id !== null ? (int) $user->user_id : null
+        );
+
+        $request->user()?->currentAccessToken()?->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out successfully.',
+        ]);
+    }
+
     public function logout(Request $request): RedirectResponse
     {
         $user = Auth::user();
@@ -220,6 +354,13 @@ class AuthController extends Controller
         }
 
         return redirect()->to('/guard/dashboard');
+    }
+
+    private function isAccountActive(User $user): bool
+    {
+        $status = strtolower(trim((string) ($user->status ?? 'active')));
+
+        return ! in_array($status, ['inactive', 'disabled', 'suspended', 'recycle_bin', 'deleted'], true);
     }
 
     private function isValidPassword(User $user, string $inputPassword): bool

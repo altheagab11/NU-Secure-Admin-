@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['first_name','last_name','name', 'email', 'password','password_hash'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'password_hash', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -72,5 +73,31 @@ class User extends Authenticatable
         return static::query()
             ->whereRaw("LOWER(TRIM(COALESCE(email, ''))) = ?", [$email])
             ->first();
+    }
+
+    /**
+     * Safe user payload for mobile API responses.
+     *
+     * @return array{user_id: int, first_name: mixed, last_name: mixed, email: mixed, role_id: int, status: string}
+     */
+    public function toApiUser(): array
+    {
+        $status = trim((string) ($this->status ?? 'active'));
+        $normalized = strtolower($status);
+
+        $displayStatus = match (true) {
+            $normalized === '' || $normalized === 'active' => 'Active',
+            $normalized === 'recycle_bin' => 'Inactive',
+            default => ucfirst($status),
+        };
+
+        return [
+            'user_id' => (int) $this->user_id,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'email' => $this->email,
+            'role_id' => (int) $this->role_id,
+            'status' => $displayStatus,
+        ];
     }
 }
