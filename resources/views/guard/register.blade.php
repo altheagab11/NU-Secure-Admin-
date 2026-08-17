@@ -8349,8 +8349,9 @@
 				return;
 			}
 
-			// Preview window only — do not tie @page to mm; many drivers mis-handle it and shift content.
+			// Preview window only — do not tie @page to mm on Windows; many drivers mis-handle it and shift content.
 			const thermalPreviewPx = 380;
+			const isAndroid = /Android/i.test(navigator.userAgent);
 
 			const esc = (t) => String(t ?? '')
 				.replace(/&/g, '&amp;')
@@ -8425,23 +8426,30 @@
 			const nameHtml = formatNameForPrint(rawName);
 			const destHtml = formatDestForPrint(rawDest);
 
-			const nameSizeClass = rawNameUpper.length > 30 ? 'txt-tiny' : (rawNameUpper.length > 18 ? 'txt-small' : '');
-			const destSizeClass = rawDest.length > 24 ? 'txt-tiny' : (rawDest.length > 16 ? 'txt-small' : '');
+			const nameSizeClass = isAndroid ? '' : (rawNameUpper.length > 30 ? 'txt-tiny' : (rawNameUpper.length > 18 ? 'txt-small' : ''));
+			const destSizeClass = isAndroid ? '' : (rawDest.length > 24 ? 'txt-tiny' : (rawDest.length > 16 ? 'txt-small' : ''));
 			const controlNoPrint = esc((ticketControlNumber?.textContent || '-').trim());
+			const pageCss = isAndroid
+				? '@@page { size: 58mm auto; margin: 0; }'
+				: '@@page { size: auto; margin: 2mm 5mm 0 1.5mm; }';
+			const viewportContent = isAndroid
+				? 'width=220, initial-scale=1'
+				: 'width=device-width, initial-scale=1';
 
-			const THERMAL_LINE_WIDTH = 28;
+			const THERMAL_LINE_WIDTH = isAndroid ? 32 : 28;
 			const dashedLineText = '-'.repeat(THERMAL_LINE_WIDTH);
 
 			const printDoc = `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="${isAndroid ? 'android-thermal-print' : ''}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="${viewportContent}">
 <title>Visitor ticket</title>
 <style>
 /* size: auto avoids Chrome centering a narrow mm box on Letter/A4 (causes right-shift on thermal). */
 /* Asymmetric margins: mas malaki sa kanan — maraming thermal na mas kinakain ang kanan. */
-@@page { size: auto; margin: 2mm 5mm 0 1.5mm; }
+/* Android uses 58mm auto so Chrome does not layout as A4 and shrink the ticket. */
+${pageCss}
 * {
 	box-sizing: border-box;
 }
@@ -8610,9 +8618,162 @@ body {
 		padding-bottom: 0 !important;
 	}
 }
+/* Android 58mm thermal only. Windows keeps the rules above unchanged. */
+body.android-thermal-print {
+	width: 58mm;
+	max-width: 58mm;
+	margin: 0 auto;
+	padding: 0;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	transform: none;
+	zoom: 1;
+}
+html.android-thermal-print {
+	width: 58mm;
+	max-width: 58mm;
+	margin: 0;
+	padding: 0;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+body.android-thermal-print .receipt {
+	width: 52mm;
+	max-width: 52mm;
+	box-sizing: border-box;
+	margin: 0 auto;
+	padding: 2mm;
+	text-align: left;
+}
+body.android-thermal-print .receipt-title {
+	font-size: 16pt;
+	font-weight: 900;
+	text-align: center;
+	letter-spacing: 1px;
+	line-height: 1.2;
+	margin: 0 0 0.35em;
+}
+body.android-thermal-print .dash-line {
+	font-size: 9pt;
+	margin: 0 0 0.7em;
+}
+body.android-thermal-print .field-label {
+	font-size: 11pt;
+	font-weight: 800;
+	letter-spacing: 0.03em;
+}
+body.android-thermal-print .field-value.name-val,
+body.android-thermal-print .field-value.name-val.txt-small,
+body.android-thermal-print .field-value.name-val.txt-tiny {
+	font-size: 12pt;
+	font-weight: 700;
+	line-height: 1.25;
+	margin-bottom: 0.7em;
+}
+body.android-thermal-print .field-value.dest-val,
+body.android-thermal-print .field-value.dest-val.txt-small,
+body.android-thermal-print .field-value.dest-val.txt-tiny {
+	font-size: 12pt;
+	font-weight: 700;
+	line-height: 1.25;
+	margin-bottom: 0.75em;
+}
+body.android-thermal-print .qr-wrap {
+	width: 100%;
+	max-width: none;
+	text-align: center;
+}
+body.android-thermal-print .qr-table td {
+	padding: 2mm 0;
+	text-align: center;
+}
+body.android-thermal-print .qr-img {
+	display: block;
+	margin: 0 auto;
+	width: 40mm !important;
+	height: 40mm !important;
+	max-width: none !important;
+	max-height: none !important;
+	aspect-ratio: 1 / 1;
+	object-fit: contain;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+body.android-thermal-print .control-label {
+	font-size: 12pt;
+	font-weight: 900;
+	letter-spacing: 0.06em;
+	margin: 0.4em 0 0.12em;
+}
+body.android-thermal-print .control-value {
+	font-size: 16pt;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+}
+body.android-thermal-print .foot {
+	font-size: 10.5pt;
+	font-weight: 500;
+	text-align: center;
+	margin: 2.5mm 0 0;
+}
+@@media print {
+	html.android-thermal-print,
+	body.android-thermal-print {
+		width: 58mm !important;
+		max-width: 58mm !important;
+		margin: 0 auto !important;
+		padding: 0 !important;
+		transform: none !important;
+		zoom: 1 !important;
+		-webkit-text-size-adjust: 100% !important;
+		text-size-adjust: 100% !important;
+	}
+	body.android-thermal-print .receipt {
+		width: 52mm !important;
+		max-width: 52mm !important;
+		margin: 0 auto !important;
+		padding: 2mm !important;
+		transform: none !important;
+	}
+	body.android-thermal-print .receipt-title {
+		font-size: 16pt !important;
+		font-weight: 900 !important;
+		letter-spacing: 1px !important;
+	}
+	body.android-thermal-print .field-label {
+		font-size: 11pt !important;
+		font-weight: 800 !important;
+	}
+	body.android-thermal-print .field-value.name-val,
+	body.android-thermal-print .field-value.name-val.txt-small,
+	body.android-thermal-print .field-value.name-val.txt-tiny,
+	body.android-thermal-print .field-value.dest-val,
+	body.android-thermal-print .field-value.dest-val.txt-small,
+	body.android-thermal-print .field-value.dest-val.txt-tiny {
+		font-size: 12pt !important;
+	}
+	body.android-thermal-print .qr-img {
+		width: 40mm !important;
+		height: 40mm !important;
+		max-width: none !important;
+		max-height: none !important;
+	}
+	body.android-thermal-print .control-label {
+		font-size: 12pt !important;
+		font-weight: 900 !important;
+	}
+	body.android-thermal-print .control-value {
+		font-size: 16pt !important;
+		font-weight: 900 !important;
+	}
+	body.android-thermal-print .foot {
+		font-size: 10.5pt !important;
+	}
+}
 </style>
 </head>
-<body>
+<body class="${isAndroid ? 'android-thermal-print' : ''}">
 <div class="receipt">
 	<p class="receipt-title">VISITOR QR PASS</p>
 	<p class="dash-line" aria-hidden="true">${dashedLineText}</p>
@@ -8673,10 +8834,18 @@ body {
 			};
 
 			const tryPrint = () => {
+				if (isAndroid) {
+					printWindow.document.documentElement.classList.add('android-thermal-print');
+					printWindow.document.body.classList.add('android-thermal-print');
+				}
+
 				printWindow.onafterprint = finalizeAfterPrint;
 				window.addEventListener('focus', fallbackOnFocus, { once: true });
 				printWindow.focus();
 				printWindow.print();
+
+				/* Dedicated print window is closed after printing; do not strip Android
+				   styles after 1s or the print dialog may lose them mid-preview. */
 			};
 
 			if (printWindow.document.readyState === 'complete') {
