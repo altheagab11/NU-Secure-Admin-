@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\GuardDutyUnavailableException;
 use App\Services\ActivityLogService;
+use App\Services\GuardDutyService;
 use App\Services\OCRService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,6 +16,10 @@ use Illuminate\Validation\Rule;
 
 class GuardVisitorController extends Controller
 {
+    public function __construct(protected GuardDutyService $guardDutyService)
+    {
+    }
+
     public function processExitScan(Request $request)
     {
         $validated = $request->validate([
@@ -325,6 +331,17 @@ class GuardVisitorController extends Controller
 
         try {
             $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $enrolleeSteps, $activeExitStatusId, $visitorVisitTypeId) {
+                $isSelfRegistration = (int) optional(Auth::user())->role_id === 4;
+                $activeShift = null;
+
+                if ($isSelfRegistration) {
+                    $activeShift = $this->guardDutyService->lockActiveShiftForKiosk((int) Auth::id());
+
+                    if (! $activeShift) {
+                        throw GuardDutyUnavailableException::missing();
+                    }
+                }
+
                 $confirmedExistingVisitorId = (int) ($validated['existing_visitor_id'] ?? 0);
                 $shouldReuseExistingVisitor = (bool) ($validated['existing_visitor_confirmed'] ?? false) && $confirmedExistingVisitorId > 0;
                 $matchedVisitor = $shouldReuseExistingVisitor
@@ -384,9 +401,9 @@ class GuardVisitorController extends Controller
                     $this->closeVisitForEnrolleeResume((int) $resumeEnrollee['source_visit_id']);
                 }
 
-                $visitId = DB::table('visit')->insertGetId([
+                $visitPayload = [
                     'visitor_id' => $visitorId,
-                    'guard_user_id' => Auth::id(),
+                    'guard_user_id' => $isSelfRegistration ? null : Auth::id(),
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
                     'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
@@ -400,7 +417,14 @@ class GuardVisitorController extends Controller
                         : strtoupper(Str::random(12)),
                     'entry_time' => $this->philippinesNow(),
                     'exit_status_id' => $activeExitStatusId,
-                ], 'visit_id');
+                ];
+
+                if ($isSelfRegistration && $activeShift) {
+                    $visitPayload['on_duty_guard_id'] = (int) $activeShift->guard_user_id;
+                    $visitPayload['duty_shift_id'] = (int) $activeShift->shift_id;
+                }
+
+                $visitId = DB::table('visit')->insertGetId($visitPayload, 'visit_id');
 
                 $savedOfficeCount = 0;
                 $enrolleeId = null;
@@ -554,6 +578,8 @@ class GuardVisitorController extends Controller
                     'remaining_steps' => $resumedEnrollment
                         ? (int) ($resumeEnrollee['remaining_steps'] ?? 0)
                         : 0,
+                    'on_duty_guard_id' => $isSelfRegistration ? (int) $activeShift->guard_user_id : null,
+                    'duty_shift_id' => $isSelfRegistration ? (int) $activeShift->shift_id : null,
                 ];
             });
 
@@ -577,6 +603,8 @@ class GuardVisitorController extends Controller
                     'control_number' => $controlNumber,
                     'purpose_reason' => $validated['purpose_reason'],
                     'visitor_action' => $result['visitor_action'] ?? null,
+                    'on_duty_guard_id' => $result['on_duty_guard_id'] ?? null,
+                    'duty_shift_id' => $result['duty_shift_id'] ?? null,
                 ]
             );
 
@@ -587,6 +615,11 @@ class GuardVisitorController extends Controller
                     : 'Visitor details saved successfully.',
                 'data' => $result,
             ]);
+        } catch (GuardDutyUnavailableException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Throwable $e) {
             \Log::error('storeVisitorRegistration failed', [
                 'error' => $e->getMessage(),

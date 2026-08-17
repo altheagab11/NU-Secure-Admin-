@@ -709,6 +709,7 @@
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
+					@include('admin.partials.sidebar-guard-duty-link')
 					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
 						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
 						<span class="sidebar-text">Daily Reports</span>
@@ -775,7 +776,15 @@
 			<div class="container-fluid pt-0 pb-4">
 				@include('admin.partials.admin-topbar', ['title' => 'Dashboard'])
 
-				<div class="d-flex justify-content-end align-items-center mb-4">
+				<div class="d-flex justify-content-end align-items-center mb-4 gap-3 flex-wrap">
+					<a href="{{ route('admin.guard-duty') }}" class="text-decoration-none">
+						<div class="card shadow-sm border-0 rounded-4">
+							<div class="card-body py-2 px-3 d-flex align-items-center gap-3">
+								<div class="text-muted small mb-0">Guards On Duty</div>
+								<h5 class="fw-bold mb-0">{{ $guardsOnDutyCount ?? 0 }}</h5>
+							</div>
+						</div>
+					</a>
 					<div class="text-muted small">Last updated: just now</div>
 				</div>
 

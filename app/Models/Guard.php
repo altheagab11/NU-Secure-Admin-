@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Guard extends Model
 {
@@ -26,9 +27,13 @@ class Guard extends Model
     /**
      * The user account associated with this guard record.
      */
-    public function user()
+    public function user(): BelongsTo
     {
-        // foreign key on guard table is `user_id`; user's primary key may be `user_id` as well
         return $this->belongsTo(User::class, 'user_id', (new User())->getKeyName());
+    }
+
+    public function dutyShifts(): HasMany
+    {
+        return $this->hasMany(GuardDutyShift::class, 'guard_user_id', 'user_id');
     }
 }

@@ -27,6 +27,7 @@ class ActivityLogController extends Controller
         'Reports',
         'Office Management',
         'Notifications',
+        'Guard Duty',
         'System',
     ];
 
@@ -54,6 +55,9 @@ class ActivityLogController extends Controller
         'Regenerated Report',
         'Report Downloaded',
         'Failed Report Generation',
+        'Guard Duty Started',
+        'Guard Changed',
+        'Guard Duty Ended',
     ];
 
     /**

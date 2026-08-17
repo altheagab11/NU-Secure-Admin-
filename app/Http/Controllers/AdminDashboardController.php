@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\GuardDutyShift;
 
 class AdminDashboardController extends Controller
 {
@@ -446,6 +447,13 @@ class AdminDashboardController extends Controller
             $longestAvgDurationInsight = $longestAvgDurationOfficeRow->office_name . ' has the longest average visit duration (' . $avgDuration . 'm).';
         }
 
+        $guardsOnDutyCount = 0;
+        try {
+            $guardsOnDutyCount = GuardDutyShift::query()->active()->count();
+        } catch (\Throwable $e) {
+            $guardsOnDutyCount = 0;
+        }
+
         return view('admin.dashboard', [
             'totalVisitorsToday' => $totalVisitorsToday,
             'currentlyInside' => $currentlyInside,
@@ -479,6 +487,7 @@ class AdminDashboardController extends Controller
             'topOfficeTodayInsight' => $topOfficeTodayInsight,
             'unresolvedAlertsInsight' => $unresolvedAlertsInsight,
             'longestAvgDurationInsight' => $longestAvgDurationInsight,
+            'guardsOnDutyCount' => $guardsOnDutyCount,
         ]);
     }
 }

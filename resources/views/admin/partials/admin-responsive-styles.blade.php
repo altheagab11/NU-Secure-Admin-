@@ -73,6 +73,22 @@ body.admin-sidebar-open .admin-nav-backdrop {
 	-webkit-overflow-scrolling: touch;
 }
 
+.sidebar-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
+}
+
+.sidebar-status-dot.is-on {
+	background: #4ade80;
+}
+
+.sidebar-status-dot.is-off {
+	background: #f87171;
+}
+
 /* Laptop / small desktop: keep sidebar, let content wrap */
 @media (max-width: 1199.98px) {
 	.filters-row,

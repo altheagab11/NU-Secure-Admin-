@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -60,6 +62,16 @@ class User extends Authenticatable
     public function getAuthPassword(): string
     {
         return (string) ($this->getAttributes()['password_hash'] ?? $this->password_hash ?? '');
+    }
+
+    public function guardProfile(): HasOne
+    {
+        return $this->hasOne(Guard::class, 'user_id', 'user_id');
+    }
+
+    public function dutyShifts(): HasMany
+    {
+        return $this->hasMany(GuardDutyShift::class, 'guard_user_id', 'user_id');
     }
 
     public static function findByEmail(string $email): ?self

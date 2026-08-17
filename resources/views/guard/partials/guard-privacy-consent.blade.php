@@ -259,6 +259,11 @@
 
 	typeLinks.forEach((link) => {
 		link.addEventListener('click', (event) => {
+			if (link.classList.contains('is-disabled') || link.getAttribute('aria-disabled') === 'true') {
+				event.preventDefault();
+				return;
+			}
+
 			const href = link.getAttribute('href');
 			if (!href) {
 				return;

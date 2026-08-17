@@ -1051,6 +1051,7 @@
 						<span class="sidebar-text">Alerts</span>
 						<span class="sidebar-badge">{{ $sidebarUnresolvedAlertsCount }}</span>
 					</a>
+					@include('admin.partials.sidebar-guard-duty-link')
 					<a href="/admin/daily-reports" class="sidebar-link {{ request()->is('admin/daily-reports*') ? 'active' : '' }}">
 						<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill"></i></span>
 						<span class="sidebar-text">Daily Reports</span>

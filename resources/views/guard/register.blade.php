@@ -3486,11 +3486,315 @@
 		}
 
 		body.self-registration-mode .kiosk-type-picker-subtitle {
-			margin: 0 0 32px;
+			margin: 0 0 18px;
 			font-size: clamp(0.95rem, 1.5vw, 1.1rem);
 			color: rgba(255, 255, 255, 0.88);
 			line-height: 1.5;
 			text-shadow: 0 1px 8px rgba(15, 23, 42, 0.3);
+		}
+
+		body.self-registration-mode .kiosk-guard-duty {
+			width: min(100%, 720px);
+			margin: 0 auto 20px;
+			text-align: left;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-card {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 14px 16px;
+			border-radius: 16px;
+			background: rgba(255, 255, 255, 0.92);
+			border: 1px solid rgba(255, 255, 255, 0.55);
+			box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+			backdrop-filter: blur(10px);
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-card.is-hidden {
+			display: none;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			background: #eef2ff;
+			color: #243c96;
+			font-size: 20px;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-icon.warn {
+			background: #fff7ed;
+			color: #c2410c;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-copy {
+			flex: 1;
+			min-width: 0;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-label {
+			margin: 0 0 2px;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: #243c96;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-name {
+			margin: 0;
+			font-size: 1rem;
+			font-weight: 800;
+			color: #0f172a;
+			line-height: 1.25;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-meta,
+		body.self-registration-mode .kiosk-guard-duty-empty p {
+			margin: 2px 0 0;
+			font-size: 12px;
+			color: #64748b;
+			line-height: 1.4;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-empty .kiosk-guard-duty-name {
+			font-size: 0.95rem;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-side {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 8px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-status {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 999px;
+			background: #ecfdf5;
+			color: #047857;
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: 0.04em;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-status::before {
+			content: '';
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			background: #10b981;
+			box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn {
+			appearance: none;
+			border: 0;
+			border-radius: 10px;
+			padding: 8px 12px;
+			background: #243c96;
+			color: #fff;
+			font-size: 12px;
+			font-weight: 700;
+			white-space: nowrap;
+			cursor: pointer;
+			transition: background 0.15s ease, transform 0.15s ease;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn:hover {
+			background: #1d327d;
+			transform: translateY(-1px);
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn.secondary {
+			background: #fff;
+			color: #243c96;
+			border: 1px solid #c7d2fe;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn.secondary:hover {
+			background: #eef2ff;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn.danger {
+			background: #fff;
+			color: #b91c1c;
+			border: 1px solid #fecaca;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-btn.danger:hover {
+			background: #fef2f2;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-since {
+			margin: 0;
+			font-size: 11px;
+			font-weight: 700;
+			color: #047857;
+		}
+
+		body.self-registration-mode .kiosk-guard-duty-actions {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+			gap: 8px;
+		}
+
+		body.self-registration-mode .end-duty-profile {
+			margin-bottom: 14px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			text-align: left;
+		}
+
+		body.self-registration-mode .end-duty-profile strong {
+			display: block;
+			color: #0f172a;
+			font-size: 16px;
+		}
+
+		body.self-registration-mode .end-duty-profile span,
+		body.self-registration-mode .end-duty-profile small {
+			display: block;
+			margin-top: 3px;
+			color: #475569;
+			font-size: 13px;
+		}
+
+		body.self-registration-mode .end-duty-started {
+			margin: 12px 0 0;
+			padding-top: 10px;
+			border-top: 1px solid #e2e8f0;
+		}
+
+		body.self-registration-mode .end-duty-started span {
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: #64748b;
+		}
+
+		body.self-registration-mode .end-duty-started strong {
+			margin-top: 2px;
+			font-size: 14px;
+		}
+
+		body.self-registration-mode .end-duty-warning {
+			margin: 0 0 14px;
+			font-size: 14px;
+			line-height: 1.5;
+			color: #334155;
+			text-align: left;
+		}
+
+		.confirmation-modal-btn.danger {
+			background: #dc2626;
+			color: #ffffff;
+		}
+
+		.confirmation-modal-btn.danger:hover {
+			background: #b91c1c;
+			filter: none;
+		}
+
+		.confirmation-modal-footer.is-choice {
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+
+		.confirmation-modal-footer.is-choice .confirmation-modal-btn {
+			min-width: 0;
+		}
+
+		body.self-registration-mode .guard-duty-current {
+			margin-bottom: 14px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			text-align: left;
+		}
+
+		body.self-registration-mode .guard-duty-current.is-hidden {
+			display: none;
+		}
+
+		body.self-registration-mode .guard-duty-current span {
+			display: block;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: #64748b;
+		}
+
+		body.self-registration-mode .guard-duty-current strong {
+			display: block;
+			margin-top: 4px;
+			color: #0f172a;
+			font-size: 15px;
+		}
+
+		body.self-registration-mode .guard-duty-current small {
+			display: block;
+			margin-top: 2px;
+			color: #475569;
+			font-size: 12px;
+		}
+
+		body.self-registration-mode .guard-duty-field {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			margin-bottom: 12px;
+			text-align: left;
+		}
+
+		body.self-registration-mode .guard-duty-field label {
+			font-size: 13px;
+			font-weight: 600;
+			color: #334155;
+		}
+
+		body.self-registration-mode .guard-duty-field input {
+			height: 44px;
+			border: 1px solid #dbe2ef;
+			border-radius: 12px;
+			padding: 0 14px;
+			font-size: 14px;
+			color: #0f172a;
+		}
+
+		body.self-registration-mode .guard-duty-field input:focus {
+			outline: none;
+			border-color: #243c96;
+			box-shadow: 0 0 0 3px rgba(36, 60, 150, 0.12);
+		}
+
+		body.self-registration-mode .guard-duty-error {
+			min-height: 18px;
+			margin: 0 0 4px;
+			font-size: 13px;
+			color: #b91c1c;
+			text-align: left;
+		}
+
+		.confirmation-modal-btn:disabled {
+			opacity: 0.65;
+			cursor: wait;
 		}
 
 		body.self-registration-mode .kiosk-type-grid {
@@ -3520,6 +3824,22 @@
 			transform: translateY(-4px);
 			border-color: #243c96;
 			box-shadow: 0 14px 36px rgba(36, 60, 150, 0.14);
+		}
+
+		body.self-registration-mode .kiosk-type-card.is-disabled,
+		body.self-registration-mode .kiosk-type-grid.is-locked .kiosk-type-card {
+			opacity: 0.46;
+			filter: grayscale(0.28);
+			pointer-events: none;
+			cursor: not-allowed;
+			box-shadow: none;
+		}
+
+		body.self-registration-mode .kiosk-type-card.is-disabled:hover,
+		body.self-registration-mode .kiosk-type-grid.is-locked .kiosk-type-card:hover {
+			transform: none;
+			border-color: #dbe2ef;
+			box-shadow: none;
 		}
 
 		body.self-registration-mode .kiosk-type-card.is-active {
@@ -4047,6 +4367,26 @@
 			body.self-registration-mode .kiosk-type-grid {
 				grid-template-columns: 1fr;
 				gap: 12px;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-card {
+				flex-wrap: wrap;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-side {
+				width: 100%;
+				flex-direction: row;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-actions {
+				width: 100%;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-actions .kiosk-guard-duty-btn {
+				flex: 1;
 			}
 
 			body.self-registration-mode .kiosk-type-card {
@@ -5627,6 +5967,24 @@
 		'enrollee' => 'Enrollee',
 		'contractor' => 'Contractor',
 	];
+	$guardOnDutyState = ['has_active_guard' => false, 'shift' => null];
+	if ($isSelfRegisteredRole) {
+		$guardOnDutyState = app(\App\Services\GuardDutyService::class)
+			->payloadForKiosk((int) $guardSidebarUser->user_id);
+	}
+	$hasActiveGuard = (bool) ($guardOnDutyState['has_active_guard'] ?? false);
+	$activeGuardShift = $guardOnDutyState['shift'] ?? null;
+	$activeGuardName = trim((string) data_get($activeGuardShift, 'guard.name', ''));
+	$activeGuardBadge = trim((string) data_get($activeGuardShift, 'guard.badge_number', ''));
+	$activeGuardStation = trim((string) data_get($activeGuardShift, 'guard.station', ''));
+	$activeGuardSince = null;
+	if (! empty($activeGuardShift['clock_in_at'])) {
+		try {
+			$activeGuardSince = \Carbon\Carbon::parse($activeGuardShift['clock_in_at'], 'Asia/Manila')->format('g:i A');
+		} catch (\Throwable $e) {
+			$activeGuardSince = null;
+		}
+	}
 @endphp
 <body @class([
 	'self-registration-mode' => $isSelfRegisteredRole,
@@ -5788,6 +6146,95 @@
 		</div>
 	</div>
 
+	@if ($showKioskTypePicker)
+	<div class="confirmation-modal is-hidden" id="guardDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guardDutyModalTitle">
+		<div class="confirmation-modal-card">
+			<form id="guardDutyForm" autocomplete="off">
+				<div class="confirmation-modal-header">
+					<h2 class="confirmation-modal-title" id="guardDutyModalTitle">Set Guard on Duty</h2>
+					<p class="confirmation-modal-subtitle" id="guardDutyModalSubtitle">Sign in with an active guard account to assign the officer on duty.</p>
+				</div>
+				<div class="confirmation-modal-body">
+					<div class="guard-duty-current is-hidden" id="guardDutyCurrentWrap">
+						<span>Currently On Duty:</span>
+						<strong id="guardDutyCurrentName">—</strong>
+						<small id="guardDutyCurrentSince">Since —</small>
+					</div>
+					<div class="guard-duty-field">
+						<label for="guardDutyEmail" id="guardDutyEmailLabel">Email / Guard Account</label>
+						<input id="guardDutyEmail" name="email" type="email" required maxlength="255" autocomplete="username">
+					</div>
+					<div class="guard-duty-field">
+						<label for="guardDutyPassword">Password</label>
+						<input id="guardDutyPassword" name="password" type="password" required maxlength="255" autocomplete="current-password">
+					</div>
+					<p class="guard-duty-error" id="guardDutyError" role="alert"></p>
+				</div>
+				<div class="confirmation-modal-footer">
+					<button type="button" class="confirmation-modal-btn secondary" id="guardDutyCancelBtn">Cancel</button>
+					<button type="submit" class="confirmation-modal-btn primary" id="guardDutySubmitBtn">Confirm</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	@endif
+
+	@if ($isSelfRegisteredRole)
+	<div class="confirmation-modal is-hidden" id="endDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="endDutyModalTitle">
+		<div class="confirmation-modal-card">
+			<form id="endDutyForm" autocomplete="off">
+				<div class="confirmation-modal-header">
+					<h2 class="confirmation-modal-title" id="endDutyModalTitle">End Guard Duty</h2>
+					<p class="confirmation-modal-subtitle">The current guard must confirm their password before this shift can be closed.</p>
+				</div>
+				<div class="confirmation-modal-body">
+					<div class="end-duty-profile" id="endDutyProfile">
+						<strong id="endDutyGuardName">—</strong>
+						<span id="endDutyGuardBadge">Badge No. —</span>
+						<span id="endDutyGuardStation">—</span>
+						<div class="end-duty-started">
+							<span>Duty Started:</span>
+							<strong id="endDutyStartedAt">—</strong>
+						</div>
+					</div>
+					<p class="end-duty-warning">
+						Are you sure you want to end this duty?<br>
+						Visitor self-registration will be temporarily disabled until another guard is assigned.
+					</p>
+					<div class="guard-duty-field">
+						<label for="endDutyPassword">Password</label>
+						<input id="endDutyPassword" name="password" type="password" required maxlength="255" autocomplete="current-password">
+					</div>
+					<p class="guard-duty-error" id="endDutyError" role="alert"></p>
+				</div>
+				<div class="confirmation-modal-footer">
+					<button type="button" class="confirmation-modal-btn secondary" id="endDutyCancelBtn">Cancel</button>
+					<button type="submit" class="confirmation-modal-btn danger" id="endDutySubmitBtn">Confirm End Duty</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div class="confirmation-modal is-hidden" id="logoutDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="logoutDutyModalTitle">
+		<div class="confirmation-modal-card">
+			<div class="confirmation-modal-header">
+				<h2 class="confirmation-modal-title" id="logoutDutyModalTitle">You are currently marked as the Guard on Duty.</h2>
+				<p class="confirmation-modal-subtitle">What would you like to do?</p>
+			</div>
+			<div class="confirmation-modal-body">
+				<p class="end-duty-warning">
+					Logout Only keeps the current shift active. End Duty &amp; Logout closes the shift and then signs this kiosk out.
+				</p>
+			</div>
+			<div class="confirmation-modal-footer is-choice">
+				<button type="button" class="confirmation-modal-btn secondary" id="logoutDutyCancelBtn">Cancel</button>
+				<button type="button" class="confirmation-modal-btn primary" id="logoutDutyOnlyBtn">Logout Only</button>
+				<button type="button" class="confirmation-modal-btn danger" id="logoutDutyEndBtn">End Duty &amp; Logout</button>
+			</div>
+		</div>
+	</div>
+	@endif
+
 
 
 		<main class="main">
@@ -5826,7 +6273,7 @@
 					@endif
 					<a href="{{ route('logout') }}"
 					   class="self-reg-logout-btn"
-					   onclick="event.preventDefault(); document.getElementById('self-reg-logout-form').submit();">
+					   id="selfRegLogoutBtn">
 						<i class="bi bi-box-arrow-right"></i>
 						<span>Logout</span>
 					</a>
@@ -5845,18 +6292,60 @@
 					<div class="kiosk-type-picker-inner">
 						<h2 class="kiosk-type-picker-title">Welcome to NU Secure</h2>
 						<p class="kiosk-type-picker-subtitle">Tap the option that best describes your visit to begin registration.</p>
-						<div class="kiosk-type-grid">
-							<a href="/guard/register?type=normal" class="kiosk-type-card js-privacy-consent-link" data-type="normal">
+						<div class="kiosk-guard-duty" id="kioskGuardDuty" data-has-active="{{ $hasActiveGuard ? '1' : '0' }}">
+							<div class="kiosk-guard-duty-card kiosk-guard-duty-empty {{ $hasActiveGuard ? 'is-hidden' : '' }}" id="kioskGuardDutyEmpty">
+								<div class="kiosk-guard-duty-icon warn" aria-hidden="true">
+									<i class="bi bi-shield-exclamation"></i>
+								</div>
+								<div class="kiosk-guard-duty-copy">
+									<p class="kiosk-guard-duty-label">Guard on Duty</p>
+									<h3 class="kiosk-guard-duty-name">No Guard Currently Assigned</h3>
+									<p>Visitor self-registration is temporarily unavailable until a security guard is assigned.</p>
+								</div>
+								<div class="kiosk-guard-duty-side">
+									<button type="button" class="kiosk-guard-duty-btn" id="kioskSetGuardBtn">Set Guard on Duty</button>
+								</div>
+							</div>
+							<div class="kiosk-guard-duty-card kiosk-guard-duty-active {{ $hasActiveGuard ? '' : 'is-hidden' }}" id="kioskGuardDutyActive">
+								<div class="kiosk-guard-duty-icon" aria-hidden="true">
+									<i class="bi bi-shield-check"></i>
+								</div>
+								<div class="kiosk-guard-duty-copy">
+									<p class="kiosk-guard-duty-label">Guard on Duty</p>
+									<h3 class="kiosk-guard-duty-name" id="kioskGuardDutyName">{{ $activeGuardName !== '' ? $activeGuardName : 'Security Guard' }}</h3>
+									<p class="kiosk-guard-duty-meta" id="kioskGuardDutyMeta">
+										@if ($hasActiveGuard)
+											Security Guard{{ $activeGuardBadge !== '' ? ' • Badge '.$activeGuardBadge : '' }}
+										@endif
+									</p>
+									<p class="kiosk-guard-duty-meta" id="kioskGuardDutyStation">
+										@if ($hasActiveGuard)
+											{{ $activeGuardStation !== '' ? $activeGuardStation : 'Self-Registration' }}
+										@endif
+									</p>
+								</div>
+								<div class="kiosk-guard-duty-side">
+									<span class="kiosk-guard-duty-status">ON DUTY</span>
+									<p class="kiosk-guard-duty-since" id="kioskGuardDutySince">{{ $hasActiveGuard && $activeGuardSince ? 'Since '.$activeGuardSince : '' }}</p>
+									<div class="kiosk-guard-duty-actions">
+										<button type="button" class="kiosk-guard-duty-btn secondary" id="kioskChangeGuardBtn">Change Guard</button>
+										<button type="button" class="kiosk-guard-duty-btn danger" id="kioskEndDutyBtn">End Duty</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="kiosk-type-grid {{ $hasActiveGuard ? '' : 'is-locked' }}" id="kioskTypeGrid">
+							<a href="{{ $hasActiveGuard ? '/guard/register?type=normal' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="normal" data-href="/guard/register?type=normal" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
 								<span class="kiosk-type-icon"><i class="bi bi-person-fill"></i></span>
 								<span class="kiosk-type-name">Normal Visitor</span>
 								<span class="kiosk-type-desc">Guests visiting offices, staff, or departments on campus.</span>
 							</a>
-							<a href="/guard/register?type=enrollee" class="kiosk-type-card js-privacy-consent-link" data-type="enrollee">
+							<a href="{{ $hasActiveGuard ? '/guard/register?type=enrollee' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="enrollee" data-href="/guard/register?type=enrollee" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
 								<span class="kiosk-type-icon"><i class="bi bi-mortarboard-fill"></i></span>
 								<span class="kiosk-type-name">Enrollee</span>
 								<span class="kiosk-type-desc">Prospective or incoming students for enrollment-related visits.</span>
 							</a>
-							<a href="/guard/register?type=contractor" class="kiosk-type-card js-privacy-consent-link" data-type="contractor">
+							<a href="{{ $hasActiveGuard ? '/guard/register?type=contractor' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="contractor" data-href="/guard/register?type=contractor" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
 								<span class="kiosk-type-icon"><i class="bi bi-briefcase-fill"></i></span>
 								<span class="kiosk-type-name">Contractor</span>
 								<span class="kiosk-type-desc">Vendors and service providers with scheduled work on site.</span>
@@ -6751,6 +7240,434 @@
 	@include('guard.partials.guard-responsive-script')
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	@include('guard.partials.guard-privacy-consent')
+	@if ($isSelfRegisteredRole)
+	<script>
+		(() => {
+			const urls = {
+				current: @json(route('self-registration.guard-on-duty')),
+				assign: @json(route('self-registration.guard-on-duty.assign')),
+				change: @json(route('self-registration.guard-on-duty.change')),
+				end: @json(route('self-registration.guard-on-duty.end')),
+			};
+			const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+			const panel = document.getElementById('kioskGuardDuty');
+			const emptyCard = document.getElementById('kioskGuardDutyEmpty');
+			const activeCard = document.getElementById('kioskGuardDutyActive');
+			const nameEl = document.getElementById('kioskGuardDutyName');
+			const metaEl = document.getElementById('kioskGuardDutyMeta');
+			const stationEl = document.getElementById('kioskGuardDutyStation');
+			const sinceEl = document.getElementById('kioskGuardDutySince');
+			const grid = document.getElementById('kioskTypeGrid');
+			const cards = Array.from(document.querySelectorAll('.kiosk-type-card'));
+			const modal = document.getElementById('guardDutyModal');
+			const form = document.getElementById('guardDutyForm');
+			const titleEl = document.getElementById('guardDutyModalTitle');
+			const subtitleEl = document.getElementById('guardDutyModalSubtitle');
+			const emailLabel = document.getElementById('guardDutyEmailLabel');
+			const emailInput = document.getElementById('guardDutyEmail');
+			const passwordInput = document.getElementById('guardDutyPassword');
+			const errorEl = document.getElementById('guardDutyError');
+			const submitBtn = document.getElementById('guardDutySubmitBtn');
+			const currentWrap = document.getElementById('guardDutyCurrentWrap');
+			const currentNameEl = document.getElementById('guardDutyCurrentName');
+			const currentSinceEl = document.getElementById('guardDutyCurrentSince');
+			const endDutyModal = document.getElementById('endDutyModal');
+			const endDutyForm = document.getElementById('endDutyForm');
+			const endDutyPassword = document.getElementById('endDutyPassword');
+			const endDutyError = document.getElementById('endDutyError');
+			const endDutySubmitBtn = document.getElementById('endDutySubmitBtn');
+			const endDutyGuardName = document.getElementById('endDutyGuardName');
+			const endDutyGuardBadge = document.getElementById('endDutyGuardBadge');
+			const endDutyGuardStation = document.getElementById('endDutyGuardStation');
+			const endDutyStartedAt = document.getElementById('endDutyStartedAt');
+			const logoutDutyModal = document.getElementById('logoutDutyModal');
+			const logoutForm = document.getElementById('self-reg-logout-form');
+			const logoutBtn = document.getElementById('selfRegLogoutBtn');
+			let modalMode = 'assign';
+			let currentShift = null;
+			let logoutAfterEnd = false;
+
+			const csrfHeaders = () => ({
+				'Content-Type': 'application/json',
+				'Accept': 'application/json',
+				'X-CSRF-TOKEN': csrfToken,
+			});
+
+			const formatDutySince = (value) => {
+				if (!value) {
+					return '';
+				}
+
+				const date = new Date(value);
+				if (Number.isNaN(date.getTime())) {
+					return '';
+				}
+
+				return date.toLocaleTimeString('en-US', {
+					hour: 'numeric',
+					minute: '2-digit',
+				});
+			};
+
+			const clearPasswordField = (input) => {
+				if (input) {
+					input.value = '';
+				}
+			};
+
+			const setVisitorCardsEnabled = (enabled) => {
+				grid?.classList.toggle('is-locked', !enabled);
+				cards.forEach((card) => {
+					card.classList.toggle('is-disabled', !enabled);
+					card.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+					const destination = card.getAttribute('data-href') || card.getAttribute('href') || '#';
+					if (enabled) {
+						card.removeAttribute('tabindex');
+						card.setAttribute('href', destination);
+					} else {
+						card.setAttribute('tabindex', '-1');
+						card.setAttribute('href', '#');
+					}
+				});
+			};
+
+			const renderGuardState = (payload) => {
+				const hasActive = Boolean(payload?.has_active_guard && payload?.shift);
+				currentShift = hasActive ? payload.shift : null;
+				if (panel) {
+					panel.dataset.hasActive = hasActive ? '1' : '0';
+				}
+				emptyCard?.classList.toggle('is-hidden', hasActive);
+				activeCard?.classList.toggle('is-hidden', !hasActive);
+				setVisitorCardsEnabled(hasActive);
+
+				if (!hasActive || !currentShift) {
+					return;
+				}
+
+				const guard = currentShift.guard || {};
+				const badge = String(guard.badge_number || '').trim();
+				const station = String(guard.station || '').trim();
+				const since = formatDutySince(currentShift.clock_in_at);
+
+				if (nameEl) {
+					nameEl.textContent = guard.name || 'Security Guard';
+				}
+				if (metaEl) {
+					metaEl.textContent = badge !== ''
+						? `Security Guard • Badge ${badge}`
+						: 'Security Guard';
+				}
+				if (stationEl) {
+					stationEl.textContent = station !== '' ? station : 'Self-Registration';
+				}
+				if (sinceEl) {
+					sinceEl.textContent = since ? `Since ${since}` : '';
+				}
+			};
+
+			const setModalError = (message) => {
+				if (errorEl) {
+					errorEl.textContent = message || '';
+				}
+			};
+
+			const setModalBusy = (busy) => {
+				if (submitBtn) {
+					submitBtn.disabled = busy;
+				}
+				if (emailInput) {
+					emailInput.disabled = busy;
+				}
+				if (passwordInput) {
+					passwordInput.disabled = busy;
+				}
+			};
+
+			const setEndDutyError = (message) => {
+				if (endDutyError) {
+					endDutyError.textContent = message || '';
+				}
+			};
+
+			const setEndDutyBusy = (busy) => {
+				if (endDutySubmitBtn) {
+					endDutySubmitBtn.disabled = busy;
+				}
+				if (endDutyPassword) {
+					endDutyPassword.disabled = busy;
+				}
+			};
+
+			const openModalEl = (el) => {
+				el?.classList.remove('is-hidden');
+				el?.setAttribute('aria-hidden', 'false');
+			};
+
+			const closeModalEl = (el) => {
+				el?.classList.add('is-hidden');
+				el?.setAttribute('aria-hidden', 'true');
+			};
+
+			const openModal = (mode) => {
+				modalMode = mode;
+				setModalError('');
+				if (form) {
+					form.reset();
+				}
+
+				const isChange = mode === 'change';
+				if (titleEl) {
+					titleEl.textContent = isChange ? 'Change Guard' : 'Set Guard on Duty';
+				}
+				if (subtitleEl) {
+					subtitleEl.textContent = isChange
+						? 'The incoming guard must authenticate before taking over this kiosk.'
+						: 'Sign in with an active guard account to assign the officer on duty.';
+				}
+				if (emailLabel) {
+					emailLabel.textContent = isChange ? 'New Guard Email' : 'Email / Guard Account';
+				}
+				if (submitBtn) {
+					submitBtn.textContent = isChange ? 'Confirm Guard Change' : 'Confirm';
+				}
+
+				currentWrap?.classList.toggle('is-hidden', !isChange);
+				if (isChange && currentShift) {
+					if (currentNameEl) {
+						currentNameEl.textContent = currentShift.guard?.name || 'Security Guard';
+					}
+					if (currentSinceEl) {
+						const since = formatDutySince(currentShift.clock_in_at);
+						currentSinceEl.textContent = since ? `Since ${since}` : 'Currently assigned';
+					}
+				}
+
+				openModalEl(modal);
+				window.setTimeout(() => emailInput?.focus(), 50);
+			};
+
+			const closeModal = () => {
+				closeModalEl(modal);
+				setModalBusy(false);
+				setModalError('');
+				form?.reset();
+			};
+
+			const populateEndDutyModal = (shift) => {
+				const guard = shift?.guard || {};
+				const badge = String(guard.badge_number || '').trim();
+				const station = String(guard.station || '').trim();
+				const since = formatDutySince(shift?.clock_in_at);
+
+				if (endDutyGuardName) {
+					endDutyGuardName.textContent = guard.name || 'Security Guard';
+				}
+				if (endDutyGuardBadge) {
+					endDutyGuardBadge.textContent = badge !== '' ? `Badge No. ${badge}` : 'Badge No. —';
+				}
+				if (endDutyGuardStation) {
+					endDutyGuardStation.textContent = station !== '' ? station : 'Self-Registration';
+				}
+				if (endDutyStartedAt) {
+					endDutyStartedAt.textContent = since || '—';
+				}
+			};
+
+			const openEndDutyModal = (afterLogout = false) => {
+				logoutAfterEnd = afterLogout;
+				setEndDutyError('');
+				endDutyForm?.reset();
+				clearPasswordField(endDutyPassword);
+				populateEndDutyModal(currentShift);
+				closeModalEl(logoutDutyModal);
+				openModalEl(endDutyModal);
+				window.setTimeout(() => endDutyPassword?.focus(), 50);
+			};
+
+			const closeEndDutyModal = () => {
+				closeModalEl(endDutyModal);
+				setEndDutyBusy(false);
+				setEndDutyError('');
+				endDutyForm?.reset();
+				clearPasswordField(endDutyPassword);
+				logoutAfterEnd = false;
+			};
+
+			const openLogoutDutyModal = () => {
+				openModalEl(logoutDutyModal);
+			};
+
+			const closeLogoutDutyModal = () => {
+				closeModalEl(logoutDutyModal);
+			};
+
+			const submitLogoutForm = () => {
+				logoutForm?.submit();
+			};
+
+			const fetchCurrentGuard = async () => {
+				const response = await fetch(urls.current, {
+					headers: { 'Accept': 'application/json' },
+					credentials: 'same-origin',
+				});
+				const payload = await response.json().catch(() => ({ has_active_guard: false, shift: null }));
+				renderGuardState(payload);
+				return payload;
+			};
+
+			const submitGuardDuty = async (event) => {
+				event.preventDefault();
+				setModalError('');
+
+				const email = String(emailInput?.value || '').trim();
+				const password = String(passwordInput?.value || '');
+
+				if (!email || !password) {
+					setModalError('Email and password are required.');
+					return;
+				}
+
+				setModalBusy(true);
+
+				try {
+					const response = await fetch(modalMode === 'change' ? urls.change : urls.assign, {
+						method: 'POST',
+						headers: csrfHeaders(),
+						credentials: 'same-origin',
+						body: JSON.stringify({ email, password }),
+					});
+					const payload = await response.json().catch(() => ({}));
+
+					if (!response.ok || payload.success === false) {
+						throw new Error(payload.message || 'Invalid guard credentials.');
+					}
+
+					renderGuardState(payload);
+					closeModal();
+				} catch (error) {
+					setModalError(error?.message || 'Invalid guard credentials.');
+					clearPasswordField(passwordInput);
+					passwordInput?.focus();
+				} finally {
+					setModalBusy(false);
+				}
+			};
+
+			const submitEndDuty = async (event) => {
+				event.preventDefault();
+				setEndDutyError('');
+
+				const password = String(endDutyPassword?.value || '');
+				if (!password) {
+					setEndDutyError('Password is required.');
+					return;
+				}
+
+				setEndDutyBusy(true);
+
+				try {
+					const response = await fetch(urls.end, {
+						method: 'POST',
+						headers: csrfHeaders(),
+						credentials: 'same-origin',
+						body: JSON.stringify({ password }),
+					});
+					const payload = await response.json().catch(() => ({}));
+
+					if (!response.ok || payload.success === false) {
+						throw new Error(payload.message || 'Invalid guard credentials.');
+					}
+
+					renderGuardState(payload);
+					const shouldLogout = logoutAfterEnd;
+					closeEndDutyModal();
+
+					if (shouldLogout) {
+						submitLogoutForm();
+					}
+				} catch (error) {
+					setEndDutyError(error?.message || 'Invalid guard credentials.');
+					clearPasswordField(endDutyPassword);
+					endDutyPassword?.focus();
+				} finally {
+					setEndDutyBusy(false);
+				}
+			};
+
+			const handleLogoutClick = async (event) => {
+				event.preventDefault();
+
+				try {
+					const payload = await fetchCurrentGuard();
+					if (payload?.has_active_guard && payload?.shift) {
+						openLogoutDutyModal();
+						return;
+					}
+				} catch (error) {
+					if (currentShift) {
+						openLogoutDutyModal();
+						return;
+					}
+				}
+
+				submitLogoutForm();
+			};
+
+			document.getElementById('kioskSetGuardBtn')?.addEventListener('click', () => openModal('assign'));
+			document.getElementById('kioskChangeGuardBtn')?.addEventListener('click', () => openModal('change'));
+			document.getElementById('kioskEndDutyBtn')?.addEventListener('click', () => openEndDutyModal(false));
+			document.getElementById('guardDutyCancelBtn')?.addEventListener('click', closeModal);
+			document.getElementById('endDutyCancelBtn')?.addEventListener('click', closeEndDutyModal);
+			document.getElementById('logoutDutyCancelBtn')?.addEventListener('click', closeLogoutDutyModal);
+			document.getElementById('logoutDutyOnlyBtn')?.addEventListener('click', () => {
+				closeLogoutDutyModal();
+				submitLogoutForm();
+			});
+			document.getElementById('logoutDutyEndBtn')?.addEventListener('click', () => openEndDutyModal(true));
+			logoutBtn?.addEventListener('click', handleLogoutClick);
+			form?.addEventListener('submit', submitGuardDuty);
+			endDutyForm?.addEventListener('submit', submitEndDuty);
+			modal?.addEventListener('click', (event) => {
+				if (event.target === modal) {
+					closeModal();
+				}
+			});
+			endDutyModal?.addEventListener('click', (event) => {
+				if (event.target === endDutyModal) {
+					closeEndDutyModal();
+				}
+			});
+			logoutDutyModal?.addEventListener('click', (event) => {
+				if (event.target === logoutDutyModal) {
+					closeLogoutDutyModal();
+				}
+			});
+			document.addEventListener('keydown', (event) => {
+				if (event.key !== 'Escape') {
+					return;
+				}
+				if (endDutyModal && !endDutyModal.classList.contains('is-hidden')) {
+					closeEndDutyModal();
+					return;
+				}
+				if (logoutDutyModal && !logoutDutyModal.classList.contains('is-hidden')) {
+					closeLogoutDutyModal();
+					return;
+				}
+				if (modal && !modal.classList.contains('is-hidden')) {
+					closeModal();
+				}
+			});
+
+			if (panel) {
+				fetchCurrentGuard().catch(() => {
+					renderGuardState({ has_active_guard: false, shift: null });
+				});
+			}
+		})();
+	</script>
+	@endif
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>

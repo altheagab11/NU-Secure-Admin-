@@ -9,6 +9,8 @@ use App\Http\Controllers\GuardController;
 use App\Http\Controllers\GuardDashboardController;
 use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardVisitorController;
+use App\Http\Controllers\GuardDutyController;
+use App\Http\Controllers\AdminGuardDutyController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\OfficeController;
@@ -91,6 +93,8 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
  
     Route::get('/alerts', [AlertsController::class, 'index']);
     Route::post('/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
+
+    Route::get('/guard-duty', [AdminGuardDutyController::class, 'index'])->name('admin.guard-duty');
  
     Route::get('/user', function () {
         return view('admin.user');
@@ -115,6 +119,23 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
         ->name('admin.activity-logs.show');
 });
 
+Route::middleware(['auth', 'role:1,4'])->prefix('api/self-registration')->group(function () {
+    Route::get('/guard-on-duty', [GuardDutyController::class, 'current'])
+        ->name('self-registration.guard-on-duty');
+});
+
+Route::middleware(['auth', 'role:4'])->prefix('api/self-registration')->group(function () {
+    Route::post('/guard-on-duty', [GuardDutyController::class, 'assign'])
+        ->middleware('throttle:5,1')
+        ->name('self-registration.guard-on-duty.assign');
+    Route::post('/guard-on-duty/change', [GuardDutyController::class, 'change'])
+        ->middleware('throttle:5,1')
+        ->name('self-registration.guard-on-duty.change');
+    Route::post('/guard-on-duty/end', [GuardDutyController::class, 'end'])
+        ->middleware('throttle:5,1')
+        ->name('self-registration.guard-on-duty.end');
+});
+
 Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'list'])->name('api.admin.activity-logs');
     Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary'])->name('api.admin.activity-logs.summary');
@@ -122,6 +143,15 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
     Route::get('/activity-logs/{log}', [ActivityLogController::class, 'show'])
         ->whereNumber('log')
         ->name('api.admin.activity-logs.show');
+
+    Route::get('/guard-duty', [AdminGuardDutyController::class, 'list'])->name('api.admin.guard-duty');
+    Route::get('/guard-duty/filters', [AdminGuardDutyController::class, 'filters'])->name('api.admin.guard-duty.filters');
+    Route::get('/guard-duty/{shift}/visitors', [AdminGuardDutyController::class, 'visitors'])
+        ->whereNumber('shift')
+        ->name('api.admin.guard-duty.visitors');
+    Route::get('/guard-duty/{shift}', [AdminGuardDutyController::class, 'show'])
+        ->whereNumber('shift')
+        ->name('api.admin.guard-duty.show');
 });
  
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
@@ -146,6 +176,18 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
  
 Route::middleware(['auth', 'role:2,4'])->prefix('guard')->group(function () {
     Route::get('/register', function () {
+        $user = auth()->user();
+        $isSelfRegisteredRole = (int) optional($user)->role_id === 4;
+
+        if ($isSelfRegisteredRole && request()->filled('type')) {
+            $hasActiveGuard = app(\App\Services\GuardDutyService::class)
+                ->hasActiveGuardForKiosk((int) $user->user_id);
+
+            if (! $hasActiveGuard) {
+                return redirect('/guard/register');
+            }
+        }
+
         $activeAlertsCount = DB::table('alerts')
             ->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
             ->count();
