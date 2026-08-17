@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 
+
 class AuthController extends Controller
 {
     public function showLogin(): View|RedirectResponse
