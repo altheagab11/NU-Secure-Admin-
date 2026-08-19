@@ -1226,7 +1226,7 @@
 									<td style="padding:10px 8px;">{{ ($alert['visitor']['first_name'] ?? '') . ' ' . ($alert['visitor']['last_name'] ?? '') }}</td>
 									<td style="padding:10px 8px;">{{ $alert['visit']['pass_number'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['visit']['control_number'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['visit']['office']['office_name'] ?? ($alert['visit']['primary_office_id'] ?? '') }}</td>
+									<td style="padding:10px 8px;">{{ ($alert['visit']['office']['office_name'] ?? null) ?: ($alert['visit']['destination_text'] ?? ($alert['visit']['primary_office_id'] ?? '')) }}</td>
 									<td style="padding:10px 8px;">{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
 									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
 									@php
@@ -1778,7 +1778,9 @@
 			const [exitDate, exitTime] = formatDateTime(alert.visit && alert.visit.exit_time ? alert.visit.exit_time : null);
 			modal.querySelector('#m_exit_time').textContent = exitDate === '-' ? '-' : `${exitDate} ${exitTime}`;
 			modal.querySelector('#m_duration').textContent = visitDuration;
-			modal.querySelector('#m_primary_office').textContent = (alert.visit && alert.visit.office && alert.visit.office.office_name) ? alert.visit.office.office_name : (alert.visit && alert.visit.primary_office_id ? alert.visit.primary_office_id : '-');
+			modal.querySelector('#m_primary_office').textContent = (alert.visit && alert.visit.office && alert.visit.office.office_name)
+				? alert.visit.office.office_name
+				: ((alert.visit && alert.visit.destination_text) ? alert.visit.destination_text : (alert.visit && alert.visit.primary_office_id ? alert.visit.primary_office_id : '-'));
 
 			// Scan
 			const scannedBy = (alert.office_scan && alert.office_scan.users)

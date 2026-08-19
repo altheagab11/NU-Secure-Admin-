@@ -84,7 +84,7 @@
 				</div>
 				<div class="col-md-6">
 					<div class="text-muted">Person / department</div>
-					<div class="fw-semibold">{{ $visit->destination_text ?: ($visit->primary_office_name ?: '—') }}</div>
+					<div class="fw-semibold">{{ $visit->primary_office_name ?: ($visit->destination_text ?: '—') }}</div>
 				</div>
 			</div>
 		</div>

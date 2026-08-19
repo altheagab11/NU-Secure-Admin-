@@ -60,7 +60,7 @@ class AlertsController extends Controller
                 // visitor fields
                 'visitor(first_name,last_name,contact_no),' .
                 // visit fields + visit_type + primary office mapping
-                'visit(visit_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,primary_office_id,visit_type(visit_type_name),office(office_name)),' .
+                'visit(visit_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,primary_office_id,destination_text,visit_type(visit_type_name),office(office_name)),' .
                 // office_scan fields + office + scanned_by user + validation status
                 'office_scan(scan_id,scan_time,remarks,office(office_name),users(first_name,last_name),validation_status(status_name)),' .
                 // resolved_by user
@@ -117,7 +117,7 @@ class AlertsController extends Controller
 
                     $officeOptions = collect($alertsRaw)
                         ->flatMap(function ($alert) {
-                            $expectedOffice = $this->extractOfficeName($alert['visit']['office'] ?? null);
+                            $expectedOffice = $this->resolveVisitDestination($this->firstRelation($alert['visit'] ?? []));
                             $scannedOffice = $this->extractOfficeName($alert['office_scan']['office'] ?? null);
                             return array_values(array_filter([$expectedOffice, $scannedOffice], fn ($x) => filled($x)));
                         })
@@ -137,7 +137,7 @@ class AlertsController extends Controller
                     ) {
                         $visitor = $this->firstRelation($alert['visitor'] ?? null);
                         $visit = $this->firstRelation($alert['visit'] ?? null);
-                        $visitOffice = $this->extractOfficeName($visit['office'] ?? null);
+                        $visitOffice = $this->resolveVisitDestination($visit);
                         $scan = $this->firstRelation($alert['office_scan'] ?? null);
                         $scanOffice = $this->extractOfficeName($scan['office'] ?? null);
 
@@ -244,6 +244,18 @@ class AlertsController extends Controller
     {
         $office = $this->firstRelation($officeRelation);
         return trim((string) ($office['office_name'] ?? ''));
+    }
+
+    private function resolveVisitDestination(array $visit): string
+    {
+        $officeName = $this->extractOfficeName($visit['office'] ?? null);
+        if ($officeName !== '') {
+            return $officeName;
+        }
+
+        $destinationText = trim((string) ($visit['destination_text'] ?? ''));
+
+        return $destinationText !== '' ? $destinationText : '';
     }
 
     /**

@@ -3088,6 +3088,29 @@
 			display: grid;
 		}
 
+		.other-destination-wrap {
+			overflow: hidden;
+			max-height: 0;
+			opacity: 0;
+			margin-top: 0;
+			transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+		}
+
+		.other-destination-wrap.is-visible {
+			max-height: 120px;
+			opacity: 1;
+			margin-top: 17px;
+		}
+
+		body.self-registration-mode .other-destination-wrap.is-visible {
+			grid-column: 1 / -1;
+		}
+
+		.office-option input[type="radio"] {
+			width: 16px;
+			height: 16px;
+		}
+
 		/* legacy tile class kept as alias during transition */
 		body.self-registration-mode .kiosk-office-tile {
 			display: none;
@@ -6923,6 +6946,12 @@
 											<div class="kiosk-office-grid" id="destinationOffice">
 												<p class="office-list-note" id="officeListNote">Loading offices...</p>
 											</div>
+											<div class="visitor-input-group other-destination-wrap is-hidden" id="otherDestinationWrap">
+												<label class="kiosk-field-label" for="otherDestinationText">Specify Destination <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<input class="visitor-input" id="otherDestinationText" name="other_destination_text" type="text" maxlength="255" placeholder="Enter office or destination" autocomplete="off">
+												</div>
+											</div>
 										@endif
 									</section>
 
@@ -7064,6 +7093,10 @@
 							@else
 								<div class="office-list" id="destinationOffice">
 									<p class="office-list-note" id="officeListNote">Loading offices...</p>
+								</div>
+								<div class="visitor-field other-destination-wrap is-hidden" id="otherDestinationWrap" style="margin-top: 10px;">
+									<label class="visitor-label" for="otherDestinationText">Specify Destination <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="otherDestinationText" name="other_destination_text" type="text" maxlength="255" placeholder="Enter office or destination" autocomplete="off">
 								</div>
 							@endif
 						</div>
@@ -7746,6 +7779,8 @@
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
+		const otherDestinationWrap = document.getElementById('otherDestinationWrap');
+		const otherDestinationText = document.getElementById('otherDestinationText');
 		const contactPerson = document.getElementById('contactPerson');
 		const officeListNote = document.getElementById('officeListNote');
 		const visitorFirstName = document.getElementById('visitorFirstName');
@@ -7775,6 +7810,9 @@
 		let currentStep = 1;
 		let capturedPictureData = '';
 		let selectedOfficeIds = [];
+		let selectedOfficeId = null;
+		let isOtherDestination = false;
+		const OTHERS_OFFICE_VALUE = '__others__';
 		let faceIdCapturePublicPath = '';
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
@@ -8111,6 +8149,39 @@
 			updateKioskSummaryProgress();
 		};
 
+		const showOtherDestinationField = () => {
+			otherDestinationWrap?.classList.add('is-visible');
+			otherDestinationWrap?.classList.remove('is-hidden');
+			otherDestinationText?.setAttribute('aria-required', 'true');
+		};
+
+		const hideAndClearOtherDestination = () => {
+			otherDestinationWrap?.classList.remove('is-visible');
+			otherDestinationWrap?.classList.add('is-hidden');
+			if (otherDestinationText) {
+				otherDestinationText.value = '';
+				otherDestinationText.removeAttribute('aria-required');
+			}
+		};
+
+		const syncDestinationSelection = () => {
+			const othersInput = destinationOffice?.querySelector(`input[value="${OTHERS_OFFICE_VALUE}"]`);
+			if (othersInput?.checked) {
+				isOtherDestination = true;
+				selectedOfficeId = null;
+				selectedOfficeIds = [];
+				showOtherDestinationField();
+				return;
+			}
+
+			isOtherDestination = false;
+			hideAndClearOtherDestination();
+
+			const checkedOffice = destinationOffice?.querySelector(`.office-checkbox:checked:not([value="${OTHERS_OFFICE_VALUE}"])`);
+			selectedOfficeId = checkedOffice ? Number(checkedOffice.value) : null;
+			selectedOfficeIds = selectedOfficeId ? [String(selectedOfficeId)] : [];
+		};
+
 		const getSelectedDestinationOffices = () => {
 			if (registerType === 'contractor') {
 				const text = (destinationOfficeText?.value || '').trim();
@@ -8121,16 +8192,24 @@
 				return autoEnrolleeOfficeNames.filter(Boolean);
 			}
 
-			return Array.from(document.querySelectorAll('.office-checkbox:checked')).map((cb) => {
-				const label = cb?.closest('label') || cb?.parentElement;
+			if (isOtherDestination) {
+				const text = (otherDestinationText?.value || '').trim();
+				return text ? [text] : [];
+			}
+
+			if (selectedOfficeId) {
+				const checked = destinationOffice?.querySelector(`.office-checkbox:checked:not([value="${OTHERS_OFFICE_VALUE}"])`);
+				const label = checked?.closest('label') || checked?.parentElement;
 				const named = label?.querySelector('.office-details strong, strong');
 				if (named?.textContent) {
-					return named.textContent.trim();
+					return [named.textContent.trim()];
 				}
 
-				const text = label?.textContent || cb?.parentElement?.textContent || '';
-				return text.replace(/\s*Tap to select\s*/gi, '').trim();
-			}).filter(Boolean);
+				const text = label?.textContent || checked?.parentElement?.textContent || '';
+				return [text.replace(/\s*Tap to select\s*/gi, '').trim()].filter(Boolean);
+			}
+
+			return [];
 		};
 
 		const getSelectedDestinationText = () => {
@@ -8698,11 +8777,19 @@
 				purpose_reason: getPurposeReasonValue(),
 				destination_office_text: registerType === 'contractor'
 					? (destinationOfficeText?.value.trim() || '')
-					: null,
+					: (registerType === 'normal' && isOtherDestination
+						? (otherDestinationText?.value.trim() || '')
+						: null),
 				contact_person: registerType === 'contractor'
 					? (contactPerson?.value.trim() || '')
 					: null,
-				office_ids: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
+				office_ids: registerType === 'enrollee'
+					? selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
+					: (isOtherDestination
+						? []
+						: (selectedOfficeId
+							? [Number(selectedOfficeId)].filter((value) => Number.isInteger(value) && value > 0)
+							: [])),
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
 				qr_token: qrMeta?.qr_token || null,
 				qr_payload: qrMeta?.qr_payload || null,
@@ -9852,11 +9939,24 @@ body.android-thermal-print .foot {
 					alert('Please enter Destination Office.');
 					return;
 				}
-			} else if ((registerType === 'normal' || registerType === 'enrollee') && !selectedOfficeIds.length) {
+			} else if (registerType === 'normal') {
+				syncDestinationSelection();
+				if (isOtherDestination) {
+					const customDestination = (otherDestinationText?.value || '').trim();
+					if (!customDestination) {
+						showOtherDestinationField();
+						otherDestinationText?.focus();
+						alert('Please specify the office or destination you want to visit.');
+						return;
+					}
+				} else if (!selectedOfficeId) {
+					destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					alert('Please select an office to visit.');
+					return;
+				}
+			} else if (registerType === 'enrollee' && !selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				alert(registerType === 'enrollee'
-					? 'No enrollee destination offices are available. Please check enrollee steps setup.'
-					: 'Please select at least one Destination Office.');
+				alert('No enrollee destination offices are available. Please check enrollee steps setup.');
 				return;
 			}
 
@@ -9945,8 +10045,65 @@ body.android-thermal-print .foot {
 		visitorProvince?.addEventListener('input', syncRegionFromProvince);
 		visitorProvince?.addEventListener('change', syncRegionFromProvince);
 
+		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select') => {
+			const choice = document.createElement('div');
+			choice.className = 'kiosk-office-choice';
+
+			const inputId = officeId === OTHERS_OFFICE_VALUE
+				? 'kiosk_office_others'
+				: `kiosk_office_${officeId}`;
+			const input = document.createElement('input');
+			input.type = 'radio';
+			input.id = inputId;
+			input.name = 'destination_office_choice';
+			input.className = 'office-checkbox';
+			input.value = String(officeId);
+			input.addEventListener('change', syncDestinationSelection);
+
+			const label = document.createElement('label');
+			label.htmlFor = inputId;
+			label.tabIndex = 0;
+			label.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					input.checked = true;
+					input.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			});
+
+			const indicator = document.createElement('span');
+			indicator.className = 'checkbox-indicator';
+			indicator.setAttribute('aria-hidden', 'true');
+
+			const details = document.createElement('span');
+			details.className = 'office-details';
+			const strong = document.createElement('strong');
+			strong.textContent = officeName;
+			const small = document.createElement('small');
+			small.textContent = subtitle;
+			details.appendChild(strong);
+			details.appendChild(small);
+
+			const check = document.createElement('span');
+			check.className = 'office-check';
+			check.setAttribute('aria-hidden', 'true');
+			check.innerHTML = '<i class="bi bi-check-lg"></i>';
+
+			label.appendChild(indicator);
+			label.appendChild(details);
+			label.appendChild(check);
+
+			choice.appendChild(input);
+			choice.appendChild(label);
+
+			return choice;
+		};
+
 		const renderOfficeList = (offices) => {
 			autoEnrolleeOfficeNames = [];
+			isOtherDestination = false;
+			selectedOfficeId = null;
+			hideAndClearOtherDestination();
 
 			const normalizedOffices = Array.isArray(offices)
 				? offices
@@ -9977,72 +10134,62 @@ body.android-thermal-print .foot {
 				return;
 			}
 
-			normalizedOffices.forEach((office, index) => {
+			normalizedOffices.forEach((office) => {
 				if (isSelfRegistrationKiosk) {
-					const choice = document.createElement('div');
-					choice.className = 'kiosk-office-choice';
-
-					const inputId = `kiosk_office_${office.office_id}`;
-					const input = document.createElement('input');
-					input.type = 'checkbox';
-					input.id = inputId;
-					input.name = 'destination_office_choice[]';
-					input.className = 'office-checkbox';
-					input.value = String(office.office_id);
-
-					input.addEventListener('change', () => {
-						selectedOfficeIds = Array.from(destinationOffice.querySelectorAll('.office-checkbox:checked'))
-							.map((cb) => cb.value);
-					});
-
-					const label = document.createElement('label');
-					label.htmlFor = inputId;
-
-					const indicator = document.createElement('span');
-					indicator.className = 'checkbox-indicator';
-					indicator.setAttribute('aria-hidden', 'true');
-
-					const details = document.createElement('span');
-					details.className = 'office-details';
-					const strong = document.createElement('strong');
-					strong.textContent = office.office_name;
-					const small = document.createElement('small');
-					small.textContent = 'Tap to select';
-					details.appendChild(strong);
-					details.appendChild(small);
-
-					const check = document.createElement('span');
-					check.className = 'office-check';
-					check.setAttribute('aria-hidden', 'true');
-					check.innerHTML = '<i class="bi bi-check-lg"></i>';
-
-					label.appendChild(indicator);
-					label.appendChild(details);
-					label.appendChild(check);
-
-					choice.appendChild(input);
-					choice.appendChild(label);
-					destinationOffice.appendChild(choice);
+					destinationOffice.appendChild(createKioskOfficeChoice(office.office_id, office.office_name));
 					return;
 				}
 
 				const label = document.createElement('label');
 				label.className = 'office-option';
+				label.tabIndex = 0;
 
 				const input = document.createElement('input');
-				input.type = 'checkbox';
+				input.type = 'radio';
+				input.name = 'destination_office_choice';
 				input.className = 'office-checkbox';
 				input.value = String(office.office_id);
-
-				input.addEventListener('change', () => {
-					selectedOfficeIds = Array.from(destinationOffice.querySelectorAll('.office-checkbox:checked'))
-						.map((cb) => cb.value);
+				input.addEventListener('change', syncDestinationSelection);
+				label.addEventListener('keydown', (event) => {
+					if (event.key === 'Enter' || event.key === ' ') {
+						event.preventDefault();
+						input.checked = true;
+						input.dispatchEvent(new Event('change', { bubbles: true }));
+					}
 				});
 
 				label.appendChild(input);
 				label.appendChild(document.createTextNode(office.office_name));
 				destinationOffice.appendChild(label);
 			});
+
+			if (isSelfRegistrationKiosk) {
+				destinationOffice.appendChild(createKioskOfficeChoice(OTHERS_OFFICE_VALUE, 'Others', 'Tap to enter destination'));
+			} else {
+				const othersLabel = document.createElement('label');
+				othersLabel.className = 'office-option';
+				othersLabel.tabIndex = 0;
+
+				const othersInput = document.createElement('input');
+				othersInput.type = 'radio';
+				othersInput.name = 'destination_office_choice';
+				othersInput.className = 'office-checkbox';
+				othersInput.value = OTHERS_OFFICE_VALUE;
+				othersInput.addEventListener('change', syncDestinationSelection);
+				othersLabel.addEventListener('keydown', (event) => {
+					if (event.key === 'Enter' || event.key === ' ') {
+						event.preventDefault();
+						othersInput.checked = true;
+						othersInput.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+				});
+
+				othersLabel.appendChild(othersInput);
+				othersLabel.appendChild(document.createTextNode('Others — Tap to enter destination'));
+				destinationOffice.appendChild(othersLabel);
+			}
+
+			selectedOfficeIds = [];
 		};
 
 		const fetchOffices = async () => {
@@ -10061,6 +10208,9 @@ body.android-thermal-print .foot {
 				renderOfficeList(data.offices || []);
 			} catch (error) {
 				selectedOfficeIds = [];
+				selectedOfficeId = null;
+				isOtherDestination = false;
+				hideAndClearOtherDestination();
 				autoEnrolleeOfficeNames = [];
 
 				if (destinationOffice) {
@@ -10088,6 +10238,9 @@ body.android-thermal-print .foot {
 			existingVisitorMatch = null;
 			existingVisitorConfirmed = false;
 			selectedOfficeIds = [];
+			selectedOfficeId = null;
+			isOtherDestination = false;
+			hideAndClearOtherDestination();
 			autoEnrolleeOfficeNames = [];
 
 			const resetPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;

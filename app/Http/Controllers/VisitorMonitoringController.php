@@ -331,7 +331,7 @@ class VisitorMonitoringController extends Controller
 
     private function fetchVisitorMonitoringRows(string $supabaseUrl, string $supabaseKey): Collection
     {
-        $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,'.
+        $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,destination_text,'.
             'visitor:visitor!visit_visitor_id_fkey(visitor_id,first_name,last_name,contact_no,visitor_photo_with_id_url,address_id),'.
             'visit_type:visit_type!visit_visit_type_id_fkey(visit_type_name),'.
             'office:office!visit_primary_office_id_fkey(office_name),'.
@@ -494,7 +494,10 @@ class VisitorMonitoringController extends Controller
                 'address' => $address,
                 'visit_type' => (string) ($visitType['visit_type_name'] ?? '—'),
                 'purpose' => (string) ($visit['purpose_reason'] ?? '—'),
-                'destination' => (string) ($office['office_name'] ?? '—'),
+                'destination' => $this->resolveVisitDestination(
+                    (string) ($office['office_name'] ?? ''),
+                    (string) ($visit['destination_text'] ?? '')
+                ),
                 'entry_time_label_date' => $entry ? $entry->format('M d, Y') : '—',
                 'entry_time_label_time' => $entry ? $entry->format('h:i A') : '—',
                 'entry_time_label_short' => $entry ? $entry->format('h:i A') : '—',
@@ -1169,6 +1172,7 @@ class VisitorMonitoringController extends Controller
                     'o.office_name as scanned_office_name',
                     'v.control_number',
                     'v.primary_office_id',
+                    'v.destination_text',
                     'vr.first_name as visitor_first_name',
                     'vr.last_name as visitor_last_name',
                     'po.office_name as primary_office_name',
@@ -1210,11 +1214,13 @@ class VisitorMonitoringController extends Controller
                     $visitorName = trim(((string) ($scan['visitor_first_name'] ?? '')).' '.((string) ($scan['visitor_last_name'] ?? '')));
                     $scannedOfficeName = trim((string) ($scan['scanned_office_name'] ?? ''));
                     $primaryOfficeName = trim((string) ($scan['primary_office_name'] ?? ''));
+                    $destinationText = trim((string) ($scan['destination_text'] ?? ''));
+                    $resolvedDestination = $this->resolveVisitDestination($primaryOfficeName, $destinationText);
 
                     return [
                         'visitor_name' => $visitorName !== '' ? $visitorName : 'Unknown Visitor',
-                        'destination' => $primaryOfficeName !== ''
-                            ? $primaryOfficeName
+                        'destination' => $resolvedDestination !== '—'
+                            ? $resolvedDestination
                             : ($scannedOfficeName !== '' ? $scannedOfficeName : '—'),
                         'control_number' => (string) ($scan['control_number'] ?? '—'),
                         'time_label' => $scanTime ? $scanTime->format('h:i A') : '—',
@@ -1294,9 +1300,6 @@ class VisitorMonitoringController extends Controller
         return $hours.' hr '.$remaining.' mins';
     }
 
-    /**
-     * Facility exit scans are not office destination scans — keep Scanned Office blank.
-     */
     private function formatScannedOffice(?string $officeName, ?string $remarks = null): string
     {
         $remarksText = Str::lower(trim((string) $remarks));
@@ -1326,6 +1329,7 @@ class VisitorMonitoringController extends Controller
                     'v.exit_time',
                     'v.duration_minutes',
                     'v.exit_status_id',
+                    'v.destination_text',
                     'vr.visitor_id',
                     'vr.first_name as visitor_first_name',
                     'vr.last_name as visitor_last_name',
@@ -1538,7 +1542,10 @@ class VisitorMonitoringController extends Controller
                     'address' => $address,
                     'visit_type' => (string) ($visit['visit_type_name'] ?? '—'),
                     'purpose' => (string) ($visit['purpose_reason'] ?? '—'),
-                    'destination' => (string) ($visit['office_name'] ?? '—'),
+                    'destination' => $this->resolveVisitDestination(
+                        (string) ($visit['office_name'] ?? ''),
+                        (string) ($visit['destination_text'] ?? '')
+                    ),
                     'entry_time_label_date' => $entry ? $entry->format('M d, Y') : '—',
                     'entry_time_label_time' => $entry ? $entry->format('h:i A') : '—',
                     'entry_time_label_short' => $entry ? $entry->format('h:i A') : '—',
@@ -1810,5 +1817,17 @@ class VisitorMonitoringController extends Controller
         $role = $json['role'] ?? null;
 
         return is_string($role) ? Str::lower($role) : null;
+    }
+
+    private function resolveVisitDestination(?string $officeName, ?string $destinationText): string
+    {
+        $office = trim((string) ($officeName ?? ''));
+        if ($office !== '') {
+            return $office;
+        }
+
+        $destination = trim((string) ($destinationText ?? ''));
+
+        return $destination !== '' ? $destination : '—';
     }
 }

@@ -269,6 +269,7 @@ class AdminDashboardController extends Controller
                 'vis.first_name',
                 'vis.last_name',
                 'o.office_name',
+                'v.destination_text',
                 'vs.status_name as validation_status_name',
             ])
             ->when($dateFilter === 'today', fn ($query) => $query->whereDate('v.entry_time', today()))
@@ -307,7 +308,11 @@ class AdminDashboardController extends Controller
                     'visit_id' => (int) ($row->visit_id ?? 0),
                     'name' => $name,
                     'status' => $status,
-                    'location' => trim((string) ($row->office_name ?? '')) ?: 'No office set',
+                    'location' => trim((string) ($row->office_name ?? '')) !== ''
+                        ? trim((string) ($row->office_name ?? ''))
+                        : (trim((string) ($row->destination_text ?? '')) !== ''
+                            ? trim((string) ($row->destination_text ?? ''))
+                            : 'No office set'),
                     'time_in' => $timeIn,
                 ];
             })

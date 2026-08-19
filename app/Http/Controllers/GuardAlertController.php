@@ -42,6 +42,7 @@ class GuardAlertController extends Controller
                 'v.entry_time',
                 'v.exit_time',
                 'v.duration_minutes',
+                'v.destination_text',
                 'po.office_name as primary_office_name',
                 'so.office_name as scanned_office_name',
                 'os.scan_time',
@@ -83,6 +84,9 @@ class GuardAlertController extends Controller
             }
             if ($expectedOffice === '') {
                 $expectedOffice = trim((string) ($row->primary_office_name ?? ''));
+            }
+            if ($expectedOffice === '') {
+                $expectedOffice = trim((string) ($row->destination_text ?? ''));
             }
             if ($expectedOffice === '') {
                 $expectedOffice = trim((string) ($row->purpose_reason ?? ''));

@@ -794,6 +794,11 @@ class OfficeScanService
                 'pass_number' => trim((string) ($visit->pass_number ?? '')),
                 'purpose_reason' => trim((string) ($visit->purpose_reason ?? '')),
                 'destination_text' => trim((string) ($visit->destination_text ?? '')),
+                'destination_display' => trim((string) ($visit->primary_office_name ?? '')) !== ''
+                    ? trim((string) ($visit->primary_office_name ?? ''))
+                    : (trim((string) ($visit->destination_text ?? '')) !== ''
+                        ? trim((string) ($visit->destination_text ?? ''))
+                        : ''),
                 'entry_time' => $visit->entry_time,
                 'exit_time' => $visit->exit_time,
                 'exit_status' => trim((string) ($visit->exit_status_name ?? 'Active')),

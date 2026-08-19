@@ -208,7 +208,10 @@ class GuardVisitorController extends Controller
                 'control_number' => trim((string) ($visit->control_number ?? '')),
                 'pass_number' => trim((string) ($visit->pass_number ?? '')),
                 'purpose_reason' => trim((string) ($visit->purpose_reason ?? '')),
-                'office_name' => trim((string) ($visit->primary_office_name ?? '')),
+                'office_name' => $this->resolveVisitDestinationLabel(
+                    trim((string) ($visit->primary_office_name ?? '')),
+                    trim((string) ($visit->destination_text ?? ''))
+                ),
                 'destination_text' => trim((string) ($visit->destination_text ?? '')),
                 'visitor_photo_with_id_url' => $photoPath,
                 'visitor_photo_preview_url' => $photoPreviewUrl,
@@ -242,7 +245,7 @@ class GuardVisitorController extends Controller
             'destination_office_text' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'office_ids' => ['nullable', 'array'],
-            'office_ids.*' => ['integer'],
+            'office_ids.*' => ['integer', 'exists:office,office_id'],
             'visitor_photo_with_id_url' => ['nullable', 'string', 'max:2000'],
             'qr_token' => ['nullable', 'string', 'max:255'],
             'qr_payload' => ['nullable', 'string', 'max:4000'],
@@ -278,11 +281,43 @@ class GuardVisitorController extends Controller
             $validated['region'] = $this->inferRegionFromProvince($validated['province']);
         }
 
-        if ($registerType === 'normal' && empty($officeIds)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please select at least one destination office.',
-            ], 422);
+        $destinationOfficeText = trim((string) ($validated['destination_office_text'] ?? ''));
+
+        if ($registerType === 'normal') {
+            $hasOffice = ! empty($officeIds);
+            $hasCustomDestination = $destinationOfficeText !== '';
+
+            if ($hasOffice && $hasCustomDestination) {
+                $destinationOfficeText = '';
+                $hasCustomDestination = false;
+            }
+
+            if (! $hasOffice && ! $hasCustomDestination) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please select an office to visit or specify your destination.',
+                ], 422);
+            }
+
+            if ($hasCustomDestination) {
+                $officeIds = [];
+            } elseif ($hasOffice) {
+                $validOfficeCount = DB::table('office')
+                    ->whereIn('office_id', $officeIds)
+                    ->where('is_active', true)
+                    ->count();
+
+                if ($validOfficeCount !== count($officeIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'One or more selected offices are invalid or inactive.',
+                    ], 422);
+                }
+
+                if (count($officeIds) > 1) {
+                    $officeIds = [$officeIds[0]];
+                }
+            }
         }
 
         if ($registerType === 'enrollee' && empty($officeIds)) {
@@ -293,7 +328,6 @@ class GuardVisitorController extends Controller
         }
 
         if ($registerType === 'contractor') {
-            $destinationOfficeText = trim((string) ($validated['destination_office_text'] ?? ''));
             $contactPerson = trim((string) ($validated['contact_person'] ?? ''));
 
             if ($destinationOfficeText === '') {
@@ -330,7 +364,7 @@ class GuardVisitorController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $enrolleeSteps, $activeExitStatusId, $visitorVisitTypeId) {
+            $result = DB::transaction(function () use ($validated, $registerType, $officeIds, $enrolleeSteps, $activeExitStatusId, $visitorVisitTypeId, $destinationOfficeText) {
                 $isSelfRegistration = (int) optional(Auth::user())->role_id === 4;
                 $activeShift = null;
 
@@ -401,15 +435,28 @@ class GuardVisitorController extends Controller
                     $this->closeVisitForEnrolleeResume((int) $resumeEnrollee['source_visit_id']);
                 }
 
+                $primaryOfficeId = null;
+                $destinationText = null;
+
+                if ($registerType === 'contractor') {
+                    $destinationText = $destinationOfficeText !== '' ? $destinationOfficeText : null;
+                } elseif ($registerType === 'enrollee') {
+                    $primaryOfficeId = $officeIds[0] ?? null;
+                } elseif ($registerType === 'normal') {
+                    if ($destinationOfficeText !== '') {
+                        $destinationText = $destinationOfficeText;
+                    } else {
+                        $primaryOfficeId = $officeIds[0] ?? null;
+                    }
+                }
+
                 $visitPayload = [
                     'visitor_id' => $visitorId,
                     'guard_user_id' => $isSelfRegistration ? null : Auth::id(),
                     'visit_type_id' => $visitorVisitTypeId,
                     'purpose_reason' => $validated['purpose_reason'],
-                    'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
-                    'destination_text' => $registerType === 'contractor'
-                        ? trim((string) ($validated['destination_office_text'] ?? ''))
-                        : null,
+                    'primary_office_id' => $primaryOfficeId,
+                    'destination_text' => $destinationText,
                     'pass_number' => $validated['pass_number'],
                     'control_number' => $validated['control_number'],
                     'qr_token' => trim((string) ($validated['qr_token'] ?? '')) !== ''
@@ -566,7 +613,8 @@ class GuardVisitorController extends Controller
                     'enrollee_id' => $enrolleeId,
                     'visitor_action' => $visitorAction,
                     'visit_id' => $visitId,
-                    'primary_office_id' => in_array($registerType, ['normal', 'enrollee'], true) ? ($officeIds[0] ?? null) : null,
+                    'primary_office_id' => $primaryOfficeId,
+                    'destination_text' => $destinationText,
                     'saved_office_count' => $savedOfficeCount,
                     'resumed_enrollment' => $resumedEnrollment,
                     'resumed_from_visit_id' => $resumedEnrollment
@@ -2780,6 +2828,21 @@ class GuardVisitorController extends Controller
                 ];
             })
             ->all();
+    }
+
+    /**
+     * Resolve a single display label for a visit destination.
+     */
+    protected function resolveVisitDestinationLabel(?string $officeName, ?string $destinationText): string
+    {
+        $office = trim((string) ($officeName ?? ''));
+        if ($office !== '') {
+            return $office;
+        }
+
+        $destination = trim((string) ($destinationText ?? ''));
+
+        return $destination !== '' ? $destination : '';
     }
 
     /**
