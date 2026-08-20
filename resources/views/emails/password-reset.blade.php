@@ -16,11 +16,19 @@
                 <p style="margin:0 0 12px;">Hello {{ $fullName ?: 'User' }},</p>
                 <p style="margin:0 0 12px;">We received a request to reset the password for your NU-Secure account.</p>
                 <p style="margin:0 0 18px;">
-                    <a href="{{ $resetUrl }}" style="display:inline-block;background:#1f348f;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Reset Password</a>
+                    <a href="{{ $resetUrl }}" style="display:inline-block;background:#1f348f;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Reset Password (Web)</a>
                 </p>
+                @if (!empty($mobileResetUrl))
+                    <p style="margin:0 0 18px;">
+                        <a href="{{ $mobileResetUrl }}" style="display:inline-block;background:#0A4DB3;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Open in NU-Secure Mobile App</a>
+                    </p>
+                @endif
                 <p style="margin:0 0 10px;color:#475569;font-size:13px;">This password reset link will expire in {{ $expiresInMinutes }} minutes.</p>
                 <p style="margin:0 0 12px;color:#475569;font-size:13px;">If you did not request a password reset, you can safely ignore this email.</p>
-                <p style="margin:0;color:#64748b;font-size:12px;word-break:break-all;">If the button does not work, copy this URL:<br>{{ $resetUrl }}</p>
+                <p style="margin:0;color:#64748b;font-size:12px;word-break:break-all;">If the button does not work, copy this web URL:<br>{{ $resetUrl }}</p>
+                @if (!empty($mobileResetUrl))
+                    <p style="margin:12px 0 0;color:#64748b;font-size:12px;word-break:break-all;">Mobile app link:<br>{{ $mobileResetUrl }}</p>
+                @endif
             </td>
         </tr>
     </table>

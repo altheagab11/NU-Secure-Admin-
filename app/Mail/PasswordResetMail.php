@@ -16,6 +16,7 @@ class PasswordResetMail extends Mailable
         public string $fullName,
         public string $resetUrl,
         public int $expiresInMinutes,
+        public ?string $mobileResetUrl = null,
     ) {
     }
 
