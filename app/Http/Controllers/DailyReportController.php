@@ -164,10 +164,9 @@ class DailyReportController extends Controller
             $normalized === ''
             || str_contains($normalized, '..')
             || ! str_starts_with($normalized, 'reports/daily/')
-            || ! $disk->exists($normalized)
         ) {
-            Log::warning('Daily report download failed because the file is missing.', [
-                'action' => 'daily_report_download_missing',
+            Log::warning('Daily report download failed because the stored path is invalid.', [
+                'action' => 'daily_report_download_invalid_path',
                 'report_id' => $report->id,
                 'report_date' => $report->report_date?->toDateString(),
                 'user_id' => $request->user()?->getAuthIdentifier(),
@@ -176,6 +175,41 @@ class DailyReportController extends Controller
             return redirect()
                 ->route('admin.daily-reports')
                 ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
+        }
+
+        // Auto-heal orphaned DB rows (Completed status but Excel deleted/missing).
+        if (! $disk->exists($normalized)) {
+            try {
+                $report = $this->reportService->generate(
+                    $report->report_date->toDateString(),
+                    (int) $request->user()->getAuthIdentifier(),
+                    true
+                );
+                $normalized = str_replace('\\', '/', (string) $report->file_path);
+            } catch (Throwable $e) {
+                Log::warning('Daily report download failed because the file is missing and regeneration failed.', [
+                    'action' => 'daily_report_download_missing',
+                    'report_id' => $report->id,
+                    'report_date' => $report->report_date?->toDateString(),
+                    'user_id' => $request->user()?->getAuthIdentifier(),
+                    'error' => $e->getMessage(),
+                ]);
+
+                return redirect()
+                    ->route('admin.daily-reports')
+                    ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
+            }
+
+            if (
+                $normalized === ''
+                || str_contains($normalized, '..')
+                || ! str_starts_with($normalized, 'reports/daily/')
+                || ! $disk->exists($normalized)
+            ) {
+                return redirect()
+                    ->route('admin.daily-reports')
+                    ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
+            }
         }
 
         Log::info('Daily visitor report downloaded.', [

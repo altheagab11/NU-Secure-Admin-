@@ -54,13 +54,24 @@ class DailyVisitorReportService
             && $report->generation_status === DailyReport::STATUS_COMPLETED
             && ! $regenerate
         ) {
-            Log::info('Daily visitor report already exists; skipping duplicate generation.', [
+            if ($this->reportFileExists($report)) {
+                Log::info('Daily visitor report already exists; skipping duplicate generation.', [
+                    'report_date' => $dateString,
+                    'report_id' => $report->id,
+                    'action' => 'daily_report_duplicate_skipped',
+                ]);
+
+                return $report;
+            }
+
+            // DB says completed but the Excel file is gone — rebuild it.
+            Log::warning('Daily visitor report marked completed but file is missing; regenerating.', [
                 'report_date' => $dateString,
                 'report_id' => $report->id,
-                'action' => 'daily_report_duplicate_skipped',
+                'file_path' => $report->file_path,
+                'action' => 'daily_report_missing_file_regenerate',
             ]);
-
-            return $report;
+            $regenerate = true;
         }
 
         if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING) {
@@ -188,14 +199,22 @@ class DailyVisitorReportService
                 ->whereDate('report_date', $dateString)
                 ->first();
 
-            if ($existing && $existing->generation_status === DailyReport::STATUS_COMPLETED) {
+            $completedWithFile = $existing
+                && $existing->generation_status === DailyReport::STATUS_COMPLETED
+                && $this->reportFileExists($existing);
+
+            if ($completedWithFile) {
                 $stats['skipped']++;
 
                 continue;
             }
 
+            $needsFileRepair = $existing
+                && $existing->generation_status === DailyReport::STATUS_COMPLETED
+                && ! $this->reportFileExists($existing);
+
             try {
-                $this->generate($dateString, $generatedByUserId, false);
+                $this->generate($dateString, $generatedByUserId, $needsFileRepair);
                 $stats['generated']++;
             } catch (Throwable $e) {
                 $stats['failed']++;
@@ -208,6 +227,31 @@ class DailyVisitorReportService
         }
 
         return $stats;
+    }
+
+    /**
+     * Whether the report's Excel file still exists on the configured private disk.
+     */
+    public function reportFileExists(?DailyReport $report): bool
+    {
+        if (! $report) {
+            return false;
+        }
+
+        $path = str_replace('\\', '/', (string) $report->file_path);
+
+        if (
+            $path === ''
+            || str_contains($path, '..')
+            || (
+                ! str_starts_with($path, 'reports/daily/')
+                && ! str_starts_with($path, 'reports/date-range/')
+            )
+        ) {
+            return false;
+        }
+
+        return Storage::disk(self::DISK)->exists($path);
     }
 
     /**

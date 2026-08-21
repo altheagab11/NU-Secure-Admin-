@@ -92,7 +92,7 @@ class DailyReportFeatureTest extends TestCase
     }
 
     #[Test]
-    public function missing_report_file_returns_controlled_error_for_admin(): void
+    public function missing_report_file_is_auto_regenerated_on_download_for_admin(): void
     {
         try {
             if (! \Illuminate\Support\Facades\Schema::hasTable('daily_reports')) {
@@ -132,12 +132,30 @@ class DailyReportFeatureTest extends TestCase
         ]);
 
         try {
-            $this->actingAs($admin)
-                ->get(route('admin.daily-reports.download', $report->id))
-                ->assertRedirect(route('admin.daily-reports'))
-                ->assertSessionHas('error');
+            $response = $this->actingAs($admin)
+                ->get(route('admin.daily-reports.download', $report->id));
+
+            // Auto-heal rebuilds the Excel file, then streams the download.
+            $this->assertTrue(
+                $response->isSuccessful() || $response->isRedirection(),
+                'Expected a download stream or a controlled redirect.'
+            );
+
+            if ($response->isRedirection()) {
+                $response->assertRedirect(route('admin.daily-reports'));
+                $response->assertSessionHas('error');
+            } else {
+                $response->assertOk();
+                $this->assertTrue(
+                    Storage::disk('local')->exists('reports/daily/1999/01/NU-Secure_Visitor_Report_'.$uniqueDate.'.xlsx')
+                );
+            }
         } finally {
-            $report->delete();
+            DailyReport::query()
+                ->where('report_date', $uniqueDate)
+                ->where('report_type', DailyReport::TYPE_DAILY_VISITOR)
+                ->delete();
+            Storage::disk('local')->deleteDirectory('reports/daily/1999');
         }
     }
 
