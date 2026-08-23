@@ -1074,17 +1074,6 @@
 				<button id="closeAddGuard" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
 			</div>
 
-
-			@if($errors->any())
-				<div class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
-					<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
-					<ul style="margin:0;padding-left:18px;">
-						@foreach($errors->all() as $err)
-							<li>{{ $err }}</li>
-						@endforeach
-					</ul>
-				</div>
-			@endif
 			<p style="color:#6b7280;margin:8px 0 14px;">Create a new security guard account for the system.</p>
 			<form id="addGuardForm" method="POST" action="/admin/user/guards">
 				@csrf
@@ -1127,17 +1116,6 @@
 				<h3 id="addOfficeTitle" style="margin:0; font-size:18px;">Add Office User Account</h3>
 				<button id="closeAddOffice" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
 			</div>
-
-			@if($errors->any())
-				<div class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
-					<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
-					<ul style="margin:0;padding-left:18px;">
-						@foreach($errors->all() as $err)
-							<li>{{ $err }}</li>
-						@endforeach
-					</ul>
-				</div>
-			@endif
 
 			<p style="color:#6b7280;margin:8px 0 14px;">Create a new office staff account for the system.</p>
 			<form id="addOfficeForm" method="POST" action="/admin/user/offices">
