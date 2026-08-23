@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\CaptchaService;
+use App\Services\LoginAttemptService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +16,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -23,32 +26,72 @@ class AuthController extends Controller
             return $this->redirectByRole((int) Auth::user()->role_id);
         }
 
-        return view('welcome');
+        return view('welcome', [
+            'turnstileSiteKey' => app(CaptchaService::class)->siteKey(),
+        ]);
     }
 
-    public function login(Request $request): RedirectResponse
+    public function login(Request $request, CaptchaService $captcha): RedirectResponse
     {
         if (Auth::check()) {
             return $this->redirectByRole((int) Auth::user()->role_id);
         }
 
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $email = LoginAttemptService::normalizeEmail((string) $request->input('email', ''));
 
-        $user = User::findByEmail($credentials['email']);
+        try {
+            $credentials = $request->validate([
+                'email' => ['required', 'email'],
+                'password' => ['required', 'string'],
+            ]);
+        } catch (ValidationException $e) {
+            if ($email !== '') {
+                $knownUser = User::findByEmail($email);
+                LoginAttemptService::recordFailure($knownUser, $email, LoginAttemptService::REASON_INVALID_CREDENTIALS, $request);
+            }
 
-        if (! $user || ! $this->isValidPassword($user, $credentials['password'])) {
-            ActivityLogService::log(
-                action: 'Failed Login',
-                module: 'Authentication',
-                description: 'Failed login attempt for '.$credentials['email'].'.',
-                entityType: 'User',
-                entityId: $user?->user_id,
-                status: ActivityLogService::STATUS_FAILED,
-                userId: null
-            );
+            throw $e;
+        }
+
+        $email = LoginAttemptService::normalizeEmail($credentials['email']);
+
+        $this->assertWebCaptchaPassed($request, $captcha, $email);
+
+        if (LoginAttemptService::tooManyAttempts($request, $email)) {
+            $knownUser = User::findByEmail($email);
+            LoginAttemptService::recordBlocked($knownUser, $email, $request);
+
+            throw ValidationException::withMessages([
+                'email' => 'Too many login attempts. Please try again later.',
+            ]);
+        }
+
+        $user = User::findByEmail($email);
+
+        if (! $user) {
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure(null, $email, LoginAttemptService::REASON_ACCOUNT_NOT_FOUND, $request);
+            $this->logFailedAuthentication(null, 'Failed login attempt for '.$email.'.');
+
+            throw ValidationException::withMessages([
+                'email' => 'Invalid email or password.',
+            ]);
+        }
+
+        if (! $this->isValidPassword($user, $credentials['password'])) {
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_INCORRECT_PASSWORD, $request);
+            $this->logFailedAuthentication($user, 'Failed login attempt for '.$email.'.');
+
+            throw ValidationException::withMessages([
+                'email' => 'Invalid email or password.',
+            ]);
+        }
+
+        if (! $this->isAccountActive($user)) {
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::inactiveReason($user), $request);
+            $this->logFailedAuthentication($user, 'Failed login attempt for '.$email.'. Account is inactive.');
 
             throw ValidationException::withMessages([
                 'email' => 'Invalid email or password.',
@@ -66,14 +109,11 @@ class AuthController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            ActivityLogService::log(
-                action: 'Failed Login',
-                module: 'Authentication',
-                description: 'Failed login attempt for '.$credentials['email'].'. This account is not allowed in the web app.',
-                entityType: 'User',
-                entityId: $user->user_id ?? null,
-                status: ActivityLogService::STATUS_FAILED,
-                userId: null
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_UNAUTHORIZED_ROLE, $request);
+            $this->logFailedAuthentication(
+                $user,
+                'Failed login attempt for '.$email.'. This account is not allowed in the web app.'
             );
 
             throw ValidationException::withMessages([
@@ -82,9 +122,9 @@ class AuthController extends Controller
         }
 
         if ($roleId === 3) {
-            $hasOffice = DB::table('office_staff')
-                ->where('user_id', (int) $user->user_id)
-                ->whereNotNull('office_id')
+            $hasOffice = DB::table('office_staff as staff')
+                ->where('staff.user_id', (int) $user->user_id)
+                ->whereNotNull('staff.office_id')
                 ->exists();
 
             if (! $hasOffice) {
@@ -92,14 +132,11 @@ class AuthController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                ActivityLogService::log(
-                    action: 'Failed Login',
-                    module: 'Authentication',
-                    description: 'Failed login attempt for '.$credentials['email'].'. Account is not assigned to an office.',
-                    entityType: 'User',
-                    entityId: $user->user_id ?? null,
-                    status: ActivityLogService::STATUS_FAILED,
-                    userId: null
+                LoginAttemptService::hit($request, $email);
+                LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_OFFICE_NOT_ASSIGNED, $request);
+                $this->logFailedAuthentication(
+                    $user,
+                    'Failed login attempt for '.$email.'. Account is not assigned to an office.'
                 );
 
                 throw ValidationException::withMessages([
@@ -107,6 +144,9 @@ class AuthController extends Controller
                 ]);
             }
         }
+
+        LoginAttemptService::clear($request, $email);
+        LoginAttemptService::recordSuccess($user, $email, $request);
 
         ActivityLogService::log(
             action: 'Login',
@@ -121,24 +161,52 @@ class AuthController extends Controller
 
     public function apiLogin(Request $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'device_name' => ['nullable', 'string', 'max:100'],
-        ]);
+        $email = LoginAttemptService::normalizeEmail((string) $request->input('email', ''));
 
-        $user = User::findByEmail($credentials['email']);
+        try {
+            $credentials = $request->validate([
+                'email' => ['required', 'email'],
+                'password' => ['required', 'string'],
+                'device_name' => ['nullable', 'string', 'max:100'],
+            ]);
+        } catch (ValidationException $e) {
+            if ($email !== '') {
+                $knownUser = User::findByEmail($email);
+                LoginAttemptService::recordFailure($knownUser, $email, LoginAttemptService::REASON_INVALID_CREDENTIALS, $request);
+            }
 
-        if (! $user || ! $this->isValidPassword($user, $credentials['password'])) {
-            ActivityLogService::log(
-                action: 'Failed Login',
-                module: 'Authentication',
-                description: 'Failed mobile login attempt for '.$credentials['email'].'.',
-                entityType: 'User',
-                entityId: $user?->user_id,
-                status: ActivityLogService::STATUS_FAILED,
-                userId: null
-            );
+            throw $e;
+        }
+
+        $email = LoginAttemptService::normalizeEmail($credentials['email']);
+
+        if (LoginAttemptService::tooManyAttempts($request, $email)) {
+            $knownUser = User::findByEmail($email);
+            LoginAttemptService::recordBlocked($knownUser, $email, $request);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many login attempts. Please try again later.',
+            ], 429);
+        }
+
+        $user = User::findByEmail($email);
+
+        if (! $user) {
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure(null, $email, LoginAttemptService::REASON_ACCOUNT_NOT_FOUND, $request);
+            $this->logFailedAuthentication(null, 'Failed mobile login attempt for '.$email.'.');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email or password.',
+            ], 422);
+        }
+
+        if (! $this->isValidPassword($user, $credentials['password'])) {
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_INCORRECT_PASSWORD, $request);
+            $this->logFailedAuthentication($user, 'Failed mobile login attempt for '.$email.'.');
 
             return response()->json([
                 'success' => false,
@@ -147,15 +215,9 @@ class AuthController extends Controller
         }
 
         if (! $this->isAccountActive($user)) {
-            ActivityLogService::log(
-                action: 'Failed Login',
-                module: 'Authentication',
-                description: 'Failed mobile login attempt for '.$credentials['email'].'. Account is inactive.',
-                entityType: 'User',
-                entityId: $user->user_id ?? null,
-                status: ActivityLogService::STATUS_FAILED,
-                userId: null
-            );
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::inactiveReason($user), $request);
+            $this->logFailedAuthentication($user, 'Failed mobile login attempt for '.$email.'. Account is inactive.');
 
             return response()->json([
                 'success' => false,
@@ -166,14 +228,11 @@ class AuthController extends Controller
         $roleId = (int) $user->role_id;
 
         if (! in_array($roleId, [1, 2, 3, 4], true)) {
-            ActivityLogService::log(
-                action: 'Failed Login',
-                module: 'Authentication',
-                description: 'Failed mobile login attempt for '.$credentials['email'].'. This account is not allowed in the mobile application.',
-                entityType: 'User',
-                entityId: $user->user_id ?? null,
-                status: ActivityLogService::STATUS_FAILED,
-                userId: null
+            LoginAttemptService::hit($request, $email);
+            LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_UNAUTHORIZED_ROLE, $request);
+            $this->logFailedAuthentication(
+                $user,
+                'Failed mobile login attempt for '.$email.'. This account is not allowed in the mobile application.'
             );
 
             return response()->json([
@@ -183,20 +242,17 @@ class AuthController extends Controller
         }
 
         if ($roleId === 3) {
-            $hasOffice = DB::table('office_staff')
-                ->where('user_id', (int) $user->user_id)
-                ->whereNotNull('office_id')
+            $hasOffice = DB::table('office_staff as staff')
+                ->where('staff.user_id', (int) $user->user_id)
+                ->whereNotNull('staff.office_id')
                 ->exists();
 
             if (! $hasOffice) {
-                ActivityLogService::log(
-                    action: 'Failed Login',
-                    module: 'Authentication',
-                    description: 'Failed mobile login attempt for '.$credentials['email'].'. Account is not assigned to an office.',
-                    entityType: 'User',
-                    entityId: $user->user_id ?? null,
-                    status: ActivityLogService::STATUS_FAILED,
-                    userId: null
+                LoginAttemptService::hit($request, $email);
+                LoginAttemptService::recordFailure($user, $email, LoginAttemptService::REASON_OFFICE_NOT_ASSIGNED, $request);
+                $this->logFailedAuthentication(
+                    $user,
+                    'Failed mobile login attempt for '.$email.'. Account is not assigned to an office.'
                 );
 
                 return response()->json([
@@ -212,6 +268,9 @@ class AuthController extends Controller
             $deviceName,
             ['mobile']
         )->plainTextToken;
+
+        LoginAttemptService::clear($request, $email);
+        LoginAttemptService::recordSuccess($user, $email, $request);
 
         ActivityLogService::log(
             action: 'Login',
@@ -337,6 +396,64 @@ class AuthController extends Controller
         }
 
         return redirect()->route('login')->with('status', 'Password has been set successfully. You can now log in.');
+    }
+
+    private function assertWebCaptchaPassed(Request $request, CaptchaService $captcha, string $email): void
+    {
+        $token = $captcha->tokenFrom((string) $request->input('cf-turnstile-response', ''));
+        $knownUser = $this->findUserForAttempt($email);
+
+        if ($token === '') {
+            LoginAttemptService::recordFailure(
+                $knownUser,
+                $email,
+                LoginAttemptService::REASON_CAPTCHA_MISSING,
+                $request
+            );
+
+            throw ValidationException::withMessages([
+                'cf-turnstile-response' => 'Please complete the security verification.',
+            ]);
+        }
+
+        if (! $captcha->verify($token, $request->ip())) {
+            LoginAttemptService::recordFailure(
+                $knownUser,
+                $email,
+                LoginAttemptService::REASON_CAPTCHA_FAILED,
+                $request
+            );
+
+            throw ValidationException::withMessages([
+                'cf-turnstile-response' => 'Security verification failed. Please try again.',
+            ]);
+        }
+    }
+
+    private function findUserForAttempt(string $email): ?User
+    {
+        if ($email === '') {
+            return null;
+        }
+
+        try {
+            return User::findByEmail($email);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function logFailedAuthentication(?User $user, string $description): void
+    {
+        ActivityLogService::log(
+            action: 'Failed Login',
+            module: 'Authentication',
+            description: $description,
+            entityType: 'User',
+            entityId: $user?->user_id,
+            status: 'Failed',
+            userId: null
+        );
     }
 
     private function redirectByRole(int $roleId): RedirectResponse

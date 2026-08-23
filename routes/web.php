@@ -1,30 +1,32 @@
 <?php
- 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PasswordResetController;
-use App\Http\Controllers\AlertsController;
-use App\Http\Controllers\GuardController;
-use App\Http\Controllers\GuardDashboardController;
-use App\Http\Controllers\GuardAlertController;
-use App\Http\Controllers\GuardVisitorController;
-use App\Http\Controllers\GuardDutyController;
-use App\Http\Controllers\AdminGuardDutyController;
-use App\Http\Controllers\AdminDashboardController;
+
 use App\Http\Controllers\ActivityLogController;
-use App\Http\Controllers\OfficeController;
-use App\Http\Controllers\VisitorMonitoringController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminGuardDutyController;
+use App\Http\Controllers\AlertsController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DateRangeReportController;
 use App\Http\Controllers\EnrolleeProgressController;
+use App\Http\Controllers\GuardAlertController;
+use App\Http\Controllers\GuardController;
+use App\Http\Controllers\GuardDashboardController;
+use App\Http\Controllers\GuardDutyController;
+use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\LiveDataController;
+use App\Http\Controllers\LoginAttemptController;
 use App\Http\Controllers\Office\OfficeDashboardController;
-use App\Http\Controllers\Office\OfficeScannerController;
-use App\Http\Controllers\Office\OfficeVisitorController;
-use App\Http\Controllers\Office\OfficeVisitHistoryController;
 use App\Http\Controllers\Office\OfficeProfileController;
- 
+use App\Http\Controllers\Office\OfficeScannerController;
+use App\Http\Controllers\Office\OfficeVisitHistoryController;
+use App\Http\Controllers\Office\OfficeVisitorController;
+use App\Http\Controllers\OfficeController;
+use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\VisitorMonitoringController;
+use App\Services\GuardDutyService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
@@ -39,12 +41,12 @@ Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('
 
 // Public enrollee QR progress tracker (opened when enrollee QR is scanned in a browser/camera).
 Route::get('/enrollee/progress/{token}/status', [EnrolleeProgressController::class, 'status'])
-	->where('token', '[^/]+')
-	->name('enrollee.progress.status');
+    ->where('token', '[^/]+')
+    ->name('enrollee.progress.status');
 Route::get('/enrollee/progress/{token}', [EnrolleeProgressController::class, 'show'])
-	->where('token', '[^/]+')
-	->name('enrollee.progress');
- 
+    ->where('token', '[^/]+')
+    ->name('enrollee.progress');
+
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::middleware(['auth', 'role:1,2,3'])->get('/live/status', [LiveDataController::class, 'status'])
@@ -69,10 +71,10 @@ Route::middleware(['auth', 'office.staff'])->prefix('office')->name('office.')->
         ->whereNumber('notifId')
         ->name('notifications.read');
 });
- 
+
 Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index']);
- 
+
     Route::get('/visitor', [VisitorMonitoringController::class, 'index'])->name('admin.visitor');
 
     Route::get('/daily-reports', [DailyReportController::class, 'index'])->name('admin.daily-reports');
@@ -90,21 +92,21 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/date-range-reports/{id}/download', [DateRangeReportController::class, 'download'])
         ->whereNumber('id')
         ->name('admin.date-range-reports.download');
- 
+
     Route::get('/alerts', [AlertsController::class, 'index']);
     Route::post('/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
 
     Route::get('/guard-duty', [AdminGuardDutyController::class, 'index'])->name('admin.guard-duty');
- 
+
     Route::get('/user', function () {
         return view('admin.user');
     });
- 
+
     Route::get('/user/guards', [GuardController::class, 'index']);
     Route::post('/user/guards', [GuardController::class, 'store']);
     Route::delete('/user/guards/{id}', [GuardController::class, 'recycle']);
     Route::post('/user/guards/{id}/restore', [GuardController::class, 'restore']);
- 
+
     Route::get('/user/offices', [OfficeController::class, 'index']);
     Route::post('/user/offices', [OfficeController::class, 'store']);
     Route::put('/user/offices/{id}', [OfficeController::class, 'update']);
@@ -117,6 +119,9 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::get('/activity-logs/{log}', [ActivityLogController::class, 'show'])
         ->whereNumber('log')
         ->name('admin.activity-logs.show');
+
+    Route::get('/login-attempts', [LoginAttemptController::class, 'index'])->name('admin.login-attempts');
+    Route::get('/login-attempts/summary', [LoginAttemptController::class, 'summary'])->name('admin.login-attempts.summary');
 });
 
 Route::middleware(['auth', 'role:1,4'])->prefix('api/self-registration')->group(function () {
@@ -144,6 +149,9 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
         ->whereNumber('log')
         ->name('api.admin.activity-logs.show');
 
+    Route::get('/login-attempts', [LoginAttemptController::class, 'list'])->name('api.admin.login-attempts');
+    Route::get('/login-attempts/summary', [LoginAttemptController::class, 'summary'])->name('api.admin.login-attempts.summary');
+
     Route::get('/guard-duty', [AdminGuardDutyController::class, 'list'])->name('api.admin.guard-duty');
     Route::get('/guard-duty/filters', [AdminGuardDutyController::class, 'filters'])->name('api.admin.guard-duty.filters');
     Route::get('/guard-duty/{shift}/visitors', [AdminGuardDutyController::class, 'visitors'])
@@ -153,11 +161,11 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
         ->whereNumber('shift')
         ->name('api.admin.guard-duty.show');
 });
- 
+
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
     Route::get('/dashboard', [GuardDashboardController::class, 'index']);
     Route::get('/dashboard/visits/{visitId}/details', [GuardDashboardController::class, 'visitDetails']);
- 
+
     Route::get('/exit', function () {
         $activeAlertsCount = DB::table('alerts')
             ->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
@@ -168,19 +176,19 @@ Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
         ]);
     });
     Route::post('/exit/scan', [GuardVisitorController::class, 'processExitScan']);
- 
+
     Route::get('/alert', [GuardAlertController::class, 'index']);
     Route::post('/alerts/{alertId}/resolve', [GuardAlertController::class, 'resolve']);
 
 });
- 
+
 Route::middleware(['auth', 'role:2,4'])->prefix('guard')->group(function () {
     Route::get('/register', function () {
         $user = auth()->user();
         $isSelfRegisteredRole = (int) optional($user)->role_id === 4;
 
         if ($isSelfRegisteredRole && request()->filled('type')) {
-            $hasActiveGuard = app(\App\Services\GuardDutyService::class)
+            $hasActiveGuard = app(GuardDutyService::class)
                 ->hasActiveGuardForKiosk((int) $user->user_id);
 
             if (! $hasActiveGuard) {

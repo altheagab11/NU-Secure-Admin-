@@ -8,17 +8,16 @@ use App\Services\GuardDutyService;
 use App\Services\OCRService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class GuardVisitorController extends Controller
 {
-    public function __construct(protected GuardDutyService $guardDutyService)
-    {
-    }
+    public function __construct(protected GuardDutyService $guardDutyService) {}
 
     public function processExitScan(Request $request)
     {
@@ -64,15 +63,15 @@ class GuardVisitorController extends Controller
             )
             ->whereNull('v.exit_time')
             ->where(function ($query) use ($parsedQr) {
-                if (!empty($parsedQr['qr_token'])) {
+                if (! empty($parsedQr['qr_token'])) {
                     $query->orWhereRaw('LOWER(TRIM(COALESCE(v.qr_token, \'\'))) = ?', [strtolower($parsedQr['qr_token'])]);
                 }
 
-                if (!empty($parsedQr['control_number'])) {
+                if (! empty($parsedQr['control_number'])) {
                     $query->orWhereRaw('LOWER(TRIM(COALESCE(v.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
                 }
 
-                if (!empty($parsedQr['pass_number'])) {
+                if (! empty($parsedQr['pass_number'])) {
                     $query->orWhereRaw('LOWER(TRIM(COALESCE(v.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
                 }
             })
@@ -80,20 +79,20 @@ class GuardVisitorController extends Controller
             ->orderByDesc('v.visit_id')
             ->first();
 
-        if (!$visit) {
+        if (! $visit) {
             $alreadyCheckedOut = DB::table('visit as v')
                 ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
                 ->whereNotNull('v.exit_time')
                 ->where(function ($query) use ($parsedQr) {
-                    if (!empty($parsedQr['qr_token'])) {
+                    if (! empty($parsedQr['qr_token'])) {
                         $query->orWhereRaw('LOWER(TRIM(COALESCE(v.qr_token, \'\'))) = ?', [strtolower($parsedQr['qr_token'])]);
                     }
 
-                    if (!empty($parsedQr['control_number'])) {
+                    if (! empty($parsedQr['control_number'])) {
                         $query->orWhereRaw('LOWER(TRIM(COALESCE(v.control_number, \'\'))) = ?', [strtolower($parsedQr['control_number'])]);
                     }
 
-                    if (!empty($parsedQr['pass_number'])) {
+                    if (! empty($parsedQr['pass_number'])) {
                         $query->orWhereRaw('LOWER(TRIM(COALESCE(v.pass_number, \'\'))) = ?', [strtolower($parsedQr['pass_number'])]);
                     }
                 })
@@ -110,7 +109,7 @@ class GuardVisitorController extends Controller
         $exitAt = $this->philippinesNow();
         $durationMinutes = null;
 
-        if (!empty($visit->entry_time)) {
+        if (! empty($visit->entry_time)) {
             try {
                 $entryAt = Carbon::parse($visit->entry_time, 'Asia/Manila');
                 // Ensure integer minutes for DB column type compatibility.
@@ -166,7 +165,7 @@ class GuardVisitorController extends Controller
             ]);
         });
 
-        $fullName = trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? '')));
+        $fullName = trim(((string) ($visit->first_name ?? '')).' '.((string) ($visit->last_name ?? '')));
         $displayName = $fullName !== '' ? $fullName : 'Visitor';
 
         ActivityLogService::log(
@@ -189,7 +188,7 @@ class GuardVisitorController extends Controller
         $photoPath = trim((string) ($visit->visitor_photo_with_id_url ?? ''));
         $photoPreviewUrl = $this->resolveVisitorPhotoUrl($photoPath);
 
-        if (!empty($visit->entry_time)) {
+        if (! empty($visit->entry_time)) {
             try {
                 $entryTime = Carbon::parse($visit->entry_time, 'Asia/Manila')->toDateTimeString();
             } catch (\Throwable $e) {
@@ -199,7 +198,7 @@ class GuardVisitorController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'message' => $displayName . ' successfully checked out.',
+            'message' => $displayName.' successfully checked out.',
             'qr_data' => $parsedQr['control_number'] ?: ($parsedQr['pass_number'] ?: ($parsedQr['qr_token'] ?: $rawQr)),
             'data' => [
                 'visit_id' => (int) $visit->visit_id,
@@ -287,11 +286,6 @@ class GuardVisitorController extends Controller
             $hasOffice = ! empty($officeIds);
             $hasCustomDestination = $destinationOfficeText !== '';
 
-            if ($hasOffice && $hasCustomDestination) {
-                $destinationOfficeText = '';
-                $hasCustomDestination = false;
-            }
-
             if (! $hasOffice && ! $hasCustomDestination) {
                 return response()->json([
                     'success' => false,
@@ -299,9 +293,7 @@ class GuardVisitorController extends Controller
                 ], 422);
             }
 
-            if ($hasCustomDestination) {
-                $officeIds = [];
-            } elseif ($hasOffice) {
+            if ($hasOffice) {
                 $validOfficeCount = DB::table('office')
                     ->whereIn('office_id', $officeIds)
                     ->where('is_active', true)
@@ -312,10 +304,6 @@ class GuardVisitorController extends Controller
                         'success' => false,
                         'message' => 'One or more selected offices are invalid or inactive.',
                     ], 422);
-                }
-
-                if (count($officeIds) > 1) {
-                    $officeIds = [$officeIds[0]];
                 }
             }
         }
@@ -443,10 +431,9 @@ class GuardVisitorController extends Controller
                 } elseif ($registerType === 'enrollee') {
                     $primaryOfficeId = $officeIds[0] ?? null;
                 } elseif ($registerType === 'normal') {
+                    $primaryOfficeId = $officeIds[0] ?? null;
                     if ($destinationOfficeText !== '') {
                         $destinationText = $destinationOfficeText;
-                    } else {
-                        $primaryOfficeId = $officeIds[0] ?? null;
                     }
                 }
 
@@ -878,7 +865,7 @@ class GuardVisitorController extends Controller
                 if (! $localResult['success']) {
                     return response()->json([
                         'success' => false,
-                        'message' => ($uploadResult['message'] ?? 'Failed to upload image to Supabase') . ' Also failed local fallback save.',
+                        'message' => ($uploadResult['message'] ?? 'Failed to upload image to Supabase').' Also failed local fallback save.',
                     ], 500);
                 }
 
@@ -923,8 +910,8 @@ class GuardVisitorController extends Controller
             ];
         }
 
-        $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $extension;
-        $filePath = $pictureDir . '/' . $filename;
+        $filename = 'capture_'.date('Y-m-d_H-i-s').'_'.Str::random(8).'.'.$extension;
+        $filePath = $pictureDir.'/'.$filename;
 
         if (file_put_contents($filePath, $binaryImage) === false) {
             return [
@@ -937,7 +924,7 @@ class GuardVisitorController extends Controller
             'success' => true,
             'filename' => $filename,
             'absolute_path' => $filePath,
-            'public_path' => '/storage/captures/' . $filename,
+            'public_path' => '/storage/captures/'.$filename,
         ];
     }
 
@@ -961,8 +948,8 @@ class GuardVisitorController extends Controller
         $defaultFolder = $step === 3 ? 'Face_ID_Picture' : 'ID_scan';
         $folder = trim((string) env('SUPABASE_STORAGE_FACE_ID_FOLDER', $defaultFolder), '/');
 
-        $filename = 'capture_' . date('Y-m-d_H-i-s') . '_' . Str::random(8) . '.' . $extension;
-        $objectPath = $folder !== '' ? ($folder . '/' . $filename) : $filename;
+        $filename = 'capture_'.date('Y-m-d_H-i-s').'_'.Str::random(8).'.'.$extension;
+        $objectPath = $folder !== '' ? ($folder.'/'.$filename) : $filename;
 
         $contentType = match ($extension) {
             'png' => 'image/png',
@@ -975,11 +962,11 @@ class GuardVisitorController extends Controller
             ->map(fn ($segment) => rawurlencode($segment))
             ->implode('/');
 
-        $uploadUrl = $supabaseUrl . '/storage/v1/object/' . rawurlencode($bucket) . '/' . $encodedPath;
+        $uploadUrl = $supabaseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
 
         $response = Http::withHeaders([
             'apikey' => $supabaseKey,
-            'Authorization' => 'Bearer ' . $supabaseKey,
+            'Authorization' => 'Bearer '.$supabaseKey,
             'Content-Type' => $contentType,
             'x-upsert' => 'true',
         ])->withBody($binaryImage, $contentType)->post($uploadUrl);
@@ -1006,7 +993,7 @@ class GuardVisitorController extends Controller
             $objectPath
         );
 
-        $publicUrl = $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
+        $publicUrl = $supabaseUrl.'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$encodedPath;
 
         return [
             'success' => true,
@@ -1015,7 +1002,7 @@ class GuardVisitorController extends Controller
             'object_path' => $objectPath,
             'public_url' => $publicUrl,
             'preview_url' => $signedPreviewUrl ?: $publicUrl,
-            'bucket_file_path' => $bucket . '/' . $objectPath,
+            'bucket_file_path' => $bucket.'/'.$objectPath,
         ];
     }
 
@@ -1034,9 +1021,9 @@ class GuardVisitorController extends Controller
 
             $response = Http::withHeaders([
                 'apikey' => $supabaseKey,
-                'Authorization' => 'Bearer ' . $supabaseKey,
+                'Authorization' => 'Bearer '.$supabaseKey,
                 'Accept' => 'application/json',
-            ])->timeout(20)->post($supabaseUrl . '/storage/v1/object/sign/' . $encodedBucket . '/' . $encodedObjectPath, [
+            ])->timeout(20)->post($supabaseUrl.'/storage/v1/object/sign/'.$encodedBucket.'/'.$encodedObjectPath, [
                 'expiresIn' => 3600,
             ]);
 
@@ -1056,16 +1043,16 @@ class GuardVisitorController extends Controller
 
             $signedPath = ltrim($signed, '/');
             if (Str::startsWith($signedPath, 'storage/v1/')) {
-                return $supabaseUrl . '/' . $signedPath;
+                return $supabaseUrl.'/'.$signedPath;
             }
 
             if (Str::startsWith($signedPath, 'object/')) {
-                return $supabaseUrl . '/storage/v1/' . $signedPath;
+                return $supabaseUrl.'/storage/v1/'.$signedPath;
             }
 
-            return $supabaseUrl . '/' . $signedPath;
+            return $supabaseUrl.'/'.$signedPath;
         } catch (\Throwable $e) {
-            logger()->warning('Unable to build signed storage URL for capture preview: ' . $e->getMessage(), [
+            logger()->warning('Unable to build signed storage URL for capture preview: '.$e->getMessage(), [
                 'bucket' => $bucket,
                 'object_path' => $objectPath,
             ]);
@@ -1087,7 +1074,7 @@ class GuardVisitorController extends Controller
             if ($request->hasFile('image')) {
                 $imageData = $request->file('image');
                 $source = 'file_upload';
-                
+
                 \Log::info('parseId: File upload received', [
                     'file_size' => $imageData->getSize(),
                     'mime_type' => $imageData->getMimeType(),
@@ -1098,7 +1085,7 @@ class GuardVisitorController extends Controller
                 $source = 'base64_input';
             }
 
-            if (!$imageData) {
+            if (! $imageData) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No image data provided',
@@ -1113,16 +1100,16 @@ class GuardVisitorController extends Controller
             ]);
 
             // Use OCRService to extract data
-            $ocrService = new OCRService();
+            $ocrService = new OCRService;
             $ocrResult = $ocrService->parseIdDocument($imageData, $idType);
 
             \Log::info('OCR result', [
                 'success' => $ocrResult['success'],
                 'message' => $ocrResult['message'] ?? '',
-                'has_extracted_data' => !empty($ocrResult['extracted_data']),
+                'has_extracted_data' => ! empty($ocrResult['extracted_data']),
             ]);
 
-            if (!$ocrResult['success']) {
+            if (! $ocrResult['success']) {
                 return response()->json([
                     'success' => false,
                     'message' => $ocrResult['message'],
@@ -1169,7 +1156,7 @@ class GuardVisitorController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error parsing ID: ' . $e->getMessage(),
+                'message' => 'Error parsing ID: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1441,7 +1428,8 @@ class GuardVisitorController extends Controller
         // Local fallback path (used when Supabase upload is blocked):
         // /storage/captures/xxx.jpg or storage/captures/xxx.jpg
         if (Str::startsWith($cleanPath, ['/storage/', 'storage/'])) {
-            $normalized = '/' . ltrim($cleanPath, '/');
+            $normalized = '/'.ltrim($cleanPath, '/');
+
             return url($normalized);
         }
 
@@ -1465,9 +1453,9 @@ class GuardVisitorController extends Controller
 
                 $signedResponse = Http::withHeaders([
                     'apikey' => $supabaseKey,
-                    'Authorization' => 'Bearer ' . $supabaseKey,
+                    'Authorization' => 'Bearer '.$supabaseKey,
                     'Accept' => 'application/json',
-                ])->timeout(20)->post($supabaseUrl . '/storage/v1/object/sign/' . $encodedBucket . '/' . $encodedObjectPath, [
+                ])->timeout(20)->post($supabaseUrl.'/storage/v1/object/sign/'.$encodedBucket.'/'.$encodedObjectPath, [
                     'expiresIn' => 3600,
                 ]);
 
@@ -1482,25 +1470,25 @@ class GuardVisitorController extends Controller
 
                         $signedPath = ltrim($signed, '/');
                         if (Str::startsWith($signedPath, 'storage/v1/')) {
-                            return $supabaseUrl . '/' . $signedPath;
+                            return $supabaseUrl.'/'.$signedPath;
                         }
 
                         if (Str::startsWith($signedPath, 'object/')) {
-                            return $supabaseUrl . '/storage/v1/' . $signedPath;
+                            return $supabaseUrl.'/storage/v1/'.$signedPath;
                         }
 
-                        return $supabaseUrl . '/' . $signedPath;
+                        return $supabaseUrl.'/'.$signedPath;
                     }
                 }
             } catch (\Throwable $e) {
-                logger()->warning('Unable to sign visitor preview URL: ' . $e->getMessage());
+                logger()->warning('Unable to sign visitor preview URL: '.$e->getMessage());
             }
         }
 
         // Public bucket fallback.
         $encodedPath = implode('/', array_map('rawurlencode', explode('/', $objectPath)));
 
-        return $supabaseUrl . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
+        return $supabaseUrl.'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$encodedPath;
     }
 
     protected function parseStorageObjectPathForPreview(string $rawPath): array
@@ -1541,12 +1529,12 @@ class GuardVisitorController extends Controller
     protected function mapOcrDataToFormFields(array $extracted): array
     {
         // Prefer direct extracted name fields, fallback to full_name parsing
-        $firstName = trim((string)($extracted['first_name'] ?? ''));
-        $lastName = trim((string)($extracted['last_name'] ?? ''));
-        $documentType = strtolower(trim((string)($extracted['document_type'] ?? '')));
+        $firstName = trim((string) ($extracted['first_name'] ?? ''));
+        $lastName = trim((string) ($extracted['last_name'] ?? ''));
+        $documentType = strtolower(trim((string) ($extracted['document_type'] ?? '')));
         $rawOcrText = (string) ($extracted['_raw_text'] ?? '');
 
-        if ((empty($firstName) || empty($lastName)) && !empty($extracted['full_name'])) {
+        if ((empty($firstName) || empty($lastName)) && ! empty($extracted['full_name'])) {
             $parts = explode(',', $extracted['full_name']);
             if (count($parts) >= 2) {
                 // Format: "LastName, FirstName"
@@ -1564,7 +1552,7 @@ class GuardVisitorController extends Controller
 
                     // For passports, do not guess a surname from a space-separated given name.
                 } else {
-                // Try space-separated
+                    // Try space-separated
                     $nameParts = explode(' ', trim($extracted['full_name']));
                     if (count($nameParts) > 1) {
                         if (empty($firstName)) {
@@ -1583,10 +1571,10 @@ class GuardVisitorController extends Controller
         }
 
         // Parse address into components
-        $addressSource = trim((string)($extracted['address'] ?? ''));
+        $addressSource = trim((string) ($extracted['address'] ?? ''));
 
         if (
-            !empty($addressSource)
+            ! empty($addressSource)
             && (
                 (($extracted['document_type'] ?? '') === 'passport')
                 || preg_match('/\b(PLACE\s+OF\s+B|BIRTH\s+PLACE|POB|PLOCE)\b/i', $addressSource)
@@ -1595,8 +1583,8 @@ class GuardVisitorController extends Controller
             $addressSource = $this->normalizePassportPlaceOfBirthSource($addressSource);
         }
 
-        if (empty($addressSource) && !empty($extracted['place_of_birth'])) {
-            $addressSource = $this->normalizePassportPlaceOfBirthSource((string)$extracted['place_of_birth']);
+        if (empty($addressSource) && ! empty($extracted['place_of_birth'])) {
+            $addressSource = $this->normalizePassportPlaceOfBirthSource((string) $extracted['place_of_birth']);
         }
 
         $addressData = $this->parseAddress($addressSource);
@@ -1605,15 +1593,15 @@ class GuardVisitorController extends Controller
             $addressData = $this->enhanceUmidAddressDataFromRawText($addressData, $addressSource, $rawOcrText);
         }
 
-        if (empty($addressData['city']) && !empty($extracted['place_of_birth'])) {
-            $birthplaceData = $this->parseAddress($this->normalizePassportPlaceOfBirthSource((string)$extracted['place_of_birth']));
-            if (!empty($birthplaceData['city'])) {
+        if (empty($addressData['city']) && ! empty($extracted['place_of_birth'])) {
+            $birthplaceData = $this->parseAddress($this->normalizePassportPlaceOfBirthSource((string) $extracted['place_of_birth']));
+            if (! empty($birthplaceData['city'])) {
                 $addressData['city'] = $birthplaceData['city'];
             }
-            if (empty($addressData['province']) && !empty($birthplaceData['province'])) {
+            if (empty($addressData['province']) && ! empty($birthplaceData['province'])) {
                 $addressData['province'] = $birthplaceData['province'];
             }
-            if (empty($addressData['region']) && !empty($birthplaceData['region'])) {
+            if (empty($addressData['region']) && ! empty($birthplaceData['region'])) {
                 $addressData['region'] = $birthplaceData['region'];
             }
         }
@@ -1621,7 +1609,7 @@ class GuardVisitorController extends Controller
         $addressData = $this->sanitizeParsedAddressData($addressData);
 
         // Auto-infer PH region from extracted province when available
-        if (empty($addressData['region']) && !empty($addressData['province'])) {
+        if (empty($addressData['region']) && ! empty($addressData['province'])) {
             $addressData['region'] = $this->inferRegionFromProvince($addressData['province']);
         }
 
@@ -1685,14 +1673,14 @@ class GuardVisitorController extends Controller
 
         $normalized = preg_replace('/\b(PLACE\s+OF\s+B(?:IRTH|ERTE)|BIRTH\s+PLACE|PLACE\s+OF\s+BIRTH|POB)\b/i', ' ', $normalized);
         $normalized = preg_replace('/\b[A-Z]\b/', ' ', $normalized);
-        $normalized = preg_replace('/\s+/', ' ', trim((string)$normalized));
+        $normalized = preg_replace('/\s+/', ' ', trim((string) $normalized));
 
         if (preg_match('/\bCITY\s+OF\s+([A-Z\s]{2,40})\b/', $normalized, $m)) {
-            return 'CITY OF ' . trim($m[1]);
+            return 'CITY OF '.trim($m[1]);
         }
 
         if (preg_match('/\b([A-Z\s]{2,40})\s+CITY\b/', $normalized, $m)) {
-            return trim($m[1]) . ' CITY';
+            return trim($m[1]).' CITY';
         }
 
         if (preg_match('/\b(CALAPAN|LIPA|BATANGAS|MINDORO|PUERTO|ORIENTAL|OCCIDENTAL)\b/i', $normalized, $m)) {
@@ -1708,7 +1696,7 @@ class GuardVisitorController extends Controller
             return $candidate;
         }
 
-        return trim((string)$normalized);
+        return trim((string) $normalized);
     }
 
     /**
@@ -1733,12 +1721,12 @@ class GuardVisitorController extends Controller
         $normalizedAddress = $this->normalizeAddressForParsing($address);
         $umidNormalizedAddress = trim((string) preg_replace('/\bPHL(?:\s*[0-9?]{3,5})?\b/i', '', $normalizedAddress));
         $umidNormalizedAddress = trim((string) preg_replace('/\s+/', ' ', $umidNormalizedAddress));
-        $parts = array_values(array_filter(array_map('trim', explode(',', $normalizedAddress)), fn($part) => $part !== ''));
+        $parts = array_values(array_filter(array_map('trim', explode(',', $normalizedAddress)), fn ($part) => $part !== ''));
 
         // UMID compact format often has no commas:
         // "218 PRK 3 BRGY MALITLIT LIPA CITY BATANGAS PHL 4217"
         // "218 BRGY MALITLIT LIPA CITY BATANGAS PHL 4217"
-        if (!empty($umidNormalizedAddress)) {
+        if (! empty($umidNormalizedAddress)) {
             if (empty($result['house_no']) && preg_match('/^\s*(\d{1,5}[A-Z0-9-]*)\b/i', $umidNormalizedAddress, $m)) {
                 $result['house_no'] = trim((string) $m[1]);
             }
@@ -1756,7 +1744,7 @@ class GuardVisitorController extends Controller
             ) {
                 $purokToken = strtoupper(trim((string) $m[1]));
                 if (preg_match('/^\d{1,2}[A-Z]?$/', $purokToken)) {
-                    $result['street'] = 'Purok ' . $purokToken;
+                    $result['street'] = 'Purok '.$purokToken;
                 }
             }
 
@@ -1765,7 +1753,7 @@ class GuardVisitorController extends Controller
                 empty($result['street'])
                 && preg_match('/^\s*\d{1,5}[A-Z0-9-]*\s+(\d{1,2}[A-Z]?)\s+BRGY\.?\b/i', $umidNormalizedAddress, $m)
             ) {
-                $result['street'] = 'Purok ' . strtoupper(trim((string) $m[1]));
+                $result['street'] = 'Purok '.strtoupper(trim((string) $m[1]));
             }
 
             if (
@@ -1773,7 +1761,7 @@ class GuardVisitorController extends Controller
                 && preg_match('/^\s*\d{1,5}[A-Z0-9-]*\s+(.+?)\s+BRGY\.?\b/i', $umidNormalizedAddress, $m)
             ) {
                 $streetCandidate = trim((string) $m[1]);
-                if (!empty($streetCandidate)) {
+                if (! empty($streetCandidate)) {
                     $result['street'] = ucwords(strtolower($streetCandidate));
                 }
             }
@@ -1788,18 +1776,18 @@ class GuardVisitorController extends Controller
             // Some UMIDs only contain house no. + barangay + city/province (no explicit street).
             if (
                 empty($result['street'])
-                && !empty($result['barangay'])
+                && ! empty($result['barangay'])
                 && preg_match('/\bBRGY\.?\b/i', $umidNormalizedAddress)
             ) {
-                $result['street'] = 'Brgy. ' . $result['barangay'];
+                $result['street'] = 'Brgy. '.$result['barangay'];
             }
 
             if (empty($result['city']) && preg_match('/\bLIPA\s+CITY\b/i', $umidNormalizedAddress)) {
                 $result['city'] = 'Lipa City';
             } elseif (empty($result['city']) && preg_match('/\bCITY\s+OF\s+([A-Z\s]+?)(?=\s+\bBATANGAS\b|$)/i', $umidNormalizedAddress, $m)) {
-                $result['city'] = 'City of ' . ucwords(strtolower(trim((string) $m[1])));
+                $result['city'] = 'City of '.ucwords(strtolower(trim((string) $m[1])));
             } elseif (empty($result['city']) && preg_match('/\b([A-Z]+)\s+CITY\b/i', $umidNormalizedAddress, $m)) {
-                $result['city'] = ucwords(strtolower(trim((string) $m[1]) . ' City'));
+                $result['city'] = ucwords(strtolower(trim((string) $m[1]).' City'));
             }
 
             if (empty($result['province']) && preg_match('/\bBATANGAS\b/i', $umidNormalizedAddress)) {
@@ -1813,16 +1801,17 @@ class GuardVisitorController extends Controller
         foreach ($parts as $idx => $part) {
             if (preg_match('/^(ROAD|BLOCK|LOT)\s+[A-Z0-9-]+$/i', $part)) {
                 $houseParts[] = strtoupper($part);
+
                 continue;
             }
 
             if (preg_match('/^STREET\s+([A-Z\s]+?)(?:\s+[A-Z]+\s+CITY|\s+CITY|\s+MUNICIPALITY|$)/i', $part, $m)) {
                 if (empty($result['street']) && isset($parts[$idx - 1])) {
-                    $prevPart = trim((string)$parts[$idx - 1]);
+                    $prevPart = trim((string) $parts[$idx - 1]);
                     if (
-                        !empty($prevPart)
-                        && !preg_match('/^(ROAD|BLOCK|LOT)\s+/i', $prevPart)
-                        && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|BATANGAS)\b/i', $prevPart)
+                        ! empty($prevPart)
+                        && ! preg_match('/^(ROAD|BLOCK|LOT)\s+/i', $prevPart)
+                        && ! preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|BATANGAS)\b/i', $prevPart)
                     ) {
                         $result['street'] = ucwords(strtolower($prevPart));
                     }
@@ -1834,7 +1823,7 @@ class GuardVisitorController extends Controller
             }
         }
 
-        if (!empty($houseParts) && empty($result['house_no'])) {
+        if (! empty($houseParts) && empty($result['house_no'])) {
             $result['house_no'] = implode(', ', $houseParts);
         }
 
@@ -1853,9 +1842,9 @@ class GuardVisitorController extends Controller
         }
 
         if (preg_match('/\bCITY\s+OF\s+([A-Z\s]+?)(?:\s+BATANGAS|\s+PROVINCE|$)/i', $normalizedAddress, $m)) {
-            $result['city'] = 'City of ' . ucwords(strtolower(trim($m[1])));
+            $result['city'] = 'City of '.ucwords(strtolower(trim($m[1])));
         } elseif (preg_match('/\b([A-Z\s]+)\s+CITY\b/i', $normalizedAddress, $m)) {
-            $result['city'] = ucwords(strtolower(trim($m[1]) . ' City'));
+            $result['city'] = ucwords(strtolower(trim($m[1]).' City'));
         }
 
         if (preg_match('/\bBATANGAS\b/i', $normalizedAddress)) {
@@ -1871,7 +1860,7 @@ class GuardVisitorController extends Controller
         $addressLower = strtolower($normalizedAddress);
         $lines = array_filter(
             array_map('trim', explode(',', $normalizedAddress)),
-            fn($line) => !empty($line)
+            fn ($line) => ! empty($line)
         );
 
         // Handle OCR-noisy National ID address chunks like
@@ -1882,14 +1871,16 @@ class GuardVisitorController extends Controller
 
             if (preg_match('/\bCITY\b/', $lineUpper)) {
                 $normalizedCity = $this->normalizeCityFromOcrChunk($lineUpper, $normalizedAddress);
-                if (!empty($normalizedCity)) {
+                if (! empty($normalizedCity)) {
                     $result['city'] = $normalizedCity;
+
                     continue;
                 }
             }
 
             if (preg_match('/\bBATANGAS\b/i', $lineUpper)) {
                 $result['province'] = 'Batangas';
+
                 continue;
             }
 
@@ -1900,9 +1891,10 @@ class GuardVisitorController extends Controller
             if (
                 empty($result['barangay'])
                 && preg_match('/^[A-Z\s]{3,}$/', $lineUpper)
-                && !preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL|PRK|PUROK|BRGY|BARANGAY)\b/', $lineUpper)
+                && ! preg_match('/\b(CITY|MUNICIPALITY|PROVINCE|REGION|STREET|ROAD|AVENUE|PHL|PRK|PUROK|BRGY|BARANGAY)\b/', $lineUpper)
             ) {
                 $result['barangay'] = ucwords(strtolower(trim($lineUpper)));
+
                 continue;
             }
 
@@ -1967,15 +1959,15 @@ class GuardVisitorController extends Controller
             $lastPart = trim(end($lines));
             if (
                 preg_match('/^[A-Za-z\s]{3,}$/', $lastPart)
-                && !preg_match('/\b(city|municipality|barangay|brgy|street|st|road|rd|avenue|ave|pilipina|prk|purok)\b/i', $lastPart)
-                && !preg_match('/^[A-Za-z]{12,}$/', $lastPart)
+                && ! preg_match('/\b(city|municipality|barangay|brgy|street|st|road|rd|avenue|ave|pilipina|prk|purok)\b/i', $lastPart)
+                && ! preg_match('/^[A-Za-z]{12,}$/', $lastPart)
                 && $this->inferRegionFromProvince($lastPart) !== ''
             ) {
                 $result['province'] = $lastPart;
             }
         }
 
-        if (empty($result['city']) && !empty($lines)) {
+        if (empty($result['city']) && ! empty($lines)) {
             foreach ($lines as $line) {
                 if (preg_match('/\b(city\s+of\s+[A-Za-z\s]+)\b/i', $line, $m)) {
                     $result['city'] = trim($m[1]);
@@ -1993,7 +1985,7 @@ class GuardVisitorController extends Controller
         $provinceUpper = strtoupper(trim((string) ($result['province'] ?? '')));
         $cityUpper = strtoupper(trim((string) ($result['city'] ?? '')));
 
-        if (empty($result['city']) && !empty($normalizedParts)) {
+        if (empty($result['city']) && ! empty($normalizedParts)) {
             for ($i = count($normalizedParts) - 1; $i >= 0; $i--) {
                 $candidate = $normalizedParts[$i];
                 if ($candidate === '' || $candidate === 'PHL' || $candidate === $provinceUpper) {
@@ -2013,7 +2005,7 @@ class GuardVisitorController extends Controller
             }
         }
 
-        if (!empty($normalizedParts)) {
+        if (! empty($normalizedParts)) {
             $leadingPart = $normalizedParts[0];
             $leadingBarangay = $this->extractBarangayFromLeadingAddressPart($leadingPart);
 
@@ -2023,8 +2015,8 @@ class GuardVisitorController extends Controller
 
             // If OCR previously treated municipality as barangay, recover barangay from leading part.
             if (
-                !empty($result['city'])
-                && !empty($result['barangay'])
+                ! empty($result['city'])
+                && ! empty($result['barangay'])
                 && strtoupper(trim((string) $result['barangay'])) === $cityUpper
                 && $leadingBarangay !== ''
             ) {
@@ -2052,7 +2044,7 @@ class GuardVisitorController extends Controller
             return '';
         }
 
-        if (!preg_match('/^[A-Z][A-Z\s]{1,40}$/', $candidate)) {
+        if (! preg_match('/^[A-Z][A-Z\s]{1,40}$/', $candidate)) {
             return '';
         }
 
@@ -2062,7 +2054,7 @@ class GuardVisitorController extends Controller
     protected function enhanceUmidAddressDataFromRawText(array $addressData, string $addressSource, string $rawOcrText): array
     {
         $segment = $this->extractUmidAddressSegmentFromRawText($rawOcrText);
-        $context = trim($addressSource . ' ' . $segment);
+        $context = trim($addressSource.' '.$segment);
         $normalized = $this->normalizeAddressForParsing($context);
 
         if ($normalized === '') {
@@ -2077,7 +2069,7 @@ class GuardVisitorController extends Controller
             empty($addressData['street'])
             && preg_match('/\b(?:PRK|PUROK)\b\s*[,.:;-]?\s*(\d{1,2}[A-Z]?)\b/i', $normalized, $m)
         ) {
-            $addressData['street'] = 'Purok ' . strtoupper(trim((string) $m[1]));
+            $addressData['street'] = 'Purok '.strtoupper(trim((string) $m[1]));
         }
 
         if (
@@ -2085,7 +2077,7 @@ class GuardVisitorController extends Controller
             && preg_match('/\bBRGY\.?\s*[,.:;-]?\s*([A-Z]{3,20})\b/i', $normalized, $m)
         ) {
             $candidate = strtoupper(trim((string) $m[1]));
-            if (!in_array($candidate, ['CITY', 'PRK', 'PUROK', 'PHL'], true)) {
+            if (! in_array($candidate, ['CITY', 'PRK', 'PUROK', 'PHL'], true)) {
                 $addressData['barangay'] = ucwords(strtolower($candidate));
             }
         }
@@ -2149,10 +2141,10 @@ class GuardVisitorController extends Controller
         $provinceUpper = strtoupper(trim($province));
 
         if (
-            !preg_match('/\bLIPA\b/', $u)
-            && !preg_match('/\bLIPA\b/', $cityUpper)
-            && !preg_match('/\bBATANGAS\b/', $u)
-            && !preg_match('/\bBATANGAS\b/', $provinceUpper)
+            ! preg_match('/\bLIPA\b/', $u)
+            && ! preg_match('/\bLIPA\b/', $cityUpper)
+            && ! preg_match('/\bBATANGAS\b/', $u)
+            && ! preg_match('/\bBATANGAS\b/', $provinceUpper)
         ) {
             return '';
         }
@@ -2283,7 +2275,7 @@ class GuardVisitorController extends Controller
         }
 
         if (preg_match('/\bCITY\s+OF\s+([A-Z\s]+)\b/', $cityChunk, $m)) {
-            return 'City of ' . ucwords(strtolower(trim($m[1])));
+            return 'City of '.ucwords(strtolower(trim($m[1])));
         }
 
         if (preg_match('/\bCITY\s+([A-Z\s]+)\b/', $cityChunk, $m)) {
@@ -2293,7 +2285,7 @@ class GuardVisitorController extends Controller
                 return 'City of Lipa';
             }
 
-            return 'City of ' . ucwords(strtolower($candidate));
+            return 'City of '.ucwords(strtolower($candidate));
         }
 
         return '';
@@ -2493,6 +2485,7 @@ class GuardVisitorController extends Controller
             $payload['qr_token'] = $this->normalizeNullableString($decoded['qr_token'] ?? null);
             $payload['control_number'] = $this->normalizeNullableString($decoded['control_number'] ?? null);
             $payload['pass_number'] = $this->normalizeNullableString($decoded['pass_number'] ?? null);
+
             return $payload;
         }
 
@@ -2502,6 +2495,7 @@ class GuardVisitorController extends Controller
             $tokenFromUrl = $this->normalizeNullableString(urldecode($matches[1]));
             if ($tokenFromUrl !== null) {
                 $payload['qr_token'] = $tokenFromUrl;
+
                 return $payload;
             }
         }
@@ -2523,6 +2517,7 @@ class GuardVisitorController extends Controller
     protected function normalizeNullableString($value): ?string
     {
         $normalized = trim((string) ($value ?? ''));
+
         return $normalized === '' ? null : $normalized;
     }
 
@@ -2593,7 +2588,7 @@ class GuardVisitorController extends Controller
             }
 
             $partial = DB::table('office')
-                ->whereRaw('LOWER(TRIM(COALESCE(office_name, \'\'))) like ?', ['%' . strtolower($destination) . '%'])
+                ->whereRaw('LOWER(TRIM(COALESCE(office_name, \'\'))) like ?', ['%'.strtolower($destination).'%'])
                 ->orderBy('office_id')
                 ->value('office_id');
 
@@ -2662,7 +2657,7 @@ class GuardVisitorController extends Controller
         foreach ($names as $name) {
             $normalized = strtolower(trim($name));
             foreach (['status_name', 'step_status_name'] as $column) {
-                if (! \Illuminate\Support\Facades\Schema::hasColumn('step_status', $column)) {
+                if (! Schema::hasColumn('step_status', $column)) {
                     continue;
                 }
 
@@ -2676,9 +2671,9 @@ class GuardVisitorController extends Controller
             }
         }
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('step_status')) {
+        if (Schema::hasTable('step_status')) {
             $query = DB::table('step_status');
-            if (\Illuminate\Support\Facades\Schema::hasColumn('step_status', 'status_name')) {
+            if (Schema::hasColumn('step_status', 'status_name')) {
                 $query->whereRaw("LOWER(TRIM(COALESCE(status_name, ''))) NOT IN (?, ?, ?, ?)", [
                     'completed', 'complete', 'done', 'finished',
                 ]);

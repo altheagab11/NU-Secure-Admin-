@@ -169,6 +169,24 @@
             box-shadow: 0 12px 20px rgba(31, 52, 143, 0.25);
         }
 
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .captcha-group {
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .cf-turnstile {
+            width: 100%;
+        }
+
         .footer-text {
             margin-top: 18px;
             font-size: 13px;
@@ -221,7 +239,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login.submit') }}">
+            <form method="POST" action="{{ route('login.submit') }}" id="login-form">
                 @csrf
 
                 <div class="form-group">
@@ -266,12 +284,93 @@
                     </a>
                 </div>
 
-                <button type="submit" class="btn-login">Sign In</button>
+                <div class="form-group captcha-group">
+                    @if (! empty($turnstileSiteKey))
+                        <div
+                            class="cf-turnstile"
+                            data-sitekey="{{ $turnstileSiteKey }}"
+                            data-theme="light"
+                            data-size="flexible"
+                        ></div>
+                    @endif
+                    @error('cf-turnstile-response')
+                        <div class="error-text" id="captcha-error">{{ $message }}</div>
+                    @else
+                        <div class="error-text" id="captcha-error" hidden></div>
+                    @enderror
+                </div>
+
+                <button type="submit" class="btn-login" id="login-submit">Sign In</button>
             </form>
 
             <p class="footer-text">National University - Secure Visitor Access</p>
         </div>
     </div>
 
+    @if (! empty($turnstileSiteKey))
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @endif
+    <script>
+        (function () {
+            var form = document.getElementById('login-form');
+            var button = document.getElementById('login-submit');
+            var captchaError = document.getElementById('captcha-error');
+
+            if (!form || !button) {
+                return;
+            }
+
+            function captchaToken() {
+                var input = form.querySelector('input[name="cf-turnstile-response"]');
+                return input ? String(input.value || '').trim() : '';
+            }
+
+            function showCaptchaError(message) {
+                if (!captchaError) {
+                    return;
+                }
+                captchaError.hidden = false;
+                captchaError.textContent = message;
+            }
+
+            function resetCaptcha() {
+                if (window.turnstile && typeof window.turnstile.reset === 'function') {
+                    try {
+                        window.turnstile.reset();
+                    } catch (e) {}
+                }
+            }
+
+            function unlockButton() {
+                button.disabled = false;
+                button.textContent = 'Sign In';
+                button.dataset.submitting = '0';
+            }
+
+            form.addEventListener('submit', function (event) {
+                if (button.dataset.submitting === '1') {
+                    event.preventDefault();
+                    return;
+                }
+
+                if (!captchaToken()) {
+                    event.preventDefault();
+                    showCaptchaError('Please complete the security verification.');
+                    resetCaptcha();
+                    unlockButton();
+                    return;
+                }
+
+                button.dataset.submitting = '1';
+                button.disabled = true;
+                button.textContent = 'Signing in...';
+            });
+
+            window.addEventListener('pageshow', function () {
+                unlockButton();
+                resetCaptcha();
+            });
+        })();
+    </script>
 </body>
 </html>

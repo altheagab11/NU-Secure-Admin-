@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['first_name','last_name','name', 'email', 'password','password_hash'])]
+#[Fillable(['first_name', 'last_name', 'name', 'email', 'password', 'password_hash'])]
 #[Hidden(['password', 'password_hash', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -72,6 +72,11 @@ class User extends Authenticatable
     public function dutyShifts(): HasMany
     {
         return $this->hasMany(GuardDutyShift::class, 'guard_user_id', 'user_id');
+    }
+
+    public function loginAttempts(): HasMany
+    {
+        return $this->hasMany(LoginAttempt::class, 'user_id', 'user_id');
     }
 
     public static function findByEmail(string $email): ?self

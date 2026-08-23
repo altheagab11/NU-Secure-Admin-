@@ -748,6 +748,7 @@
 						</div>
 					</div>
 					@include('admin.partials.sidebar-activity-logs-link')
+					@include('admin.partials.sidebar-login-attempts-link')
 				</div>
 			</div>
 
@@ -823,6 +824,39 @@
 								<h2 class="fw-bold mb-0">{{ $averageDuration ?? '45m' }}</h2>
 							</div>
 						</div>
+					</div>
+				</div>
+
+				<div class="row g-3 mb-4">
+					<div class="col-md-4">
+						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
+							<div class="card shadow-sm border-0 rounded-4 h-100">
+								<div class="card-body">
+									<div class="text-muted small mb-2">Successful Logins Today</div>
+									<h2 class="fw-bold mb-0 text-success">{{ $successfulLoginsToday ?? 0 }}</h2>
+								</div>
+							</div>
+						</a>
+					</div>
+					<div class="col-md-4">
+						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
+							<div class="card shadow-sm border-0 rounded-4 h-100">
+								<div class="card-body">
+									<div class="text-muted small mb-2">Failed Login Attempts Today</div>
+									<h2 class="fw-bold mb-0 text-danger">{{ $failedLoginsToday ?? 0 }}</h2>
+								</div>
+							</div>
+						</a>
+					</div>
+					<div class="col-md-4">
+						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
+							<div class="card shadow-sm border-0 rounded-4 h-100">
+								<div class="card-body">
+									<div class="text-muted small mb-2">Blocked Attempts Today</div>
+									<h2 class="fw-bold mb-0 text-warning">{{ $blockedLoginsToday ?? 0 }}</h2>
+								</div>
+							</div>
+						</a>
 					</div>
 				</div>
 

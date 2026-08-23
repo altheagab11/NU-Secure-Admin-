@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
-	<title>Activity Logs</title>
+	<title>Login Attempts</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<style>
@@ -260,7 +260,7 @@
 
 		.filters-grid {
 			display: grid;
-			grid-template-columns: repeat(6, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 10px;
 			align-items: end;
 		}
@@ -395,6 +395,7 @@
 
 		.status-success { background: #dcfce7; color: #166534; }
 		.status-failed { background: #fee2e2; color: #991b1b; }
+		.status-blocked { background: #ffedd5; color: #9a3412; }
 		.status-warning { background: #fef3c7; color: #92400e; }
 
 		.empty-state {
@@ -588,15 +589,15 @@
 		</aside>
 
 		<main class="main">
-			@include('admin.partials.admin-topbar', ['title' => 'Activity Logs'])
+			@include('admin.partials.admin-topbar', ['title' => 'Login Attempts'])
 
 			<div class="toolbar mb-3">
 				<div>
-					<p class="page-subtitle mb-0">Monitor and review system activities performed by users.</p>
+					<p class="page-subtitle mb-0">Review successful, failed, and blocked login attempts for Administrator, Guard, and Office Staff accounts.</p>
 				</div>
 				<div class="refresh-meta">
 					<span id="lastUpdatedLabel">Last updated: just now</span>
-					<button type="button" class="btn btn-outline-primary btn-sm" id="refreshLogsBtn">
+					<button type="button" class="btn btn-outline-primary btn-sm" id="refreshAttemptsBtn">
 						<i class="bi bi-arrow-clockwise me-1"></i> Refresh
 					</button>
 				</div>
@@ -605,35 +606,29 @@
 			<div id="pageError" class="alert alert-danger d-none" role="alert"></div>
 
 			<div class="row g-3">
-				<div class="col-md-6 col-xl-3">
+				<div class="col-md-4">
 					<div class="stat-card">
-						<div class="stat-label">Total Activities Today</div>
-						<p class="stat-value" id="summaryTotal">—</p>
+						<div class="stat-label">Successful Logins Today</div>
+						<p class="stat-value" id="summarySuccess">—</p>
 					</div>
 				</div>
-				<div class="col-md-6 col-xl-3">
+				<div class="col-md-4">
 					<div class="stat-card">
-						<div class="stat-label">Active Users Today</div>
-						<p class="stat-value" id="summaryUsers">—</p>
-					</div>
-				</div>
-				<div class="col-md-6 col-xl-3">
-					<div class="stat-card">
-						<div class="stat-label">Failed Activities</div>
+						<div class="stat-label">Failed Login Attempts Today</div>
 						<p class="stat-value" id="summaryFailed">—</p>
 					</div>
 				</div>
-				<div class="col-md-6 col-xl-3">
+				<div class="col-md-4">
 					<div class="stat-card">
-						<div class="stat-label">Most Active Module</div>
-						<p class="stat-value" id="summaryModule">—</p>
+						<div class="stat-label">Blocked Attempts Today</div>
+						<p class="stat-value" id="summaryBlocked">—</p>
 					</div>
 				</div>
 			</div>
 
 			<div class="filters-card">
 				<p class="filters-label">Search &amp; Filter</p>
-				<form id="activityFilterForm" onsubmit="return false;">
+				<form id="loginAttemptFilterForm" onsubmit="return false;">
 					<div class="filters-grid">
 						<div>
 							<label class="field-label" for="date_range">Date Range</label>
@@ -647,40 +642,21 @@
 							</select>
 						</div>
 						<div>
-							<label class="field-label" for="user_id">User</label>
-							<select id="user_id" class="filter-select">
-								<option value="">All Users</option>
-							</select>
-						</div>
-						<div>
-							<label class="field-label" for="role_id">Role</label>
-							<select id="role_id" class="filter-select">
+							<label class="field-label" for="role">Role</label>
+							<select id="role" class="filter-select">
 								<option value="">All Roles</option>
-								<option value="1">Admin</option>
-								<option value="2">Guard</option>
-								<option value="3">Office Staff</option>
-								<option value="system">System</option>
-							</select>
-						</div>
-						<div>
-							<label class="field-label" for="module">Module</label>
-							<select id="module" class="filter-select">
-								<option value="">All Modules</option>
-							</select>
-						</div>
-						<div>
-							<label class="field-label" for="action">Action</label>
-							<select id="action" class="filter-select">
-								<option value="">All Actions</option>
+								<option value="admin">Administrator</option>
+								<option value="guard">Guard</option>
+								<option value="office">Office Staff</option>
 							</select>
 						</div>
 						<div>
 							<label class="field-label" for="status">Status</label>
 							<select id="status" class="filter-select">
 								<option value="">All Status</option>
-								<option value="Success">Success</option>
-								<option value="Failed">Failed</option>
-								<option value="Warning">Warning</option>
+								<option value="success">Successful</option>
+								<option value="failed">Failed</option>
+								<option value="blocked">Blocked</option>
 							</select>
 						</div>
 					</div>
@@ -696,7 +672,7 @@
 					</div>
 					<div class="search-wrap">
 						<i class="bi bi-search"></i>
-						<input type="search" id="search" class="filter-input" placeholder="Search activity logs...">
+						<input type="search" id="search" class="filter-input" placeholder="Search by name, email, or IP address...">
 					</div>
 					<div class="filters-actions">
 						<button type="button" class="btn btn-outline-secondary" id="resetFiltersBtn">Reset</button>
@@ -710,49 +686,47 @@
 					<table class="table table-hover align-middle mb-0">
 						<thead>
 							<tr>
-								<th class="sortable" data-sort="created_at">Date &amp; Time</th>
-								<th class="sortable" data-sort="user">User</th>
-								<th>Role</th>
-								<th class="sortable" data-sort="module">Module</th>
-								<th class="sortable" data-sort="action">Action</th>
-								<th>Description</th>
-								<th>IP Address</th>
+								<th class="sortable" data-sort="attempted_at">Date &amp; Time</th>
+								<th>Account / User</th>
+								<th class="sortable" data-sort="email">Email</th>
+								<th class="sortable" data-sort="role">Role</th>
 								<th class="sortable" data-sort="status">Status</th>
-								<th>Details</th>
+								<th>Failure Reason</th>
+								<th class="sortable" data-sort="ip_address">IP Address</th>
+								<th>Device</th>
+								<th class="sortable" data-sort="login_source">Login Source</th>
 							</tr>
 						</thead>
-						<tbody id="activityLogsBody">
+						<tbody id="loginAttemptsBody">
 							<tr>
-								<td colspan="9" class="text-center text-muted py-4">Loading activity logs...</td>
+								<td colspan="9" class="text-center text-muted py-4">Loading login attempts...</td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
-				<div class="table-pagination-bar activity-pagination-bar" id="activityPagination" role="navigation" aria-label="Activity logs pagination">
+				<div class="table-pagination-bar activity-pagination-bar" id="attemptsPagination" role="navigation" aria-label="Login attempts pagination">
 					<div class="table-pagination-left">
-						<label class="table-pagination-label" for="activityPageSize">Page size:</label>
-						<select id="activityPageSize" class="table-page-size" aria-label="Page size">
-							<option value="5" selected>5</option>
+						<label class="table-pagination-label" for="attemptsPageSize">Page size:</label>
+						<select id="attemptsPageSize" class="table-page-size" aria-label="Page size">
 							<option value="10">10</option>
+							<option value="15" selected>15</option>
 							<option value="25">25</option>
 							<option value="50">50</option>
-							<option value="75">75</option>
-							<option value="100">100</option>
 						</select>
-						<span class="table-pagination-range" id="activityPaginationRange">0 to 0 of 0</span>
+						<span class="table-pagination-range" id="attemptsPaginationRange">0 to 0 of 0</span>
 					</div>
 					<div class="table-pagination-right">
-						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationFirst" aria-label="First page" aria-disabled="true" disabled>
+						<button type="button" class="table-pagination-nav is-disabled" id="attemptsPaginationFirst" aria-label="First page" aria-disabled="true" disabled>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6L5 12l6 6M19 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
-						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationPrev" aria-label="Previous page" aria-disabled="true" disabled>
+						<button type="button" class="table-pagination-nav is-disabled" id="attemptsPaginationPrev" aria-label="Previous page" aria-disabled="true" disabled>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
-						<span class="table-pagination-page" id="activityPaginationPageLabel">Page <strong>1</strong> of 1</span>
-						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationNext" aria-label="Next page" aria-disabled="true" disabled>
+						<span class="table-pagination-page" id="attemptsPaginationPageLabel">Page <strong>1</strong> of 1</span>
+						<button type="button" class="table-pagination-nav is-disabled" id="attemptsPaginationNext" aria-label="Next page" aria-disabled="true" disabled>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
-						<button type="button" class="table-pagination-nav is-disabled" id="activityPaginationLast" aria-label="Last page" aria-disabled="true" disabled>
+						<button type="button" class="table-pagination-nav is-disabled" id="attemptsPaginationLast" aria-label="Last page" aria-disabled="true" disabled>
 							<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 						</button>
 					</div>
@@ -761,61 +735,41 @@
 		</main>
 	</div>
 
-	<div class="offcanvas offcanvas-end" tabindex="-1" id="activityLogDrawer" aria-labelledby="activityLogDrawerLabel">
-		<div class="offcanvas-header border-bottom">
-			<h5 class="offcanvas-title" id="activityLogDrawerLabel">Activity Details</h5>
-			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-		</div>
-		<div class="offcanvas-body" id="activityLogDrawerBody"></div>
-	</div>
-
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 	<script>
 		(function () {
-			const listUrl = @json(route('api.admin.activity-logs'));
-			const summaryUrl = @json(route('api.admin.activity-logs.summary'));
-			const filtersUrl = @json(route('api.admin.activity-logs.filters'));
-			const showUrlBase = @json(url('/api/admin/activity-logs'));
+			const listUrl = @json(route('api.admin.login-attempts'));
+			const summaryUrl = @json(route('api.admin.login-attempts.summary'));
 
 			const state = {
 				page: 1,
 				lastPage: 1,
-				perPage: 5,
-				sortBy: 'created_at',
+				perPage: 15,
+				sortBy: 'attempted_at',
 				sortDirection: 'desc',
 				searchTimer: null,
-				refreshTimer: null,
 				lastUpdatedAt: Date.now(),
-				drawerOpen: false,
 			};
 
 			const els = {
-				body: document.getElementById('activityLogsBody'),
-				pagination: document.getElementById('activityPagination'),
-				pageSize: document.getElementById('activityPageSize'),
-				range: document.getElementById('activityPaginationRange'),
-				pageLabel: document.getElementById('activityPaginationPageLabel'),
-				first: document.getElementById('activityPaginationFirst'),
-				prev: document.getElementById('activityPaginationPrev'),
-				next: document.getElementById('activityPaginationNext'),
-				last: document.getElementById('activityPaginationLast'),
+				body: document.getElementById('loginAttemptsBody'),
+				pageSize: document.getElementById('attemptsPageSize'),
+				range: document.getElementById('attemptsPaginationRange'),
+				pageLabel: document.getElementById('attemptsPaginationPageLabel'),
+				first: document.getElementById('attemptsPaginationFirst'),
+				prev: document.getElementById('attemptsPaginationPrev'),
+				next: document.getElementById('attemptsPaginationNext'),
+				last: document.getElementById('attemptsPaginationLast'),
 				error: document.getElementById('pageError'),
 				lastUpdated: document.getElementById('lastUpdatedLabel'),
 				dateRange: document.getElementById('date_range'),
 				customRange: document.getElementById('customRangeRow'),
-				user: document.getElementById('user_id'),
-				role: document.getElementById('role_id'),
-				module: document.getElementById('module'),
-				action: document.getElementById('action'),
+				role: document.getElementById('role'),
 				status: document.getElementById('status'),
 				search: document.getElementById('search'),
 				dateFrom: document.getElementById('date_from'),
 				dateTo: document.getElementById('date_to'),
-				drawerBody: document.getElementById('activityLogDrawerBody'),
 			};
-
-			const drawerEl = document.getElementById('activityLogDrawer');
-			const drawer = drawerEl ? new bootstrap.Offcanvas(drawerEl) : null;
 
 			function showError(message) {
 				els.error.textContent = message;
@@ -838,7 +792,7 @@
 			function statusClass(status) {
 				const normalized = String(status || '').toLowerCase();
 				if (normalized === 'failed') return 'status-failed';
-				if (normalized === 'warning') return 'status-warning';
+				if (normalized === 'blocked') return 'status-blocked';
 				return 'status-success';
 			}
 
@@ -851,10 +805,7 @@
 					date_range: els.dateRange.value || 'all',
 				});
 				if (els.search.value.trim()) params.set('search', els.search.value.trim());
-				if (els.user.value) params.set('user_id', els.user.value);
-				if (els.role.value) params.set('role_id', els.role.value);
-				if (els.module.value) params.set('module', els.module.value);
-				if (els.action.value) params.set('action', els.action.value);
+				if (els.role.value) params.set('role', els.role.value);
 				if (els.status.value) params.set('status', els.status.value);
 				if (els.dateRange.value === 'custom') {
 					if (els.dateFrom.value) params.set('date_from', els.dateFrom.value);
@@ -875,39 +826,15 @@
 				});
 				const payload = await response.json().catch(() => null);
 				if (!response.ok || !payload || payload.success === false) {
-					throw new Error((payload && payload.message) || 'Unable to load activity logs. Please try again.');
+					throw new Error((payload && payload.message) || 'Unable to load login attempts. Please try again.');
 				}
 				return payload;
 			}
 
 			function renderSummary(data) {
-				document.getElementById('summaryTotal').textContent = Number(data.total_today || 0).toLocaleString();
-				document.getElementById('summaryUsers').textContent = Number(data.active_users_today || 0).toLocaleString();
+				document.getElementById('summarySuccess').textContent = Number(data.successful_today || 0).toLocaleString();
 				document.getElementById('summaryFailed').textContent = Number(data.failed_today || 0).toLocaleString();
-				document.getElementById('summaryModule').textContent = data.most_active_module || '—';
-			}
-
-			function fillSelect(select, items, allLabel, valueKey, labelKey) {
-				const current = select.value;
-				select.innerHTML = '';
-				const all = document.createElement('option');
-				all.value = '';
-				all.textContent = allLabel;
-				select.appendChild(all);
-				items.forEach(function (item) {
-					const option = document.createElement('option');
-					if (typeof item === 'string') {
-						option.value = item;
-						option.textContent = item;
-					} else {
-						option.value = String(item[valueKey]);
-						option.textContent = item[labelKey];
-					}
-					select.appendChild(option);
-				});
-				if ([...select.options].some((opt) => opt.value === current)) {
-					select.value = current;
-				}
+				document.getElementById('summaryBlocked').textContent = Number(data.blocked_today || 0).toLocaleString();
 			}
 
 			function renderRows(payload) {
@@ -918,9 +845,9 @@
 						<tr>
 							<td colspan="9">
 								<div class="empty-state">
-									<i class="bi bi-clipboard-data"></i>
-									<h5 class="mb-1">${filtered ? 'No activities match your selected filters.' : 'No activity logs found.'}</h5>
-									<p class="mb-0">${filtered ? 'Try adjusting the filters or search terms.' : 'Activities performed by system users will appear here.'}</p>
+									<i class="bi bi-shield-lock"></i>
+									<h5 class="mb-1">${filtered ? 'No login attempts match your selected filters.' : 'No login attempts found.'}</h5>
+									<p class="mb-0">${filtered ? 'Try adjusting the filters or search terms.' : 'Login attempts from Administrator, Guard, and Office Staff accounts will appear here.'}</p>
 								</div>
 							</td>
 						</tr>
@@ -933,14 +860,14 @@
 					return `
 						<tr>
 							<td class="log-datetime">${escapeHtml(row.date_label)}<small>${escapeHtml(row.time_label)}</small></td>
-							<td><span class="log-user">${escapeHtml(row.user_name)}</span><span class="log-role">${escapeHtml(row.role)}</span></td>
+							<td><span class="log-user">${escapeHtml(row.account_name)}</span></td>
+							<td>${escapeHtml(row.email)}</td>
 							<td>${escapeHtml(row.role)}</td>
-							<td>${escapeHtml(row.module)}</td>
-							<td>${escapeHtml(row.action)}</td>
-							<td class="log-description" title="${escapeHtml(row.description)}">${escapeHtml(row.description)}</td>
+							<td><span class="status-badge ${statusClass(row.status_slug)}">${escapeHtml(row.status)}</span></td>
+							<td>${escapeHtml(row.failure_reason)}</td>
 							<td>${escapeHtml(row.ip_address)}</td>
-							<td><span class="status-badge ${statusClass(row.status)}">${escapeHtml(row.status)}</span></td>
-							<td><button type="button" class="btn btn-sm btn-outline-dark view-log-btn" data-log-id="${row.log_id}">View</button></td>
+							<td>${escapeHtml(row.device_type)}</td>
+							<td>${escapeHtml(row.login_source)}</td>
 						</tr>
 					`;
 				}).join('');
@@ -982,97 +909,16 @@
 				setNavDisabled(els.last, onLast);
 			}
 
-			function renderDetail(data) {
-				const userBlock = data.performed_by_system
-					? `<div class="detail-grid"><dt>Performed By</dt><dd>System</dd></div>`
-					: `<div class="detail-grid">
-						<dt>Full name</dt><dd>${escapeHtml(data.user.full_name)}</dd>
-						<dt>Email</dt><dd>${escapeHtml(data.user.email)}</dd>
-						<dt>Role</dt><dd>${escapeHtml(data.user.role)}</dd>
-						<dt>User ID</dt><dd>${escapeHtml(data.user.user_id)}</dd>
-					</div>`;
-
-				const changes = (data.changes || []);
-				const changesHtml = changes.length
-					? `<div class="table-responsive"><table class="table table-sm align-middle">
-						<thead><tr><th>Field</th><th>Previous</th><th>New</th></tr></thead>
-						<tbody>
-							${changes.map((row) => `
-								<tr class="${row.changed ? 'diff-changed' : ''}">
-									<td>${escapeHtml(row.field)}</td>
-									<td>${escapeHtml(row.previous)}</td>
-									<td>${escapeHtml(row.new)}</td>
-								</tr>
-							`).join('')}
-						</tbody>
-					</table></div>`
-					: '<p class="text-muted mb-0">No data changes were recorded for this activity.</p>';
-
-				els.drawerBody.innerHTML = `
-					<div class="detail-section">
-						<h6>Activity Information</h6>
-						<div class="detail-grid">
-							<dt>Log ID</dt><dd>#${escapeHtml(data.log_id)}</dd>
-							<dt>Date</dt><dd>${escapeHtml(data.date_label)}</dd>
-							<dt>Time</dt><dd>${escapeHtml(data.time_label)}</dd>
-							<dt>Action</dt><dd>${escapeHtml(data.action)}</dd>
-							<dt>Module</dt><dd>${escapeHtml(data.module)}</dd>
-							<dt>Status</dt><dd><span class="status-badge ${statusClass(data.status)}">${escapeHtml(data.status)}</span></dd>
-						</div>
-					</div>
-					<div class="detail-section">
-						<h6>User Information</h6>
-						${userBlock}
-					</div>
-					<div class="detail-section">
-						<h6>Request Information</h6>
-						<div class="detail-grid">
-							<dt>IP Address</dt><dd>${escapeHtml(data.request.ip_address)}</dd>
-							<dt>Device / Browser</dt><dd>${escapeHtml(data.request.user_agent)}</dd>
-							<dt>Request Method</dt><dd>${escapeHtml(data.request.method)}</dd>
-							<dt>Request URL</dt><dd>${escapeHtml(data.request.url)}</dd>
-						</div>
-					</div>
-					<div class="detail-section">
-						<h6>Record Information</h6>
-						<div class="detail-grid">
-							<dt>Entity Type</dt><dd>${escapeHtml(data.record.entity_type)}</dd>
-							<dt>Entity ID</dt><dd>${escapeHtml(data.record.entity_id ?? '—')}</dd>
-						</div>
-					</div>
-					<div class="detail-section">
-						<h6>Description</h6>
-						<p>${escapeHtml(data.description)}</p>
-					</div>
-					<div class="detail-section">
-						<h6>Data Changes</h6>
-						${changesHtml}
-					</div>
-				`;
-			}
-
 			async function loadSummary() {
 				try {
 					const payload = await fetchJson(summaryUrl);
 					renderSummary(payload.data || {});
 				} catch (error) {
-					showError('Unable to load activity summary. Please try again.');
+					showError('Unable to load login attempt summary. Please try again.');
 				}
 			}
 
-			async function loadFilters() {
-				try {
-					const payload = await fetchJson(filtersUrl);
-					const data = payload.data || {};
-					fillSelect(els.user, data.users || [], 'All Users', 'user_id', 'name');
-					fillSelect(els.module, data.modules || [], 'All Modules');
-					fillSelect(els.action, data.actions || [], 'All Actions');
-				} catch (error) {
-					showError('Unable to load activity log filters. Please try again.');
-				}
-			}
-
-			async function loadLogs() {
+			async function loadAttempts() {
 				try {
 					hideError();
 					const payload = await fetchJson(listUrl + '?' + queryParams().toString());
@@ -1085,88 +931,60 @@
 				}
 			}
 
-			async function openLog(logId) {
-				els.drawerBody.innerHTML = '<p class="text-muted">Loading details...</p>';
-				drawer?.show();
-				try {
-					const payload = await fetchJson(showUrlBase + '/' + logId);
-					renderDetail(payload.data);
-				} catch (error) {
-					els.drawerBody.innerHTML = `<div class="alert alert-danger">${escapeHtml(error.message)}</div>`;
-				}
-			}
-
 			function resetFilters() {
 				els.dateRange.value = 'all';
-				els.user.value = '';
 				els.role.value = '';
-				els.module.value = '';
-				els.action.value = '';
 				els.status.value = '';
 				els.search.value = '';
 				els.dateFrom.value = '';
 				els.dateTo.value = '';
 				state.page = 1;
 				toggleCustomRange();
-				loadLogs();
+				loadAttempts();
 			}
 
 			els.dateRange.addEventListener('change', toggleCustomRange);
 			document.getElementById('applyFiltersBtn').addEventListener('click', function () {
 				state.page = 1;
-				loadLogs();
+				loadAttempts();
 			});
 			document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
-			document.getElementById('refreshLogsBtn').addEventListener('click', function () {
+			document.getElementById('refreshAttemptsBtn').addEventListener('click', function () {
 				loadSummary();
-				loadLogs();
+				loadAttempts();
 			});
 			els.search.addEventListener('input', function () {
 				clearTimeout(state.searchTimer);
 				state.searchTimer = setTimeout(function () {
 					state.page = 1;
-					loadLogs();
+					loadAttempts();
 				}, 400);
 			});
-			els.body.addEventListener('click', function (event) {
-				const button = event.target.closest('.view-log-btn');
-				if (button) openLog(button.getAttribute('data-log-id'));
+			els.first.addEventListener('click', function () {
+				if (state.page <= 1) return;
+				state.page = 1;
+				loadAttempts();
 			});
-			if (els.first) {
-				els.first.addEventListener('click', function () {
-					if (state.page <= 1) return;
-					state.page = 1;
-					loadLogs();
-				});
-			}
-			if (els.prev) {
-				els.prev.addEventListener('click', function () {
-					if (state.page <= 1) return;
-					state.page -= 1;
-					loadLogs();
-				});
-			}
-			if (els.next) {
-				els.next.addEventListener('click', function () {
-					if (state.page >= state.lastPage) return;
-					state.page += 1;
-					loadLogs();
-				});
-			}
-			if (els.last) {
-				els.last.addEventListener('click', function () {
-					if (state.page >= state.lastPage) return;
-					state.page = state.lastPage;
-					loadLogs();
-				});
-			}
-			if (els.pageSize) {
-				els.pageSize.addEventListener('change', function () {
-					state.perPage = Number(els.pageSize.value) || 5;
-					state.page = 1;
-					loadLogs();
-				});
-			}
+			els.prev.addEventListener('click', function () {
+				if (state.page <= 1) return;
+				state.page -= 1;
+				loadAttempts();
+			});
+			els.next.addEventListener('click', function () {
+				if (state.page >= state.lastPage) return;
+				state.page += 1;
+				loadAttempts();
+			});
+			els.last.addEventListener('click', function () {
+				if (state.page >= state.lastPage) return;
+				state.page = state.lastPage;
+				loadAttempts();
+			});
+			els.pageSize.addEventListener('change', function () {
+				state.perPage = Number(els.pageSize.value) || 15;
+				state.page = 1;
+				loadAttempts();
+			});
 			document.querySelectorAll('th.sortable').forEach(function (th) {
 				th.addEventListener('click', function () {
 					const sortBy = th.getAttribute('data-sort');
@@ -1174,16 +992,11 @@
 						state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
 					} else {
 						state.sortBy = sortBy;
-						state.sortDirection = sortBy === 'created_at' ? 'desc' : 'asc';
+						state.sortDirection = 'desc';
 					}
-					loadLogs();
+					loadAttempts();
 				});
 			});
-
-			if (drawerEl) {
-				drawerEl.addEventListener('shown.bs.offcanvas', function () { state.drawerOpen = true; });
-				drawerEl.addEventListener('hidden.bs.offcanvas', function () { state.drawerOpen = false; });
-			}
 
 			const toggle = document.getElementById('userMenuToggle');
 			const group = document.getElementById('userMenuGroup');
@@ -1206,15 +1019,14 @@
 			}, 5000);
 
 			setInterval(function () {
-				if (document.hidden || state.drawerOpen) return;
+				if (document.hidden) return;
 				loadSummary();
-				loadLogs();
+				loadAttempts();
 			}, 45000);
 
 			toggleCustomRange();
-			loadFilters();
 			loadSummary();
-			loadLogs();
+			loadAttempts();
 		})();
 	</script>
 	@include('admin.partials.admin-responsive-script')

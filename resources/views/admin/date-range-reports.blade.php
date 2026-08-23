@@ -521,6 +521,7 @@
 						</div>
 					</div>
 					@include('admin.partials.sidebar-activity-logs-link')
+					@include('admin.partials.sidebar-login-attempts-link')
 				</div>
 			</div>
 

@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GuardDutyShift;
+use App\Models\LoginAttempt;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\GuardDutyShift;
 
 class AdminDashboardController extends Controller
 {
@@ -18,17 +19,17 @@ class AdminDashboardController extends Controller
         $statusFilter = strtolower($statusFilterRaw);
 
         $allowedDateFilters = ['today', 'week', 'month'];
-        if (!in_array($dateFilter, $allowedDateFilters, true)) {
+        if (! in_array($dateFilter, $allowedDateFilters, true)) {
             $dateFilter = '';
         }
 
         $allowedPerPage = [5, 10, 25, 50, 75, 100];
         $livePerPage = (int) $request->query('live_per_page', 5);
         $alertsPerPage = (int) $request->query('alerts_per_page', 5);
-        if (!in_array($livePerPage, $allowedPerPage, true)) {
+        if (! in_array($livePerPage, $allowedPerPage, true)) {
             $livePerPage = 5;
         }
-        if (!in_array($alertsPerPage, $allowedPerPage, true)) {
+        if (! in_array($alertsPerPage, $allowedPerPage, true)) {
             $alertsPerPage = 5;
         }
 
@@ -128,7 +129,7 @@ class AdminDashboardController extends Controller
         $averageDurationMinutes = $averageDurationQuery->avg('duration_minutes');
 
         $averageDuration = $averageDurationMinutes !== null
-            ? (int) round((float) $averageDurationMinutes) . 'm'
+            ? (int) round((float) $averageDurationMinutes).'m'
             : '0m';
 
         $severityCountsToday = DB::table('alerts as a')
@@ -285,19 +286,19 @@ class AdminDashboardController extends Controller
 
         $liveVisitorRows->setCollection(
             $liveVisitorRows->getCollection()->map(function ($row) {
-                $name = trim(((string) ($row->first_name ?? '')) . ' ' . ((string) ($row->last_name ?? '')));
+                $name = trim(((string) ($row->first_name ?? '')).' '.((string) ($row->last_name ?? '')));
                 if ($name === '') {
                     $name = 'Unknown Visitor';
                 }
 
                 $status = 'Inside';
-                if (!empty($row->exit_time)) {
+                if (! empty($row->exit_time)) {
                     $status = 'Exited';
                 }
 
                 $timeIn = '—';
                 try {
-                    if (!empty($row->entry_time)) {
+                    if (! empty($row->entry_time)) {
                         $timeIn = Carbon::parse($row->entry_time)->format('h:i A');
                     }
                 } catch (\Throwable $e) {
@@ -360,14 +361,14 @@ class AdminDashboardController extends Controller
                     $lastName = trim((string) ($row->visit_last_name ?? ''));
                 }
 
-                $visitorName = trim($firstName . ' ' . $lastName);
+                $visitorName = trim($firstName.' '.$lastName);
                 if ($visitorName === '') {
                     $visitorName = 'Unknown Visitor';
                 }
 
                 $timeLabel = '—';
                 try {
-                    if (!empty($row->created_at)) {
+                    if (! empty($row->created_at)) {
                         $timeLabel = Carbon::parse($row->created_at)->format('h:i A');
                     }
                 } catch (\Throwable $e) {
@@ -431,11 +432,11 @@ class AdminDashboardController extends Controller
             ->first();
 
         $topOfficeTodayInsight = 'No office visits recorded today.';
-        if ($topOfficeTodayRow && !empty($topOfficeTodayRow->office_name)) {
-            $topOfficeTodayInsight = $topOfficeTodayRow->office_name . ' receives the most visitors today.';
+        if ($topOfficeTodayRow && ! empty($topOfficeTodayRow->office_name)) {
+            $topOfficeTodayInsight = $topOfficeTodayRow->office_name.' receives the most visitors today.';
         }
 
-        $unresolvedAlertsInsight = $unresolvedAlerts . ' unresolved alert' . ($unresolvedAlerts === 1 ? '' : 's') . ' need immediate attention.';
+        $unresolvedAlertsInsight = $unresolvedAlerts.' unresolved alert'.($unresolvedAlerts === 1 ? '' : 's').' need immediate attention.';
 
         $longestAvgDurationOfficeRow = DB::table('visit as v')
             ->join('office as o', 'v.primary_office_id', '=', 'o.office_id')
@@ -447,9 +448,9 @@ class AdminDashboardController extends Controller
             ->first();
 
         $longestAvgDurationInsight = 'No completed visit duration data yet.';
-        if ($longestAvgDurationOfficeRow && !empty($longestAvgDurationOfficeRow->office_name)) {
+        if ($longestAvgDurationOfficeRow && ! empty($longestAvgDurationOfficeRow->office_name)) {
             $avgDuration = (int) round((float) ($longestAvgDurationOfficeRow->average_duration ?? 0));
-            $longestAvgDurationInsight = $longestAvgDurationOfficeRow->office_name . ' has the longest average visit duration (' . $avgDuration . 'm).';
+            $longestAvgDurationInsight = $longestAvgDurationOfficeRow->office_name.' has the longest average visit duration ('.$avgDuration.'m).';
         }
 
         $guardsOnDutyCount = 0;
@@ -457,6 +458,22 @@ class AdminDashboardController extends Controller
             $guardsOnDutyCount = GuardDutyShift::query()->active()->count();
         } catch (\Throwable $e) {
             $guardsOnDutyCount = 0;
+        }
+
+        $successfulLoginsToday = 0;
+        $failedLoginsToday = 0;
+        $blockedLoginsToday = 0;
+        try {
+            $todayStart = Carbon::now('Asia/Manila')->startOfDay();
+            $todayEnd = Carbon::now('Asia/Manila')->endOfDay();
+            $todayAttempts = LoginAttempt::query()->whereBetween('attempted_at', [$todayStart, $todayEnd]);
+            $successfulLoginsToday = (clone $todayAttempts)->where('status', LoginAttempt::STATUS_SUCCESS)->count();
+            $failedLoginsToday = (clone $todayAttempts)->where('status', LoginAttempt::STATUS_FAILED)->count();
+            $blockedLoginsToday = (clone $todayAttempts)->where('status', LoginAttempt::STATUS_BLOCKED)->count();
+        } catch (\Throwable $e) {
+            $successfulLoginsToday = 0;
+            $failedLoginsToday = 0;
+            $blockedLoginsToday = 0;
         }
 
         return view('admin.dashboard', [
@@ -493,6 +510,9 @@ class AdminDashboardController extends Controller
             'unresolvedAlertsInsight' => $unresolvedAlertsInsight,
             'longestAvgDurationInsight' => $longestAvgDurationInsight,
             'guardsOnDutyCount' => $guardsOnDutyCount,
+            'successfulLoginsToday' => $successfulLoginsToday,
+            'failedLoginsToday' => $failedLoginsToday,
+            'blockedLoginsToday' => $blockedLoginsToday,
         ]);
     }
 }

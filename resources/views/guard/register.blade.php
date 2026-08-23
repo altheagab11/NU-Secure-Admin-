@@ -1079,6 +1079,42 @@
 		.office-option input {
 			width: 16px;
 			height: 16px;
+			accent-color: #3e4ba0;
+			flex-shrink: 0;
+		}
+
+		.office-visit-heading {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			flex-wrap: wrap;
+			margin-bottom: 8px;
+		}
+
+		.office-visit-heading .visitor-label {
+			margin: 0;
+		}
+
+		.office-select-all-inline {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0;
+			font-size: 14px;
+			font-weight: 700;
+			color: #1f2937;
+			cursor: pointer;
+			user-select: none;
+			white-space: nowrap;
+		}
+
+		.office-select-all-inline input {
+			width: 16px;
+			height: 16px;
+			accent-color: #3e4ba0;
+			flex-shrink: 0;
+			cursor: pointer;
 		}
 
 		.visitor-submit {
@@ -1976,7 +2012,7 @@
 		}
 
 		body.self-registration-mode.kiosk-type-select {
-			background: #1a2d6d;
+			background: #1f348f;
 		}
 
 		body.self-registration-mode .layout {
@@ -3022,6 +3058,85 @@
 			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 		}
 
+		body.self-registration-mode .kiosk-office-heading {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			flex-wrap: wrap;
+			margin-bottom: 0;
+		}
+
+		body.self-registration-mode .kiosk-office-heading .kiosk-form-section-title {
+			margin: 0;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0;
+			padding: 6px 10px;
+			border: 1px solid #d8e1ee;
+			border-radius: 999px;
+			background: #f8fafc;
+			font-size: 0.78rem;
+			font-weight: 700;
+			color: #1e293b;
+			cursor: pointer;
+			user-select: none;
+			white-space: nowrap;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline input {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline .checkbox-indicator {
+			width: 16px;
+			height: 16px;
+			flex-shrink: 0;
+			border: 2px solid #a4afbf;
+			border-radius: 4px;
+			background: #fff;
+			display: grid;
+			place-items: center;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline input:checked + .checkbox-indicator {
+			border-color: #2945a5;
+			background: #2945a5;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline input:checked + .checkbox-indicator::after {
+			content: "";
+			width: 4px;
+			height: 8px;
+			margin-bottom: 1px;
+			border: solid #fff;
+			border-width: 0 2px 2px 0;
+			transform: rotate(45deg);
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline input:indeterminate + .checkbox-indicator {
+			border-color: #2945a5;
+			background: #2945a5;
+		}
+
+		body.self-registration-mode .kiosk-select-all-inline input:indeterminate + .checkbox-indicator::after {
+			content: "";
+			width: 8px;
+			height: 2px;
+			margin: 0;
+			background: #fff;
+			border: 0;
+			transform: none;
+		}
+
 		body.self-registration-mode .kiosk-office-choice .checkbox-indicator,
 		body.self-registration-mode .kiosk-office-choice .radio-indicator {
 			width: 19px;
@@ -3030,6 +3145,8 @@
 			border: 2px solid #a4afbf;
 			border-radius: 5px;
 			background: #fff;
+			display: grid;
+			place-items: center;
 		}
 
 		body.self-registration-mode .kiosk-office-choice .office-details {
@@ -3081,7 +3198,37 @@
 		body.self-registration-mode .kiosk-office-choice > input:checked + label .radio-indicator {
 			border-color: #2945a5;
 			background: #2945a5;
-			box-shadow: inset 0 0 0 2px #fff;
+			box-shadow: none;
+		}
+
+		body.self-registration-mode .kiosk-office-choice > input:checked + label .checkbox-indicator::after {
+			content: "";
+			width: 5px;
+			height: 9px;
+			margin-bottom: 2px;
+			border: solid #fff;
+			border-width: 0 2px 2px 0;
+			transform: rotate(45deg);
+		}
+
+		body.self-registration-mode .kiosk-office-choice > input:indeterminate + label {
+			border-color: #2945a5;
+			background: #edf2ff;
+		}
+
+		body.self-registration-mode .kiosk-office-choice > input:indeterminate + label .checkbox-indicator {
+			border-color: #2945a5;
+			background: #2945a5;
+		}
+
+		body.self-registration-mode .kiosk-office-choice > input:indeterminate + label .checkbox-indicator::after {
+			content: "";
+			width: 9px;
+			height: 2px;
+			margin: 0;
+			background: #fff;
+			border: 0;
+			transform: none;
 		}
 
 		body.self-registration-mode .kiosk-office-choice > input:checked + label .office-check {
@@ -3106,7 +3253,7 @@
 			grid-column: 1 / -1;
 		}
 
-		.office-option input[type="radio"] {
+		.office-option input[type="checkbox"] {
 			width: 16px;
 			height: 16px;
 		}
@@ -3492,6 +3639,33 @@
 			padding: 24px;
 			background: linear-gradient(rgba(31, 52, 143, 0.72), rgba(31, 52, 143, 0.72)),
 				url('{{ asset('picture/lipa.png') }}') no-repeat center center / cover;
+		}
+
+		/* Type picker: extend background to the top so no body-color stripe shows under the fixed header. */
+		body.self-registration-mode.kiosk-type-select {
+			--self-reg-header-height: calc(72px + env(safe-area-inset-top, 0px));
+			background: #1f348f;
+		}
+
+		body.self-registration-mode.kiosk-type-select .main {
+			padding-top: 0 !important;
+			min-height: 100dvh;
+		}
+
+		body.self-registration-mode.kiosk-type-select .self-registration-body {
+			min-height: 100dvh;
+		}
+
+		body.self-registration-mode.kiosk-type-select .kiosk-type-picker {
+			min-height: 100dvh;
+			padding-top: calc(var(--self-reg-header-height) + 24px);
+			padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+			box-sizing: border-box;
+		}
+
+		body.self-registration-mode.kiosk-type-select .self-registration-header {
+			border-bottom: none;
+			box-shadow: none;
 		}
 
 		body.self-registration-mode .kiosk-type-picker-inner {
@@ -4250,7 +4424,7 @@
 			}
 
 			body.self-registration-mode.kiosk-type-select .main {
-				padding-top: calc(64px + env(safe-area-inset-top)) !important;
+				padding-top: 0 !important;
 			}
 
 			body.self-registration-mode:not(.kiosk-type-select) .self-registration-brand {
@@ -4635,7 +4809,7 @@
 			gap: 16px;
 			padding: 14px 0 18px;
 			margin-bottom: 8px;
-			border-bottom: 1px solid #e2e8f0;
+			border-bottom: none;
 		}
 
 		.self-registration-brand {
@@ -5539,7 +5713,7 @@
 			}
 
 			body.self-registration-mode.kiosk-type-select .main {
-				padding-top: calc(70px + env(safe-area-inset-top)) !important;
+				padding-top: 0 !important;
 			}
 
 			body.self-registration-mode.kiosk-type-select .self-registration-header {
@@ -5713,7 +5887,7 @@
 			}
 
 			body.self-registration-mode.kiosk-type-select .main {
-				padding-top: calc(64px + env(safe-area-inset-top)) !important;
+				padding-top: 0 !important;
 			}
 
 			body.self-registration-mode.kiosk-type-select .self-registration-header {
@@ -5972,6 +6146,63 @@
 				padding: 28px 12px;
 				min-height: 240px;
 			}
+		}
+
+		.leave-register-toast.swal2-popup {
+			width: auto !important;
+			max-width: min(560px, calc(100vw - 24px));
+			margin-top: 16px !important;
+			padding: 14px 16px 12px !important;
+			border-radius: 12px !important;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15) !important;
+		}
+
+		.leave-register-toast .swal2-icon {
+			width: 2em;
+			height: 2em;
+			margin: 0 10px 0 0 !important;
+			border-width: 2px;
+		}
+
+		.leave-register-toast-title {
+			font-size: 15px !important;
+			font-weight: 700 !important;
+			color: #111827 !important;
+			margin: 0 !important;
+			text-align: left !important;
+		}
+
+		.leave-register-toast-text {
+			font-size: 13px !important;
+			color: #4b5563 !important;
+			margin: 4px 0 0 !important;
+			text-align: left !important;
+		}
+
+		.leave-register-toast-actions {
+			margin: 10px 0 0 !important;
+			width: 100%;
+			justify-content: flex-end !important;
+			gap: 8px !important;
+		}
+
+		.leave-register-toast-btn {
+			border: 0;
+			border-radius: 8px;
+			padding: 7px 14px;
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+		}
+
+		.leave-register-toast-btn-stay {
+			background: #f3f4f6;
+			color: #374151;
+		}
+
+		.leave-register-toast-btn-leave {
+			background: #3e4ba0;
+			color: #fff;
 		}
 	</style>
 </head>
@@ -6935,7 +7166,16 @@
 									</section>
 
 									<section class="kiosk-form-section">
-										<h3 class="kiosk-form-section-title"><i class="bi bi-building-fill"></i> Office to Visit <span class="required-mark">*</span></h3>
+										<div class="kiosk-office-heading">
+											<h3 class="kiosk-form-section-title"><i class="bi bi-building-fill"></i> Office to Visit <span class="required-mark">*</span></h3>
+											@if ($registerType !== 'contractor')
+												<label class="kiosk-select-all-inline" for="officeSelectAll">
+													<input type="checkbox" id="officeSelectAll" class="office-checkbox" value="__select_all__" name="destination_office_select_all">
+													<span class="checkbox-indicator" aria-hidden="true"></span>
+													<span>Select All</span>
+												</label>
+											@endif
+										</div>
 										@if ($registerType === 'contractor')
 											<div class="visitor-input-group" style="margin-top: 17px;">
 												<div class="kiosk-input-wrap">
@@ -7023,7 +7263,7 @@
 									<ul class="kiosk-verify-tips-list">
 										<li><i class="bi bi-check-lg" aria-hidden="true"></i> Review all entered information.</li>
 										<li><i class="bi bi-check-lg" aria-hidden="true"></i> Make sure required fields are complete.</li>
-										<li><i class="bi bi-check-lg" aria-hidden="true"></i> Select the correct office to visit.</li>
+										<li><i class="bi bi-check-lg" aria-hidden="true"></i> Select one or more offices to visit.</li>
 									</ul>
 								</div>
 							</aside>
@@ -7087,7 +7327,15 @@
 						</div>
 
 						<div class="visitor-field">
-							<label class="visitor-label" for="destinationOffice">Office to Visit <span class="required-mark">*</span></label>
+							<div class="office-visit-heading">
+								<label class="visitor-label" for="destinationOffice">Office to Visit <span class="required-mark">*</span></label>
+								@if ($registerType !== 'contractor')
+									<label class="office-select-all-inline" for="officeSelectAll">
+										<input type="checkbox" id="officeSelectAll" class="office-checkbox" value="__select_all__" name="destination_office_select_all">
+										<span>Select All</span>
+									</label>
+								@endif
+							</div>
 							@if ($registerType === 'contractor')
 								<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
 							@else
@@ -7319,6 +7567,26 @@
 			let modalMode = 'assign';
 			let currentShift = null;
 			let logoutAfterEnd = false;
+
+			const syncKioskTypeHeaderOffset = () => {
+				if (!document.body.classList.contains('kiosk-type-select')) {
+					return;
+				}
+
+				const header = document.querySelector('.self-registration-header');
+				const picker = document.querySelector('.kiosk-type-picker');
+				if (!header || !picker) {
+					return;
+				}
+
+				const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+				document.documentElement.style.setProperty('--self-reg-header-height', `${headerHeight}px`);
+				picker.style.paddingTop = `${headerHeight + 24}px`;
+			};
+
+			syncKioskTypeHeaderOffset();
+			window.addEventListener('resize', syncKioskTypeHeaderOffset);
+			window.addEventListener('orientationchange', syncKioskTypeHeaderOffset);
 
 			const csrfHeaders = () => ({
 				'Content-Type': 'application/json',
@@ -7813,6 +8081,7 @@
 		let selectedOfficeId = null;
 		let isOtherDestination = false;
 		const OTHERS_OFFICE_VALUE = '__others__';
+		const SELECT_ALL_VALUE = '__select_all__';
 		let faceIdCapturePublicPath = '';
 		let faceIdCapturePreviewUrl = '';
 		let hasSavedRegistration = false;
@@ -7883,22 +8152,35 @@
 			return Boolean(frozenFrame?.classList.contains('visible'));
 		};
 
-		const leaveRegisterConfirmCopy = {
+		const leaveRegisterConfirmOptions = () => ({
+			toast: true,
+			position: 'top',
+			icon: 'warning',
+			iconColor: '#f59e0b',
 			title: 'Leave this page?',
-			html: 'You have an in-progress visitor registration. If you leave now, any unsaved information will be lost.<br/><br/>Do you want to continue?',
+			text: 'Unsaved registration progress will be lost.',
+			showCancelButton: true,
 			confirmButtonText: 'Leave page',
 			cancelButtonText: 'Stay here',
-		};
+			focusCancel: true,
+			reverseButtons: true,
+			buttonsStyling: false,
+			customClass: {
+				popup: 'leave-register-toast',
+				title: 'leave-register-toast-title',
+				htmlContainer: 'leave-register-toast-text',
+				confirmButton: 'leave-register-toast-btn leave-register-toast-btn-leave',
+				cancelButton: 'leave-register-toast-btn leave-register-toast-btn-stay',
+				actions: 'leave-register-toast-actions',
+			},
+		});
 
 		const confirmKioskNavigation = (targetHref) => {
 			if (!targetHref) {
 				return;
 			}
 
-			Swal.fire({
-				...leaveRegisterConfirmCopy,
-				icon: 'warning',
-			}).then((result) => {
+			Swal.fire(leaveRegisterConfirmOptions()).then((result) => {
 				if (result.isConfirmed) {
 					bypassNativeBeforeUnloadPrompt = true;
 					window.location.href = targetHref;
@@ -7924,29 +8206,10 @@
 
 		const confirmLeaveRegisterFlow = async () => {
 			if (typeof window.Swal?.fire !== 'function') {
-				return window.confirm(
-					'You have an in-progress visitor registration. If you leave now, any unsaved information will be lost.\n\nDo you want to continue?'
-				);
+				return window.confirm('Unsaved registration progress will be lost. Leave this page?');
 			}
 
-			const result = await window.Swal.fire({
-				icon: 'warning',
-				title: leaveRegisterConfirmCopy.title,
-				html: leaveRegisterConfirmCopy.html,
-				showCancelButton: true,
-				confirmButtonText: leaveRegisterConfirmCopy.confirmButtonText,
-				cancelButtonText: leaveRegisterConfirmCopy.cancelButtonText,
-				focusCancel: true,
-				allowOutsideClick: false,
-				allowEscapeKey: true,
-				reverseButtons: true,
-				customClass: {
-					confirmButton: 'btn btn-primary',
-					cancelButton: 'btn btn-outline-secondary',
-					actions: 'd-flex gap-2 justify-content-end',
-				},
-				buttonsStyling: false,
-			});
+			const result = await window.Swal.fire(leaveRegisterConfirmOptions());
 
 			return Boolean(result.isConfirmed);
 		};
@@ -8149,6 +8412,37 @@
 			updateKioskSummaryProgress();
 		};
 
+		const getOfficeCheckboxes = () => Array.from(
+			destinationOffice?.querySelectorAll(`.office-checkbox:not([value="${OTHERS_OFFICE_VALUE}"]):not([value="${SELECT_ALL_VALUE}"])`) || []
+		);
+
+		const getSelectAllInput = () => document.getElementById('officeSelectAll')
+			|| document.querySelector(`.office-checkbox[value="${SELECT_ALL_VALUE}"]`);
+
+		const getOthersOfficeInput = () => destinationOffice?.querySelector(`.office-checkbox[value="${OTHERS_OFFICE_VALUE}"]`);
+
+		const syncSelectAllState = () => {
+			const selectAllInput = getSelectAllInput();
+			const officeInputs = getOfficeCheckboxes();
+			if (!selectAllInput || !officeInputs.length) {
+				return;
+			}
+
+			const checkedCount = officeInputs.filter((input) => input.checked).length;
+			selectAllInput.checked = checkedCount === officeInputs.length;
+			selectAllInput.indeterminate = checkedCount > 0 && checkedCount < officeInputs.length;
+		};
+
+		const bindOfficeOptionKeyboard = (label, input) => {
+			label.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					input.checked = !input.checked;
+					input.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			});
+		};
+
 		const showOtherDestinationField = () => {
 			otherDestinationWrap?.classList.add('is-visible');
 			otherDestinationWrap?.classList.remove('is-hidden');
@@ -8164,22 +8458,31 @@
 			}
 		};
 
-		const syncDestinationSelection = () => {
-			const othersInput = destinationOffice?.querySelector(`input[value="${OTHERS_OFFICE_VALUE}"]`);
-			if (othersInput?.checked) {
-				isOtherDestination = true;
-				selectedOfficeId = null;
-				selectedOfficeIds = [];
-				showOtherDestinationField();
-				return;
+		const syncDestinationSelection = (event) => {
+			const changed = event?.target;
+			const othersInput = getOthersOfficeInput();
+			const selectAllInput = getSelectAllInput();
+			const officeInputs = getOfficeCheckboxes();
+
+			if (changed?.value === SELECT_ALL_VALUE || changed?.id === 'officeSelectAll') {
+				const shouldCheck = Boolean(selectAllInput?.checked);
+				officeInputs.forEach((input) => {
+					input.checked = shouldCheck;
+				});
 			}
 
-			isOtherDestination = false;
-			hideAndClearOtherDestination();
+			isOtherDestination = Boolean(othersInput?.checked);
 
-			const checkedOffice = destinationOffice?.querySelector(`.office-checkbox:checked:not([value="${OTHERS_OFFICE_VALUE}"])`);
-			selectedOfficeId = checkedOffice ? Number(checkedOffice.value) : null;
-			selectedOfficeIds = selectedOfficeId ? [String(selectedOfficeId)] : [];
+			if (isOtherDestination) {
+				showOtherDestinationField();
+			} else {
+				hideAndClearOtherDestination();
+			}
+
+			const checkedOffices = officeInputs.filter((input) => input.checked);
+			selectedOfficeIds = checkedOffices.map((input) => String(input.value));
+			selectedOfficeId = selectedOfficeIds.length ? Number(selectedOfficeIds[0]) : null;
+			syncSelectAllState();
 		};
 
 		const getSelectedDestinationOffices = () => {
@@ -8192,24 +8495,28 @@
 				return autoEnrolleeOfficeNames.filter(Boolean);
 			}
 
+			const offices = getOfficeCheckboxes()
+				.filter((input) => input.checked)
+				.map((input) => {
+					const label = input.closest('label') || input.parentElement?.querySelector('label') || input.parentElement;
+					const named = label?.querySelector('.office-details strong, strong');
+					if (named?.textContent) {
+						return named.textContent.trim();
+					}
+
+					const text = label?.textContent || input.parentElement?.textContent || '';
+					return text.replace(/\s*Tap to select\s*/gi, '').trim();
+				})
+				.filter(Boolean);
+
 			if (isOtherDestination) {
 				const text = (otherDestinationText?.value || '').trim();
-				return text ? [text] : [];
-			}
-
-			if (selectedOfficeId) {
-				const checked = destinationOffice?.querySelector(`.office-checkbox:checked:not([value="${OTHERS_OFFICE_VALUE}"])`);
-				const label = checked?.closest('label') || checked?.parentElement;
-				const named = label?.querySelector('.office-details strong, strong');
-				if (named?.textContent) {
-					return [named.textContent.trim()];
+				if (text) {
+					offices.push(text);
 				}
-
-				const text = label?.textContent || checked?.parentElement?.textContent || '';
-				return [text.replace(/\s*Tap to select\s*/gi, '').trim()].filter(Boolean);
 			}
 
-			return [];
+			return offices;
 		};
 
 		const getSelectedDestinationText = () => {
@@ -8785,11 +9092,7 @@
 					: null,
 				office_ids: registerType === 'enrollee'
 					? selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)
-					: (isOtherDestination
-						? []
-						: (selectedOfficeId
-							? [Number(selectedOfficeId)].filter((value) => Number.isInteger(value) && value > 0)
-							: [])),
+					: selectedOfficeIds.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0),
 				visitor_photo_with_id_url: faceIdCapturePublicPath || null,
 				qr_token: qrMeta?.qr_token || null,
 				qr_payload: qrMeta?.qr_payload || null,
@@ -9941,7 +10244,16 @@ body.android-thermal-print .foot {
 				}
 			} else if (registerType === 'normal') {
 				syncDestinationSelection();
-				if (isOtherDestination) {
+				const hasOffice = selectedOfficeIds.length > 0;
+				const hasOther = isOtherDestination;
+
+				if (!hasOffice && !hasOther) {
+					destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					alert('Please select at least one office to visit.');
+					return;
+				}
+
+				if (hasOther) {
 					const customDestination = (otherDestinationText?.value || '').trim();
 					if (!customDestination) {
 						showOtherDestinationField();
@@ -9949,10 +10261,6 @@ body.android-thermal-print .foot {
 						alert('Please specify the office or destination you want to visit.');
 						return;
 					}
-				} else if (!selectedOfficeId) {
-					destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-					alert('Please select an office to visit.');
-					return;
 				}
 			} else if (registerType === 'enrollee' && !selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -10048,14 +10356,17 @@ body.android-thermal-print .foot {
 		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select') => {
 			const choice = document.createElement('div');
 			choice.className = 'kiosk-office-choice';
+			if (officeId === OTHERS_OFFICE_VALUE) {
+				choice.classList.add('is-others');
+			}
 
 			const inputId = officeId === OTHERS_OFFICE_VALUE
 				? 'kiosk_office_others'
 				: `kiosk_office_${officeId}`;
 			const input = document.createElement('input');
-			input.type = 'radio';
+			input.type = 'checkbox';
 			input.id = inputId;
-			input.name = 'destination_office_choice';
+			input.name = officeId === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 			input.className = 'office-checkbox';
 			input.value = String(officeId);
 			input.addEventListener('change', syncDestinationSelection);
@@ -10063,13 +10374,7 @@ body.android-thermal-print .foot {
 			const label = document.createElement('label');
 			label.htmlFor = inputId;
 			label.tabIndex = 0;
-			label.addEventListener('keydown', (event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					input.checked = true;
-					input.dispatchEvent(new Event('change', { bubbles: true }));
-				}
-			});
+			bindOfficeOptionKeyboard(label, input);
 
 			const indicator = document.createElement('span');
 			indicator.className = 'checkbox-indicator';
@@ -10105,6 +10410,12 @@ body.android-thermal-print .foot {
 			selectedOfficeId = null;
 			hideAndClearOtherDestination();
 
+			const selectAllInput = getSelectAllInput();
+			if (selectAllInput) {
+				selectAllInput.checked = false;
+				selectAllInput.indeterminate = false;
+			}
+
 			const normalizedOffices = Array.isArray(offices)
 				? offices
 					.map((office) => ({
@@ -10134,59 +10445,34 @@ body.android-thermal-print .foot {
 				return;
 			}
 
-			normalizedOffices.forEach((office) => {
-				if (isSelfRegistrationKiosk) {
-					destinationOffice.appendChild(createKioskOfficeChoice(office.office_id, office.office_name));
-					return;
-				}
-
+			const appendGuardOfficeOption = (value, text) => {
 				const label = document.createElement('label');
 				label.className = 'office-option';
 				label.tabIndex = 0;
 
 				const input = document.createElement('input');
-				input.type = 'radio';
-				input.name = 'destination_office_choice';
+				input.type = 'checkbox';
+				input.name = value === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 				input.className = 'office-checkbox';
-				input.value = String(office.office_id);
+				input.value = String(value);
 				input.addEventListener('change', syncDestinationSelection);
-				label.addEventListener('keydown', (event) => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						input.checked = true;
-						input.dispatchEvent(new Event('change', { bubbles: true }));
-					}
-				});
+				bindOfficeOptionKeyboard(label, input);
 
 				label.appendChild(input);
-				label.appendChild(document.createTextNode(office.office_name));
+				label.appendChild(document.createTextNode(text));
 				destinationOffice.appendChild(label);
-			});
+			};
 
 			if (isSelfRegistrationKiosk) {
+				normalizedOffices.forEach((office) => {
+					destinationOffice.appendChild(createKioskOfficeChoice(office.office_id, office.office_name));
+				});
 				destinationOffice.appendChild(createKioskOfficeChoice(OTHERS_OFFICE_VALUE, 'Others', 'Tap to enter destination'));
 			} else {
-				const othersLabel = document.createElement('label');
-				othersLabel.className = 'office-option';
-				othersLabel.tabIndex = 0;
-
-				const othersInput = document.createElement('input');
-				othersInput.type = 'radio';
-				othersInput.name = 'destination_office_choice';
-				othersInput.className = 'office-checkbox';
-				othersInput.value = OTHERS_OFFICE_VALUE;
-				othersInput.addEventListener('change', syncDestinationSelection);
-				othersLabel.addEventListener('keydown', (event) => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						othersInput.checked = true;
-						othersInput.dispatchEvent(new Event('change', { bubbles: true }));
-					}
+				normalizedOffices.forEach((office) => {
+					appendGuardOfficeOption(office.office_id, office.office_name);
 				});
-
-				othersLabel.appendChild(othersInput);
-				othersLabel.appendChild(document.createTextNode('Others — Tap to enter destination'));
-				destinationOffice.appendChild(othersLabel);
+				appendGuardOfficeOption(OTHERS_OFFICE_VALUE, 'Others — Tap to enter destination');
 			}
 
 			selectedOfficeIds = [];
@@ -10243,12 +10529,19 @@ body.android-thermal-print .foot {
 			hideAndClearOtherDestination();
 			autoEnrolleeOfficeNames = [];
 
+			const selectAllInput = getSelectAllInput();
+			if (selectAllInput) {
+				selectAllInput.checked = false;
+				selectAllInput.indeterminate = false;
+			}
+
 			const resetPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;
 			if (resetPanel) {
 				const fields = resetPanel.querySelectorAll('input, textarea');
 				fields.forEach((field) => {
 					if (field.type === 'checkbox' || field.type === 'radio') {
 						field.checked = false;
+						field.indeterminate = false;
 						return;
 					}
 
@@ -10374,6 +10667,7 @@ body.android-thermal-print .foot {
 			updateStepUI();
 			ensureAutoControlNumber();
 			syncRegionFromProvince();
+			getSelectAllInput()?.addEventListener('change', syncDestinationSelection);
 			if (registerType !== 'contractor') {
 				fetchOffices();
 			}
