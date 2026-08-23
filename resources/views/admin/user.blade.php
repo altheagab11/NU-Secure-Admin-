@@ -741,7 +741,8 @@
 				@endif
 
 				@if($errors->any())
-					<div style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+					<div id="guardErrorAlert" class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
+						<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
 						<ul style="margin:0;padding-left:18px;">
 							@foreach($errors->all() as $err)
 								<li>{{ $err }}</li>
@@ -879,7 +880,8 @@
 				@endif
 
 				@if($errors->any())
-					<div id="officeErrorAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+					<div id="officeErrorAlert" class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
+						<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
 						<ul style="margin:0;padding-left:18px;">
 							@foreach($errors->all() as $err)
 								<li>{{ $err }}</li>
@@ -1074,7 +1076,8 @@
 
 
 			@if($errors->any())
-				<div style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+				<div class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
+					<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
 					<ul style="margin:0;padding-left:18px;">
 						@foreach($errors->all() as $err)
 							<li>{{ $err }}</li>
@@ -1126,7 +1129,8 @@
 			</div>
 
 			@if($errors->any())
-				<div style="margin:12px 0;padding:10px;border-radius:8px;background:#fff1f2;color:#9f1239;">
+				<div class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
+					<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
 					<ul style="margin:0;padding-left:18px;">
 						@foreach($errors->all() as $err)
 							<li>{{ $err }}</li>
@@ -1446,6 +1450,27 @@
 			})();
 	</script>
 
+	<script>
+		(function () {
+			function dismissAlert(el) {
+				if (!el || el.dataset.dismissing === '1') return;
+				el.dataset.dismissing = '1';
+				el.style.transition = 'opacity 0.4s ease';
+				el.style.opacity = '0';
+				setTimeout(function () { el.remove(); }, 400);
+			}
+
+			document.querySelectorAll('.js-auto-dismiss-alert').forEach(function (el) {
+				setTimeout(function () { dismissAlert(el); }, 5000);
+			});
+
+			document.addEventListener('click', function (e) {
+				var btn = e.target.closest('.js-dismiss-alert');
+				if (!btn) return;
+				dismissAlert(btn.closest('.js-auto-dismiss-alert'));
+			});
+		})();
+	</script>
 	@include('admin.partials.admin-responsive-script')
 	</body>
 	</html>
