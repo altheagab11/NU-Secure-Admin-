@@ -32,9 +32,13 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
 Route::get('/forgot-password', [PasswordResetController::class, 'create'])->name('password.request');
 Route::post('/forgot-password', [PasswordResetController::class, 'store'])->name('password.email');
+Route::post('/forgot-password/verify-code', [PasswordResetController::class, 'verifyCode'])->name('password.verify');
+Route::post('/forgot-password/resend-code', [PasswordResetController::class, 'resendCode'])->name('password.resend');
+Route::post('/forgot-password/change-email', [PasswordResetController::class, 'changeEmail'])->name('password.change-email');
+Route::post('/forgot-password/reset', [PasswordResetController::class, 'update'])->name('password.update');
 Route::get('/reset-password/success', [PasswordResetController::class, 'success'])->name('password.reset.success');
 Route::get('/reset-password', [PasswordResetController::class, 'edit'])->name('password.reset');
-Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
+Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update.legacy');
 
 Route::get('/password/setup/{token}', [AuthController::class, 'showPasswordSetupForm'])->name('password.setup.form');
 Route::post('/password/setup', [AuthController::class, 'setupPassword'])->name('password.setup.submit');

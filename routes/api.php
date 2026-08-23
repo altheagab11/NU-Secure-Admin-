@@ -10,6 +10,12 @@ Route::post('/login', [AuthController::class, 'apiLogin']);
 Route::post('/forgot-password', [PasswordResetController::class, 'apiForgotPassword'])
     ->middleware('throttle:5,15');
 
+Route::post('/forgot-password/verify-code', [PasswordResetController::class, 'apiVerifyCode'])
+    ->middleware('throttle:10,1');
+
+Route::post('/forgot-password/resend-code', [PasswordResetController::class, 'apiResendCode'])
+    ->middleware('throttle:5,15');
+
 Route::post('/reset-password', [PasswordResetController::class, 'apiResetPassword'])
     ->middleware('throttle:10,1');
 

@@ -8,29 +8,26 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PasswordResetMail extends Mailable
+class PasswordChangedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
         public string $fullName,
-        public string $resetUrl,
-        public int $expiresInMinutes,
-        public ?string $mobileResetUrl = null,
     ) {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'NU-Secure Password Reset',
+            subject: 'Your NU-Secure Password Was Changed',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.password-reset',
+            view: 'emails.password-changed',
         );
     }
 
