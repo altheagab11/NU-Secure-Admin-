@@ -1,3 +1,9 @@
+# HTTP Strict Transport Security (HSTS) — HTTPS responses only
+# Short max-age for testing; raise later after HTTPS is confirmed.
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=300" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
