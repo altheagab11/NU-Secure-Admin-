@@ -2,10 +2,12 @@
 # HSTS: short max-age for testing; raise later after HTTPS is confirmed.
 # X-Powered-By: suppress PHP version disclosure (OWASP ZAP).
 # X-Content-Type-Options: prevent MIME sniffing.
+# X-Frame-Options: anti-clickjacking (blocks cross-origin framing).
 <IfModule mod_headers.c>
     Header always set Strict-Transport-Security "max-age=300" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
 </IfModule>
 
 <IfModule mod_rewrite.c>
