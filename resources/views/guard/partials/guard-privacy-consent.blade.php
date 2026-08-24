@@ -188,7 +188,7 @@
 	</div>
 </div>
 
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
 	const privacyModal = document.getElementById('guardPrivacyModal');
 	const privacyAccept = document.getElementById('guardPrivacyAccept');

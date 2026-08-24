@@ -32,7 +32,7 @@
 @endphp
 
 <div class="mb-3">
-	<a href="javascript:history.back()" class="btn btn-nu-outline btn-sm"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
+	<a href="#" class="btn btn-nu-outline btn-sm" data-history-back><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back</a>
 </div>
 
 <div class="row g-3">

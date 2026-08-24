@@ -1,5 +1,27 @@
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
+	document.querySelectorAll('[data-auto-submit]').forEach(function (el) {
+		el.addEventListener('change', function () {
+			if (el.form) {
+				el.form.submit();
+			}
+		});
+	});
+
+	document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+		form.addEventListener('submit', function (event) {
+			if (!window.confirm(form.getAttribute('data-confirm') || 'Are you sure?')) {
+				event.preventDefault();
+			}
+		});
+	});
+
+	document.querySelectorAll('form[data-prevent-submit]').forEach(function (form) {
+		form.addEventListener('submit', function (event) {
+			event.preventDefault();
+		});
+	});
+
 	const layout = document.querySelector('.layout');
 	const sidebar = layout ? layout.querySelector('.sidebar') : null;
 	const openBtn = document.getElementById('adminNavOpen');

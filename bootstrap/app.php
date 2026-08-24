@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\ContentSecurityPolicy::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'office.staff' => \App\Http\Middleware\EnsureOfficeStaff::class,
@@ -21,4 +25,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(function ($request, \Throwable $e): bool {
             return $request->is('api/*') || $request->expectsJson();
         });
-    })->create();
+    })
+    ->create();

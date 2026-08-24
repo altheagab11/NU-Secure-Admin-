@@ -1144,36 +1144,36 @@
 					<div class="alert-filters-row">
 						<input class="alert-filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search visitor..." aria-label="Search visitor">
 
-						<select class="alert-filter-select" name="alert_type" aria-label="Filter by alert type" onchange="this.form.submit()">
+						<select class="alert-filter-select" name="alert_type" aria-label="Filter by alert type" data-auto-submit>
 							<option value="">Alert Type</option>
 							@foreach(($alertTypeOptions ?? []) as $type)
 								<option value="{{ $type }}" @selected(($filters['alert_type'] ?? '') === $type)>{{ $type }}</option>
 							@endforeach
 						</select>
 
-						<select class="alert-filter-select" name="severity" aria-label="Filter by severity" onchange="this.form.submit()">
+						<select class="alert-filter-select" name="severity" aria-label="Filter by severity" data-auto-submit>
 							<option value="">Severity</option>
 							@foreach(($severityOptions ?? []) as $sev)
 								<option value="{{ $sev }}" @selected(($filters['severity'] ?? '') === $sev)>{{ $sev }}</option>
 							@endforeach
 						</select>
 
-						<select class="alert-filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
+						<select class="alert-filter-select" name="status" aria-label="Filter by status" data-auto-submit>
 							<option value="">Status</option>
 							@foreach(($statusOptions ?? []) as $st)
 								<option value="{{ $st }}" @selected(($filters['status'] ?? '') === $st)>{{ $st }}</option>
 							@endforeach
 						</select>
 
-						<select class="alert-filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
+						<select class="alert-filter-select" name="office" aria-label="Filter by office" data-auto-submit>
 							<option value="">Office</option>
 							@foreach(($officeOptions ?? []) as $office)
 								<option value="{{ $office }}" @selected(($filters['office'] ?? '') === $office)>{{ $office }}</option>
 							@endforeach
 						</select>
 
-						<input class="alert-filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
-						<input class="alert-filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
+						<input class="alert-filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" data-auto-submit>
+						<input class="alert-filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" data-auto-submit>
 
 						<a href="{{ url('/admin/alerts') }}" class="alert-filter-clear {{ !($hasActiveFilters ?? false) ? 'disabled' : '' }}">Clear</a>
 					</div>
@@ -1452,7 +1452,7 @@
 				<button id="closeResolveModalBtn" class="alert-modal-close" type="button" aria-label="Close">×</button>
 			</div>
 
-			<form onsubmit="return false;">
+			<form data-prevent-submit>
 				<div class="resolve-flow-body">
 					<div class="resolve-summary">
 						<p class="modal-line"><strong>Alert ID:</strong> <span id="r_alert_id" class="value">-</span></p>
@@ -1478,7 +1478,7 @@
 		</div>
 	</div>
 
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		// Export alerts to JS for modal/detail interactions
 		const ALERTS = @json($alerts ?? []);
 

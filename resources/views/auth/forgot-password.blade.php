@@ -314,7 +314,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ $cspNonce }}">
         (function () {
             const emailForm = document.getElementById('emailStepForm');
             if (emailForm) {

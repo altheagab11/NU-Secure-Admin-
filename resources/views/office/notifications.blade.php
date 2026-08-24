@@ -71,7 +71,7 @@
 @endpush
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-script')
 </script>
 @endpush

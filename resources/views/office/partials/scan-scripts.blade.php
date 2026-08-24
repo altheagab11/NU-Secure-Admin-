@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ $cspNonce }}">
 window.OfficeScan = (function () {
 	const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 	const checkInUrl = @json(route('office.scanner.check-in'));

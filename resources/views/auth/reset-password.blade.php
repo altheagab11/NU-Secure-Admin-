@@ -77,7 +77,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ $cspNonce }}">
         document.getElementById('resetPasswordForm')?.addEventListener('submit', function (event) {
             const password = document.getElementById('password')?.value || '';
             const confirmation = document.getElementById('password_confirmation')?.value || '';

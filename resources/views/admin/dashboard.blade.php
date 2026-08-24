@@ -1265,7 +1265,7 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		@include('admin.partials.table-pagination-script')
 
 		const userMenuGroup = document.getElementById('userMenuGroup');

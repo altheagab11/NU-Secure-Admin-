@@ -19,7 +19,7 @@
 		'#exitResultModal.open',
 	];
 @endphp
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
 	if (window.__nuSecureLiveRefreshBound) {
 		return;

@@ -439,7 +439,7 @@
 @push('scripts')
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 @include('office.partials.scan-scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
 	const hardwarePanel = document.getElementById('hardwarePanel');
 	const cameraPanel = document.getElementById('cameraPanel');
@@ -859,7 +859,7 @@
 	focusScannerInput();
 })();
 </script>
-<script>
+<script nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-script')
 </script>
 @endpush

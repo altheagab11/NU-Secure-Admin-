@@ -310,7 +310,7 @@
     @if (! empty($turnstileSiteKey))
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     @endif
-    <script>
+    <script nonce="{{ $cspNonce }}">
         (function () {
             var form = document.getElementById('login-form');
             var button = document.getElementById('login-submit');

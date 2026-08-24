@@ -757,7 +757,7 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		(() => {
 			const officeQrPayload = @json($office_qr_payload);
 			const officeQrHost = document.getElementById('officeQrCode');

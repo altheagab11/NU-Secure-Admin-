@@ -88,10 +88,10 @@
 @endpush
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-script')
 </script>
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
 	const input = document.getElementById('search');
 	if (!input) return;

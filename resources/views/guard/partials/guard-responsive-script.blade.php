@@ -1,4 +1,4 @@
-<script>
+<script nonce="{{ $cspNonce }}">
 (function () {
 	const backdrop = document.getElementById('guardNavBackdrop');
 	const openBtn = document.getElementById('guardNavOpen');

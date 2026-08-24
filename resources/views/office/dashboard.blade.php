@@ -176,7 +176,7 @@
 
 @push('scripts')
 @include('office.partials.scan-scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 OfficeScan.init({
 	onSuccess: function () {
 		setTimeout(() => window.location.reload(), 700);
@@ -366,7 +366,7 @@ OfficeScan.init({
 	}, 20000);
 })();
 </script>
-<script>
+<script nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-script')
 </script>
 @endpush

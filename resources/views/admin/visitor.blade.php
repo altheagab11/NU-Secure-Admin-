@@ -1141,26 +1141,26 @@
 							</svg>
 							<input class="filter-input" type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search Visitor" aria-label="Search visitor">
 						</div>
-						<select class="filter-select" name="status" aria-label="Filter by status" onchange="this.form.submit()">
+						<select class="filter-select" name="status" aria-label="Filter by status" data-auto-submit>
 							<option value="">Status</option>
 							@foreach(($statusOptions ?? []) as $statusOption)
 								<option value="{{ $statusOption }}" @selected(($filters['status'] ?? '') === $statusOption)>{{ $statusOption }}</option>
 							@endforeach
 						</select>
-						<select class="filter-select" name="office" aria-label="Filter by office" onchange="this.form.submit()">
+						<select class="filter-select" name="office" aria-label="Filter by office" data-auto-submit>
 							<option value="">Office</option>
 							@foreach(($officeOptions ?? []) as $officeOption)
 								<option value="{{ $officeOption }}" @selected(($filters['office'] ?? '') === $officeOption)>{{ $officeOption }}</option>
 							@endforeach
 						</select>
-						<select class="filter-select" name="visit_type" aria-label="Filter by visit type" onchange="this.form.submit()">
+						<select class="filter-select" name="visit_type" aria-label="Filter by visit type" data-auto-submit>
 							<option value="">Visit Type</option>
 							@foreach(($visitTypeOptions ?? []) as $visitTypeOption)
 								<option value="{{ $visitTypeOption }}" @selected(($filters['visit_type'] ?? '') === $visitTypeOption)>{{ $visitTypeOption }}</option>
 							@endforeach
 						</select>
-						<input class="filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" onchange="this.form.submit()">
-						<input class="filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" onchange="this.form.submit()">
+						<input class="filter-date" type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" aria-label="Date from" data-auto-submit>
+						<input class="filter-date" type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" aria-label="Date to" data-auto-submit>
 						<div class="filter-actions">
 							<a href="{{ route('admin.visitor') }}" class="clear-filters-btn {{ $hasActiveFilters ? '' : 'disabled' }}" aria-label="Clear filters">Clear</a>
 						</div>
@@ -1476,7 +1476,7 @@
 		</div>
 	</div>
 
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		@include('admin.partials.table-pagination-script')
 
 		const userMenuGroup = document.getElementById('userMenuGroup');

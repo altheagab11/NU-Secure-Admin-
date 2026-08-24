@@ -670,7 +670,7 @@
 			<h2 class="section-title">Duty History</h2>
 			<div class="filters-card">
 				<p class="filters-label">Search &amp; Filter</p>
-				<form id="dutyFilterForm" onsubmit="return false;">
+				<form id="dutyFilterForm" data-prevent-submit>
 					<div class="filters-grid">
 						<div>
 							<label class="field-label" for="search">Search Guard</label>
@@ -790,7 +790,7 @@
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		(function () {
 			const listUrl = @json(route('api.admin.guard-duty'));
 			const filtersUrl = @json(route('api.admin.guard-duty.filters'));

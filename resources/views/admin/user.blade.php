@@ -728,7 +728,7 @@
 
 				@if(session('success'))
 					<div id="guardSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
-					<script>
+					<script nonce="{{ $cspNonce }}">
 						setTimeout(function(){
 							var el = document.getElementById('guardSuccessAlert');
 							if (el) {
@@ -790,7 +790,7 @@
 									<td>
 										<span class="action-icons">
 											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" style="width:14px;height:14px;" />
-											<form method="POST" action="/admin/user/guards/{{ $guard->user_id ?? '' }}" style="display:inline;" onsubmit="return confirm('Move this guard account to recycle bin?');">
+											<form method="POST" action="/admin/user/guards/{{ $guard->user_id ?? '' }}" style="display:inline;" data-confirm="Move this guard account to recycle bin?">
 												@csrf
 												@method('DELETE')
 												<button type="submit" class="icon-btn" aria-label="Delete">
@@ -824,7 +824,7 @@
 							</svg>
 							Recycle Bin ({{ isset($recycledOffices) ? count($recycledOffices) : 0 }})
 						</button>
-						<button type="button" id="openAddOfficeBtn" class="add-guard-btn" onclick="document.getElementById('addOfficeModal') && (document.getElementById('addOfficeModal').style.display = 'flex')">
+						<button type="button" id="openAddOfficeBtn" class="add-guard-btn">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 								<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
@@ -842,14 +842,14 @@
 							<input class="filter-input" type="text" name="search" value="{{ request('search', '') }}" placeholder="Search name or email" aria-label="Search users">
 						</div>
 
-						<select name="office" class="filter-select" aria-label="Filter by office" onchange="this.form.submit()">
+						<select name="office" class="filter-select" aria-label="Filter by office" data-auto-submit>
 							<option value="">All offices</option>
 							@foreach($officeOptions ?? [] as $opt)
 								<option value="{{ $opt->office_id ?? $opt->id }}" @selected(request('office') == ($opt->office_id ?? $opt->id))>{{ $opt->office_name ?? $opt->name }}</option>
 							@endforeach
 						</select>
 
-						<select name="position" class="filter-select" aria-label="Filter by position" onchange="this.form.submit()">
+						<select name="position" class="filter-select" aria-label="Filter by position" data-auto-submit>
 							<option value="">All positions</option>
 							@foreach($positions ?? [] as $pos)
 								@if(!empty($pos))
@@ -867,7 +867,7 @@
 
 				@if(session('success'))
 					<div id="officeSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
-					<script>
+					<script nonce="{{ $cspNonce }}">
 						setTimeout(function(){
 							var el = document.getElementById('officeSuccessAlert');
 							if (el) {
@@ -935,7 +935,7 @@
 												 data-office-id="{{ $office->office_id ?? '' }}"
 												 data-position="{{ $office->position ?? '' }}"
 											/>
-											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" style="display:inline;" onsubmit="return confirm('Move this office user to recycle bin?');">
+											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" style="display:inline;" data-confirm="Move this office user to recycle bin?">
 												@csrf
 												@method('DELETE')
 												<button type="submit" class="icon-btn" aria-label="Delete">
@@ -1001,7 +1001,7 @@
 		</main>
 	</div>
 
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		@include('admin.partials.table-pagination-script')
 
 		const userMenuGroup = document.getElementById('userMenuGroup');
@@ -1256,7 +1256,7 @@
 		</div>
 	</div>
 
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		// Modal open/close and form handling for Add Office User
 		(function() {
 			try {
@@ -1428,7 +1428,7 @@
 			})();
 	</script>
 
-	<script>
+	<script nonce="{{ $cspNonce }}">
 		(function () {
 			function dismissAlert(el) {
 				if (!el || el.dataset.dismissing === '1') return;
