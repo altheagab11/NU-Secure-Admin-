@@ -4,7 +4,7 @@
 @section('title', 'Visitor Details')
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 	.route-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 	.route-timeline::before {
 		content: ""; position: absolute; left: 14px; top: 8px; bottom: 8px; width: 3px;
@@ -40,10 +40,10 @@
 		<div class="office-card">
 			<div class="text-center mb-3">
 				@if($details['photo_url'])
-					<img src="{{ $details['photo_url'] }}" alt="Photo of {{ $details['visitor_name'] }}" class="img-fluid rounded-4" style="max-height: 220px; object-fit: cover; width: 100%;">
+					<img src="{{ $details['photo_url'] }}" alt="Photo of {{ $details['visitor_name'] }}" class="img-fluid rounded-4 visitor-detail-photo">
 				@else
-					<div class="rounded-4 d-flex align-items-center justify-content-center" style="height: 180px; background: #eef4ff; color: #064A9F;">
-						<i class="bi bi-person-bounding-box" style="font-size: 3rem;" aria-hidden="true"></i>
+					<div class="rounded-4 d-flex align-items-center justify-content-center visitor-detail-photo-fallback">
+						<i class="bi bi-person-bounding-box scan-photo-icon" aria-hidden="true"></i>
 					</div>
 				@endif
 			</div>

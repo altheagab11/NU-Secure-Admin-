@@ -9,7 +9,7 @@
 	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -594,6 +594,225 @@
 			}
 		}
 
+		.action-icons img {
+			width: 14px;
+			height: 14px;
+		}
+
+		.action-edit.edit-office-btn {
+			cursor: pointer;
+		}
+
+		.header-actions {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.add-guard-btn.btn-recycle {
+			background: #334155;
+		}
+
+		.add-guard-btn.btn-restore {
+			padding: 6px 10px;
+			font-size: 12px;
+		}
+
+		.flash-success {
+			margin: 12px 0;
+			padding: 10px;
+			border-radius: 8px;
+			background: #ecfdf5;
+			color: #065f46;
+		}
+
+		.flash-error {
+			margin: 12px 0;
+			padding: 10px 36px 10px 10px;
+			border-radius: 8px;
+			background: #fff1f2;
+			color: #9f1239;
+			position: relative;
+		}
+
+		.flash-error-close {
+			position: absolute;
+			top: 6px;
+			right: 8px;
+			border: 0;
+			background: transparent;
+			font-size: 18px;
+			line-height: 1;
+			cursor: pointer;
+			color: #9f1239;
+		}
+
+		.flash-error ul {
+			margin: 0;
+			padding-left: 18px;
+		}
+
+		.inline-form {
+			display: inline;
+		}
+
+		.table-empty-cell {
+			text-align: center;
+			color: #64748b;
+			padding: 18px;
+		}
+
+		.office-filters-form {
+			margin: 12px 0 18px;
+		}
+
+		.filter-actions {
+			margin-left: auto;
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.user-modal-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(2, 6, 23, 0.6);
+			align-items: center;
+			justify-content: center;
+			z-index: 80;
+		}
+
+		.user-modal-overlay.z-recycle {
+			z-index: 85;
+		}
+
+		.user-modal-dialog {
+			background: #fff;
+			border-radius: 10px;
+			width: 520px;
+			max-width: 94%;
+			padding: 20px;
+			box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+		}
+
+		.user-modal-dialog.wide {
+			width: 560px;
+		}
+
+		.user-modal-dialog.recycle {
+			width: 760px;
+			max-width: 96%;
+		}
+
+		.user-modal-head {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.user-modal-head.with-gap {
+			margin-bottom: 8px;
+		}
+
+		.user-modal-title {
+			margin: 0;
+			font-size: 18px;
+		}
+
+		.user-modal-close {
+			border: 0;
+			background: transparent;
+			font-size: 22px;
+			cursor: pointer;
+			line-height: 1;
+			color: #374151;
+		}
+
+		.user-modal-lead {
+			color: #6b7280;
+			margin: 8px 0 14px;
+		}
+
+		.user-modal-lead.tight {
+			margin: 4px 0 14px;
+		}
+
+		.user-modal-row {
+			display: flex;
+			gap: 10px;
+		}
+
+		.user-modal-field {
+			flex: 1;
+		}
+
+		.user-modal-field.stacked {
+			margin-top: 10px;
+		}
+
+		.user-modal-label {
+			font-size: 13px;
+			color: #334155;
+		}
+
+		.user-modal-input,
+		.user-modal-select {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #e5e7eb;
+			border-radius: 6px;
+			margin-top: 6px;
+		}
+
+		.user-modal-select {
+			background: #fff;
+		}
+
+		.user-modal-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 18px;
+		}
+
+		.user-modal-footer {
+			display: flex;
+			justify-content: flex-end;
+			margin-top: 14px;
+		}
+
+		.user-modal-btn-cancel {
+			background: #ecedf2;
+			border-radius: 8px;
+			padding: 8px 14px;
+			border: 0;
+			cursor: pointer;
+			color: #0f172a;
+		}
+
+		.user-modal-btn-submit {
+			background: #4b5cd1;
+			color: #fff;
+			border-radius: 8px;
+			padding: 8px 14px;
+			border: 0;
+			cursor: pointer;
+		}
+
+		.recycle-table-wrap {
+			max-height: 420px;
+			overflow: auto;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+		}
+
+		.recycle-table-wrap .guard-table,
+		.recycle-table-wrap .office-table {
+			margin: 0;
+			width: 100%;
+		}
+
 		@include('admin.partials.admin-topbar-styles')
 		@include('admin.partials.admin-responsive-styles')
 	</style>
@@ -710,8 +929,8 @@
 			@if ($activeSection === 'guards')
 				<div class="header-row">
 					<div></div>
-					<div style="display:flex;gap:8px;align-items:center;">
-						<button type="button" id="openGuardRecycleBinBtn" class="add-guard-btn" style="background:#334155;">
+					<div class="header-actions">
+						<button type="button" id="openGuardRecycleBinBtn" class="add-guard-btn btn-recycle">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
@@ -727,7 +946,7 @@
 				</div>
 
 				@if(session('success'))
-					<div id="guardSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
+					<div id="guardSuccessAlert" class="flash-success">{{ session('success') }}</div>
 					<script nonce="{{ $cspNonce }}">
 						setTimeout(function(){
 							var el = document.getElementById('guardSuccessAlert');
@@ -741,9 +960,9 @@
 				@endif
 
 				@if($errors->any())
-					<div id="guardErrorAlert" class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
-						<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
-						<ul style="margin:0;padding-left:18px;">
+					<div id="guardErrorAlert" class="js-auto-dismiss-alert flash-error" role="alert">
+						<button type="button" class="js-dismiss-alert flash-error-close" aria-label="Close">&times;</button>
+						<ul>
 							@foreach($errors->all() as $err)
 								<li>{{ $err }}</li>
 							@endforeach
@@ -789,12 +1008,12 @@
 									<td>{{ $guard->station ?? '—' }}</td>
 									<td>
 										<span class="action-icons">
-											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" style="width:14px;height:14px;" />
-											<form method="POST" action="/admin/user/guards/{{ $guard->user_id ?? '' }}" style="display:inline;" data-confirm="Move this guard account to recycle bin?">
+											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" />
+											<form method="POST" action="/admin/user/guards/{{ $guard->user_id ?? '' }}" class="inline-form" data-confirm="Move this guard account to recycle bin?">
 												@csrf
 												@method('DELETE')
 												<button type="submit" class="icon-btn" aria-label="Delete">
-													<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
+													<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" />
 												</button>
 											</form>
 										</span>
@@ -802,7 +1021,7 @@
 								</tr>
 							@empty
 								<tr>
-									<td colspan="5" style="text-align:center;color:#64748b;padding:18px;">No guards found.</td>
+									<td colspan="5" class="table-empty-cell">No guards found.</td>
 								</tr>
 							@endforelse
 						</tbody>
@@ -817,8 +1036,8 @@
 			@elseif ($activeSection === 'offices')
 				<div class="header-row">
 					<div></div>
-					<div style="display:flex;gap:8px;align-items:center;">
-						<button type="button" id="openRecycleBinBtn" class="add-guard-btn" style="background:#334155;">
+					<div class="header-actions">
+						<button type="button" id="openRecycleBinBtn" class="add-guard-btn btn-recycle">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 								<path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
@@ -836,7 +1055,7 @@
 				</div>
 
 				{{-- Filters for offices (placed between page title and Office User Accounts) --}}
-				<form method="GET" action="" style="margin:12px 0 18px;">
+				<form method="GET" action="" class="office-filters-form">
 					<div class="filters-card" role="search" aria-label="Office filters">
 						<div class="search-wrap">
 							<input class="filter-input" type="text" name="search" value="{{ request('search', '') }}" placeholder="Search name or email" aria-label="Search users">
@@ -858,15 +1077,15 @@
 							@endforeach
 						</select>
 
-						<div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-							<button type="submit" class="add-guard-btn" style="background:#39459a;padding:8px 12px;">Apply</button>
+						<div class="filter-actions">
+							<button type="submit" class="add-guard-btn">Apply</button>
 							<a href="/admin/user/offices" class="clear-filters-btn">Clear</a>
 						</div>
 					</div>
 				</form>
 
 				@if(session('success'))
-					<div id="officeSuccessAlert" style="margin:12px 0;padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46;">{{ session('success') }}</div>
+					<div id="officeSuccessAlert" class="flash-success">{{ session('success') }}</div>
 					<script nonce="{{ $cspNonce }}">
 						setTimeout(function(){
 							var el = document.getElementById('officeSuccessAlert');
@@ -880,9 +1099,9 @@
 				@endif
 
 				@if($errors->any())
-					<div id="officeErrorAlert" class="js-auto-dismiss-alert" role="alert" style="margin:12px 0;padding:10px 36px 10px 10px;border-radius:8px;background:#fff1f2;color:#9f1239;position:relative;">
-						<button type="button" class="js-dismiss-alert" aria-label="Close" style="position:absolute;top:6px;right:8px;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#9f1239;">&times;</button>
-						<ul style="margin:0;padding-left:18px;">
+					<div id="officeErrorAlert" class="js-auto-dismiss-alert flash-error" role="alert">
+						<button type="button" class="js-dismiss-alert flash-error-close" aria-label="Close">&times;</button>
+						<ul>
 							@foreach($errors->all() as $err)
 								<li>{{ $err }}</li>
 							@endforeach
@@ -928,18 +1147,18 @@
 									<td>{{ $office->position ?? '—' }}</td>
 									<td>
 										<span class="action-icons">
-											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-office-btn" style="width:14px;height:14px;cursor:pointer;" 
+											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-office-btn"
 												 data-user-id="{{ $office->user_id ?? '' }}"
 												 data-name="{{ $office->name ?? '' }}"
 												 data-email="{{ $office->email ?? '' }}"
 												 data-office-id="{{ $office->office_id ?? '' }}"
 												 data-position="{{ $office->position ?? '' }}"
 											/>
-											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" style="display:inline;" data-confirm="Move this office user to recycle bin?">
+											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" class="inline-form" data-confirm="Move this office user to recycle bin?">
 												@csrf
 												@method('DELETE')
 												<button type="submit" class="icon-btn" aria-label="Delete">
-													<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" style="width:14px;height:14px;" />
+													<img src="{{ asset('picture/Vector.png') }}" alt="Delete" class="action-delete" />
 												</button>
 											</form>
 										</span>
@@ -947,7 +1166,7 @@
 								</tr>
 							@empty
 								<tr>
-									<td colspan="5" style="text-align:center;color:#64748b;padding:18px;">No users found.</td>
+									<td colspan="5" class="table-empty-cell">No users found.</td>
 								</tr>
 							@endforelse
 						</tbody>
@@ -1067,42 +1286,42 @@
 	</script>
 
 	<!-- Add Guard Modal -->
-	<div id="addGuardModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:80;">
-		<div role="dialog" aria-modal="true" aria-labelledby="addGuardTitle" style="background:#fff;border-radius:10px; width:520px; max-width:94%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
-			<div style="display:flex; justify-content:space-between; align-items:center;">
-				<h3 id="addGuardTitle" style="margin:0; font-size:18px;">Add Guard Account</h3>
-				<button id="closeAddGuard" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+	<div id="addGuardModal" class="user-modal-overlay">
+		<div role="dialog" aria-modal="true" aria-labelledby="addGuardTitle" class="user-modal-dialog">
+			<div class="user-modal-head">
+				<h3 id="addGuardTitle" class="user-modal-title">Add Guard Account</h3>
+				<button id="closeAddGuard" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p style="color:#6b7280;margin:8px 0 14px;">Create a new security guard account for the system.</p>
+			<p class="user-modal-lead">Create a new security guard account for the system.</p>
 			<form id="addGuardForm" method="POST" action="/admin/user/guards">
 				@csrf
-				<div style="display:flex;gap:10px;">
-					<div style="flex:1;">
-						<label style="font-size:13px;color:#334155;">First Name</label>
-						<input name="first_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-row">
+					<div class="user-modal-field">
+						<label class="user-modal-label">First Name</label>
+						<input name="first_name" class="user-modal-input" type="text" required>
 					</div>
-					<div style="flex:1;">
-						<label style="font-size:13px;color:#334155;">Last Name</label>
-						<input name="last_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+					<div class="user-modal-field">
+						<label class="user-modal-label">Last Name</label>
+						<input name="last_name" class="user-modal-input" type="text" required>
 					</div>
 				</div>
 				<input type="hidden" name="name" id="fullNameHidden">
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Email</label>
-					<input name="email" type="email" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Email</label>
+					<input name="email" class="user-modal-input" type="email" required>
 				</div>
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Badge Number</label>
-					<input name="badge_number" type="text" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Badge Number</label>
+					<input name="badge_number" class="user-modal-input" type="text">
 				</div>
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Station</label>
-					<input name="station" type="text" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Station</label>
+					<input name="station" class="user-modal-input" type="text">
 				</div>
-				<div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-					<button type="button" id="cancelAddGuard" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Cancel</button>
-					<button type="submit" style="background:#4b5cd1;color:#fff;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;">Add User</button>
+				<div class="user-modal-actions">
+					<button type="button" id="cancelAddGuard" class="user-modal-btn-cancel">Cancel</button>
+					<button type="submit" class="user-modal-btn-submit">Add User</button>
 				</div>
 			</form>
 		</div>
@@ -1110,64 +1329,64 @@
 
 
 	<!-- Add Office User Modal -->
-	<div id="addOfficeModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:80;">
-		<div role="dialog" aria-modal="true" aria-labelledby="addOfficeTitle" style="background:#fff;border-radius:10px; width:560px; max-width:94%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
-			<div style="display:flex; justify-content:space-between; align-items:center;">
-				<h3 id="addOfficeTitle" style="margin:0; font-size:18px;">Add Office User Account</h3>
-				<button id="closeAddOffice" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+	<div id="addOfficeModal" class="user-modal-overlay">
+		<div role="dialog" aria-modal="true" aria-labelledby="addOfficeTitle" class="user-modal-dialog wide">
+			<div class="user-modal-head">
+				<h3 id="addOfficeTitle" class="user-modal-title">Add Office User Account</h3>
+				<button id="closeAddOffice" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p style="color:#6b7280;margin:8px 0 14px;">Create a new office staff account for the system.</p>
+			<p class="user-modal-lead">Create a new office staff account for the system.</p>
 			<form id="addOfficeForm" method="POST" action="/admin/user/offices">
 				@csrf
-				<div style="display:flex;gap:10px;">
-					<div style="flex:1;">
-						<label style="font-size:13px;color:#334155;">First Name</label>
-						<input name="first_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-row">
+					<div class="user-modal-field">
+						<label class="user-modal-label">First Name</label>
+						<input name="first_name" class="user-modal-input" type="text" required>
 					</div>
-					<div style="flex:1;">
-						<label style="font-size:13px;color:#334155;">Last Name</label>
-						<input name="last_name" type="text" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+					<div class="user-modal-field">
+						<label class="user-modal-label">Last Name</label>
+						<input name="last_name" class="user-modal-input" type="text" required>
 					</div>
 				</div>
 				<input type="hidden" name="name" id="fullNameOfficeHidden">
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Email</label>
-					<input name="email" type="email" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Email</label>
+					<input name="email" class="user-modal-input" type="email" required>
 				</div>
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Office</label>
-					<select name="office_id" required style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;background:#fff;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Office</label>
+					<select name="office_id" class="user-modal-select" required>
 						<option value="" disabled selected>Select Office</option>
 						@foreach($officeOptions ?? [] as $officeOption)
 							<option value="{{ $officeOption->office_id }}">{{ $officeOption->office_name }}</option>
 						@endforeach
 					</select>
 				</div>
-				<div style="margin-top:10px;">
-					<label style="font-size:13px;color:#334155;">Position</label>
-					<input name="position" type="text" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;margin-top:6px;">
+				<div class="user-modal-field stacked">
+					<label class="user-modal-label">Position</label>
+					<input name="position" class="user-modal-input" type="text">
 				</div>
-				<div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
-					<button type="button" id="cancelAddOffice" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Cancel</button>
-					<button type="submit" style="background:#4b5cd1;color:#fff;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;">Add User</button>
+				<div class="user-modal-actions">
+					<button type="button" id="cancelAddOffice" class="user-modal-btn-cancel">Cancel</button>
+					<button type="submit" class="user-modal-btn-submit">Add User</button>
 				</div>
 			</form>
 		</div>
 	</div>
 
 	<!-- Guard Recycle Bin Modal -->
-	<div id="guardRecycleBinModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:85;">
-		<div role="dialog" aria-modal="true" aria-labelledby="guardRecycleBinTitle" style="background:#fff;border-radius:10px; width:760px; max-width:96%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
-			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-				<h3 id="guardRecycleBinTitle" style="margin:0; font-size:18px;">Guard Recycle Bin</h3>
-				<button id="closeGuardRecycleBin" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+	<div id="guardRecycleBinModal" class="user-modal-overlay z-recycle">
+		<div role="dialog" aria-modal="true" aria-labelledby="guardRecycleBinTitle" class="user-modal-dialog recycle">
+			<div class="user-modal-head with-gap">
+				<h3 id="guardRecycleBinTitle" class="user-modal-title">Guard Recycle Bin</h3>
+				<button id="closeGuardRecycleBin" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p style="color:#6b7280;margin:4px 0 14px;">Deleted guard accounts are stored here. You can restore them anytime.</p>
+			<p class="user-modal-lead tight">Deleted guard accounts are stored here. You can restore them anytime.</p>
 
-			<div style="max-height:420px; overflow:auto; border:1px solid #e5e7eb; border-radius:8px;">
-				<table class="guard-table" aria-label="Guard recycle bin table" style="margin:0; width:100%;">
+			<div class="recycle-table-wrap">
+				<table class="guard-table" aria-label="Guard recycle bin table">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -1185,39 +1404,39 @@
 								<td>{{ $recycled->badge_number ?? '—' }}</td>
 								<td>{{ $recycled->station ?? '—' }}</td>
 								<td>
-									<form method="POST" action="/admin/user/guards/{{ $recycled->user_id }}/restore" style="display:inline;">
+									<form method="POST" action="/admin/user/guards/{{ $recycled->user_id }}/restore" class="inline-form">
 										@csrf
-										<button type="submit" class="add-guard-btn" style="padding:6px 10px;font-size:12px;">Restore</button>
+										<button type="submit" class="add-guard-btn btn-restore">Restore</button>
 									</form>
 								</td>
 							</tr>
 						@empty
 							<tr>
-								<td colspan="5" style="text-align:center;color:#64748b;padding:18px;">Recycle bin is empty.</td>
+								<td colspan="5" class="table-empty-cell">Recycle bin is empty.</td>
 							</tr>
 						@endforelse
 					</tbody>
 				</table>
 			</div>
 
-			<div style="display:flex; justify-content:flex-end; margin-top:14px;">
-				<button type="button" id="cancelGuardRecycleBin" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Close</button>
+			<div class="user-modal-footer">
+				<button type="button" id="cancelGuardRecycleBin" class="user-modal-btn-cancel">Close</button>
 			</div>
 		</div>
 	</div>
 
 	<!-- Office Recycle Bin Modal -->
-	<div id="officeRecycleBinModal" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.6); align-items:center; justify-content:center; z-index:85;">
-		<div role="dialog" aria-modal="true" aria-labelledby="officeRecycleBinTitle" style="background:#fff;border-radius:10px; width:760px; max-width:96%; padding:20px; box-shadow:0 10px 30px rgba(2,6,23,0.35);">
-			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-				<h3 id="officeRecycleBinTitle" style="margin:0; font-size:18px;">Office Recycle Bin</h3>
-				<button id="closeOfficeRecycleBin" aria-label="Close" style="border:0;background:transparent;font-size:22px;cursor:pointer;line-height:1;color:#374151;">&times;</button>
+	<div id="officeRecycleBinModal" class="user-modal-overlay z-recycle">
+		<div role="dialog" aria-modal="true" aria-labelledby="officeRecycleBinTitle" class="user-modal-dialog recycle">
+			<div class="user-modal-head with-gap">
+				<h3 id="officeRecycleBinTitle" class="user-modal-title">Office Recycle Bin</h3>
+				<button id="closeOfficeRecycleBin" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p style="color:#6b7280;margin:4px 0 14px;">Deleted office users are stored here. You can restore them anytime.</p>
+			<p class="user-modal-lead tight">Deleted office users are stored here. You can restore them anytime.</p>
 
-			<div style="max-height:420px; overflow:auto; border:1px solid #e5e7eb; border-radius:8px;">
-				<table class="office-table" aria-label="Office recycle bin table" style="margin:0;">
+			<div class="recycle-table-wrap">
+				<table class="office-table" aria-label="Office recycle bin table">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -1235,23 +1454,23 @@
 								<td>{{ $recycled->office_name ?? '—' }}</td>
 								<td>{{ $recycled->position ?? '—' }}</td>
 								<td>
-									<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/restore" style="display:inline;">
+									<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/restore" class="inline-form">
 										@csrf
-										<button type="submit" class="add-guard-btn" style="padding:6px 10px;font-size:12px;">Restore</button>
+										<button type="submit" class="add-guard-btn btn-restore">Restore</button>
 									</form>
 								</td>
 							</tr>
 						@empty
 							<tr>
-								<td colspan="5" style="text-align:center;color:#64748b;padding:18px;">Recycle bin is empty.</td>
+								<td colspan="5" class="table-empty-cell">Recycle bin is empty.</td>
 							</tr>
 						@endforelse
 					</tbody>
 				</table>
 			</div>
 
-			<div style="display:flex; justify-content:flex-end; margin-top:14px;">
-				<button type="button" id="cancelOfficeRecycleBin" style="background:#ecedf2;border-radius:8px;padding:8px 14px;border:0;cursor:pointer;color:#0f172a;">Close</button>
+			<div class="user-modal-footer">
+				<button type="button" id="cancelOfficeRecycleBin" class="user-modal-btn-cancel">Close</button>
 			</div>
 		</div>
 	</div>

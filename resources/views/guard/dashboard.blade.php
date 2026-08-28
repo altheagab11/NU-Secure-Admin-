@@ -7,7 +7,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -1034,6 +1034,30 @@
 				font-size: clamp(1.25rem, 5vw, 1.75rem);
 			}
 		}
+
+		.table-empty-cell {
+			text-align: center;
+			color: #6b7280;
+		}
+
+		.pagination-wrap.js-hidden {
+			display: none;
+		}
+
+		.drawer-badge-row {
+			display: flex;
+			gap: 6px;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+
+		.drawer-alert-message {
+			margin-top: 10px;
+		}
+
+		.drawer-info-grid.mt-10 {
+			margin-top: 10px;
+		}
 	</style>
 </head>
 <body>
@@ -1324,13 +1348,13 @@
 									</tr>
 								@empty
 									<tr>
-										<td colspan="7" style="text-align:center; color:#6b7280;">No active visitors inside campus.</td>
+										<td colspan="7" class="table-empty-cell">No active visitors inside campus.</td>
 									</tr>
 								@endforelse
 							</tbody>
 						</table>
 					</div>
-					<div class="pagination-wrap" id="activeVisitorsPagination" style="display:none;">
+					<div class="pagination-wrap js-hidden" id="activeVisitorsPagination">
 						<div class="pagination-info" id="activeVisitorsPaginationInfo"></div>
 						<div class="pagination-controls" id="activeVisitorsPaginationControls"></div>
 					</div>
@@ -1488,13 +1512,13 @@
 											<h4>Alert #${escapeHtml(alert.alert_id ?? '-')} · ${escapeHtml(alert.alert_type || 'General Alert')}</h4>
 											<p>${escapeHtml(formatTime(alert.created_at))}</p>
 										</div>
-										<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+										<div class="drawer-badge-row">
 											<span class="drawer-status-badge orange">${escapeHtml(alert.severity || 'Medium')}</span>
 											<span class="drawer-status-badge ${escapeHtml(getDrawerStatusClass(alert.status || 'Unresolved'))}">${escapeHtml(alert.status || 'Unresolved')}</span>
 										</div>
 									</div>
-									<p class="drawer-alert-message" style="margin-top:10px;">${escapeHtml(alert.message || '—')}</p>
-									<div class="drawer-info-grid two-col" style="margin-top:10px;">
+									<p class="drawer-alert-message">${escapeHtml(alert.message || '—')}</p>
+									<div class="drawer-info-grid two-col mt-10">
 										<div><span>Resolved At</span><strong>${escapeHtml(formatTime(alert.resolved_at))}</strong></div>
 										<div><span>Resolved By</span><strong>${escapeHtml(alert.resolved_by || '—')}</strong></div>
 									</div>

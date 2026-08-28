@@ -7,7 +7,8 @@
 	<title>Register Visitor</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-	<style>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #243c96;
@@ -6204,6 +6205,27 @@
 			background: #3e4ba0;
 			color: #fff;
 		}
+
+		.qr-print-holder {
+			position: fixed;
+			left: -4000px;
+			top: 0;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+		}
+
+		.progress-track span.is-complete-66 {
+			width: 66%;
+		}
+
+		.visitor-input-group.span-all {
+			grid-column: 1 / -1;
+		}
+
+		.visitor-input-group.spaced-top {
+			margin-top: 17px;
+		}
 	</style>
 </head>
 @php
@@ -6724,7 +6746,7 @@
 										</div>
 									</div>
 									<p class="camera-status is-hidden" id="cameraStatus">Starting camera...</p>
-									<canvas id="captureCanvas" style="display:none;"></canvas>
+									<canvas id="captureCanvas" class="is-hidden"></canvas>
 								</section>
 
 								<section class="sidebar-section action-section">
@@ -6809,7 +6831,7 @@
 							</div>
 						</div>
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
-						<canvas id="captureCanvas" style="display:none;"></canvas>
+						<canvas id="captureCanvas" class="is-hidden"></canvas>
 						<div class="scan-actions-row">
 							<button type="button" class="scan-action" id="scanAction">
 								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -6846,7 +6868,7 @@
 									<span>Step 2 of 3</span>
 									<strong>66% Complete</strong>
 								</div>
-								<div class="progress-track"><span style="width: 66%"></span></div>
+								<div class="progress-track"><span class="is-complete-66"></span></div>
 							</div>
 							<div class="kiosk-verify-layout">
 								<div class="kiosk-verify-main">
@@ -6877,7 +6899,7 @@
 														<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Enter last name" autocomplete="family-name" required>
 													</div>
 												</div>
-												<div class="visitor-input-group" style="grid-column: 1 / -1;">
+												<div class="visitor-input-group span-all">
 													<label class="kiosk-field-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
 													<div class="kiosk-input-wrap">
 														<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" autocomplete="bday" max="{{ now()->subDay()->format('Y-m-d') }}" required>
@@ -7071,7 +7093,7 @@
 								<span>Step 2 of 3</span>
 								<strong>66% Complete</strong>
 							</div>
-							<div class="progress-track"><span style="width: 66%"></span></div>
+							<div class="progress-track"><span class="is-complete-66"></span></div>
 						</div>
 						<div class="kiosk-verify-layout">
 							<div class="kiosk-verify-main">
@@ -7102,7 +7124,7 @@
 													<input class="visitor-input" id="visitorLastName" name="last_name" type="text" placeholder="Enter last name" autocomplete="family-name" required>
 												</div>
 											</div>
-											<div class="visitor-input-group" style="grid-column: 1 / -1;">
+											<div class="visitor-input-group span-all">
 												<label class="kiosk-field-label" for="visitorBirthday">Birthday <span class="required-mark">*</span></label>
 												<div class="kiosk-input-wrap">
 													<input class="visitor-input" id="visitorBirthday" name="birthday" type="date" autocomplete="bday" max="{{ now()->subDay()->format('Y-m-d') }}" required>
@@ -7177,7 +7199,7 @@
 											@endif
 										</div>
 										@if ($registerType === 'contractor')
-											<div class="visitor-input-group" style="margin-top: 17px;">
+											<div class="visitor-input-group spaced-top">
 												<div class="kiosk-input-wrap">
 													<input class="visitor-input" id="destinationOfficeText" name="destination_office_text" type="text" placeholder="Enter destination office" required>
 												</div>
@@ -7198,7 +7220,7 @@
 									@if ($registerType === 'contractor')
 										<section class="kiosk-form-section">
 											<h3 class="kiosk-form-section-title"><i class="bi bi-person-lines-fill"></i> Contact Person <span class="required-mark">*</span></h3>
-											<div class="visitor-input-group" style="margin-top: 17px;">
+											<div class="visitor-input-group spaced-top">
 												<div class="kiosk-input-wrap">
 													<input class="visitor-input" id="contactPerson" name="contact_person" type="text" placeholder="Enter contact person" required>
 												</div>
@@ -7208,14 +7230,14 @@
 
 									<section class="kiosk-form-section">
 										<h3 class="kiosk-form-section-title"><i class="bi bi-pencil-fill"></i> Purpose <span class="required-mark">*</span></h3>
-										<div class="visitor-input-group" style="margin-top: 17px;">
+										<div class="visitor-input-group spaced-top">
 											<textarea class="visitor-textarea" id="visitReason" placeholder="Please state the purpose of your visit..." required></textarea>
 										</div>
 									</section>
 
 									<section class="kiosk-form-section">
 										<h3 class="kiosk-form-section-title"><i class="bi bi-person-vcard-fill"></i> ID Pass Number <span class="required-mark">*</span></h3>
-										<div class="visitor-input-group" style="margin-top: 17px;">
+										<div class="visitor-input-group spaced-top">
 											<div class="kiosk-input-wrap">
 												<input class="visitor-input" id="visitorIdPassNumber" name="id_pass_number" type="text" placeholder="Enter ID pass number" required>
 											</div>
@@ -7342,7 +7364,7 @@
 								<div class="office-list" id="destinationOffice">
 									<p class="office-list-note" id="officeListNote">Loading offices...</p>
 								</div>
-								<div class="visitor-field other-destination-wrap is-hidden" id="otherDestinationWrap" style="margin-top: 10px;">
+								<div class="visitor-field other-destination-wrap is-hidden" id="otherDestinationWrap">
 									<label class="visitor-label" for="otherDestinationText">Specify Destination <span class="required-mark">*</span></label>
 									<input class="visitor-input" id="otherDestinationText" name="other_destination_text" type="text" maxlength="255" placeholder="Enter office or destination" autocomplete="off">
 								</div>
@@ -9625,7 +9647,7 @@
 
 			const holder = document.createElement('div');
 			holder.setAttribute('aria-hidden', 'true');
-			holder.style.cssText = 'position:fixed;left:-4000px;top:0;width:1px;height:1px;overflow:hidden;';
+			holder.className = 'qr-print-holder';
 			document.body.appendChild(holder);
 
 			try {
@@ -9752,7 +9774,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="${viewportContent}">
 <title>Visitor ticket</title>
-<style>
+<style nonce="{{ $cspNonce }}">
 /* size: auto avoids Chrome centering a narrow mm box on Letter/A4 (causes right-shift on thermal). */
 /* Asymmetric margins: mas malaki sa kanan — maraming thermal na mas kinakain ang kanan. */
 /* Android uses 58mm auto so Chrome does not layout as A4 and shrink the ticket. */

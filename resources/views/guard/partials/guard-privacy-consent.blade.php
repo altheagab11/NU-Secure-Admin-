@@ -1,4 +1,4 @@
-<style>
+<style nonce="{{ $cspNonce }}">
 	.kiosk-privacy-modal {
 		position: fixed;
 		inset: 0;

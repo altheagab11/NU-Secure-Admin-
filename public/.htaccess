@@ -7,9 +7,16 @@
 
 <IfModule mod_headers.c>
     Header always set Strict-Transport-Security "max-age=300" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
+
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Safe fallback CSP for responses without Laravel's generated nonce policy.
+    Header always set Content-Security-Policy "default-src 'none'; frame-ancestors 'self'; form-action 'self'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
+
+    # Replace fallback only when Laravel generated a CSP.
+    Header always set Content-Security-Policy "expr=%{resp:X-CSP-Generated}" "expr=-n %{resp:X-CSP-Generated}"
 </IfModule>
 
 <IfModule mod_rewrite.c>

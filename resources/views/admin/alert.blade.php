@@ -7,7 +7,7 @@
 	<title>Alerts</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -643,6 +643,52 @@
 				/* compact table sizing for alerts */
 				.alerts-table {
 					font-size: 15px;
+					width: 100%;
+					border-collapse: collapse;
+				}
+
+				.alerts-table thead tr {
+					border-bottom: 1px solid #e6edf6;
+				}
+
+				.alerts-table tbody tr {
+					border-bottom: 1px solid #f1f5f9;
+				}
+
+				.alerts-table .datetime-stack {
+					line-height: 1;
+				}
+
+				.alerts-table .datetime-time {
+					color: #6b7280;
+					font-size: 13px;
+				}
+
+				.view-btn {
+					background: #4b5cd1;
+					color: #fff;
+					padding: 6px 10px;
+					border-radius: 8px;
+					border: 0;
+				}
+
+				.table-empty-cell {
+					padding: 16px;
+					color: #7b8794;
+					text-align: center;
+				}
+
+				.js-hidden {
+					display: none;
+				}
+
+				.detail-value.is-muted {
+					font-style: italic;
+					color: #64748b;
+				}
+
+				.alert-modal-title.resolve-title {
+					font-size: 22px;
 				}
 
 				.alerts-table thead th {
@@ -1188,48 +1234,48 @@
 					<a href="#" class="tab-link" data-filter="resolved" data-empty-subtitle="All alerts have been resolved">Resolved ({{ $resolvedCount ?? 0 }})</a>
 				</div>
 				<div class="table-wrap">
-					<table class="alerts-table" style="width:100%; border-collapse:collapse;">
+					<table class="alerts-table">
 						<thead>
-							<tr style="border-bottom:1px solid #e6edf6;">
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Alert ID</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Date &amp; Time</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Visitor Name</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Pass No.</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Control No.</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Expected Office</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Scanned Office</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Alert Type</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Severity</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Status</th>
-								<th style="text-align:left; padding:10px 8px; font-weight:400;">Actions</th>
+							<tr>
+								<th>Alert ID</th>
+								<th>Date &amp; Time</th>
+								<th>Visitor Name</th>
+								<th>Pass No.</th>
+								<th>Control No.</th>
+								<th>Expected Office</th>
+								<th>Scanned Office</th>
+								<th>Alert Type</th>
+								<th>Severity</th>
+								<th>Status</th>
+								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							@php $hasAlerts = count($alerts ?? []) > 0; @endphp
 								@foreach(($alerts ?? []) as $alert)
-									<tr style="border-bottom:1px solid #f1f5f9;"
+									<tr
 										data-status="{{ strtolower($alert['status'] ?? 'unknown') }}"
 										data-alert-id="{{ $alert['alert_id'] ?? '' }}"
 										data-created-at="{{ $alert['created_at'] ?? '' }}"
 										data-resolved-at="{{ $alert['resolved_at'] ?? '' }}">
-									<td style="padding:10px 8px;">{{ $alert['alert_id'] ?? '' }}</td>
-									<td style="padding:10px 8px;">
+									<td>{{ $alert['alert_id'] ?? '' }}</td>
+									<td>
 										@php $dt = isset($alert['created_at']) ? \Carbon\Carbon::parse($alert['created_at']) : null; @endphp
 										@if($dt)
-											<div style="line-height:1;">
-												<div style="font-weight:normal;">{{ $dt->format('M d, Y') }}</div>
-												<div style="color:#6b7280; font-size:13px;">{{ $dt->format('h:i A') }}</div>
+											<div class="datetime-stack">
+												<div>{{ $dt->format('M d, Y') }}</div>
+												<div class="datetime-time">{{ $dt->format('h:i A') }}</div>
 											</div>
 										@else
 											-
 										@endif
 									</td>
-									<td style="padding:10px 8px;">{{ ($alert['visitor']['first_name'] ?? '') . ' ' . ($alert['visitor']['last_name'] ?? '') }}</td>
-									<td style="padding:10px 8px;">{{ $alert['visit']['pass_number'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['visit']['control_number'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ ($alert['visit']['office']['office_name'] ?? null) ?: ($alert['visit']['destination_text'] ?? ($alert['visit']['primary_office_id'] ?? '')) }}</td>
-									<td style="padding:10px 8px;">{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
-									<td style="padding:10px 8px;">{{ $alert['alert_type'] ?? '' }}</td>
+									<td>{{ ($alert['visitor']['first_name'] ?? '') . ' ' . ($alert['visitor']['last_name'] ?? '') }}</td>
+									<td>{{ $alert['visit']['pass_number'] ?? '' }}</td>
+									<td>{{ $alert['visit']['control_number'] ?? '' }}</td>
+									<td>{{ ($alert['visit']['office']['office_name'] ?? null) ?: ($alert['visit']['destination_text'] ?? ($alert['visit']['primary_office_id'] ?? '')) }}</td>
+									<td>{{ $alert['office_scan']['office']['office_name'] ?? '' }}</td>
+									<td>{{ $alert['alert_type'] ?? '' }}</td>
 									@php
 										$severityText = (string) ($alert['severity'] ?? 'Medium');
 										$severityClass = match (strtolower(trim($severityText))) {
@@ -1242,15 +1288,15 @@
 										$statusText = (string) ($alert['status'] ?? 'Unresolved');
 										$statusClass = strtolower(trim($statusText)) === 'resolved' ? 'status-resolved' : 'status-unresolved';
 									@endphp
-									<td style="padding:10px 8px;"><span class="alert-pill {{ $severityClass }}">{{ $severityText }}</span></td>
-									<td style="padding:10px 8px;"><span class="alert-pill {{ $statusClass }}">{{ $statusText }}</span></td>
-										<td style="padding:10px 8px;">
-										<button class="view-btn" data-alert-id="{{ $alert['alert_id'] ?? '' }}" style="background:#4b5cd1;color:#fff;padding:6px 10px;border-radius:8px;border:0;">View</button>
+									<td><span class="alert-pill {{ $severityClass }}">{{ $severityText }}</span></td>
+									<td><span class="alert-pill {{ $statusClass }}">{{ $statusText }}</span></td>
+										<td>
+										<button class="view-btn" data-alert-id="{{ $alert['alert_id'] ?? '' }}">View</button>
 									</td>
 								</tr>
 							@endforeach
-							<tr id="noResults" style="display: {{ $hasAlerts ? 'none' : 'table-row' }};">
-								<td colspan="11" style="padding:16px; color:#7b8794; text-align:center;">No alerts found</td>
+							<tr id="noResults" class="{{ $hasAlerts ? 'js-hidden' : '' }}">
+								<td colspan="11" class="table-empty-cell">No alerts found</td>
 							</tr>
 						</tbody>
 					</table>
@@ -1425,8 +1471,8 @@
 				<section class="alert-info-card">
 					<h4 class="card-title">Resolution Information</h4>
 					<div class="card-content">
-						<div id="m_unresolved_text" class="detail-value" style="font-style: italic; color:#64748b;">Not yet resolved</div>
-						<div id="m_resolved_details" style="display:none;">
+						<div id="m_unresolved_text" class="detail-value is-muted">Not yet resolved</div>
+						<div id="m_resolved_details" class="js-hidden">
 							<div class="detail-grid">
 								<div><div class="detail-label">Resolved By</div><div class="detail-value" id="m_resolved_by">-</div></div>
 								<div><div class="detail-label">Resolved At</div><div class="detail-value" id="m_resolved_at">-</div></div>
@@ -1448,7 +1494,7 @@
 	<div id="resolveModal" class="resolve-flow-modal">
 		<div class="resolve-flow-card" role="dialog" aria-modal="true" aria-labelledby="resolveAlertTitle">
 			<div class="alert-modal-header">
-				<h3 id="resolveAlertTitle" class="alert-modal-title" style="font-size:22px;">Resolve Alert</h3>
+				<h3 id="resolveAlertTitle" class="alert-modal-title resolve-title">Resolve Alert</h3>
 				<button id="closeResolveModalBtn" class="alert-modal-close" type="button" aria-label="Close">×</button>
 			</div>
 

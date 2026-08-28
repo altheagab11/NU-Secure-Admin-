@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Enrollee Pass Not Found</title>
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			--bg: #eef1f6;
 			--blue: #1e3a8a;

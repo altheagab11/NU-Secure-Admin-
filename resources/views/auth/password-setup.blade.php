@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Set Password - NU-Secure</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         :root {
             --page-bg: #3a4797;
             --card-bg: #ececec;

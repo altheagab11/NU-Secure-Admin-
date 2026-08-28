@@ -7,7 +7,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -1323,6 +1323,65 @@
 				width: 100%;
 			}
 		}
+
+		.pagination-wrap.js-hidden {
+			display: none;
+		}
+
+		.detail-value.is-muted {
+			color: #64748b;
+		}
+
+		.detail-value.is-muted-italic {
+			font-style: italic;
+			color: #64748b;
+		}
+
+		.detail-value.mb-8 {
+			margin-bottom: 8px;
+		}
+
+		.js-hidden {
+			display: none;
+		}
+
+		.alert-modal-title.resolve-title {
+			font-size: 22px;
+		}
+
+		.visit-card {
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 12px;
+			margin-bottom: 10px;
+			background: #f8fafc;
+		}
+
+		.visit-card.is-focused {
+			border: 2px solid #f97316;
+			background: #fff7ed;
+		}
+
+		.visit-card-head {
+			display: flex;
+			justify-content: space-between;
+			gap: 8px;
+			flex-wrap: wrap;
+			margin-bottom: 8px;
+		}
+
+		.visit-card-badges {
+			display: flex;
+			gap: 6px;
+			flex-wrap: wrap;
+		}
+
+		.scan-card-static {
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 12px;
+			background: #f8fafc;
+		}
 	</style>
 </head>
 <body>
@@ -1527,7 +1586,7 @@
 							</div>
 						@endforelse
 					</div>
-					<div class="pagination-wrap" id="completedVisitorsPagination" style="display:none;">
+					<div class="pagination-wrap js-hidden" id="completedVisitorsPagination">
 						<div class="pagination-info" id="completedVisitorsPaginationInfo"></div>
 						<div class="pagination-controls" id="completedVisitorsPaginationControls"></div>
 					</div>
@@ -1577,7 +1636,7 @@
 							</div>
 						@endforelse
 					</div>
-					<div class="pagination-wrap" id="unresolvedAlertsPagination" style="display:none;">
+					<div class="pagination-wrap js-hidden" id="unresolvedAlertsPagination">
 						<div class="pagination-info" id="unresolvedAlertsPaginationInfo"></div>
 						<div class="pagination-controls" id="unresolvedAlertsPaginationControls"></div>
 					</div>
@@ -1600,7 +1659,7 @@
 				<section class="alert-info-card">
 					<h4 class="card-title">Alert Information</h4>
 					<div class="card-content" id="m_alerts_list">
-						<div class="detail-value" style="color:#64748b;">Loading alerts...</div>
+						<div class="detail-value is-muted">Loading alerts...</div>
 					</div>
 				</section>
 
@@ -1630,15 +1689,15 @@
 				<section class="alert-info-card">
 					<h4 class="card-title">Scan Information</h4>
 					<div class="card-content" id="m_scans_list">
-						<div class="detail-value" style="color:#64748b;">Loading scans...</div>
+						<div class="detail-value is-muted">Loading scans...</div>
 					</div>
 				</section>
 
 				<section class="alert-info-card">
 					<h4 class="card-title">Resolution Information</h4>
 					<div class="card-content">
-						<div id="m_unresolved_text" class="detail-value" style="font-style: italic; color:#64748b;">Not yet resolved</div>
-						<div id="m_resolved_details" style="display:none;">
+						<div id="m_unresolved_text" class="detail-value is-muted-italic">Not yet resolved</div>
+						<div id="m_resolved_details" class="js-hidden">
 							<div class="detail-grid">
 								<div><div class="detail-label">Resolved By</div><div class="detail-value" id="m_resolved_by">-</div></div>
 								<div><div class="detail-label">Resolved At</div><div class="detail-value" id="m_resolved_at">-</div></div>
@@ -1659,7 +1718,7 @@
 	<div id="resolveModal" class="resolve-flow-modal">
 		<div class="resolve-flow-card" role="dialog" aria-modal="true" aria-labelledby="resolveAlertTitle">
 			<div class="alert-modal-header">
-				<h3 id="resolveAlertTitle" class="alert-modal-title" style="font-size:22px;">Resolve Alert</h3>
+				<h3 id="resolveAlertTitle" class="alert-modal-title resolve-title">Resolve Alert</h3>
 				<button id="closeResolveModalBtn" class="alert-modal-close" type="button" aria-label="Close">×</button>
 			</div>
 			<div class="resolve-flow-body">
@@ -1729,7 +1788,7 @@
 
 		function renderAlertsListHtml(alerts, focusedAlertId) {
 			if (!alerts.length) {
-				return '<div class="detail-value" style="color:#64748b;">No alerts found for this visit.</div>';
+				return '<div class="detail-value is-muted">No alerts found for this visit.</div>';
 			}
 
 			return alerts.map((item) => {
@@ -1738,18 +1797,18 @@
 				const createdLabel = createdDate === '-' ? '-' : `${createdDate} ${createdTime}`;
 				const [resolvedDate, resolvedTime] = formatDateTime(item.resolved_at);
 				const resolvedLabel = resolvedDate === '-' ? '—' : `${resolvedDate} ${resolvedTime}`;
-				const border = isFocused ? '2px solid #f97316' : '1px solid #e2e8f0';
+				const focusedClass = isFocused ? ' is-focused' : '';
 
 				return `
-					<div style="border:${border}; border-radius:12px; padding:12px; margin-bottom:10px; background:${isFocused ? '#fff7ed' : '#f8fafc'};">
-						<div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+					<div class="visit-card${focusedClass}">
+						<div class="visit-card-head">
 							<strong>Alert #${escapeHtml(item.alert_id ?? '-')} · ${escapeHtml(item.alert_type || 'General Alert')}</strong>
-							<div style="display:flex; gap:6px; flex-wrap:wrap;">
+							<div class="visit-card-badges">
 								<span class="${getSeverityClass(item.severity)}">${escapeHtml(item.severity || 'Medium')}</span>
 								<span class="${getStatusClass(item.status)}">${escapeHtml(item.status || 'Unresolved')}</span>
 							</div>
 						</div>
-						<div class="detail-value" style="margin-bottom:8px;">${escapeHtml(item.message || '—')}</div>
+						<div class="detail-value mb-8">${escapeHtml(item.message || '—')}</div>
 						<div class="detail-grid">
 							<div><div class="detail-label">Created At</div><div class="detail-value">${escapeHtml(createdLabel)}</div></div>
 							<div><div class="detail-label">Resolved At</div><div class="detail-value">${escapeHtml(resolvedLabel)}</div></div>
@@ -1763,15 +1822,15 @@
 
 		function renderScansListHtml(scans) {
 			if (!scans.length) {
-				return '<div class="detail-value" style="color:#64748b;">No scan records found.</div>';
+				return '<div class="detail-value is-muted">No scan records found.</div>';
 			}
 
 			return scans.map((scan) => {
 				const [scanDate, scanTime] = formatDateTime(scan.scan_time);
 				const scanLabel = scanDate === '-' ? '-' : `${scanDate} ${scanTime}`;
 				return `
-					<div style="border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-bottom:10px; background:#f8fafc;">
-						<div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+					<div class="visit-card">
+						<div class="visit-card-head">
 							<strong>Scan #${escapeHtml(scan.scan_id ?? '-')} · ${escapeHtml(scan.office_name || 'Unknown Office')}</strong>
 							<span class="badge-pill ${String(scan.validation_status || '').toLowerCase().includes('valid') && !String(scan.validation_status || '').toLowerCase().includes('invalid') ? 'badge-success' : 'badge-danger'}">${escapeHtml(scan.validation_status || 'Unknown')}</span>
 						</div>
@@ -1811,7 +1870,7 @@
 
 			document.getElementById('m_alerts_list').innerHTML = renderAlertsListHtml([alert], alert.alert_id);
 			document.getElementById('m_scans_list').innerHTML = `
-				<div style="border:1px solid #e2e8f0; border-radius:12px; padding:12px; background:#f8fafc;">
+				<div class="scan-card-static">
 					<div class="detail-grid">
 						<div><div class="detail-label">Scan ID</div><div class="detail-value">${escapeHtml(alert.scan_id || '-')}</div></div>
 						<div><div class="detail-label">Scanned Office</div><div class="detail-value">${escapeHtml(alert.scanned_office || '-')}</div></div>

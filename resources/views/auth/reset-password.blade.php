@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password - NU-SECURE</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         @include('auth.partials.auth-styles')
     </style>
 </head>
@@ -20,7 +20,7 @@
             @if(!empty($invalidLink))
                 <h2 class="card-heading">Reset Link Expired</h2>
                 <p class="card-copy">This password reset link is invalid or has expired.</p>
-                <a href="{{ route('password.request') }}" class="btn-login" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Request New Reset Link</a>
+                <a href="{{ route('password.request') }}" class="btn-login">Request New Reset Link</a>
                 <a href="{{ route('login') }}" class="back-link">Back to Sign In</a>
             @else
                 <h2 class="card-heading">Reset Password</h2>

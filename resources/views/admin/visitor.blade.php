@@ -6,7 +6,7 @@
 	<title>Visitor Monitoring</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -915,6 +915,10 @@
 			width: 33%;
 		}
 
+		.vd-alerts-list.js-hidden {
+			display: none;
+		}
+
 		.correct-list {
 			list-style: none;
 			margin: 0;
@@ -1332,7 +1336,7 @@
 										@php
 											$barWidth = (int) round((($officeActivity['count'] ?? 0) / max(1, ($maxOfficeCount ?? 1))) * 100);
 										@endphp
-										<div class="bar-fill" style="width: {{ max(8, $barWidth) }}%;"></div>
+										<div class="bar-fill" data-width="{{ max(8, $barWidth) }}%"></div>
 									</div>
 								</li>
 							@empty
@@ -1410,7 +1414,7 @@
 							<h3 class="vd-card-title">Alert Information</h3>
 							<div class="vd-card-body">
 								<div id="vdNoAlertsBox" class="vd-badge vd-badge-success">No alerts found.</div>
-								<div id="vdAlertsList" class="vd-alerts-list" style="display:none;"></div>
+								<div id="vdAlertsList" class="vd-alerts-list js-hidden"></div>
 							</div>
 						</section>
 					</div>
@@ -1478,6 +1482,10 @@
 
 	<script nonce="{{ $cspNonce }}">
 		@include('admin.partials.table-pagination-script')
+
+		document.querySelectorAll('.bar-fill[data-width]').forEach(function (el) {
+			el.style.width = el.getAttribute('data-width') || '';
+		});
 
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');

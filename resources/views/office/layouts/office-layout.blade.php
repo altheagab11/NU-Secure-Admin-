@@ -8,7 +8,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -307,6 +307,47 @@
 		}
 		.office-card h2, .office-card h3 {
 			margin: 0 0 6px; font-size: 1.1rem; font-weight: 800; color: var(--nu-text);
+		}
+		.office-page-title {
+			font-size: 1.15rem;
+			font-weight: 800;
+		}
+		.scan-promo-panel {
+			min-height: 160px;
+			background: linear-gradient(160deg, #0B57B7, #064A9F);
+			color: #fff;
+		}
+		.scan-promo-icon {
+			font-size: 2.6rem;
+			color: #ffd84d;
+		}
+		.scan-modal-content {
+			border-radius: 20px;
+			border: 0;
+		}
+		.scan-visitor-photo {
+			max-height: 180px;
+			object-fit: cover;
+			width: 100%;
+			background: #eef4ff;
+		}
+		.scan-visitor-photo-fallback {
+			height: 160px;
+			background: #eef4ff;
+			color: #064A9F;
+		}
+		.scan-photo-icon {
+			font-size: 3rem;
+		}
+		.visitor-detail-photo {
+			max-height: 220px;
+			object-fit: cover;
+			width: 100%;
+		}
+		.visitor-detail-photo-fallback {
+			height: 180px;
+			background: #eef4ff;
+			color: #064A9F;
 		}
 		.card-muted { color: var(--nu-muted); font-size: .9rem; margin-bottom: 14px; }
 

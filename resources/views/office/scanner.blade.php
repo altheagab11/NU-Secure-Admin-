@@ -4,7 +4,7 @@
 @section('title', 'QR Scanner')
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 	.scan-layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
@@ -231,6 +231,10 @@
 		justify-content: center;
 		flex-shrink: 0;
 	}
+	.side-tip-icon.tip-success {
+		background: #ecfdf3;
+		color: #16a34a;
+	}
 	.side-tip ul {
 		margin: 0;
 		padding-left: 18px;
@@ -371,7 +375,7 @@
 
 		<div class="side-card">
 			<div class="side-tip">
-				<div class="side-tip-icon" style="background:#ecfdf3;color:#16a34a;" aria-hidden="true"><i class="bi bi-shield-check"></i></div>
+				<div class="side-tip-icon tip-success" aria-hidden="true"><i class="bi bi-shield-check"></i></div>
 				<div>
 					<h3>Office Check-in</h3>
 					<p>The system verifies the visitor is expected at <strong>{{ $office->office_name }}</strong> before recording the scan.</p>

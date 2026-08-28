@@ -61,7 +61,7 @@
 @endsection
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-styles')
 
 	.office-card .table-pagination-bar {

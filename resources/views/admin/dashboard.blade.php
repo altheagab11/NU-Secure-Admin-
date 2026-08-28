@@ -6,7 +6,7 @@
 	<title>Admin Dashboard</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-	<style>
+	<style nonce="{{ $cspNonce }}">
 		:root {
 			font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 			--sidebar-bg: #39459a;
@@ -669,6 +669,13 @@
 		}
 		@include('admin.partials.admin-topbar-styles')
 		@include('admin.partials.admin-responsive-styles')
+		.progress-h-6 { height: 6px; }
+		.progress-w-75 { width: 75%; }
+		.progress-w-60 { width: 60%; }
+		.progress-w-40 { width: 40%; }
+		.progress-w-20 { width: 20%; }
+		.chart-box-300 { height: 300px; }
+		.chart-box-280 { height: 280px; }
 	</style>
 </head>
 <body>
@@ -895,8 +902,8 @@
 													Last alert: 5 mins ago
 												</div>
 
-												<div class="progress rounded-pill" style="height: 6px;">
-													<div class="progress-bar bg-danger" style="width: 75%"></div>
+												<div class="progress rounded-pill progress-h-6">
+													<div class="progress-bar bg-danger progress-w-75"></div>
 												</div>
 											</div>
 										</a>
@@ -925,8 +932,8 @@
 													Last alert: 12 mins ago
 												</div>
 
-												<div class="progress rounded-pill" style="height: 6px;">
-													<div class="progress-bar bg-warning" style="width: 60%"></div>
+												<div class="progress rounded-pill progress-h-6">
+													<div class="progress-bar bg-warning progress-w-60"></div>
 												</div>
 											</div>
 										</a>
@@ -955,8 +962,8 @@
 													Last alert: 20 mins ago
 												</div>
 
-												<div class="progress rounded-pill" style="height: 6px;">
-													<div class="progress-bar bg-info" style="width: 40%"></div>
+												<div class="progress rounded-pill progress-h-6">
+													<div class="progress-bar bg-info progress-w-40"></div>
 												</div>
 											</div>
 										</a>
@@ -985,8 +992,8 @@
 													Last alert: 35 mins ago
 												</div>
 
-												<div class="progress rounded-pill" style="height: 6px;">
-													<div class="progress-bar bg-secondary" style="width: 20%"></div>
+												<div class="progress rounded-pill progress-h-6">
+													<div class="progress-bar bg-secondary progress-w-20"></div>
 												</div>
 											</div>
 										</a>
@@ -1083,7 +1090,7 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">7-Day Visitor Trend</h4>
-								<div class="bg-light rounded-4 border p-3" style="height: 300px;">
+								<div class="bg-light rounded-4 border p-3 chart-box-300">
 									<canvas id="visitorTrendChart"></canvas>
 								</div>
 							</div>
@@ -1094,7 +1101,7 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Status</h4>
-								<div class="bg-light rounded-4 border p-3" style="height: 300px;">
+								<div class="bg-light rounded-4 border p-3 chart-box-300">
 									<canvas id="visitorStatusChart"></canvas>
 								</div>
 							</div>
@@ -1225,7 +1232,7 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Hour</h4>
-								<div class="bg-light rounded-4 border p-3" style="height: 280px;">
+								<div class="bg-light rounded-4 border p-3 chart-box-280">
 									<canvas id="visitorHourChart"></canvas>
 								</div>
 							</div>
@@ -1236,7 +1243,7 @@
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<h4 class="fw-semibold text-center mb-3">Visitors by Office</h4>
-								<div class="bg-light rounded-4 border p-3" style="height: 280px;">
+								<div class="bg-light rounded-4 border p-3 chart-box-280">
 									<canvas id="visitorOfficeChart"></canvas>
 								</div>
 							</div>

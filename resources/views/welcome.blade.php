@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NU-SECURE Login</title>
 
-    <style>
+    <style nonce="{{ $cspNonce }}">
         * {
             margin: 0;
             padding: 0;
@@ -119,6 +119,12 @@
             font-size: 14px;
         }
 
+        .alert-box.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+
         .remember-row {
             display: flex;
             align-items: center;
@@ -228,7 +234,7 @@
             </div>
 
             @if (session('status'))
-                <div class="alert-box" style="background:#ecfdf5;color:#065f46;border-color:#a7f3d0;">
+                <div class="alert-box success">
                     {{ session('status') }}
                 </div>
             @endif

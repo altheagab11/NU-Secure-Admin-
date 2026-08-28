@@ -131,6 +131,10 @@ body {
     font-weight: 700;
     cursor: pointer;
     transition: 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .btn-login:hover {

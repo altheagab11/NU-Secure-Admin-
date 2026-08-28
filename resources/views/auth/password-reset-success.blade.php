@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Reset Successful - NU-SECURE</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         @include('auth.partials.auth-styles')
     </style>
 </head>
@@ -20,7 +20,7 @@
             <h2 class="card-heading">Password Reset Successful</h2>
             <p class="card-copy">Your password has been changed successfully. For your security, existing login sessions may have been signed out. You can now sign in using your new password.</p>
 
-            <a href="{{ route('login') }}" class="btn-login" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Back to Sign In</a>
+            <a href="{{ route('login') }}" class="btn-login">Back to Sign In</a>
             <p class="footer-text">National University - Secure Visitor Access</p>
         </div>
     </div>

@@ -25,14 +25,48 @@ class ContentSecurityPolicyFeatureTest extends TestCase
         $this->assertStringContainsString("base-uri 'self'", $csp);
         $this->assertStringContainsString("object-src 'none'", $csp);
         $this->assertStringContainsString('upgrade-insecure-requests', $csp);
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("style-src 'self'", $csp);
+        $this->assertStringContainsString("img-src 'self' data: blob:", $csp);
+        $this->assertStringContainsString("connect-src 'self'", $csp);
+        $this->assertStringContainsString("font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com", $csp);
+        $this->assertStringContainsString("media-src 'self' blob:", $csp);
+        $this->assertStringContainsString("manifest-src 'none'", $csp);
+        $this->assertStringContainsString('https://cdnjs.cloudflare.com', $csp);
         $this->assertStringNotContainsString("'unsafe-inline'", $csp);
         $this->assertStringNotContainsString('script-src *', $csp);
+        $this->assertStringNotContainsString('*.supabase.co', $csp);
+        $this->assertDoesNotMatchRegularExpression('/style-src[^;]*\*/', $csp);
         $this->assertMatchesRegularExpression("/script-src[^;]*'nonce-[A-Za-z0-9+\/=]+'/", $csp);
+        $this->assertMatchesRegularExpression("/style-src[^;]*'nonce-[A-Za-z0-9+\/=]+'/", $csp);
 
         preg_match("/'nonce-([^']+)'/", $csp, $matches);
         $this->assertNotEmpty($matches[1] ?? null);
 
+        $this->assertSame($csp, (string) $response->headers->get('X-CSP-Generated'));
+
         $response->assertSee('nonce="'.$matches[1].'"', false);
+        $response->assertSee('<style nonce="'.$matches[1].'">', false);
+    }
+
+    #[Test]
+    public function login_csp_img_src_includes_exact_supabase_origin_when_configured(): void
+    {
+        $repository = \Illuminate\Support\Env::getRepository();
+        $previous = $repository->get('SUPABASE_URL');
+        $repository->set('SUPABASE_URL', 'https://abcd1234.supabase.co');
+
+        try {
+            $csp = (string) $this->get(route('login'))->assertOk()->headers->get('Content-Security-Policy');
+            $this->assertStringContainsString('https://abcd1234.supabase.co', $csp);
+            $this->assertStringNotContainsString('*.supabase.co', $csp);
+        } finally {
+            if ($previous === null) {
+                $repository->set('SUPABASE_URL', '');
+            } else {
+                $repository->set('SUPABASE_URL', $previous);
+            }
+        }
     }
 
     #[Test]
@@ -45,6 +79,7 @@ class ContentSecurityPolicyFeatureTest extends TestCase
         $this->assertNotEmpty($matches[1] ?? null);
 
         $response->assertSee('nonce="'.$matches[1].'"', false)
+            ->assertSee('<style nonce="'.$matches[1].'">', false)
             ->assertSee('Send Verification Code');
     }
 }

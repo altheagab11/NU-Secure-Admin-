@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - NU-SECURE</title>
-    <style>
+    <style nonce="{{ $cspNonce }}">
         @include('auth.partials.auth-styles')
 
         .step-indicator {

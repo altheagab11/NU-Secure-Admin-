@@ -7,7 +7,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 	<div>
 		<div class="d-flex align-items-center gap-2 flex-wrap">
-			<h2 class="mb-0" style="font-size:1.15rem;font-weight:800;">{{ $office->office_name }}</h2>
+			<h2 class="mb-0 office-page-title">{{ $office->office_name }}</h2>
 			@include('office.components.status-badge', ['tone' => $officeStatus === 'Open' ? 'success' : 'muted', 'label' => $officeStatus])
 		</div>
 		<p class="card-muted mb-0 mt-1">{{ $staffName }} · {{ $staffRole }}</p>
@@ -17,7 +17,7 @@
 	</a>
 </div>
 
-<div class="stat-grid mb-3" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+<div class="stat-grid mb-3">
 	@include('office.components.statistic-card', ['label' => 'Pending Scans', 'value' => $stats['pending_office_scans'], 'icon' => 'bi-hourglass-split', 'statKey' => 'pending_office_scans'])
 	@include('office.components.statistic-card', ['label' => 'Expected Visitors', 'value' => $stats['expected_visitors'], 'icon' => 'bi-person-check', 'statKey' => 'expected_visitors'])
 	@include('office.components.statistic-card', ['label' => "Today's Scans", 'value' => $stats['todays_visitors'], 'icon' => 'bi-check2-circle', 'statKey' => 'todays_visitors'])
@@ -28,8 +28,8 @@
 		<div class="office-card h-100">
 			<h2><i class="bi bi-qr-code-scan me-2 text-primary" aria-hidden="true"></i>Quick Scan</h2>
 			<p class="card-muted">Scan the visitor QR when their visit at this office is done.</p>
-			<div class="rounded-4 d-flex flex-column align-items-center justify-content-center mb-3" style="min-height: 160px; background: linear-gradient(160deg, #0B57B7, #064A9F); color: #fff;">
-				<i class="bi bi-qr-code" style="font-size: 2.6rem; color: #ffd84d;" aria-hidden="true"></i>
+			<div class="rounded-4 d-flex flex-column align-items-center justify-content-center mb-3 scan-promo-panel">
+				<i class="bi bi-qr-code scan-promo-icon" aria-hidden="true"></i>
 				<div class="fw-bold mt-2">Ready to Scan</div>
 			</div>
 			<div class="d-grid gap-2">
@@ -165,7 +165,7 @@
 @endsection
 
 @push('styles')
-<style>
+<style nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-styles')
 
 	.office-card .table-pagination-bar {

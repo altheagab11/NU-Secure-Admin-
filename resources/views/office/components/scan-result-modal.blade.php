@@ -1,7 +1,7 @@
 {{-- Confirmation / result modal shared by dashboard & scanner --}}
 <div class="modal fade" id="scanResultModal" tabindex="-1" aria-labelledby="scanResultModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-		<div class="modal-content" style="border-radius: 20px; border: 0;">
+		<div class="modal-content scan-modal-content">
 			<div class="modal-header border-0 pb-0">
 				<h2 class="modal-title fs-5 fw-bold" id="scanResultModalLabel">Visitor Verification</h2>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -10,9 +10,9 @@
 				<div id="scanModalAlert" class="alert d-none" role="alert"></div>
 				<div class="row g-3">
 					<div class="col-md-4 text-center">
-						<img id="scanVisitorPhoto" src="" alt="Visitor photo" class="img-fluid rounded-4 mb-2 d-none" style="max-height: 180px; object-fit: cover; width: 100%; background: #eef4ff;">
-						<div id="scanVisitorPhotoFallback" class="rounded-4 d-flex align-items-center justify-content-center mb-2" style="height: 160px; background: #eef4ff; color: #064A9F;">
-							<i class="bi bi-person-bounding-box" style="font-size: 3rem;" aria-hidden="true"></i>
+						<img id="scanVisitorPhoto" src="" alt="Visitor photo" class="img-fluid rounded-4 mb-2 d-none scan-visitor-photo">
+						<div id="scanVisitorPhotoFallback" class="rounded-4 d-flex align-items-center justify-content-center mb-2 scan-visitor-photo-fallback">
+							<i class="bi bi-person-bounding-box scan-photo-icon" aria-hidden="true"></i>
 						</div>
 						<div id="scanAuthBadge" class="badge-status badge-success">Correct destination</div>
 					</div>
@@ -57,7 +57,7 @@
 
 <div class="modal fade" id="manualPayloadModal" tabindex="-1" aria-labelledby="manualPayloadModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content" style="border-radius: 20px; border: 0;">
+		<div class="modal-content scan-modal-content">
 			<div class="modal-header border-0">
 				<h2 class="modal-title fs-5 fw-bold" id="manualPayloadModalLabel">Enter QR Payload Manually</h2>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
