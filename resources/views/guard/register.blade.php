@@ -8958,86 +8958,98 @@
 			loadingText.textContent = 'Processing capture...';
 			scanAction.disabled = true;
 
-			// Send image to server for saving
-			const formData = new FormData();
-			formData.append('image', capturedPictureData);
-			formData.append('step', 3);
-
-			fetch('/guard/capture', {
-				method: 'POST',
-				headers: {
-					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-				},
-				body: formData
-			})
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
-					faceIdCapturePreviewUrl = data.preview_url || data.public_url || data.path || '';
-
-					loadingText.textContent = 'Generating QR ticket...';
-					const qrMeta = createQrMeta();
-
-					if (!qrMeta) {
-						throw new Error('Failed to generate QR data. Please try again.');
-					}
-
-					if (!renderQrTicket(qrMeta)) {
-						throw new Error('Failed to generate QR ticket. Please try again.');
-					}
-
-					currentStep = 4;
-					updateStepUI();
-					releaseCamera();
-					clearFrozenFrame();
-					ticketSaveStatus.textContent = 'Saving visitor details...';
-					ticketSaveStatus.classList.remove('error');
-
-					loadingText.textContent = 'Saving visitor details...';
-					saveNormalVisitorRegistration(qrMeta)
-						.then(() => {
-							hasSavedRegistration = true;
-							ticketSaveStatus.textContent = 'Visitor details saved successfully.';
-							ticketSaveStatus.classList.remove('error');
-							loadingText.textContent = 'QR generated and visitor saved successfully.';
-							setTimeout(() => {
-								loadingOverlay.classList.add('is-hidden');
-								scanAction.disabled = true;
-								cameraStatus.textContent = 'Registration completed successfully.';
-							}, 1000);
-						})
-						.catch((error) => {
-							ticketSaveStatus.textContent = error.message || 'Failed to save visitor details.';
-							ticketSaveStatus.classList.add('error');
-							loadingText.textContent = error.message || 'Failed to save visitor details. Try again.';
-							setTimeout(() => {
-								loadingOverlay.classList.add('is-hidden');
-								scanAction.disabled = true;
-							}, 1500);
-						});
-				} else {
-					loadingText.textContent = 'Failed to save. Try again.';
-					setTimeout(() => {
-						loadingOverlay.classList.add('is-hidden');
-						clearFrozenFrame();
-						scanAction.disabled = false;
-						// Restart camera on failure
-						startCamera();
-					}, 2000);
-				}
-			})
-			.catch(error => {
-				console.error('Capture error:', error);
-				loadingText.textContent = 'Error saving capture. Try again.';
+			const finishCaptureFailure = (message) => {
+				loadingText.textContent = message || 'Failed to save. Try again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
 					clearFrozenFrame();
 					scanAction.disabled = false;
-					// Restart camera on error
 					startCamera();
 				}, 2000);
-			});
+			};
+
+			const uploadFaceCapture = (imagePayload) => {
+				const formData = new FormData();
+				if (imagePayload instanceof Blob) {
+					formData.append('image', imagePayload, 'face-id.jpg');
+				} else {
+					formData.append('image', imagePayload);
+				}
+				formData.append('step', 3);
+
+				return fetch('/guard/capture', {
+					method: 'POST',
+					headers: {
+						'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+					},
+					body: formData
+				}).then(response => response.json());
+			};
+
+			const handleCaptureSuccess = (data) => {
+				faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
+				// Prefer signed preview URL; fall back to the in-memory capture so the ticket always shows the photo.
+				faceIdCapturePreviewUrl = data.preview_url || data.public_url || capturedPictureData || '';
+
+				loadingText.textContent = 'Generating QR ticket...';
+				const qrMeta = createQrMeta();
+
+				if (!qrMeta) {
+					throw new Error('Failed to generate QR data. Please try again.');
+				}
+
+				if (!renderQrTicket(qrMeta)) {
+					throw new Error('Failed to generate QR ticket. Please try again.');
+				}
+
+				currentStep = 4;
+				updateStepUI();
+				releaseCamera();
+				clearFrozenFrame();
+				ticketSaveStatus.textContent = 'Saving visitor details...';
+				ticketSaveStatus.classList.remove('error');
+
+				loadingText.textContent = 'Saving visitor details...';
+				return saveNormalVisitorRegistration(qrMeta)
+					.then(() => {
+						hasSavedRegistration = true;
+						ticketSaveStatus.textContent = 'Visitor details saved successfully.';
+						ticketSaveStatus.classList.remove('error');
+						loadingText.textContent = 'QR generated and visitor saved successfully.';
+						setTimeout(() => {
+							loadingOverlay.classList.add('is-hidden');
+							scanAction.disabled = true;
+							cameraStatus.textContent = 'Registration completed successfully.';
+						}, 1000);
+					})
+					.catch((error) => {
+						ticketSaveStatus.textContent = error.message || 'Failed to save visitor details.';
+						ticketSaveStatus.classList.add('error');
+						loadingText.textContent = error.message || 'Failed to save visitor details. Try again.';
+						setTimeout(() => {
+							loadingOverlay.classList.add('is-hidden');
+							scanAction.disabled = true;
+						}, 1500);
+					});
+			};
+
+			captureCanvas.toBlob((blob) => {
+				const uploadPromise = blob
+					? uploadFaceCapture(blob)
+					: uploadFaceCapture(capturedPictureData);
+
+				uploadPromise
+					.then(data => {
+						if (data.success) {
+							return handleCaptureSuccess(data);
+						}
+						finishCaptureFailure('Failed to save. Try again.');
+					})
+					.catch(error => {
+						console.error('Capture error:', error);
+						finishCaptureFailure(error?.message || 'Error saving capture. Try again.');
+					});
+			}, 'image/jpeg', 0.70);
 		};
 
 		const createQrMeta = () => {

@@ -887,7 +887,8 @@ class GuardVisitorController extends Controller
                 'message' => 'Capture uploaded successfully',
                 'filename' => $uploadResult['filename'],
                 'path' => $uploadResult['object_path'],
-                'public_url' => $uploadResult['preview_url'] ?? $uploadResult['public_url'],
+                'public_url' => $uploadResult['public_url'],
+                'preview_url' => $uploadResult['preview_url'] ?? $uploadResult['public_url'],
                 'bucket' => $uploadResult['bucket'],
                 'bucket_file_path' => $uploadResult['bucket_file_path'],
                 'step' => $step,
@@ -1427,7 +1428,11 @@ class GuardVisitorController extends Controller
 
         // Local fallback path (used when Supabase upload is blocked):
         // /storage/captures/xxx.jpg or storage/captures/xxx.jpg
-        if (Str::startsWith($cleanPath, ['/storage/', 'storage/'])) {
+        // Do not treat Supabase API paths (storage/v1/...) as local files.
+        if (
+            Str::startsWith($cleanPath, ['/storage/', 'storage/'])
+            && ! Str::contains($cleanPath, 'storage/v1/')
+        ) {
             $normalized = '/'.ltrim($cleanPath, '/');
 
             return url($normalized);

@@ -49,4 +49,13 @@ return [
         'secret_key' => env('TURNSTILE_SECRET_KEY', ''),
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL', ''),
+        'key' => env('SUPABASE_KEY', ''),
+        'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY', ''),
+        'storage_key' => env('SUPABASE_STORAGE_KEY', ''),
+        'storage_bucket' => env('SUPABASE_STORAGE_BUCKET', 'visitor-file'),
+        'storage_face_id_folder' => env('SUPABASE_STORAGE_FACE_ID_FOLDER', 'Face_ID_Picture'),
+    ],
+
 ];

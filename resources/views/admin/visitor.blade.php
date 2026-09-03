@@ -1739,7 +1739,12 @@
 			const value = getText(rawValue, '');
 			if (!value || value === '—') return '';
 
-			if (/^https?:\/\//i.test(value)) {
+			if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
+				return value;
+			}
+
+			// Local Laravel capture fallback.
+			if (value.startsWith('/storage/') && !value.includes('storage/v1/')) {
 				return value;
 			}
 
@@ -1747,18 +1752,16 @@
 				return value;
 			}
 
-			if (value.startsWith('/storage/v1/object/public/')) {
+			if (value.startsWith('/storage/v1/object/')) {
 				return `${SUPABASE_URL}${value}`;
 			}
 
-			if (value.startsWith('storage/v1/object/public/')) {
+			if (value.startsWith('storage/v1/object/')) {
 				return `${SUPABASE_URL}/${value}`;
 			}
 
-			if (value.startsWith('http')) {
-				return value;
-			}
-
+			// Prefer authenticated/public object URL for bucket-relative paths
+			// e.g. visitor-file/Face_ID_Picture/capture_....jpg
 			return `${SUPABASE_URL}/storage/v1/object/public/${value.replace(/^\/+/, '')}`;
 		};
 

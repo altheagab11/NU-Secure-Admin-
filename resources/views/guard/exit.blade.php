@@ -1542,23 +1542,23 @@
 				return '';
 			}
 
+			// Signed/public Supabase URLs and inline captures.
 			if (/^https?:\/\//i.test(value) || value.startsWith('data:image/')) {
 				return value;
 			}
 
-			if (value.startsWith('/')) {
+			// Local Laravel public storage only (not Supabase storage/v1 paths).
+			if (value.startsWith('/storage/') && !value.includes('storage/v1/')) {
 				return value;
 			}
 
-			if (value.startsWith('storage/')) {
+			if (value.startsWith('storage/') && !value.includes('storage/v1/')) {
 				return `/${value}`;
 			}
 
-			if (value.startsWith('public/')) {
-				return `/${value.replace(/^public\//, 'storage/')}`;
-			}
-
-			return `/storage/${value.replace(/^\/+/, '')}`;
+			// Bucket-relative path like visitor-file/Face_ID_Picture/capture_....jpg
+			// Prefer server-provided preview URL; do not invent a local /storage path.
+			return '';
 		};
 
 		const updateRecentScanCard = (scanData) => {

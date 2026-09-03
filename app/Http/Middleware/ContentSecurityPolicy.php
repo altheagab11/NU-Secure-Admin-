@@ -75,7 +75,7 @@ class ContentSecurityPolicy
     protected function supabaseImageOrigin(): ?string
     {
         $url = rtrim(
-            (string) config('services.supabase.url', ''),
+            (string) (config('services.supabase.url') ?: env('SUPABASE_URL', '')),
             '/'
         );
 

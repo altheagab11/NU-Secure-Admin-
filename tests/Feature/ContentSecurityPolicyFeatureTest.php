@@ -52,20 +52,15 @@ class ContentSecurityPolicyFeatureTest extends TestCase
     #[Test]
     public function login_csp_img_src_includes_exact_supabase_origin_when_configured(): void
     {
-        $repository = \Illuminate\Support\Env::getRepository();
-        $previous = $repository->get('SUPABASE_URL');
-        $repository->set('SUPABASE_URL', 'https://abcd1234.supabase.co');
+        $previous = config('services.supabase.url');
+        config(['services.supabase.url' => 'https://abcd1234.supabase.co']);
 
         try {
             $csp = (string) $this->get(route('login'))->assertOk()->headers->get('Content-Security-Policy');
             $this->assertStringContainsString('https://abcd1234.supabase.co', $csp);
             $this->assertStringNotContainsString('*.supabase.co', $csp);
         } finally {
-            if ($previous === null) {
-                $repository->set('SUPABASE_URL', '');
-            } else {
-                $repository->set('SUPABASE_URL', $previous);
-            }
+            config(['services.supabase.url' => $previous]);
         }
     }
 

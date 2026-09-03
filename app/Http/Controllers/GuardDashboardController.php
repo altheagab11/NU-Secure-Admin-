@@ -433,7 +433,11 @@ class GuardDashboardController extends Controller
             return $cleanPath;
         }
 
-        if (str_starts_with($cleanPath, '/storage/') || str_starts_with($cleanPath, 'storage/')) {
+        // Local public disk only — never treat Supabase storage/v1 paths as local files.
+        if (
+            (str_starts_with($cleanPath, '/storage/') || str_starts_with($cleanPath, 'storage/'))
+            && ! str_contains($cleanPath, 'storage/v1/')
+        ) {
             return url('/' . ltrim($cleanPath, '/'));
         }
 

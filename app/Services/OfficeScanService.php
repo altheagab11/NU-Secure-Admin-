@@ -448,7 +448,11 @@ class OfficeScanService
             return $cleanPath;
         }
 
-        if (Str::startsWith($cleanPath, ['/storage/', 'storage/'])) {
+        // Local public disk only — never treat Supabase storage/v1 paths as local files.
+        if (
+            Str::startsWith($cleanPath, ['/storage/', 'storage/'])
+            && ! Str::contains($cleanPath, 'storage/v1/')
+        ) {
             return url('/'.ltrim($cleanPath, '/'));
         }
 
