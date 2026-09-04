@@ -618,6 +618,23 @@
 			font-size: 12px;
 		}
 
+		.add-guard-btn.btn-force-delete {
+			padding: 6px 10px;
+			font-size: 12px;
+			background: #b91c1c;
+		}
+
+		.add-guard-btn.btn-force-delete:hover {
+			background: #991b1b;
+		}
+
+		.recycle-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			align-items: center;
+		}
+
 		.flash-success {
 			margin: 12px 0;
 			padding: 10px;
@@ -1008,7 +1025,15 @@
 									<td>{{ $guard->station ?? '—' }}</td>
 									<td>
 										<span class="action-icons">
-											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit" />
+											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-guard-btn"
+												 data-user-id="{{ $guard->user_id ?? '' }}"
+												 data-first-name="{{ $guard->first_name ?? '' }}"
+												 data-last-name="{{ $guard->last_name ?? '' }}"
+												 data-name="{{ $guard->name ?? '' }}"
+												 data-email="{{ $guard->email ?? '' }}"
+												 data-badge-number="{{ $guard->badge_number ?? $guard->badge ?? '' }}"
+												 data-station="{{ $guard->station ?? '' }}"
+											/>
 											<form method="POST" action="/admin/user/guards/{{ $guard->user_id ?? '' }}" class="inline-form" data-confirm="Move this guard account to recycle bin?">
 												@csrf
 												@method('DELETE')
@@ -1233,15 +1258,58 @@
 			});
 		}
 
-		// Modal open/close and form handling for Add Guard
+		// Modal open/close and form handling for Add / Edit Guard
 		(function() {
 			const addBtn = document.getElementById('openAddGuardBtn');
 
 			function getModal() { return document.getElementById('addGuardModal'); }
-			function getCloseBtn() { const m = getModal(); return m ? m.querySelector('#closeAddGuard') : null; }
-			function getCancelBtn() { const m = getModal(); return m ? m.querySelector('#cancelAddGuard') : null; }
 			function getForm() { return document.getElementById('addGuardForm'); }
 			function getHiddenFullName() { return document.getElementById('fullNameHidden'); }
+			function getLead() {
+				const modal = getModal();
+				return modal ? modal.querySelector('.user-modal-lead') : null;
+			}
+
+			function cleanupEditState() {
+				const form = getForm();
+				if (!form) return;
+
+				const methodInput = form.querySelector('input[name="_method"][data-edit-added]');
+				if (methodInput) methodInput.remove();
+
+				const uidInput = form.querySelector('input[name="user_id"][data-edit-added]');
+				if (uidInput) uidInput.remove();
+
+				if (form.dataset.originalAction) {
+					form.setAttribute('action', form.dataset.originalAction);
+				}
+
+				const emailInput = form.querySelector('input[name="email"]');
+				if (emailInput) {
+					emailInput.readOnly = false;
+					emailInput.required = true;
+					emailInput.removeAttribute('aria-readonly');
+					emailInput.style.background = '';
+					emailInput.style.cursor = '';
+				}
+
+				const title = document.getElementById('addGuardTitle');
+				if (title) title.textContent = 'Add Guard Account';
+
+				const lead = getLead();
+				if (lead) lead.textContent = 'Create a new security guard account for the system.';
+
+				const submitBtn = form.querySelector('button[type=submit]');
+				if (submitBtn) submitBtn.textContent = 'Add User';
+			}
+
+			function resetFormFields() {
+				const form = getForm();
+				if (!form) return;
+				form.reset();
+				const hiddenFullName = getHiddenFullName();
+				if (hiddenFullName) hiddenFullName.value = '';
+			}
 
 			function showModal() {
 				const modal = getModal();
@@ -1249,10 +1317,12 @@
 				modal.style.display = 'flex';
 				const first = modal.querySelector('input[name="first_name"]');
 				if (first) first.focus();
-				// attach backdrop close listener if not already attached
 				if (!modal._backdropAttached) {
 					modal.addEventListener('click', (e) => {
-						if (e.target === modal) hideModal();
+						if (e.target === modal) {
+							cleanupEditState();
+							hideModal();
+						}
 					});
 					modal._backdropAttached = true;
 				}
@@ -1264,14 +1334,25 @@
 				modal.style.display = 'none';
 			}
 
-			if (addBtn) addBtn.addEventListener('click', showModal);
-			// close and cancel may be added later when modal exists; delegate via event listener on document
+			if (addBtn) {
+				addBtn.addEventListener('click', () => {
+					cleanupEditState();
+					resetFormFields();
+					showModal();
+				});
+			}
+
 			document.addEventListener('click', (e) => {
-				if (e.target && e.target.id === 'closeAddGuard') hideModal();
-				if (e.target && e.target.id === 'cancelAddGuard') hideModal();
+				if (e.target && e.target.id === 'closeAddGuard') {
+					cleanupEditState();
+					hideModal();
+				}
+				if (e.target && e.target.id === 'cancelAddGuard') {
+					cleanupEditState();
+					hideModal();
+				}
 			});
 
-			// on submit, combine first and last into hidden `name` so backend still receives `name`
 			document.addEventListener('submit', (e) => {
 				if (e.target && e.target.id === 'addGuardForm') {
 					const form = e.target;
@@ -1279,8 +1360,76 @@
 					const ln = form.querySelector('input[name="last_name"]')?.value?.trim() || '';
 					const hiddenFullName = getHiddenFullName();
 					if (hiddenFullName) hiddenFullName.value = (fn + (fn && ln ? ' ' : '') + ln).trim();
-					// allow submit to proceed
 				}
+			});
+
+			document.querySelectorAll('.edit-guard-btn').forEach(function (btn) {
+				btn.addEventListener('click', function (e) {
+					e.preventDefault();
+					const ds = btn.dataset || {};
+					const userId = ds.userId || ds.user_id || ds.userid;
+					if (!userId) return;
+
+					const form = getForm();
+					if (!form) return;
+
+					if (!form.dataset.originalAction) {
+						form.dataset.originalAction = form.getAttribute('action');
+					}
+
+					cleanupEditState();
+
+					let first = (ds.firstName || ds.first_name || '').trim();
+					let last = (ds.lastName || ds.last_name || '').trim();
+					if (!first && !last) {
+						const parts = String(ds.name || '').trim().split(/\s+/).filter(Boolean);
+						first = parts.shift() || '';
+						last = parts.join(' ') || '';
+					}
+
+					form.querySelector('input[name="first_name"]').value = first;
+					form.querySelector('input[name="last_name"]').value = last;
+
+					const emailInput = form.querySelector('input[name="email"]');
+					if (emailInput) {
+						emailInput.value = ds.email || '';
+						emailInput.readOnly = true;
+						emailInput.required = false;
+						emailInput.setAttribute('aria-readonly', 'true');
+						emailInput.style.background = '#f8fafc';
+						emailInput.style.cursor = 'not-allowed';
+					}
+
+					form.querySelector('input[name="badge_number"]').value = ds.badgeNumber || ds.badge_number || '';
+					form.querySelector('input[name="station"]').value = ds.station || '';
+
+					const methodInput = document.createElement('input');
+					methodInput.type = 'hidden';
+					methodInput.name = '_method';
+					methodInput.value = 'PUT';
+					methodInput.setAttribute('data-edit-added', '1');
+					form.appendChild(methodInput);
+
+					const uidInput = document.createElement('input');
+					uidInput.type = 'hidden';
+					uidInput.name = 'user_id';
+					uidInput.value = userId;
+					uidInput.setAttribute('data-edit-added', '1');
+					form.appendChild(uidInput);
+
+					form.setAttribute('action', '/admin/user/guards/' + encodeURIComponent(userId));
+
+					const title = document.getElementById('addGuardTitle');
+					if (title) title.textContent = 'Edit Guard Account';
+
+					const lead = getLead();
+					if (lead) lead.textContent = 'Update this security guard account.';
+
+					const submitBtn = form.querySelector('button[type=submit]');
+					if (submitBtn) submitBtn.textContent = 'Save Changes';
+
+					showModal();
+				});
 			});
 		})();
 	</script>
@@ -1383,7 +1532,7 @@
 				<button id="closeGuardRecycleBin" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p class="user-modal-lead tight">Deleted guard accounts are stored here. You can restore them anytime.</p>
+			<p class="user-modal-lead tight">Deleted guard accounts are stored here. You can restore them or permanently delete them.</p>
 
 			<div class="recycle-table-wrap">
 				<table class="guard-table" aria-label="Guard recycle bin table">
@@ -1404,10 +1553,17 @@
 								<td>{{ $recycled->badge_number ?? '—' }}</td>
 								<td>{{ $recycled->station ?? '—' }}</td>
 								<td>
-									<form method="POST" action="/admin/user/guards/{{ $recycled->user_id }}/restore" class="inline-form">
-										@csrf
-										<button type="submit" class="add-guard-btn btn-restore">Restore</button>
-									</form>
+									<div class="recycle-actions">
+										<form method="POST" action="/admin/user/guards/{{ $recycled->user_id }}/restore" class="inline-form">
+											@csrf
+											<button type="submit" class="add-guard-btn btn-restore">Restore</button>
+										</form>
+										<form method="POST" action="/admin/user/guards/{{ $recycled->user_id }}/force" class="inline-form" data-confirm="Permanently delete this guard account? This cannot be undone.">
+											@csrf
+											@method('DELETE')
+											<button type="submit" class="add-guard-btn btn-force-delete">Delete Permanently</button>
+										</form>
+									</div>
 								</td>
 							</tr>
 						@empty
@@ -1433,7 +1589,7 @@
 				<button id="closeOfficeRecycleBin" class="user-modal-close" aria-label="Close">&times;</button>
 			</div>
 
-			<p class="user-modal-lead tight">Deleted office users are stored here. You can restore them anytime.</p>
+			<p class="user-modal-lead tight">Deleted office users are stored here. You can restore them or permanently delete them.</p>
 
 			<div class="recycle-table-wrap">
 				<table class="office-table" aria-label="Office recycle bin table">
@@ -1454,10 +1610,17 @@
 								<td>{{ $recycled->office_name ?? '—' }}</td>
 								<td>{{ $recycled->position ?? '—' }}</td>
 								<td>
-									<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/restore" class="inline-form">
-										@csrf
-										<button type="submit" class="add-guard-btn btn-restore">Restore</button>
-									</form>
+									<div class="recycle-actions">
+										<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/restore" class="inline-form">
+											@csrf
+											<button type="submit" class="add-guard-btn btn-restore">Restore</button>
+										</form>
+										<form method="POST" action="/admin/user/offices/{{ $recycled->user_id }}/force" class="inline-form" data-confirm="Permanently delete this office user? This cannot be undone.">
+											@csrf
+											@method('DELETE')
+											<button type="submit" class="add-guard-btn btn-force-delete">Delete Permanently</button>
+										</form>
+									</div>
 								</td>
 							</tr>
 						@empty

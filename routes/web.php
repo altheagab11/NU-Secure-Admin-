@@ -108,14 +108,17 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
 
     Route::get('/user/guards', [GuardController::class, 'index']);
     Route::post('/user/guards', [GuardController::class, 'store']);
+    Route::put('/user/guards/{id}', [GuardController::class, 'update']);
     Route::delete('/user/guards/{id}', [GuardController::class, 'recycle']);
     Route::post('/user/guards/{id}/restore', [GuardController::class, 'restore']);
+    Route::delete('/user/guards/{id}/force', [GuardController::class, 'forceDestroy']);
 
     Route::get('/user/offices', [OfficeController::class, 'index']);
     Route::post('/user/offices', [OfficeController::class, 'store']);
     Route::put('/user/offices/{id}', [OfficeController::class, 'update']);
     Route::delete('/user/offices/{id}', [OfficeController::class, 'recycle']);
     Route::post('/user/offices/{id}/restore', [OfficeController::class, 'restore']);
+    Route::delete('/user/offices/{id}/force', [OfficeController::class, 'forceDestroy']);
 
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('admin.activity-logs');
     Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary'])->name('admin.activity-logs.summary');

@@ -690,4 +690,124 @@ class OfficeController extends Controller
             return redirect()->back()->withErrors(['error' => 'Failed to restore office user: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * Permanently delete an office user from the recycle bin.
+     */
+    public function forceDestroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $userModel = \App\Models\User::where('user_id', $id)->first();
+            if (! $userModel) {
+                $userModel = \App\Models\User::find($id);
+            }
+
+            if (! $userModel) {
+                DB::rollBack();
+
+                return redirect()->back()->withErrors(['error' => 'User not found.']);
+            }
+
+            if (! $this->isInRecycleBin($userModel)) {
+                DB::rollBack();
+
+                return redirect()->back()->withErrors(['error' => 'Only recycled office users can be permanently deleted.']);
+            }
+
+            $targetName = ActivityLogService::userDisplayName($userModel);
+            $userId = $userModel->user_id ?? $userModel->id ?? null;
+            $email = (string) ($userModel->email ?? '');
+
+            $oldStaff = null;
+            if ($userId && Schema::hasTable('office_staff')) {
+                $oldStaff = DB::table('office_staff')->where('user_id', $userId)->first()
+                    ?: (Schema::hasColumn('office_staff', 'user')
+                        ? DB::table('office_staff')->where('user', $userId)->first()
+                        : null);
+            }
+
+            $oldValues = [
+                'first_name' => $userModel->first_name ?? null,
+                'last_name' => $userModel->last_name ?? null,
+                'name' => $userModel->name ?? null,
+                'email' => $email,
+                'role' => 'Office',
+                'office_id' => $oldStaff->office_id ?? null,
+                'position' => $oldStaff->position ?? null,
+                'status' => $userModel->status ?? 'recycle_bin',
+            ];
+
+            if ($userId !== null && Schema::hasTable('office_staff')) {
+                DB::table('office_staff')->where('user_id', $userId)->delete();
+                if (Schema::hasColumn('office_staff', 'user')) {
+                    DB::table('office_staff')->where('user', $userId)->delete();
+                }
+            }
+
+            if ($userId !== null) {
+                $this->nullifyUserReferences((int) $userId);
+            }
+
+            if ($email !== '' && Schema::hasTable('password_reset_tokens')) {
+                DB::table('password_reset_tokens')->where('email', $email)->delete();
+            }
+
+            $userModel->delete();
+
+            DB::commit();
+
+            ActivityLogService::log(
+                action: 'Deleted User',
+                module: 'User Management',
+                description: ActivityLogService::actorLabel().' permanently deleted recycled office user '.$targetName.'.',
+                entityType: 'User',
+                entityId: $userId,
+                oldValues: $oldValues,
+                newValues: null
+            );
+
+            return redirect()->back()->with('success', 'Office user permanently deleted.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            logger()->error('Failed to permanently delete office user: '.$e->getMessage());
+
+            return redirect()->back()->withErrors([
+                'error' => 'Failed to permanently delete office user. It may still be referenced by historical records.',
+            ]);
+        }
+    }
+
+    protected function isInRecycleBin($user): bool
+    {
+        if (Schema::hasColumn('users', 'status')) {
+            return strtolower(trim((string) ($user->status ?? ''))) === 'recycle_bin';
+        }
+
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            return ! empty($user->deleted_at);
+        }
+
+        return false;
+    }
+
+    protected function nullifyUserReferences(int $userId): void
+    {
+        if (Schema::hasTable('office_scan') && Schema::hasColumn('office_scan', 'scanned_by')) {
+            DB::table('office_scan')->where('scanned_by', $userId)->update(['scanned_by' => null]);
+        }
+
+        if (Schema::hasTable('login_attempts') && Schema::hasColumn('login_attempts', 'user_id')) {
+            DB::table('login_attempts')->where('user_id', $userId)->update(['user_id' => null]);
+        }
+
+        if (Schema::hasTable('activity_logs') && Schema::hasColumn('activity_logs', 'user_id')) {
+            DB::table('activity_logs')->where('user_id', $userId)->update(['user_id' => null]);
+        }
+
+        if (Schema::hasTable('alerts') && Schema::hasColumn('alerts', 'resolved_by')) {
+            DB::table('alerts')->where('resolved_by', $userId)->update(['resolved_by' => null]);
+        }
+    }
 }
