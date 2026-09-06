@@ -679,6 +679,11 @@
 			padding: 18px;
 		}
 
+		.guard-table td.table-empty-cell,
+		.office-table td.table-empty-cell {
+			text-align: center !important;
+		}
+
 		.office-filters-form {
 			margin: 12px 0 18px;
 		}
@@ -693,33 +698,56 @@
 		.user-modal-overlay {
 			display: none;
 			position: fixed;
-			inset: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 260px;
 			background: rgba(2, 6, 23, 0.6);
-			align-items: center;
+			z-index: 1200;
+			padding: 16px;
+			overflow: auto;
+			box-sizing: border-box;
+		}
+
+		.user-modal-overlay.is-open {
+			display: grid !important;
+			place-items: center;
+			align-content: center;
 			justify-content: center;
-			z-index: 80;
 		}
 
 		.user-modal-overlay.z-recycle {
-			z-index: 85;
+			z-index: 1250;
 		}
 
 		.user-modal-dialog {
 			background: #fff;
 			border-radius: 10px;
 			width: 520px;
-			max-width: 94%;
+			max-width: min(520px, 100%);
 			padding: 20px;
 			box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+			margin: 0;
+			max-height: calc(100vh - 32px);
+			overflow: auto;
+			justify-self: center;
+			align-self: center;
 		}
 
 		.user-modal-dialog.wide {
 			width: 560px;
+			max-width: min(560px, 100%);
 		}
 
 		.user-modal-dialog.recycle {
 			width: 760px;
-			max-width: 96%;
+			max-width: min(760px, 100%);
+		}
+
+		@media (max-width: 991.98px) {
+			.user-modal-overlay {
+				left: 0;
+			}
 		}
 
 		.user-modal-head {
@@ -1314,7 +1342,7 @@
 			function showModal() {
 				const modal = getModal();
 				if (!modal) return;
-				modal.style.display = 'flex';
+				modal.classList.add('is-open'); modal.style.display = '';
 				const first = modal.querySelector('input[name="first_name"]');
 				if (first) first.focus();
 				if (!modal._backdropAttached) {
@@ -1331,7 +1359,7 @@
 			function hideModal() {
 				const modal = getModal();
 				if (!modal) return;
-				modal.style.display = 'none';
+				modal.classList.remove('is-open'); modal.style.display = '';
 			}
 
 			if (addBtn) {
@@ -1647,12 +1675,12 @@
 				function getHiddenFullName() { return document.getElementById('fullNameOfficeHidden'); }
 
 				function showModal() {
-					const modal = getModal(); if (!modal) return; modal.style.display = 'flex';
+					const modal = getModal(); if (!modal) return; modal.classList.add('is-open'); modal.style.display = '';
 					const first = modal.querySelector('input[name="first_name"]'); if (first) first.focus();
 					if (!modal._backdropAttached) { modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); }); modal._backdropAttached = true; }
 				}
 
-				function hideModal() { const modal = getModal(); if (!modal) return; modal.style.display = 'none'; }
+				function hideModal() { const modal = getModal(); if (!modal) return; modal.classList.remove('is-open'); modal.style.display = ''; }
 
 				if (openBtn) openBtn.addEventListener('click', showModal);
 				document.addEventListener('click', (e) => { if (e.target && e.target.id === 'closeAddOffice') hideModal(); if (e.target && e.target.id === 'cancelAddOffice') hideModal(); });
@@ -1674,8 +1702,16 @@
 				const openBtn = document.getElementById('openRecycleBinBtn');
 				const modal = document.getElementById('officeRecycleBinModal');
 
-				function openModal() { if (modal) modal.style.display = 'flex'; }
-				function closeModal() { if (modal) modal.style.display = 'none'; }
+				function openModal() {
+					if (!modal) return;
+					modal.classList.add('is-open');
+					modal.style.display = '';
+				}
+				function closeModal() {
+					if (!modal) return;
+					modal.classList.remove('is-open');
+					modal.style.display = '';
+				}
 
 				if (openBtn) openBtn.addEventListener('click', openModal);
 				document.addEventListener('click', function(e){
@@ -1699,8 +1735,16 @@
 				const openBtn = document.getElementById('openGuardRecycleBinBtn');
 				const modal = document.getElementById('guardRecycleBinModal');
 
-				function openModal() { if (modal) modal.style.display = 'flex'; }
-				function closeModal() { if (modal) modal.style.display = 'none'; }
+				function openModal() {
+					if (!modal) return;
+					modal.classList.add('is-open');
+					modal.style.display = '';
+				}
+				function closeModal() {
+					if (!modal) return;
+					modal.classList.remove('is-open');
+					modal.style.display = '';
+				}
 
 				if (openBtn) openBtn.addEventListener('click', openModal);
 				document.addEventListener('click', function(e){
@@ -1746,7 +1790,7 @@
 						const userId = ds.userId || ds.user_id || ds.userid;
 						if (!userId) return;
 
-						const modal = document.getElementById('addOfficeModal'); if (!modal) return; modal.style.display = 'flex';
+						const modal = document.getElementById('addOfficeModal'); if (!modal) return; modal.classList.add('is-open'); modal.style.display = '';
 						const form = document.getElementById('addOfficeForm'); if (!form) return;
 
 						// store original action so we can restore later

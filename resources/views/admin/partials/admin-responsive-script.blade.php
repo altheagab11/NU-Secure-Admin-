@@ -25,6 +25,50 @@
 	const layout = document.querySelector('.layout');
 	const sidebar = layout ? layout.querySelector('.sidebar') : null;
 	const openBtn = document.getElementById('adminNavOpen');
+
+	function fitAdminSidebar() {
+		if (!sidebar) {
+			return;
+		}
+
+		var nav = sidebar.children[0];
+		var footer = sidebar.querySelector('.sidebar-footer');
+		if (!nav) {
+			return;
+		}
+
+		if (!nav.classList.contains('sidebar-fit-inner')) {
+			nav.classList.add('sidebar-fit-inner');
+		}
+
+		nav.style.transform = 'scale(1)';
+		nav.style.marginBottom = '0px';
+
+		var styles = window.getComputedStyle(sidebar);
+		var padY = (parseFloat(styles.paddingTop) || 0) + (parseFloat(styles.paddingBottom) || 0);
+		var footerH = footer ? footer.offsetHeight : 0;
+		var available = sidebar.clientHeight - padY - footerH;
+		var used = nav.scrollHeight;
+		var scale = used > available && available > 0 ? Math.max(0.72, available / used) : 1;
+
+		nav.style.transform = 'scale(' + scale + ')';
+		nav.style.marginBottom = ((scale - 1) * used) + 'px';
+	}
+
+	fitAdminSidebar();
+	window.addEventListener('resize', fitAdminSidebar);
+	window.addEventListener('orientationchange', fitAdminSidebar);
+	window.addEventListener('load', fitAdminSidebar);
+	setTimeout(fitAdminSidebar, 250);
+
+	var userMenuToggle = document.getElementById('userMenuToggle');
+	var userMenuGroup = document.getElementById('userMenuGroup');
+	if (userMenuToggle && userMenuGroup) {
+		userMenuToggle.addEventListener('click', function () {
+			setTimeout(fitAdminSidebar, 50);
+		});
+	}
+
 	if (!sidebar || !openBtn) {
 		return;
 	}
@@ -45,6 +89,7 @@
 		document.body.style.overflow = open ? 'hidden' : '';
 		backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
 		openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+		setTimeout(fitAdminSidebar, 40);
 	};
 
 	const close = function () {
@@ -76,12 +121,14 @@
 			if (!e.matches) {
 				close();
 			}
+			fitAdminSidebar();
 		});
 	} else if (typeof mq.addListener === 'function') {
 		mq.addListener(function (e) {
 			if (!e.matches) {
 				close();
 			}
+			fitAdminSidebar();
 		});
 	}
 })();

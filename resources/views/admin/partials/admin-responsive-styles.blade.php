@@ -89,6 +89,124 @@ body.admin-sidebar-open .admin-nav-backdrop {
 	background: #f87171;
 }
 
+/* Fixed sidebar: no scroll, all menu items stay visible */
+.sidebar {
+	overflow: hidden !important;
+	height: 100vh !important;
+	height: 100dvh !important;
+	min-height: 0 !important;
+	padding-top: clamp(10px, 1.5vh, 18px) !important;
+	padding-bottom: clamp(10px, 1.5vh, 18px) !important;
+}
+
+.sidebar::-webkit-scrollbar {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+}
+
+.sidebar > div:first-child {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.sidebar-brand {
+	padding-top: clamp(6px, 1vh, 10px) !important;
+	padding-bottom: clamp(8px, 1.4vh, 18px) !important;
+	margin-bottom: clamp(4px, 0.8vh, 10px) !important;
+}
+
+.brand-icon {
+	width: clamp(36px, 4.6vh, 44px) !important;
+	height: clamp(36px, 4.6vh, 44px) !important;
+	font-size: clamp(18px, 2.4vh, 22px) !important;
+}
+
+.brand-title span:first-child {
+	font-size: clamp(22px, 3vh, 28px) !important;
+}
+
+.brand-title span:last-child {
+	font-size: clamp(20px, 2.8vh, 26px) !important;
+}
+
+.brand-subtitle {
+	font-size: clamp(11px, 1.4vh, 12px) !important;
+}
+
+.sidebar-section {
+	margin-top: clamp(6px, 1.5vh, 18px) !important;
+}
+
+.sidebar-label {
+	margin-bottom: clamp(4px, 0.7vh, 8px) !important;
+	font-size: clamp(10px, 1.3vh, 11px) !important;
+}
+
+.sidebar-link {
+	padding-top: clamp(7px, 1.15vh, 12px) !important;
+	padding-bottom: clamp(7px, 1.15vh, 12px) !important;
+	margin-bottom: clamp(2px, 0.45vh, 6px) !important;
+	gap: clamp(8px, 1.2vh, 12px) !important;
+}
+
+.sidebar-icon {
+	font-size: clamp(15px, 2vh, 18px);
+}
+
+.sidebar-text,
+.sidebar-link {
+	font-size: clamp(13px, 1.7vh, 15px);
+}
+
+.submenu {
+	padding-top: clamp(2px, 0.4vh, 6px) !important;
+	padding-bottom: clamp(2px, 0.4vh, 6px) !important;
+}
+
+.submenu-link {
+	padding-top: clamp(6px, 0.9vh, 10px) !important;
+	padding-bottom: clamp(6px, 0.9vh, 10px) !important;
+	font-size: clamp(12px, 1.5vh, 14px) !important;
+}
+
+.sidebar-footer {
+	flex-shrink: 0;
+	padding-top: clamp(8px, 1.2vh, 16px) !important;
+	margin-top: clamp(6px, 1.2vh, 20px) !important;
+}
+
+.admin-card {
+	padding: clamp(8px, 1.1vh, 12px) !important;
+	margin-bottom: clamp(6px, 1vh, 12px) !important;
+	gap: clamp(8px, 1vh, 12px) !important;
+}
+
+.admin-avatar {
+	width: clamp(34px, 4.2vh, 42px) !important;
+	height: clamp(34px, 4.2vh, 42px) !important;
+	font-size: clamp(18px, 2.2vh, 22px) !important;
+}
+
+.admin-info h6 {
+	font-size: clamp(13px, 1.7vh, 15px) !important;
+}
+
+.admin-info small {
+	font-size: clamp(11px, 1.3vh, 12px) !important;
+}
+
+.logout-btn {
+	padding: clamp(8px, 1.1vh, 11px) 14px !important;
+	font-size: clamp(13px, 1.6vh, 15px) !important;
+}
+
+.sidebar-fit-inner {
+	transform-origin: top center;
+	will-change: transform;
+}
+
 /* Laptop / small desktop: keep sidebar, let content wrap */
 @media (max-width: 1199.98px) {
 	.filters-row,
@@ -305,8 +423,7 @@ body.admin-sidebar-open .admin-nav-backdrop {
 
 @media (max-height: 500px) and (orientation: landscape) {
 	.sidebar {
-		overflow-y: auto;
-		-webkit-overflow-scrolling: touch;
+		overflow: hidden !important;
 	}
 }
 

@@ -734,21 +734,33 @@
 				.alert-modal {
 					display: none;
 					position: fixed;
-					inset: 0;
-					z-index: 60;
+					top: 0;
+					right: 0;
+					bottom: 0;
+					left: 260px;
+					z-index: 1200;
 					background: rgba(15, 23, 42, 0.35);
-					overflow-y: auto;
-					padding: 14px;
+					overflow: auto;
+					padding: 16px;
+					align-items: center;
+					justify-content: center;
+				}
+
+				.alert-modal.is-open {
+					display: flex;
 				}
 
 				.alert-modal-card {
 					width: 940px;
-					max-width: calc(100% - 24px);
-					margin: 12px auto;
+					max-width: min(940px, 100%);
+					margin: 0 auto;
 					background: #ffffff;
 					border-radius: 16px;
 					box-shadow: 0 10px 30px rgba(2, 6, 23, 0.2);
 					overflow: hidden;
+					max-height: calc(100vh - 32px);
+					display: flex;
+					flex-direction: column;
 				}
 
 				.alert-modal-header {
@@ -788,8 +800,9 @@
 				.alert-modal-body {
 					padding: 18px 22px;
 					background: #f8fafc;
-					max-height: calc(100vh - 170px);
 					overflow-y: auto;
+					flex: 1 1 auto;
+					min-height: 0;
 				}
 
 				.alert-info-card {
@@ -900,17 +913,26 @@
 				.resolve-flow-modal {
 					display: none;
 					position: fixed;
-					inset: 0;
-					z-index: 70;
+					top: 0;
+					right: 0;
+					bottom: 0;
+					left: 260px;
+					z-index: 1250;
 					background: rgba(15, 23, 42, 0.4);
-					overflow-y: auto;
-					padding: 14px;
+					overflow: auto;
+					padding: 16px;
+					align-items: center;
+					justify-content: center;
+				}
+
+				.resolve-flow-modal.is-open {
+					display: flex;
 				}
 
 				.resolve-flow-card {
 					width: 620px;
-					max-width: calc(100% - 24px);
-					margin: 24px auto;
+					max-width: min(620px, 100%);
+					margin: 0 auto;
 					background: #ffffff;
 					border-radius: 16px;
 					box-shadow: 0 10px 30px rgba(2, 6, 23, 0.2);
@@ -1016,6 +1038,11 @@
 				}
 
 				@media (max-width: 920px) {
+					.alert-modal,
+					.resolve-flow-modal {
+						left: 0;
+					}
+
 					.alert-modal-title { font-size: 20px; }
 					.alert-modal-card { width: 100%; max-width: calc(100% - 12px); }
 					.detail-grid { grid-template-columns: 1fr; }
@@ -1886,12 +1913,16 @@
 				}
 			}
 
-			modal.style.display = 'block';
+			modal.classList.add('is-open');
+			modal.style.display = 'flex';
 		}
 
 		function closeAlertModal() {
 			const modal = document.getElementById('alertModal');
-			if (modal) modal.style.display = 'none';
+			if (modal) {
+				modal.classList.remove('is-open');
+				modal.style.display = 'none';
+			}
 		}
 
 		function openResolveModal(alertId) {
@@ -1918,12 +1949,16 @@
 			resolveModal.querySelector('#resolveNotes').value = '';
 
 			pendingResolveAlertId = alert.alert_id;
-			resolveModal.style.display = 'block';
+			resolveModal.classList.add('is-open');
+			resolveModal.style.display = 'flex';
 		}
 
 		function closeResolveModal() {
 			const resolveModal = document.getElementById('resolveModal');
-			if (resolveModal) resolveModal.style.display = 'none';
+			if (resolveModal) {
+				resolveModal.classList.remove('is-open');
+				resolveModal.style.display = 'none';
+			}
 			pendingResolveAlertId = null;
 		}
 
