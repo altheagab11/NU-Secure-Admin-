@@ -13,41 +13,27 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-        }
-
         body {
             min-height: 100vh;
-            min-height: 100dvh;
-            max-height: 100vh;
-            max-height: 100dvh;
             background: linear-gradient(rgba(31, 52, 143, 0.72), rgba(31, 52, 143, 0.72)),
                         url('{{ asset('picture/lipa.png') }}') no-repeat center center/cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(8px, 1.5vh, 20px) clamp(12px, 2vw, 20px);
+            padding: 20px;
         }
 
         .login-wrapper {
             width: 100%;
-            max-width: min(460px, 100%);
-            max-height: 100%;
+            max-width: 460px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
 
         .brand-title {
-            font-size: clamp(28px, 5.2vh, 54px);
+            font-size: 54px;
             font-weight: 800;
-            margin-bottom: clamp(2px, 0.6vh, 8px);
+            margin-bottom: 8px;
             letter-spacing: 1px;
-            line-height: 1.05;
         }
 
         .brand-title .nu {
@@ -59,10 +45,9 @@
         }
 
         .brand-subtitle {
-            font-size: clamp(13px, 2vh, 18px);
+            font-size: 18px;
             color: #ffffff;
-            margin-bottom: clamp(8px, 2vh, 20px);
-            line-height: 1.25;
+            margin-bottom: 28px;
         }
 
         .brand-subtitle .highlight {
@@ -72,44 +57,41 @@
 
         .login-card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: clamp(14px, 2vh, 24px);
-            padding: clamp(12px, 2.2vh, 28px) clamp(14px, 2.5vw, 30px);
+            border-radius: 24px;
+            padding: 32px 30px;
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(6px);
-            overflow: hidden;
         }
 
         .logo-box {
-            margin-bottom: clamp(6px, 1.4vh, 16px);
+            margin-bottom: 22px;
         }
 
         .logo-box img {
-            width: clamp(64px, 10vh, 100px);
+            width: 110px;
             height: auto;
-            display: block;
-            margin: 0 auto;
         }
 
         .form-group {
             text-align: left;
-            margin-bottom: clamp(8px, 1.4vh, 14px);
+            margin-bottom: 18px;
         }
 
         .form-label {
             display: block;
-            font-size: clamp(13px, 1.8vh, 15px);
+            font-size: 16px;
             font-weight: 600;
             color: #1f348f;
-            margin-bottom: clamp(4px, 0.7vh, 8px);
+            margin-bottom: 8px;
         }
 
         .form-control {
             width: 100%;
-            height: clamp(40px, 5.5vh, 48px);
+            height: 52px;
             border: 1px solid #cfd7ea;
             border-radius: 12px;
-            padding: 0 14px;
-            font-size: clamp(13px, 1.8vh, 15px);
+            padding: 0 16px;
+            font-size: 15px;
             outline: none;
             transition: 0.3s ease;
             background: #fff;
@@ -122,8 +104,8 @@
 
         .error-text {
             color: #d93025;
-            font-size: 12px;
-            margin-top: 4px;
+            font-size: 13px;
+            margin-top: 6px;
         }
 
         .alert-box {
@@ -131,10 +113,10 @@
             color: #b3261e;
             border: 1px solid #f5c2c7;
             border-radius: 10px;
-            padding: 8px 12px;
-            margin-bottom: clamp(8px, 1.2vh, 14px);
+            padding: 12px 14px;
+            margin-bottom: 18px;
             text-align: left;
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .alert-box.success {
@@ -147,9 +129,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: clamp(8px, 1.2vh, 14px);
+            margin-bottom: 18px;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
         }
 
         .remember-me {
@@ -157,16 +139,16 @@
             align-items: center;
             gap: 8px;
             color: #333;
-            font-size: clamp(12px, 1.6vh, 14px);
+            font-size: 14px;
         }
 
         .remember-me input {
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .forgot-link {
             color: #1f348f;
-            font-size: clamp(12px, 1.6vh, 14px);
+            font-size: 14px;
             font-weight: 600;
             text-decoration: none;
         }
@@ -177,12 +159,12 @@
 
         .btn-login {
             width: 100%;
-            height: clamp(40px, 5.5vh, 48px);
+            height: 52px;
             border: none;
             border-radius: 12px;
             background: linear-gradient(135deg, #1f348f, #314dbd);
             color: white;
-            font-size: clamp(15px, 2vh, 17px);
+            font-size: 18px;
             font-weight: 700;
             cursor: pointer;
             transition: 0.3s ease;
@@ -201,72 +183,33 @@
         }
 
         .captcha-group {
-            margin-bottom: clamp(8px, 1.2vh, 14px);
+            margin-bottom: 18px;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
+            align-items: flex-start;
         }
 
         .cf-turnstile {
-            width: 100% !important;
-            max-width: 100%;
-            transform-origin: left top;
+            width: 100%;
         }
 
         .footer-text {
-            margin-top: clamp(8px, 1.2vh, 14px);
-            font-size: clamp(11px, 1.5vh, 13px);
+            margin-top: 18px;
+            font-size: 13px;
             color: #666;
         }
 
-        /* Short laptop screens — compress further so nothing scrolls */
-        @media (max-height: 780px) {
+        @media (max-width: 576px) {
             .brand-title {
-                font-size: clamp(24px, 4.5vh, 36px);
-            }
-
-            .logo-box img {
-                width: clamp(52px, 8vh, 72px);
-            }
-
-            .login-card {
-                padding: 12px 18px 14px;
-            }
-        }
-
-        @media (max-height: 680px) {
-            .brand-title {
-                display: none;
+                font-size: 40px;
             }
 
             .brand-subtitle {
-                margin-bottom: 8px;
-                font-size: 14px;
-            }
-
-            .logo-box {
-                margin-bottom: 6px;
-            }
-
-            .logo-box img {
-                width: 56px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            body {
-                overflow-y: auto;
-                overflow-x: hidden;
-                align-items: flex-start;
-                padding-top: 16px;
-                padding-bottom: 16px;
-            }
-
-            .login-wrapper {
-                max-height: none;
+                font-size: 15px;
             }
 
             .login-card {
+                padding: 24px 20px;
                 border-radius: 18px;
             }
         }
