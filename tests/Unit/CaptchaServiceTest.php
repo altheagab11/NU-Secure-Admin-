@@ -90,7 +90,10 @@ class CaptchaServiceTest extends TestCase
 
         Http::fake();
 
-        $this->assertTrue(app(CaptchaService::class)->verify('dummy-widget-token'));
+        $token = 'dummy-widget-token';
+        $this->assertTrue(app(CaptchaService::class)->verify($token));
+        // Dummy/local tokens are allowed to be reused (Cloudflare test widgets repeat them).
+        $this->assertTrue(app(CaptchaService::class)->verify($token));
         Http::assertNothingSent();
     }
 

@@ -372,9 +372,13 @@
                 button.textContent = 'Signing in...';
             });
 
-            window.addEventListener('pageshow', function () {
+            window.addEventListener('pageshow', function (event) {
                 unlockButton();
-                resetCaptcha();
+                // Only force-reset on back/forward cache restores. Resetting on every
+                // normal load races the Turnstile widget and can reuse dummy tokens.
+                if (event.persisted) {
+                    resetCaptcha();
+                }
             });
         })();
     </script>

@@ -62,21 +62,19 @@ class CaptchaService
             return false;
         }
 
-        $replayKey = $this->replayCacheKey($token);
-
-        if (Cache::has($replayKey)) {
-            return false;
-        }
-
-        // Official Cloudflare testing secrets do not require a live siteverify call.
-        // This keeps local login working when outbound Cloudflare requests time out.
-        if ($secret === self::DUMMY_SECRET_KEY) {
-            Cache::put($replayKey, true, now()->addMinutes(5));
+        // Localhost / phpunit with Cloudflare test keys: accept any non-empty token.
+        // Dummy widgets often reuse the same token, so replay locking must stay off here.
+        if ($this->isLocalTestingMode($secret)) {
+            if ($secret === self::DUMMY_SECRET_KEY_ALWAYS_FAIL) {
+                return false;
+            }
 
             return true;
         }
 
-        if ($secret === self::DUMMY_SECRET_KEY_ALWAYS_FAIL) {
+        $replayKey = $this->replayCacheKey($token);
+
+        if (Cache::has($replayKey)) {
             return false;
         }
 
@@ -140,6 +138,22 @@ class CaptchaService
     protected function allowsDummyKeys(): bool
     {
         return app()->environment(['local', 'testing']);
+    }
+
+    /**
+     * True when running locally/testing with Cloudflare's official dummy secrets.
+     */
+    protected function isLocalTestingMode(string $secret): bool
+    {
+        if (! $this->allowsDummyKeys()) {
+            return false;
+        }
+
+        return in_array($secret, [
+            self::DUMMY_SECRET_KEY,
+            self::DUMMY_SECRET_KEY_ALWAYS_FAIL,
+        ], true)
+            || $this->siteKey() === self::DUMMY_SITE_KEY;
     }
 
     protected function replayCacheKey(string $token): string
