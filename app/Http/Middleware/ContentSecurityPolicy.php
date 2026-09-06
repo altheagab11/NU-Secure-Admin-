@@ -48,7 +48,7 @@ class ContentSecurityPolicy
 
             "img-src {$imgSrc}",
 
-            "connect-src 'self'",
+            "connect-src 'self' https://challenges.cloudflare.com",
 
             "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
 

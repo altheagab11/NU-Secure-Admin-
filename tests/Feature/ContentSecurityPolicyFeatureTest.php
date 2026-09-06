@@ -28,7 +28,7 @@ class ContentSecurityPolicyFeatureTest extends TestCase
         $this->assertStringContainsString("default-src 'self'", $csp);
         $this->assertStringContainsString("style-src 'self'", $csp);
         $this->assertStringContainsString("img-src 'self' data: blob:", $csp);
-        $this->assertStringContainsString("connect-src 'self'", $csp);
+        $this->assertStringContainsString("connect-src 'self' https://challenges.cloudflare.com", $csp);
         $this->assertStringContainsString("font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com", $csp);
         $this->assertStringContainsString("media-src 'self' blob:", $csp);
         $this->assertStringContainsString("manifest-src 'none'", $csp);

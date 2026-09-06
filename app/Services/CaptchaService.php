@@ -15,13 +15,15 @@ class CaptchaService
     public const TOKEN_FIELD = 'cf-turnstile-response';
 
     /**
-     * Cloudflare's official always-pass dummy keys for local/testing only.
+     * Cloudflare's official dummy keys for local/testing only.
      *
      * @see https://developers.cloudflare.com/turnstile/troubleshooting/testing/
      */
     public const DUMMY_SITE_KEY = '1x00000000000000000000AA';
 
     public const DUMMY_SECRET_KEY = '1x0000000000000000000000000000000AA';
+
+    public const DUMMY_SECRET_KEY_ALWAYS_FAIL = '2x0000000000000000000000000000000AA';
 
     public function siteKey(): string
     {
@@ -66,6 +68,18 @@ class CaptchaService
             return false;
         }
 
+        // Official Cloudflare testing secrets do not require a live siteverify call.
+        // This keeps local login working when outbound Cloudflare requests time out.
+        if ($secret === self::DUMMY_SECRET_KEY) {
+            Cache::put($replayKey, true, now()->addMinutes(5));
+
+            return true;
+        }
+
+        if ($secret === self::DUMMY_SECRET_KEY_ALWAYS_FAIL) {
+            return false;
+        }
+
         $payload = [
             'secret' => $secret,
             'response' => $token,
@@ -100,6 +114,10 @@ class CaptchaService
         $success = $response->json('success') === true;
 
         if (! $success) {
+            Log::warning('Turnstile verification rejected the token.', [
+                'error_codes' => $response->json('error-codes') ?? [],
+            ]);
+
             return false;
         }
 

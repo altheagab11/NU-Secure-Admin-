@@ -3,13 +3,23 @@
 namespace Tests\Unit;
 
 use App\Services\CaptchaService;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CaptchaServiceTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Use non-dummy keys so tests exercise the live siteverify HTTP path.
+        config([
+            'services.turnstile.site_key' => 'live-test-site-key',
+            'services.turnstile.secret_key' => 'live-test-secret-key',
+        ]);
+    }
+
     #[Test]
     public function it_accepts_a_successful_turnstile_response(): void
     {
@@ -68,6 +78,20 @@ class CaptchaServiceTest extends TestCase
         ]);
 
         $this->assertFalse(app(CaptchaService::class)->verify('any-token'));
+    }
+
+    #[Test]
+    public function it_accepts_cloudflare_dummy_always_pass_secret_without_network(): void
+    {
+        config([
+            'services.turnstile.site_key' => CaptchaService::DUMMY_SITE_KEY,
+            'services.turnstile.secret_key' => CaptchaService::DUMMY_SECRET_KEY,
+        ]);
+
+        Http::fake();
+
+        $this->assertTrue(app(CaptchaService::class)->verify('dummy-widget-token'));
+        Http::assertNothingSent();
     }
 
     #[Test]

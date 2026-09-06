@@ -10,6 +10,12 @@ abstract class TestCase extends BaseTestCase
 {
     protected function fakeSuccessfulTurnstile(): void
     {
+        // Avoid Cloudflare dummy secrets so verification uses the HTTP siteverify path.
+        config([
+            'services.turnstile.site_key' => 'live-test-site-key',
+            'services.turnstile.secret_key' => 'live-test-secret-key',
+        ]);
+
         Http::fake([
             CaptchaService::VERIFY_URL => Http::response(['success' => true], 200),
         ]);
@@ -17,6 +23,11 @@ abstract class TestCase extends BaseTestCase
 
     protected function fakeFailedTurnstile(): void
     {
+        config([
+            'services.turnstile.site_key' => 'live-test-site-key',
+            'services.turnstile.secret_key' => 'live-test-secret-key',
+        ]);
+
         Http::fake([
             CaptchaService::VERIFY_URL => Http::response([
                 'success' => false,
