@@ -583,15 +583,19 @@
 			height: 16px;
 		}
 
-		/* Visitor details modal (based on provided example UI) */
+		/* Visitor details modal — stays in main content area (does not sit under sidebar) */
 		.visitor-detail-modal {
 			display: none;
 			position: fixed;
-			inset: 0;
-			z-index: 100;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			left: 260px;
+			z-index: 1100;
 			background: rgba(15, 23, 42, 0.45);
 			overflow-y: auto;
-			padding: 18px;
+			padding: clamp(12px, 2vw, 24px);
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.visitor-detail-modal.open {
@@ -599,33 +603,46 @@
 		}
 
 		.visitor-detail-dialog {
-			max-width: 1200px;
+			width: 100%;
+			max-width: min(1200px, 100%);
 			margin: 0 auto;
 			background: #fff;
 			border-radius: 12px;
 			box-shadow: 0 12px 32px rgba(2, 6, 23, 0.24);
 			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			max-height: calc(100vh - 24px);
 		}
 
 		.vd-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			gap: 14px;
-			padding: 16px 20px;
+			flex-wrap: wrap;
+			gap: 12px 14px;
+			padding: 14px clamp(14px, 2vw, 20px);
 			border-bottom: 1px solid #e5e7eb;
+			flex-shrink: 0;
+		}
+
+		.vd-header-left {
+			min-width: 0;
+			flex: 1 1 200px;
 		}
 
 		.vd-header-left h2 {
 			margin: 0;
-			font-size: 28px;
-			line-height: 1.1;
+			font-size: clamp(20px, 2.4vw, 28px);
+			line-height: 1.15;
+			word-break: break-word;
 		}
 
 		.vd-header-meta {
 			margin-top: 4px;
 			font-size: 13px;
 			color: #64748b;
+			word-break: break-word;
 		}
 
 		.vd-close {
@@ -636,6 +653,7 @@
 			border-radius: 8px;
 			font-weight: 600;
 			cursor: pointer;
+			flex-shrink: 0;
 		}
 
 		.vd-status-badge {
@@ -645,6 +663,7 @@
 			border-radius: 999px;
 			font-size: 12px;
 			font-weight: 700;
+			white-space: nowrap;
 		}
 
 		.vd-status-arrived { background: #dcfce7; color: #166534; }
@@ -654,14 +673,16 @@
 		.vd-status-pending { background: #fef3c7; color: #92400e; }
 
 		.vd-body {
-			padding: 18px 20px 20px;
-			max-height: calc(100vh - 90px);
+			padding: 16px clamp(14px, 2vw, 20px) 20px;
 			overflow-y: auto;
+			overflow-x: hidden;
+			flex: 1 1 auto;
+			min-height: 0;
 		}
 
 		.vd-grid {
 			display: grid;
-			grid-template-columns: minmax(280px, 1fr) minmax(400px, 2fr);
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
 			gap: 16px;
 		}
 
@@ -670,6 +691,7 @@
 			border-radius: 12px;
 			overflow: hidden;
 			background: #fff;
+			min-width: 0;
 		}
 
 		.vd-card-title {
@@ -683,10 +705,11 @@
 
 		.vd-card-body {
 			padding: 14px;
+			overflow-x: auto;
 		}
 
 		.vd-photo {
-			height: 180px;
+			height: min(220px, 28vh);
 			border: 1px dashed #cbd5e1;
 			border-radius: 10px;
 			display: flex;
@@ -696,6 +719,7 @@
 			color: #64748b;
 			margin-bottom: 12px;
 			background: #f8fafc;
+			overflow: hidden;
 		}
 
 		.vd-photo.has-image {
@@ -706,6 +730,8 @@
 		.vd-photo img {
 			max-width: 100%;
 			max-height: 100%;
+			width: auto;
+			height: auto;
 			object-fit: contain;
 			border-radius: 8px;
 		}
@@ -713,6 +739,7 @@
 		.vd-table {
 			width: 100%;
 			border-collapse: collapse;
+			table-layout: auto;
 		}
 
 		.vd-table th,
@@ -722,23 +749,38 @@
 			border-bottom: 1px solid #e2e8f0;
 			text-align: left;
 			vertical-align: top;
+			word-break: break-word;
+			overflow-wrap: anywhere;
 		}
 
 		.vd-table th {
-			width: 40%;
+			width: 36%;
+			min-width: 110px;
 			color: #334155;
 			font-weight: 700;
+		}
+
+		.vd-table-sm {
+			min-width: 520px;
 		}
 
 		.vd-table-sm th,
 		.vd-table-sm td {
 			font-size: 12px;
 			padding: 7px 6px;
+			white-space: nowrap;
+		}
+
+		.vd-table-sm td:last-child,
+		.vd-table-sm th:last-child {
+			white-space: normal;
+			min-width: 120px;
 		}
 
 		.vd-stack {
 			display: grid;
 			gap: 16px;
+			min-width: 0;
 		}
 
 		.vd-badge {
@@ -771,19 +813,51 @@
 			margin: 0 0 6px;
 			font-size: 13px;
 			color: #334155;
+			word-break: break-word;
 		}
 
 		.vd-alert-box p:last-child {
 			margin-bottom: 0;
 		}
 
-		@media (max-width: 980px) {
+		@media (max-width: 1100px) {
 			.vd-grid {
 				grid-template-columns: 1fr;
 			}
+		}
+
+		@media (max-width: 900px) {
+			.visitor-detail-modal {
+				left: 0;
+				padding: 10px;
+			}
+
+			.visitor-detail-dialog {
+				max-height: calc(100vh - 20px);
+			}
 
 			.vd-header {
-				flex-wrap: wrap;
+				align-items: flex-start;
+			}
+		}
+
+		@media (max-width: 640px) {
+			.vd-header-left h2 {
+				font-size: 18px;
+			}
+
+			.vd-table th {
+				width: 42%;
+				min-width: 96px;
+				font-size: 12px;
+			}
+
+			.vd-table td {
+				font-size: 12px;
+			}
+
+			.vd-photo {
+				height: 160px;
 			}
 		}
 
