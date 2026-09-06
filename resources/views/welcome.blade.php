@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NU-SECURE Login</title>
 
     <style nonce="{{ $cspNonce }}">
@@ -13,27 +13,46 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
+        html {
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
         body {
-            min-height: 100vh;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
             background: linear-gradient(rgba(31, 52, 143, 0.72), rgba(31, 52, 143, 0.72)),
                         url('{{ asset('picture/lipa.png') }}') no-repeat center center/cover;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        .login-stage {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            overflow: hidden;
+            padding: clamp(8px, 1.6vh, 20px) clamp(12px, 2.4vw, 20px);
         }
 
         .login-wrapper {
-            width: 100%;
-            max-width: 460px;
+            width: min(460px, 100%);
             text-align: center;
+            transform-origin: center center;
         }
 
         .brand-title {
-            font-size: 54px;
+            font-size: clamp(32px, 6vh, 54px);
             font-weight: 800;
-            margin-bottom: 8px;
+            margin-bottom: clamp(4px, 0.8vh, 8px);
             letter-spacing: 1px;
+            line-height: 1.1;
         }
 
         .brand-title .nu {
@@ -45,9 +64,9 @@
         }
 
         .brand-subtitle {
-            font-size: 18px;
+            font-size: clamp(14px, 2.1vh, 18px);
             color: #ffffff;
-            margin-bottom: 28px;
+            margin-bottom: clamp(12px, 2.6vh, 28px);
         }
 
         .brand-subtitle .highlight {
@@ -57,37 +76,37 @@
 
         .login-card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 32px 30px;
+            border-radius: clamp(18px, 2.4vh, 24px);
+            padding: clamp(16px, 3vh, 32px) clamp(16px, 2.6vw, 30px);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(6px);
         }
 
         .logo-box {
-            margin-bottom: 22px;
+            margin-bottom: clamp(10px, 2vh, 22px);
         }
 
         .logo-box img {
-            width: 110px;
+            width: clamp(72px, 12vh, 110px);
             height: auto;
         }
 
         .form-group {
             text-align: left;
-            margin-bottom: 18px;
+            margin-bottom: clamp(10px, 1.7vh, 18px);
         }
 
         .form-label {
             display: block;
-            font-size: 16px;
+            font-size: clamp(14px, 1.9vh, 16px);
             font-weight: 600;
             color: #1f348f;
-            margin-bottom: 8px;
+            margin-bottom: clamp(4px, 0.8vh, 8px);
         }
 
         .form-control {
             width: 100%;
-            height: 52px;
+            height: clamp(42px, 6.2vh, 52px);
             border: 1px solid #cfd7ea;
             border-radius: 12px;
             padding: 0 16px;
@@ -114,7 +133,7 @@
             border: 1px solid #f5c2c7;
             border-radius: 10px;
             padding: 12px 14px;
-            margin-bottom: 18px;
+            margin-bottom: clamp(10px, 1.7vh, 18px);
             text-align: left;
             font-size: 14px;
         }
@@ -129,7 +148,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 18px;
+            margin-bottom: clamp(10px, 1.7vh, 18px);
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -159,12 +178,12 @@
 
         .btn-login {
             width: 100%;
-            height: 52px;
+            height: clamp(42px, 6.2vh, 52px);
             border: none;
             border-radius: 12px;
             background: linear-gradient(135deg, #1f348f, #314dbd);
             color: white;
-            font-size: 18px;
+            font-size: clamp(16px, 2.1vh, 18px);
             font-weight: 700;
             cursor: pointer;
             transition: 0.3s ease;
@@ -183,52 +202,53 @@
         }
 
         .captcha-group {
-            margin-bottom: 18px;
+            margin-bottom: clamp(10px, 1.7vh, 18px);
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
+            width: 100%;
+            max-width: 100%;
         }
 
         .cf-turnstile {
-            width: 100%;
+            width: 100% !important;
+            max-width: 100%;
         }
 
         .footer-text {
-            margin-top: 18px;
+            margin-top: clamp(10px, 1.7vh, 18px);
             font-size: 13px;
             color: #666;
         }
 
         @media (max-width: 576px) {
-            .brand-title {
-                font-size: 40px;
-            }
-
-            .brand-subtitle {
-                font-size: 15px;
-            }
-
             .login-card {
-                padding: 24px 20px;
                 border-radius: 18px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .remember-row {
+                margin-bottom: 10px;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-wrapper">
-        <h1 class="brand-title">
-            <span class="nu">NU-</span><span class="secure">SECURE</span>
-        </h1>
+    <div class="login-stage">
+        <div class="login-wrapper">
+            <h1 class="brand-title">
+                <span class="nu">NU-</span><span class="secure">SECURE</span>
+            </h1>
 
-        <p class="brand-subtitle">
-            <span class="highlight">V</span>isitor
-            <span class="highlight">M</span>onitoring
-            <span class="highlight">S</span>ystem
-        </p>
+            <p class="brand-subtitle">
+                <span class="highlight">V</span>isitor
+                <span class="highlight">M</span>onitoring
+                <span class="highlight">S</span>ystem
+            </p>
 
-        <div class="login-card">
+            <div class="login-card">
             <div class="logo-box">
                 <img src="{{ asset('picture/nu-logo.png') }}" alt="NU Logo">
             </div>
@@ -310,6 +330,7 @@
             </form>
 
             <p class="footer-text">National University - Secure Visitor Access</p>
+            </div>
         </div>
     </div>
 
@@ -321,6 +342,46 @@
             var form = document.getElementById('login-form');
             var button = document.getElementById('login-submit');
             var captchaError = document.getElementById('captcha-error');
+            var stage = document.querySelector('.login-stage');
+            var wrap = document.querySelector('.login-wrapper');
+            var fitFrame = 0;
+
+            function fitLoginToViewport() {
+                if (!stage || !wrap) {
+                    return;
+                }
+
+                var styles = window.getComputedStyle(stage);
+                var availableWidth = stage.clientWidth
+                    - (parseFloat(styles.paddingLeft) || 0)
+                    - (parseFloat(styles.paddingRight) || 0);
+                var availableHeight = stage.clientHeight
+                    - (parseFloat(styles.paddingTop) || 0)
+                    - (parseFloat(styles.paddingBottom) || 0);
+                var scale = Math.min(
+                    1,
+                    availableWidth / Math.max(wrap.offsetWidth, 1),
+                    availableHeight / Math.max(wrap.offsetHeight, 1)
+                );
+
+                wrap.style.transform = scale < 0.995 ? 'scale(' + scale + ')' : 'none';
+            }
+
+            function scheduleFit() {
+                if (fitFrame) {
+                    cancelAnimationFrame(fitFrame);
+                }
+                fitFrame = requestAnimationFrame(fitLoginToViewport);
+            }
+
+            window.addEventListener('resize', scheduleFit);
+            window.addEventListener('orientationchange', scheduleFit);
+
+            if (window.ResizeObserver && wrap) {
+                new ResizeObserver(scheduleFit).observe(wrap);
+            }
+
+            scheduleFit();
 
             if (!form || !button) {
                 return;
@@ -374,6 +435,7 @@
 
             window.addEventListener('pageshow', function (event) {
                 unlockButton();
+                scheduleFit();
                 // Only force-reset on back/forward cache restores. Resetting on every
                 // normal load races the Turnstile widget and can reuse dummy tokens.
                 if (event.persisted) {
