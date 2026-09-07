@@ -5881,25 +5881,248 @@
 			}
 		}
 
-		/* Tablet portrait: tips + ID types stay visible under camera */
+		/* Tablet portrait: fit ID scan step on one screen (normal / enrollee / contractor) */
 		@media screen and (min-width: 768px) and (max-width: 1100px) and (orientation: portrait) {
-			body.self-registration-mode .scanner-zone.camera-frame,
-			body.self-registration-mode .scanner-zone {
-				max-height: min(32vh, 300px);
-				min-height: 180px;
-				aspect-ratio: 16 / 10;
+			body.self-registration-mode .main {
+				padding-top: calc(100px + env(safe-area-inset-top)) !important;
 			}
 
-			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden),
-			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden) {
-				display: grid !important;
-				grid-template-columns: 1fr;
-				gap: 12px;
+			body.self-registration-mode .self-registration-header {
+				padding: 8px 14px;
+				padding-top: max(8px, env(safe-area-inset-top));
+				gap: 8px 10px;
+			}
+
+			body.self-registration-mode .self-reg-step-label {
+				font-size: 0.58rem;
+			}
+
+			body.self-registration-mode .scan-layout.kiosk-scan-layout,
+			body.self-registration-mode .kiosk-scan-layout {
+				overflow-y: auto !important;
 			}
 
 			body.self-registration-mode .kiosk-scan-main,
 			body.self-registration-mode .scan-main.kiosk-scan-main {
-				padding-bottom: 20px;
+				padding: 10px 14px 8px;
+			}
+
+			body.self-registration-mode .kiosk-scan-heading,
+			body.self-registration-mode .scan-heading.kiosk-scan-heading {
+				margin-bottom: 0;
+			}
+
+			body.self-registration-mode .kiosk-scan-title {
+				font-size: 1.05rem;
+				margin-bottom: 2px;
+			}
+
+			body.self-registration-mode .kiosk-scan-desc {
+				font-size: 0.78rem;
+				line-height: 1.3;
+			}
+
+			body.self-registration-mode .kiosk-scan-viewport {
+				min-height: 0;
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame,
+			body.self-registration-mode .scanner-zone {
+				max-height: min(26vh, 240px);
+				min-height: 160px;
+				aspect-ratio: 16 / 10;
+			}
+
+			body.self-registration-mode .id-guide {
+				width: min(360px, 62%);
+			}
+
+			body.self-registration-mode .kiosk-camera-badge,
+			body.self-registration-mode .kiosk-camera-badge.camera-ready-badge {
+				bottom: 8px;
+				padding: 4px 10px;
+				font-size: 11px;
+			}
+
+			/* Tips + Supported IDs side-by-side so both show without scroll */
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden),
+			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden) {
+				display: grid !important;
+				grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+				gap: 10px;
+				margin: 8px 0 0;
+			}
+
+			body.self-registration-mode .info-card.kiosk-info-card {
+				padding: 10px 12px;
+			}
+
+			body.self-registration-mode .info-card-title,
+			body.self-registration-mode .kiosk-info-card-title {
+				margin-bottom: 8px;
+				gap: 6px;
+			}
+
+			body.self-registration-mode .info-card-title h2,
+			body.self-registration-mode .kiosk-info-card-title {
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .tips-list,
+			body.self-registration-mode .kiosk-tips-list {
+				gap: 5px;
+			}
+
+			body.self-registration-mode .tips-list li,
+			body.self-registration-mode .kiosk-tips-list li {
+				font-size: 11px;
+				line-height: 1.3;
+				gap: 6px;
+			}
+
+			body.self-registration-mode .desktop-id-grid,
+			body.self-registration-mode .kiosk-id-chip-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+				gap: 6px;
+			}
+
+			body.self-registration-mode .desktop-id-item,
+			body.self-registration-mode .kiosk-id-chip {
+				min-height: 34px;
+				padding: 6px 8px;
+				font-size: 11px;
+				border-radius: 8px;
+				gap: 6px;
+			}
+
+			body.self-registration-mode .desktop-id-item .bi,
+			body.self-registration-mode .kiosk-id-chip .bi {
+				font-size: 14px;
+			}
+
+			/* Compact controls under the info cards */
+			body.self-registration-mode .scan-sidebar.kiosk-controls {
+				padding: 10px 14px 12px;
+				gap: 10px;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+				align-items: center;
+			}
+
+			body.self-registration-mode .visitor-type-card {
+				grid-column: 1;
+				grid-row: 1;
+				padding: 8px 10px;
+				margin: 0;
+				gap: 8px;
+			}
+
+			body.self-registration-mode .visitor-icon,
+			body.self-registration-mode .kiosk-visitor-avatar {
+				width: 34px;
+				height: 34px;
+				font-size: 15px;
+			}
+
+			body.self-registration-mode .visitor-type-card strong,
+			body.self-registration-mode .kiosk-visitor-name {
+				font-size: 13px;
+			}
+
+			body.self-registration-mode .visitor-type-card small,
+			body.self-registration-mode .kiosk-visitor-step {
+				font-size: 10px;
+				margin-top: 2px;
+			}
+
+			body.self-registration-mode .camera-status-section {
+				grid-column: 2;
+				grid-row: 1;
+				margin: 0;
+			}
+
+			body.self-registration-mode .kiosk-status-label,
+			body.self-registration-mode .sidebar-section-title {
+				display: none;
+			}
+
+			body.self-registration-mode .camera-status-card,
+			body.self-registration-mode .kiosk-status-card {
+				padding: 8px 10px;
+				margin: 0;
+				gap: 8px;
+			}
+
+			body.self-registration-mode .kiosk-status-title {
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .kiosk-status-text {
+				font-size: 10px;
+				line-height: 1.25;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
+			}
+
+			body.self-registration-mode .action-section {
+				grid-column: 1 / -1;
+				grid-row: 2;
+				margin: 0;
+			}
+
+			body.self-registration-mode .scan-actions,
+			body.self-registration-mode .scan-actions-row {
+				display: grid;
+				grid-template-columns: 1fr auto 1fr;
+				align-items: center;
+				gap: 8px;
+				width: 100%;
+				margin: 0;
+			}
+
+			body.self-registration-mode .scan-action,
+			body.self-registration-mode .gallery-action,
+			body.self-registration-mode .scan-button,
+			body.self-registration-mode .upload-button {
+				width: 100%;
+				min-width: 0;
+				height: 42px;
+				font-size: 13px;
+			}
+
+			body.self-registration-mode .kiosk-or-divider,
+			body.self-registration-mode .divider.kiosk-or-divider {
+				margin: 0;
+				width: auto;
+			}
+
+			body.self-registration-mode .gallery-hint,
+			body.self-registration-mode .upload-hint {
+				margin: 6px 0 0;
+				font-size: 11px;
+			}
+
+			/* Avoid duplicate tall Supported ID list in sidebar on tablet */
+			body.self-registration-mode .supported-section,
+			body.self-registration-mode #idTypesPanel {
+				display: none !important;
+			}
+
+			body.self-registration-mode .bottom-navigation {
+				grid-column: 1 / -1;
+				grid-row: 3;
+				margin: 0;
+				padding-top: 2px;
+			}
+
+			body.self-registration-mode .kiosk-controls-divider {
+				margin: 4px 0 8px;
+			}
+
+			body.self-registration-mode .vms-footer.kiosk-reg-footer {
+				padding: 8px 14px calc(8px + env(safe-area-inset-bottom));
+				font-size: 11px;
 			}
 		}
 
