@@ -4310,24 +4310,6 @@
 			line-height: 1;
 		}
 
-		body.self-registration-mode .kiosk-back-btn:hover {
-			background: #243c96;
-			color: #ffffff;
-			box-shadow: 0 6px 16px rgba(36, 60, 150, 0.22);
-			transform: translateY(-1px);
-		}
-
-		body.self-registration-mode .kiosk-back-btn:active {
-			transform: translateY(0);
-		}
-
-		body.self-registration-mode .bottom-navigation {
-			display: flex;
-			align-items: center;
-			justify-content: flex-start;
-			margin-top: 8px;
-		}
-
 		body.self-registration-mode .kiosk-controls-type-note {
 			margin: -6px 0 0;
 			font-size: 12px;
@@ -4458,7 +4440,7 @@
 			}
 
 			body.self-registration-mode .main {
-				padding-top: calc(108px + env(safe-area-inset-top)) !important;
+				padding-top: calc(110px + env(safe-area-inset-top)) !important;
 			}
 
 			body.self-registration-mode.kiosk-type-select .main {
@@ -4857,6 +4839,13 @@
 			min-width: 0;
 		}
 
+		.self-registration-brand-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 0;
+		}
+
 		.self-registration-brand .brand-icon {
 			width: 44px;
 			height: 44px;
@@ -5039,6 +5028,44 @@
 		body.self-registration-mode .self-registration-brand {
 			grid-column: 1;
 			justify-self: start;
+			display: flex;
+			align-items: center;
+			min-width: 0;
+		}
+
+		body.self-registration-mode .self-registration-brand-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-width: 0;
+		}
+
+		body.self-registration-mode .kiosk-back-bar {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			padding: 10px 18px 6px;
+			margin: 0;
+			background: transparent;
+		}
+
+		body.self-registration-mode .kiosk-back-bar .kiosk-back-btn {
+			min-height: 36px;
+			padding: 7px 14px;
+			border-radius: 10px;
+			border: 1.5px solid #243c96;
+			background: #ffffff;
+			color: #243c96;
+			font-size: 13px;
+			font-weight: 700;
+			box-shadow: 0 2px 8px rgba(36, 60, 150, 0.08);
+		}
+
+		body.self-registration-mode .kiosk-back-bar .kiosk-back-btn:hover {
+			background: #243c96;
+			color: #ffffff;
+			box-shadow: 0 6px 16px rgba(36, 60, 150, 0.2);
+			transform: translateY(-1px);
 		}
 
 		body.self-registration-mode .self-reg-header-progress {
@@ -5917,13 +5944,23 @@
 		/* Tablet portrait: fit ID scan step on one screen (normal / enrollee / contractor) */
 		@media screen and (min-width: 768px) and (max-width: 1100px) and (orientation: portrait) {
 			body.self-registration-mode .main {
-				padding-top: calc(100px + env(safe-area-inset-top)) !important;
+				padding-top: calc(118px + env(safe-area-inset-top)) !important;
 			}
 
 			body.self-registration-mode .self-registration-header {
 				padding: 8px 14px;
 				padding-top: max(8px, env(safe-area-inset-top));
 				gap: 8px 10px;
+			}
+
+			body.self-registration-mode .kiosk-back-bar {
+				padding: 8px 14px 4px;
+			}
+
+			body.self-registration-mode .kiosk-back-bar .kiosk-back-btn {
+				min-height: 34px;
+				padding: 6px 12px;
+				font-size: 12px;
 			}
 
 			body.self-registration-mode .self-reg-step-label {
@@ -6179,7 +6216,7 @@
 			}
 
 			body.self-registration-mode .main {
-				padding-top: calc(108px + env(safe-area-inset-top)) !important;
+				padding-top: calc(110px + env(safe-area-inset-top)) !important;
 			}
 
 			body.self-registration-mode.kiosk-type-select .main {
@@ -6834,12 +6871,14 @@
 			@if ($isSelfRegisteredRole)
 				<header class="self-registration-header">
 					<div class="self-registration-brand">
-						<div class="brand-icon">
-							<i class="bi bi-shield-lock-fill"></i>
-						</div>
-						<div>
-							<h4 class="brand-title mb-0"><span>VMS</span></h4>
-							<small class="brand-subtitle">Visitor Monitoring System</small>
+						<div class="self-registration-brand-row">
+							<div class="brand-icon">
+								<i class="bi bi-shield-lock-fill"></i>
+							</div>
+							<div>
+								<h4 class="brand-title mb-0"><span>VMS</span></h4>
+								<small class="brand-subtitle">Visitor Monitoring System</small>
+							</div>
 						</div>
 					</div>
 					@if ($showKioskTypePicker)
@@ -6874,6 +6913,14 @@
 						@csrf
 					</form>
 				</header>
+				@if (! $showKioskTypePicker)
+					<div class="kiosk-back-bar">
+						<a href="/guard/register" class="kiosk-back-btn js-kiosk-type-link" aria-label="Back to visitor types">
+							<i class="bi bi-arrow-left" aria-hidden="true"></i>
+							<span>Back</span>
+						</a>
+					</div>
+				@endif
 			@else
 				@include('guard.partials.guard-topbar', ['title' => 'Register Visitor'])
 			@endif
@@ -7086,12 +7133,6 @@
 									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the camera is unavailable, upload a clear photo of your ID.</p>
 								</section>
 
-								<div class="bottom-navigation">
-									<a href="/guard/register" class="kiosk-back-btn js-kiosk-type-link" aria-label="Back to visitor types">
-										<i class="bi bi-arrow-left" aria-hidden="true"></i>
-										<span>Back</span>
-									</a>
-								</div>
 							</aside>
 						</div>
 						@else
