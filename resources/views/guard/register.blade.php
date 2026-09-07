@@ -6914,7 +6914,7 @@
 					</form>
 				</header>
 				@if (! $showKioskTypePicker)
-					<div class="kiosk-back-bar">
+					<div class="kiosk-back-bar" id="kioskBackBar">
 						<a href="/guard/register" class="kiosk-back-btn js-kiosk-type-link" aria-label="Back to visitor types">
 							<i class="bi bi-arrow-left" aria-hidden="true"></i>
 							<span>Back</span>
@@ -8346,6 +8346,7 @@
 		const flowStepName = document.getElementById('flowStepName');
 		const flowStepCount = document.getElementById('flowStepCount');
 		const selfRegProgress = document.getElementById('selfRegProgress');
+		const kioskBackBar = document.getElementById('kioskBackBar');
 		const selfRegStepperSteps = document.querySelectorAll('.self-reg-step');
 		const selfRegStepperLines = document.querySelectorAll('.self-reg-step-line');
 		const kioskScanTitleText = document.getElementById('kioskScanTitleText');
@@ -8745,6 +8746,12 @@
 
 			if (selfRegProgress) {
 				selfRegProgress.classList.toggle('is-hidden', isCompleteStep);
+			}
+
+			// Header Back is only for step 1 (visitor types). Step 2 already has
+			// its own verify Back; step 3 (complete) should not show one.
+			if (kioskBackBar) {
+				kioskBackBar.classList.toggle('is-hidden', !isIdStep);
 			}
 
 			scannerCard.classList.toggle('is-hidden', isFormStep || isCompleteStep);
