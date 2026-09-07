@@ -4283,18 +4283,49 @@
 		}
 
 		body.self-registration-mode .kiosk-back-type-link {
-			display: inline-flex;
-			align-items: center;
-			gap: 4px;
-			margin-top: 2px;
-			font-size: 12px;
-			font-weight: 600;
-			color: #64748b;
-			text-decoration: none;
+			display: none;
 		}
 
-		body.self-registration-mode .kiosk-back-type-link:hover {
+		body.self-registration-mode .kiosk-back-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-height: 42px;
+			padding: 8px 16px;
+			border-radius: 12px;
+			border: 1.5px solid #243c96;
+			background: #ffffff;
 			color: #243c96;
+			font-size: 14px;
+			font-weight: 700;
+			line-height: 1;
+			text-decoration: none;
+			box-shadow: 0 2px 8px rgba(36, 60, 150, 0.08);
+			transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+		}
+
+		body.self-registration-mode .kiosk-back-btn .bi {
+			font-size: 1rem;
+			line-height: 1;
+		}
+
+		body.self-registration-mode .kiosk-back-btn:hover {
+			background: #243c96;
+			color: #ffffff;
+			box-shadow: 0 6px 16px rgba(36, 60, 150, 0.22);
+			transform: translateY(-1px);
+		}
+
+		body.self-registration-mode .kiosk-back-btn:active {
+			transform: translateY(0);
+		}
+
+		body.self-registration-mode .bottom-navigation {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			margin-top: 8px;
 		}
 
 		body.self-registration-mode .kiosk-controls-type-note {
@@ -5647,17 +5678,17 @@
 		}
 
 		body.self-registration-mode .back-link.kiosk-back-type-link {
-			display: inline-flex;
-			align-items: center;
-			gap: 6px;
-			color: var(--vms-text-secondary);
-			font-size: 11px;
-			text-decoration: none;
-			margin-top: 0;
+			display: none;
 		}
 
-		body.self-registration-mode .back-link.kiosk-back-type-link:hover {
-			color: var(--vms-primary);
+		body.self-registration-mode .kiosk-back-btn {
+			border-color: var(--vms-primary, #243c96);
+			color: var(--vms-primary, #243c96);
+		}
+
+		body.self-registration-mode .kiosk-back-btn:hover {
+			background: var(--vms-primary, #243c96);
+			color: #fff;
 		}
 
 		body.self-registration-mode .vms-footer.kiosk-reg-footer {
@@ -7056,10 +7087,9 @@
 								</section>
 
 								<div class="bottom-navigation">
-									<div class="kiosk-controls-divider"></div>
-									<a href="/guard/register" class="back-link kiosk-back-type-link js-kiosk-type-link">
-										<span>←</span>
-										<span>All visitor types</span>
+									<a href="/guard/register" class="kiosk-back-btn js-kiosk-type-link" aria-label="Back to visitor types">
+										<i class="bi bi-arrow-left" aria-hidden="true"></i>
+										<span>Back</span>
 									</a>
 								</div>
 							</aside>
