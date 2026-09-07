@@ -2435,6 +2435,7 @@
 		body.self-registration-mode .kiosk-id-chip-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-auto-rows: minmax(0, auto);
 			gap: 8px;
 		}
 
@@ -5401,6 +5402,7 @@
 		body.self-registration-mode .desktop-id-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-auto-rows: minmax(0, auto);
 			gap: 9px;
 		}
 
@@ -6344,8 +6346,9 @@
 				margin-top: 16px;
 			}
 
-			body.self-registration-mode .desktop-id-grid {
-				grid-template-columns: 1fr;
+			body.self-registration-mode .desktop-id-grid,
+			body.self-registration-mode .kiosk-id-chip-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 			}
 
 			body.self-registration-mode .kiosk-type-grid {
@@ -7050,17 +7053,6 @@
 									</div>
 									<input type="file" id="idGalleryInput" class="is-hidden" accept="image/jpeg,image/png,image/webp,image/*">
 									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the camera is unavailable, upload a clear photo of your ID.</p>
-								</section>
-
-								<section class="sidebar-section supported-section id-types is-hidden" id="idTypesPanel">
-									<h2 class="sidebar-section-title id-types-title">Supported ID Types</h2>
-									<ul class="supported-list kiosk-supported-list">
-										<li><span class="supported-check">✓</span> National ID</li>
-										<li><span class="supported-check">✓</span> UMID</li>
-										<li><span class="supported-check">✓</span> Voters ID</li>
-										<li><span class="supported-check">✓</span> Drivers License</li>
-										<li><span class="supported-check">✓</span> Senior ID</li>
-									</ul>
 								</section>
 
 								<div class="bottom-navigation">
@@ -8374,7 +8366,7 @@
 		const hasFinalStepPanel = Boolean(visitorStepPanel || enrolleeStepPanel);
 		const hasRegisterFlow = Boolean(
 			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
-			idTypesPanel && hasFinalStepPanel && scanAction && scanActionText &&
+			(isSelfRegistrationKiosk || idTypesPanel) && hasFinalStepPanel && scanAction && scanActionText &&
 			galleryAction && galleryHint && loadingOverlay && loadingText
 		);
 		let activeStream = null;
@@ -8710,7 +8702,9 @@
 
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
 			idGuide.classList.toggle('is-hidden', !isIdStep);
-			idTypesPanel.classList.toggle('is-hidden', !isIdStep);
+			if (idTypesPanel) {
+				idTypesPanel.classList.toggle('is-hidden', !isIdStep);
+			}
 			galleryAction.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
