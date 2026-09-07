@@ -4319,6 +4319,9 @@
 				display: flex !important;
 				flex-direction: column;
 				grid-template-columns: none;
+				overflow-x: hidden;
+				overflow-y: auto !important;
+				-webkit-overflow-scrolling: touch;
 			}
 
 			body.self-registration-mode .kiosk-scan-main,
@@ -4326,19 +4329,21 @@
 				order: 1;
 				padding: 16px;
 				overflow: visible;
+				flex: 0 0 auto;
 			}
 
-			body.self-registration-mode .kiosk-bottom-panels,
-			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
+			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden),
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden) {
+				display: grid !important;
 				grid-template-columns: 1fr;
 			}
 
 			body.self-registration-mode .scanner-zone,
 			body.self-registration-mode .scanner-zone.camera-frame {
 				flex: none;
-				min-height: 280px;
-				max-height: none;
-				aspect-ratio: 4 / 3;
+				min-height: 180px;
+				max-height: min(36vh, 320px);
+				aspect-ratio: 16 / 10;
 			}
 
 			body.self-registration-mode .camera-section,
@@ -5794,12 +5799,17 @@
 				display: flex !important;
 				flex-direction: column;
 				grid-template-columns: none;
+				overflow-x: hidden;
+				overflow-y: auto !important;
+				-webkit-overflow-scrolling: touch;
 			}
 
 			body.self-registration-mode .scan-main.kiosk-scan-main {
 				order: 1;
 				padding: 18px 20px;
 				width: 100%;
+				overflow: visible;
+				flex: 0 0 auto;
 			}
 
 			body.self-registration-mode .scan-sidebar.kiosk-controls {
@@ -5817,9 +5827,10 @@
 
 			body.self-registration-mode .scanner-zone.camera-frame {
 				width: 100%;
-				min-height: 340px;
-				max-height: none;
-				aspect-ratio: 4 / 3;
+				min-height: 220px;
+				max-height: min(38vh, 360px);
+				aspect-ratio: 16 / 10;
+				flex: none;
 			}
 
 			body.self-registration-mode .camera-section,
@@ -5832,8 +5843,14 @@
 				width: min(440px, 70%);
 			}
 
-			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden),
+			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden) {
+				display: grid !important;
 				grid-template-columns: 1fr 1fr;
+				width: 100%;
+				max-width: none;
+				margin: 14px 0 0;
+				flex-shrink: 0;
 			}
 
 			body.self-registration-mode .visitor-type-card {
@@ -5861,6 +5878,28 @@
 			body.self-registration-mode .bottom-navigation {
 				grid-column: 1 / -1;
 				margin-top: 0;
+			}
+		}
+
+		/* Tablet portrait: tips + ID types stay visible under camera */
+		@media screen and (min-width: 768px) and (max-width: 1100px) and (orientation: portrait) {
+			body.self-registration-mode .scanner-zone.camera-frame,
+			body.self-registration-mode .scanner-zone {
+				max-height: min(32vh, 300px);
+				min-height: 180px;
+				aspect-ratio: 16 / 10;
+			}
+
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden),
+			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden) {
+				display: grid !important;
+				grid-template-columns: 1fr;
+				gap: 12px;
+			}
+
+			body.self-registration-mode .kiosk-scan-main,
+			body.self-registration-mode .scan-main.kiosk-scan-main {
+				padding-bottom: 20px;
 			}
 		}
 
@@ -6026,8 +6065,29 @@
 				height: 34px;
 			}
 
-			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
-				display: none !important;
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels:not(.is-hidden),
+			body.self-registration-mode .kiosk-bottom-panels:not(.is-hidden) {
+				display: grid !important;
+				grid-template-columns: 1fr;
+				width: 100%;
+				max-width: none;
+				margin: 12px 0 0;
+				gap: 10px;
+				flex-shrink: 0;
+			}
+
+			body.self-registration-mode .info-card.kiosk-info-card {
+				padding: 12px 14px;
+			}
+
+			body.self-registration-mode .info-card-title h2,
+			body.self-registration-mode .kiosk-info-card-title {
+				font-size: 13px;
+			}
+
+			body.self-registration-mode .tips-list li,
+			body.self-registration-mode .kiosk-tips-list li {
+				font-size: 12px;
 			}
 
 			body.self-registration-mode .scan-sidebar.kiosk-controls {
