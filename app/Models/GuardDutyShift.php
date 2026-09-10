@@ -17,7 +17,9 @@ class GuardDutyShift extends Model
 
     protected $fillable = [
         'guard_user_id',
+        'guard_personnel_id',
         'kiosk_user_id',
+        'station',
         'clock_in_at',
         'clock_out_at',
         'clock_in_ip',
@@ -28,6 +30,7 @@ class GuardDutyShift extends Model
     {
         return [
             'guard_user_id' => 'integer',
+            'guard_personnel_id' => 'integer',
             'kiosk_user_id' => 'integer',
             'clock_in_at' => 'datetime',
             'clock_out_at' => 'datetime',
@@ -38,6 +41,11 @@ class GuardDutyShift extends Model
     public function guardUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'guard_user_id', 'user_id');
+    }
+
+    public function guardPersonnel(): BelongsTo
+    {
+        return $this->belongsTo(GuardPersonnel::class, 'guard_personnel_id', 'guard_personnel_id');
     }
 
     public function kioskUser(): BelongsTo

@@ -20,16 +20,30 @@ class GuardDutyController extends Controller
         return response()->json($this->payload($request));
     }
 
+    public function availableGuards(): JsonResponse
+    {
+        $guards = $this->guardDutyService->availableGuards();
+
+        return response()->json([
+            'success' => true,
+            'data' => $guards,
+            'message' => $guards === []
+                ? GuardDutyService::NO_ACTIVE_PERSONNEL_MESSAGE
+                : null,
+        ]);
+    }
+
     public function assign(Request $request): JsonResponse
     {
-        $credentials = $this->validatedCredentials($request);
+        $credentials = $this->validatedStartCredentials($request);
 
         try {
             $payload = $this->guardDutyService->assignGuard(
-                $credentials['email'],
-                $credentials['password'],
+                $credentials['guard_personnel_id'],
+                $credentials['duty_pin'],
                 $this->kioskUserId($request),
-                $request->ip()
+                $request->ip(),
+                $credentials['station']
             );
         } catch (ValidationException $e) {
             return $this->invalidCredentialsResponse($e);
@@ -51,14 +65,15 @@ class GuardDutyController extends Controller
 
     public function change(Request $request): JsonResponse
     {
-        $credentials = $this->validatedCredentials($request, true);
+        $credentials = $this->validatedStartCredentials($request);
 
         try {
             $payload = $this->guardDutyService->changeGuard(
-                $credentials['email'],
-                $credentials['password'],
+                $credentials['guard_personnel_id'],
+                $credentials['duty_pin'],
                 $this->kioskUserId($request),
-                $request->ip()
+                $request->ip(),
+                $credentials['station']
             );
         } catch (GuardDutyUnavailableException $e) {
             return response()->json([
@@ -87,11 +102,11 @@ class GuardDutyController extends Controller
 
     public function end(Request $request): JsonResponse
     {
-        $credentials = $this->validatedEndDutyPassword($request);
+        $credentials = $this->validatedEndDutyPin($request);
 
         try {
             $payload = $this->guardDutyService->endDuty(
-                $credentials['password'],
+                $credentials['duty_pin'],
                 $this->kioskUserId($request),
                 $request->ip()
             );
@@ -121,32 +136,42 @@ class GuardDutyController extends Controller
     }
 
     /**
-     * @return array{email: string, password: string}
+     * @return array{guard_personnel_id: int, duty_pin: string, station: string}
      */
-    protected function validatedCredentials(Request $request, bool $changing = false): array
+    protected function validatedStartCredentials(Request $request): array
     {
-        $emailLabel = $changing ? 'New Guard Email' : 'Email / Guard Account';
-
-        return $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'max:255'],
+        $validated = $request->validate([
+            'guard_personnel_id' => ['required', 'integer', 'min:1'],
+            'duty_pin' => ['required', 'digits:6'],
+            'station' => ['nullable', 'string', 'max:255'],
         ], [
-            'email.required' => $emailLabel.' is required.',
-            'email.email' => 'Enter a valid email address.',
-            'password.required' => 'Password is required.',
+            'guard_personnel_id.required' => 'Security Guard is required.',
+            'duty_pin.required' => 'Duty PIN is required.',
+            'duty_pin.digits' => 'Duty PIN must be exactly 6 digits.',
         ]);
+
+        return [
+            'guard_personnel_id' => (int) $validated['guard_personnel_id'],
+            'duty_pin' => (string) $validated['duty_pin'],
+            'station' => trim((string) ($validated['station'] ?? GuardDutyService::DEFAULT_STATION)) ?: GuardDutyService::DEFAULT_STATION,
+        ];
     }
 
     /**
-     * @return array{password: string}
+     * @return array{duty_pin: string}
      */
-    protected function validatedEndDutyPassword(Request $request): array
+    protected function validatedEndDutyPin(Request $request): array
     {
-        return $request->validate([
-            'password' => ['required', 'string', 'max:255'],
+        $validated = $request->validate([
+            'duty_pin' => ['required', 'digits:6'],
         ], [
-            'password.required' => 'Password is required.',
+            'duty_pin.required' => 'Duty PIN is required.',
+            'duty_pin.digits' => 'Duty PIN must be exactly 6 digits.',
         ]);
+
+        return [
+            'duty_pin' => (string) $validated['duty_pin'],
+        ];
     }
 
     protected function kioskUserId(Request $request): int

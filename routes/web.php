@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminGuardDutyController;
+use App\Http\Controllers\AdminGuardPersonnelController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DailyReportController;
@@ -101,6 +102,8 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::post('/alerts/{alertId}/resolve', [AlertsController::class, 'resolve']);
 
     Route::get('/guard-duty', [AdminGuardDutyController::class, 'index'])->name('admin.guard-duty');
+    Route::get('/guard-duty/personnel', [AdminGuardPersonnelController::class, 'index'])
+        ->name('admin.guard-personnel');
 
     Route::get('/user', function () {
         return view('admin.user');
@@ -137,6 +140,8 @@ Route::middleware(['auth', 'role:1,4'])->prefix('api/self-registration')->group(
 });
 
 Route::middleware(['auth', 'role:4'])->prefix('api/self-registration')->group(function () {
+    Route::get('/available-guards', [GuardDutyController::class, 'availableGuards'])
+        ->name('self-registration.available-guards');
     Route::post('/guard-on-duty', [GuardDutyController::class, 'assign'])
         ->middleware('throttle:5,1')
         ->name('self-registration.guard-on-duty.assign');
@@ -167,6 +172,21 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
     Route::get('/guard-duty/{shift}', [AdminGuardDutyController::class, 'show'])
         ->whereNumber('shift')
         ->name('api.admin.guard-duty.show');
+
+    Route::get('/guards', [AdminGuardPersonnelController::class, 'list'])->name('api.admin.guards');
+    Route::post('/guards', [AdminGuardPersonnelController::class, 'store'])->name('api.admin.guards.store');
+    Route::get('/guards/{id}', [AdminGuardPersonnelController::class, 'show'])
+        ->whereNumber('id')
+        ->name('api.admin.guards.show');
+    Route::put('/guards/{id}', [AdminGuardPersonnelController::class, 'update'])
+        ->whereNumber('id')
+        ->name('api.admin.guards.update');
+    Route::patch('/guards/{id}/status', [AdminGuardPersonnelController::class, 'updateStatus'])
+        ->whereNumber('id')
+        ->name('api.admin.guards.status');
+    Route::patch('/guards/{id}/pin', [AdminGuardPersonnelController::class, 'updatePin'])
+        ->whereNumber('id')
+        ->name('api.admin.guards.pin');
 });
 
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {

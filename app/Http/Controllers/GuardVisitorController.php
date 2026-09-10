@@ -454,7 +454,9 @@ class GuardVisitorController extends Controller
                 ];
 
                 if ($isSelfRegistration && $activeShift) {
-                    $visitPayload['on_duty_guard_id'] = (int) $activeShift->guard_user_id;
+                    $visitPayload['on_duty_guard_id'] = $activeShift->guard_user_id
+                        ? (int) $activeShift->guard_user_id
+                        : null;
                     $visitPayload['duty_shift_id'] = (int) $activeShift->shift_id;
                 }
 
@@ -613,8 +615,12 @@ class GuardVisitorController extends Controller
                     'remaining_steps' => $resumedEnrollment
                         ? (int) ($resumeEnrollee['remaining_steps'] ?? 0)
                         : 0,
-                    'on_duty_guard_id' => $isSelfRegistration ? (int) $activeShift->guard_user_id : null,
-                    'duty_shift_id' => $isSelfRegistration ? (int) $activeShift->shift_id : null,
+                    'on_duty_guard_id' => $isSelfRegistration && $activeShift && $activeShift->guard_user_id
+                        ? (int) $activeShift->guard_user_id
+                        : null,
+                    'duty_shift_id' => $isSelfRegistration && $activeShift
+                        ? (int) $activeShift->shift_id
+                        : null,
                 ];
             });
 

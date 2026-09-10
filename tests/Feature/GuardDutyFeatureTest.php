@@ -13,11 +13,13 @@ class GuardDutyFeatureTest extends TestCase
     public function self_registration_guard_duty_routes_are_protected(): void
     {
         $current = Route::getRoutes()->getByName('self-registration.guard-on-duty');
+        $available = Route::getRoutes()->getByName('self-registration.available-guards');
         $assign = Route::getRoutes()->getByName('self-registration.guard-on-duty.assign');
         $change = Route::getRoutes()->getByName('self-registration.guard-on-duty.change');
         $end = Route::getRoutes()->getByName('self-registration.guard-on-duty.end');
 
         $this->assertNotNull($current);
+        $this->assertNotNull($available);
         $this->assertNotNull($assign);
         $this->assertNotNull($change);
         $this->assertNotNull($end);
@@ -26,6 +28,13 @@ class GuardDutyFeatureTest extends TestCase
         $this->assertTrue(
             collect($current->gatherMiddleware())->contains(
                 fn ($middleware) => str_contains((string) $middleware, 'role:1,4')
+            )
+        );
+
+        $this->assertContains('auth', $available->gatherMiddleware());
+        $this->assertTrue(
+            collect($available->gatherMiddleware())->contains(
+                fn ($middleware) => str_contains((string) $middleware, 'role:4')
             )
         );
 
@@ -49,17 +58,17 @@ class GuardDutyFeatureTest extends TestCase
             ->assertUnauthorized();
 
         $this->postJson(route('self-registration.guard-on-duty.assign'), [
-            'email' => 'guard@example.com',
-            'password' => 'secret',
+            'guard_personnel_id' => 1,
+            'duty_pin' => '123456',
         ])->assertUnauthorized();
 
         $this->postJson(route('self-registration.guard-on-duty.change'), [
-            'email' => 'guard@example.com',
-            'password' => 'secret',
+            'guard_personnel_id' => 1,
+            'duty_pin' => '123456',
         ])->assertUnauthorized();
 
         $this->postJson(route('self-registration.guard-on-duty.end'), [
-            'password' => 'secret',
+            'duty_pin' => '123456',
         ])->assertUnauthorized();
     }
 
@@ -68,10 +77,17 @@ class GuardDutyFeatureTest extends TestCase
     {
         foreach ([
             'admin.guard-duty',
+            'admin.guard-personnel',
             'api.admin.guard-duty',
             'api.admin.guard-duty.filters',
             'api.admin.guard-duty.show',
             'api.admin.guard-duty.visitors',
+            'api.admin.guards',
+            'api.admin.guards.store',
+            'api.admin.guards.show',
+            'api.admin.guards.update',
+            'api.admin.guards.status',
+            'api.admin.guards.pin',
         ] as $name) {
             $route = Route::getRoutes()->getByName($name);
             $this->assertNotNull($route, 'Missing route: '.$name);
@@ -162,6 +178,7 @@ class GuardDutyFeatureTest extends TestCase
             ->assertOk()
             ->assertSee('Guard Duty Monitoring')
             ->assertSee('Currently On Duty')
-            ->assertSee('Duty History');
+            ->assertSee('Duty History')
+            ->assertSee('Manage Guards');
     }
 }

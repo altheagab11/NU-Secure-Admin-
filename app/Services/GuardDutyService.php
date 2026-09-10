@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\GuardDutyUnavailableException;
 use App\Models\Guard;
 use App\Models\GuardDutyShift;
+use App\Models\GuardPersonnel;
 use App\Models\User;
 use App\Models\Visit;
 use Carbon\Carbon;
@@ -13,7 +14,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -22,11 +22,15 @@ class GuardDutyService
 {
     public const GUARD_ROLE_ID = 2;
 
-    public const INVALID_CREDENTIALS_MESSAGE = 'Invalid guard credentials.';
+    public const DEFAULT_STATION = 'Lobby';
+
+    public const INVALID_CREDENTIALS_MESSAGE = 'Incorrect Duty PIN. Please verify your PIN and try again.';
 
     public const NO_ACTIVE_SHIFT_MESSAGE = 'No active guard duty shift was found.';
 
-    public const RATE_LIMIT_MESSAGE = 'Too many attempts. Please try again later.';
+    public const RATE_LIMIT_MESSAGE = 'Too many failed attempts. Please wait about 5 minutes and try again.';
+
+    public const NO_ACTIVE_PERSONNEL_MESSAGE = 'No active security guards are available. Please contact the administrator.';
 
     public function payloadForKiosk(?int $kioskUserId): array
     {
@@ -53,7 +57,7 @@ class GuardDutyService
     public function activeShift(?int $kioskUserId, bool $lock = false): ?GuardDutyShift
     {
         $query = GuardDutyShift::query()
-            ->with(['guardUser', 'guardProfile'])
+            ->with(['guardUser', 'guardProfile', 'guardPersonnel'])
             ->active()
             ->orderByDesc('clock_in_at')
             ->orderByDesc('shift_id');
@@ -86,54 +90,76 @@ class GuardDutyService
     }
 
     /**
+     * @return list<array{id: int, full_name: string, badge_number: string, status: string}>
+     */
+    public function availableGuards(): array
+    {
+        return app(GuardPersonnelService::class)->availableForDuty();
+    }
+
+    /**
      * @return array{has_active_guard: bool, shift: array<string, mixed>|null}
      */
-    public function assignGuard(string $email, string $password, int $kioskUserId, ?string $ipAddress): array
+    public function assignGuard(int $guardPersonnelId, string $dutyPin, int $kioskUserId, ?string $ipAddress, ?string $station = null): array
     {
-        $this->assertNotRateLimited($email, $ipAddress);
+        $station = $this->normalizeStation($station);
+        $rateIdentity = 'personnel:'.$guardPersonnelId;
+        $this->assertNotRateLimited($rateIdentity, $ipAddress);
 
-        $authenticated = $this->authenticateGuard($email, $password);
+        $personnel = $this->findActivePersonnel($guardPersonnelId);
 
-        if ($authenticated === null) {
-            $this->hitRateLimiter($email, $ipAddress);
-            $this->logFailedAuthentication($email);
+        if ($personnel === null || ! $personnel->verifyDutyPin($dutyPin)) {
+            $this->hitRateLimiter($rateIdentity, $ipAddress);
+            $this->logFailedPinVerification($personnel, $guardPersonnelId);
 
             throw ValidationException::withMessages([
-                'email' => self::INVALID_CREDENTIALS_MESSAGE,
+                'duty_pin' => self::INVALID_CREDENTIALS_MESSAGE,
             ]);
         }
 
-        $this->clearRateLimiter($email, $ipAddress);
+        $this->clearRateLimiter($rateIdentity, $ipAddress);
 
         try {
-            $shift = DB::transaction(function () use ($authenticated, $kioskUserId, $ipAddress) {
+            $shift = DB::transaction(function () use ($personnel, $kioskUserId, $ipAddress, $station) {
                 $existing = $this->lockActiveShiftForKiosk($kioskUserId);
 
                 if ($existing) {
                     throw ValidationException::withMessages([
-                        'email' => 'A security guard is already assigned.',
+                        'guard_personnel_id' => 'A security guard is already assigned.',
+                    ]);
+                }
+
+                $fresh = GuardPersonnel::query()
+                    ->whereKey($personnel->guard_personnel_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $fresh || ! $fresh->isActive()) {
+                    throw ValidationException::withMessages([
+                        'guard_personnel_id' => 'The selected security guard is no longer active.',
                     ]);
                 }
 
                 return $this->createShift(
-                    (int) $authenticated['user']->user_id,
+                    (int) $fresh->guard_personnel_id,
                     $kioskUserId,
-                    $ipAddress
+                    $ipAddress,
+                    $station
                 );
             });
         } catch (UniqueConstraintViolationException $e) {
             throw ValidationException::withMessages([
-                'email' => 'A security guard is already assigned.',
+                'guard_personnel_id' => 'A security guard is already assigned.',
             ]);
         }
 
-        $shift->load(['guardUser', 'guardProfile']);
+        $shift->load(['guardUser', 'guardProfile', 'guardPersonnel']);
         $payload = [
             'has_active_guard' => true,
             'shift' => $this->serializeShift($shift),
         ];
 
-        $this->logDutyStarted($authenticated['user'], $authenticated['guard'], $shift, $kioskUserId);
+        $this->logDutyStarted($shift->guardPersonnel ?? $personnel, $shift, $kioskUserId);
 
         return $payload;
     }
@@ -141,41 +167,43 @@ class GuardDutyService
     /**
      * @return array{has_active_guard: bool, shift: array<string, mixed>|null}
      */
-    public function changeGuard(string $email, string $password, int $kioskUserId, ?string $ipAddress): array
+    public function changeGuard(int $guardPersonnelId, string $dutyPin, int $kioskUserId, ?string $ipAddress, ?string $station = null): array
     {
-        $this->assertNotRateLimited($email, $ipAddress);
+        $station = $this->normalizeStation($station);
+        $rateIdentity = 'personnel:'.$guardPersonnelId;
+        $this->assertNotRateLimited($rateIdentity, $ipAddress);
 
-        $authenticated = $this->authenticateGuard($email, $password);
+        $personnel = $this->findActivePersonnel($guardPersonnelId);
 
-        if ($authenticated === null) {
-            $this->hitRateLimiter($email, $ipAddress);
-            $this->logFailedAuthentication($email);
+        if ($personnel === null || ! $personnel->verifyDutyPin($dutyPin)) {
+            $this->hitRateLimiter($rateIdentity, $ipAddress);
+            $this->logFailedPinVerification($personnel, $guardPersonnelId);
 
             throw ValidationException::withMessages([
-                'email' => self::INVALID_CREDENTIALS_MESSAGE,
+                'duty_pin' => self::INVALID_CREDENTIALS_MESSAGE,
             ]);
         }
 
-        $this->clearRateLimiter($email, $ipAddress);
+        $this->clearRateLimiter($rateIdentity, $ipAddress);
 
         $previousName = null;
-        $newName = $this->displayName($authenticated['user']);
+        $newName = $personnel->displayName();
 
         try {
-            $shift = DB::transaction(function () use ($authenticated, $kioskUserId, $ipAddress, &$previousName) {
+            $shift = DB::transaction(function () use ($personnel, $kioskUserId, $ipAddress, $station, &$previousName) {
                 $current = $this->lockActiveShiftForKiosk($kioskUserId);
 
                 if (! $current) {
                     throw GuardDutyUnavailableException::missing();
                 }
 
-                if ((int) $current->guard_user_id === (int) $authenticated['user']->user_id) {
+                if ((int) $current->guard_personnel_id === (int) $personnel->guard_personnel_id) {
                     throw ValidationException::withMessages([
-                        'email' => 'This guard is already on duty.',
+                        'guard_personnel_id' => 'This guard is already on duty.',
                     ]);
                 }
 
-                $previousName = $this->displayName($current->guardUser);
+                $previousName = $this->shiftGuardName($current);
                 $now = $this->now();
 
                 $closed = GuardDutyShift::query()
@@ -187,10 +215,22 @@ class GuardDutyService
                     throw new RuntimeException('Unable to close the current guard duty shift.');
                 }
 
+                $fresh = GuardPersonnel::query()
+                    ->whereKey($personnel->guard_personnel_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $fresh || ! $fresh->isActive()) {
+                    throw ValidationException::withMessages([
+                        'guard_personnel_id' => 'The selected security guard is no longer active.',
+                    ]);
+                }
+
                 $newShift = $this->createShift(
-                    (int) $authenticated['user']->user_id,
+                    (int) $fresh->guard_personnel_id,
                     $kioskUserId,
                     $ipAddress,
+                    $station,
                     $now
                 );
 
@@ -203,14 +243,13 @@ class GuardDutyService
             throw new RuntimeException('Unable to assign the new guard on duty. Please try again.');
         }
 
-        $shift['next']->load(['guardUser', 'guardProfile']);
+        $shift['next']->load(['guardUser', 'guardProfile', 'guardPersonnel']);
 
         $this->logDutyChanged(
             $previousName ?: 'the previous guard',
             $newName,
             $shift['next'],
-            $kioskUserId,
-            $authenticated['guard']
+            $kioskUserId
         );
 
         return [
@@ -220,11 +259,11 @@ class GuardDutyService
     }
 
     /**
-     * Close the current kiosk shift after the on-duty guard confirms their password.
+     * Close the current kiosk shift after the on-duty guard confirms their Duty PIN.
      *
      * @return array{has_active_guard: bool, shift: null}
      */
-    public function endDuty(string $password, int $kioskUserId, ?string $ipAddress): array
+    public function endDuty(string $dutyPin, int $kioskUserId, ?string $ipAddress): array
     {
         $preview = $this->activeShift($kioskUserId);
 
@@ -232,19 +271,25 @@ class GuardDutyService
             throw GuardDutyUnavailableException::missingShift();
         }
 
-        $rateLimitIdentity = $this->rateLimitIdentity($preview->guardUser);
+        $rateLimitIdentity = $preview->guard_personnel_id
+            ? 'personnel:'.(int) $preview->guard_personnel_id
+            : 'shift:'.(int) $preview->shift_id;
+
         $this->assertNotRateLimited($rateLimitIdentity, $ipAddress);
 
-        $closed = DB::transaction(function () use ($password, $kioskUserId) {
+        $closed = DB::transaction(function () use ($dutyPin, $kioskUserId) {
             $current = $this->lockActiveShiftForKiosk($kioskUserId);
 
             if (! $current) {
                 throw GuardDutyUnavailableException::missingShift();
             }
 
-            $authenticated = $this->authenticateAssignedGuard($current->guardUser, $password);
+            $personnel = $current->guardPersonnel
+                ?: ($current->guard_personnel_id
+                    ? GuardPersonnel::query()->find((int) $current->guard_personnel_id)
+                    : null);
 
-            if ($authenticated === null) {
+            if (! $personnel || ! $personnel->verifyDutyPin($dutyPin)) {
                 return null;
             }
 
@@ -260,20 +305,23 @@ class GuardDutyService
             }
 
             $current->clock_out_at = $now;
+            $current->setRelation('guardPersonnel', $personnel);
 
             return [
                 'shift' => $current,
-                'user' => $authenticated['user'],
-                'guard' => $authenticated['guard'],
+                'personnel' => $personnel,
             ];
         });
 
         if ($closed === null) {
             $this->hitRateLimiter($rateLimitIdentity, $ipAddress);
-            $this->logFailedAuthentication($rateLimitIdentity);
+            $this->logFailedPinVerification(
+                $preview->guardPersonnel,
+                (int) ($preview->guard_personnel_id ?? 0)
+            );
 
             throw ValidationException::withMessages([
-                'password' => self::INVALID_CREDENTIALS_MESSAGE,
+                'duty_pin' => self::INVALID_CREDENTIALS_MESSAGE,
             ]);
         }
 
@@ -287,51 +335,11 @@ class GuardDutyService
     }
 
     /**
-     * @return array{user: User, guard: Guard}|null
-     */
-    public function authenticateGuard(string $email, string $password): ?array
-    {
-        return $this->authenticateAssignedGuard(User::findByEmail($email), $password);
-    }
-
-    /**
-     * Verify that the given account is the current on-duty guard.
-     *
-     * @return array{user: User, guard: Guard}|null
-     */
-    public function authenticateAssignedGuard(?User $user, string $password): ?array
-    {
-        if (! $user || ! $this->passwordMatches($user, $password)) {
-            return null;
-        }
-
-        if (! $this->isAccountActive($user)) {
-            return null;
-        }
-
-        if ((int) $user->role_id !== self::GUARD_ROLE_ID) {
-            return null;
-        }
-
-        $guard = Guard::query()->where('user_id', (int) $user->user_id)->first();
-
-        if (! $guard) {
-            return null;
-        }
-
-        return [
-            'user' => $user,
-            'guard' => $guard,
-        ];
-    }
-
-    /**
-     * @return array{shift_id: int, clock_in_at: string|null, guard: array{user_id: int, name: string, badge_number: mixed, station: mixed}}
+     * @return array{shift_id: int, clock_in_at: string|null, guard: array{id: int|null, user_id: int|null, name: string, badge_number: mixed, station: mixed}}
      */
     public function serializeShift(GuardDutyShift $shift): array
     {
-        $user = $shift->guardUser;
-        $profile = $shift->guardProfile;
+        $identity = $this->resolveGuardIdentity($shift);
         $clockIn = $shift->clock_in_at;
 
         if ($clockIn instanceof Carbon) {
@@ -346,10 +354,11 @@ class GuardDutyService
             'shift_id' => (int) $shift->shift_id,
             'clock_in_at' => $clockIn,
             'guard' => [
-                'user_id' => (int) $shift->guard_user_id,
-                'name' => $this->displayName($user),
-                'badge_number' => $profile->badge_number ?? null,
-                'station' => $profile->station ?? null,
+                'id' => $identity['personnel_id'],
+                'user_id' => $identity['user_id'],
+                'name' => $identity['name'],
+                'badge_number' => $identity['badge_number'],
+                'station' => $identity['station'],
             ],
         ];
     }
@@ -360,7 +369,7 @@ class GuardDutyService
     public function currentDutyShifts(): Collection
     {
         return GuardDutyShift::query()
-            ->with(['guardUser', 'guardProfile'])
+            ->with(['guardUser', 'guardProfile', 'guardPersonnel'])
             ->withCount('visits')
             ->active()
             ->orderBy('clock_in_at')
@@ -376,7 +385,7 @@ class GuardDutyService
     public function lastCompletedShift(): ?array
     {
         $shift = GuardDutyShift::query()
-            ->with(['guardUser', 'guardProfile'])
+            ->with(['guardUser', 'guardProfile', 'guardPersonnel'])
             ->withCount('visits')
             ->completed()
             ->orderByDesc('clock_out_at')
@@ -404,7 +413,7 @@ class GuardDutyService
     public function historyQuery(array $filters): Builder
     {
         $query = GuardDutyShift::query()
-            ->with(['guardUser', 'guardProfile'])
+            ->with(['guardUser', 'guardProfile', 'guardPersonnel'])
             ->withCount('visits');
 
         $search = trim((string) ($filters['search'] ?? ''));
@@ -412,7 +421,16 @@ class GuardDutyService
             $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $search).'%';
 
             $query->where(function (Builder $builder) use ($like) {
-                $builder->whereHas('guardUser', function (Builder $userQuery) use ($like) {
+                $builder->whereHas('guardPersonnel', function (Builder $personnelQuery) use ($like) {
+                    $personnelQuery->where('first_name', 'ilike', $like)
+                        ->orWhere('middle_name', 'ilike', $like)
+                        ->orWhere('last_name', 'ilike', $like)
+                        ->orWhere('badge_number', 'ilike', $like)
+                        ->orWhereRaw(
+                            "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) ilike ?",
+                            [$like]
+                        );
+                })->orWhereHas('guardUser', function (Builder $userQuery) use ($like) {
                     $userQuery->where('first_name', 'ilike', $like)
                         ->orWhere('last_name', 'ilike', $like)
                         ->orWhere('email', 'ilike', $like)
@@ -423,14 +441,17 @@ class GuardDutyService
                 })->orWhereHas('guardProfile', function (Builder $guardQuery) use ($like) {
                     $guardQuery->where('badge_number', 'ilike', $like)
                         ->orWhere('station', 'ilike', $like);
-                });
+                })->orWhere('station', 'ilike', $like);
             });
         }
 
         $station = trim((string) ($filters['station'] ?? ''));
         if ($station !== '') {
-            $query->whereHas('guardProfile', function (Builder $guardQuery) use ($station) {
-                $guardQuery->where('station', $station);
+            $query->where(function (Builder $builder) use ($station) {
+                $builder->where('station', $station)
+                    ->orWhereHas('guardProfile', function (Builder $guardQuery) use ($station) {
+                        $guardQuery->where('station', $station);
+                    });
             });
         }
 
@@ -465,15 +486,24 @@ class GuardDutyService
      */
     public function stationOptions(): array
     {
-        return Guard::query()
+        $fromShifts = GuardDutyShift::query()
             ->whereNotNull('station')
             ->whereRaw("TRIM(COALESCE(station, '')) <> ''")
-            ->orderBy('station')
             ->distinct()
-            ->pluck('station')
+            ->pluck('station');
+
+        $fromProfiles = Guard::query()
+            ->whereNotNull('station')
+            ->whereRaw("TRIM(COALESCE(station, '')) <> ''")
+            ->distinct()
+            ->pluck('station');
+
+        return $fromShifts
+            ->merge($fromProfiles)
             ->map(fn ($station) => trim((string) $station))
             ->filter()
             ->unique()
+            ->sort()
             ->values()
             ->all();
     }
@@ -483,8 +513,7 @@ class GuardDutyService
      */
     public function serializeAdminShift(GuardDutyShift $shift): array
     {
-        $user = $shift->guardUser;
-        $profile = $shift->guardProfile;
+        $identity = $this->resolveGuardIdentity($shift);
         $isActive = $shift->isActive();
         $clockIn = $this->asManila($shift->clock_in_at);
         $clockOut = $this->asManila($shift->clock_out_at);
@@ -494,10 +523,11 @@ class GuardDutyService
         return [
             'shift_id' => (int) $shift->shift_id,
             'guard' => [
-                'user_id' => (int) $shift->guard_user_id,
-                'name' => $this->displayName($user),
-                'badge_number' => $profile->badge_number ?? null,
-                'station' => $profile->station ?? null,
+                'id' => $identity['personnel_id'],
+                'user_id' => $identity['user_id'],
+                'name' => $identity['name'],
+                'badge_number' => $identity['badge_number'],
+                'station' => $identity['station'],
             ],
             'clock_in_at' => $clockIn?->format('Y-m-d\TH:i:s'),
             'clock_out_at' => $isActive ? null : $clockOut?->format('Y-m-d\TH:i:s'),
@@ -658,13 +688,20 @@ class GuardDutyService
         return null;
     }
 
-    protected function createShift(int $guardUserId, int $kioskUserId, ?string $ipAddress, ?Carbon $now = null): GuardDutyShift
-    {
+    protected function createShift(
+        int $guardPersonnelId,
+        int $kioskUserId,
+        ?string $ipAddress,
+        string $station,
+        ?Carbon $now = null
+    ): GuardDutyShift {
         $now ??= $this->now();
 
         return GuardDutyShift::query()->create([
-            'guard_user_id' => $guardUserId,
+            'guard_user_id' => null,
+            'guard_personnel_id' => $guardPersonnelId,
             'kiosk_user_id' => $kioskUserId,
+            'station' => $station,
             'clock_in_at' => $now,
             'clock_out_at' => null,
             'clock_in_ip' => $ipAddress,
@@ -672,67 +709,95 @@ class GuardDutyService
         ]);
     }
 
+    protected function findActivePersonnel(int $guardPersonnelId): ?GuardPersonnel
+    {
+        $personnel = GuardPersonnel::query()->find($guardPersonnelId);
+
+        if (! $personnel || ! $personnel->isActive()) {
+            return null;
+        }
+
+        return $personnel;
+    }
+
+    /**
+     * @return array{personnel_id: int|null, user_id: int|null, name: string, badge_number: mixed, station: mixed}
+     */
+    protected function resolveGuardIdentity(GuardDutyShift $shift): array
+    {
+        $personnel = $shift->guardPersonnel;
+        $user = $shift->guardUser;
+        $profile = $shift->guardProfile;
+        $station = trim((string) ($shift->station ?? ''));
+
+        if ($personnel) {
+            return [
+                'personnel_id' => (int) $personnel->guard_personnel_id,
+                'user_id' => $shift->guard_user_id ? (int) $shift->guard_user_id : null,
+                'name' => $personnel->displayName(),
+                'badge_number' => $personnel->badge_number,
+                'station' => $station !== '' ? $station : self::DEFAULT_STATION,
+            ];
+        }
+
+        if ($station === '') {
+            $station = trim((string) ($profile->station ?? ''));
+        }
+
+        return [
+            'personnel_id' => $shift->guard_personnel_id ? (int) $shift->guard_personnel_id : null,
+            'user_id' => $shift->guard_user_id ? (int) $shift->guard_user_id : null,
+            'name' => $this->displayName($user),
+            'badge_number' => $profile->badge_number ?? null,
+            'station' => $station !== '' ? $station : self::DEFAULT_STATION,
+        ];
+    }
+
+    protected function shiftGuardName(GuardDutyShift $shift): string
+    {
+        return $this->resolveGuardIdentity($shift)['name'];
+    }
+
     protected function displayName(?User $user): string
     {
         return ActivityLogService::userDisplayName($user);
     }
 
-    protected function kioskLabel(?Guard $guard): string
+    protected function normalizeStation(?string $station): string
     {
-        $station = $this->stationLabel($guard);
+        $trimmed = trim((string) $station);
 
-        if ($station === 'Self-Registration kiosk') {
-            return $station;
-        }
-
-        return $station.' Self-Registration kiosk';
+        return $trimmed !== '' ? $trimmed : self::DEFAULT_STATION;
     }
 
-    protected function stationLabel(?Guard $guard): string
+    protected function logDutyStarted(GuardPersonnel $personnel, GuardDutyShift $shift, int $kioskUserId): void
     {
-        $station = trim((string) ($guard->station ?? ''));
-
-        return $station !== '' ? $station : 'Self-Registration kiosk';
-    }
-
-    protected function rateLimitIdentity(?User $user): string
-    {
-        $email = strtolower(trim((string) ($user->email ?? '')));
-
-        if ($email !== '') {
-            return $email;
-        }
-
-        return 'user:'.(int) ($user->user_id ?? 0);
-    }
-
-    protected function logDutyStarted(User $user, Guard $guard, GuardDutyShift $shift, int $kioskUserId): void
-    {
-        $name = $this->displayName($user);
+        $name = $personnel->displayName();
+        $station = $this->normalizeStation($shift->station);
 
         ActivityLogService::log(
             action: 'Guard Duty Started',
             module: 'Guard Duty',
-            description: $name.' was assigned as the guard on duty for the '.$this->kioskLabel($guard).'.',
+            description: 'Guard duty started: '.$name.' (Badge '.$personnel->badge_number.') at '.$station.'.',
             entityType: 'GuardDutyShift',
             entityId: (int) $shift->shift_id,
             newValues: [
                 'shift_id' => (int) $shift->shift_id,
-                'guard_user_id' => (int) $user->user_id,
+                'guard_personnel_id' => (int) $personnel->guard_personnel_id,
                 'guard_name' => $name,
-                'badge_number' => $guard->badge_number,
-                'station' => $guard->station,
+                'badge_number' => $personnel->badge_number,
+                'station' => $station,
                 'kiosk_user_id' => $kioskUserId,
                 'clock_in_at' => optional($shift->clock_in_at)?->toDateTimeString(),
-            ],
-            userId: (int) $user->user_id
+            ]
         );
     }
 
     protected function logDutyEnded(GuardDutyShift $shift, int $kioskUserId, mixed $clockOutAt = null): void
     {
-        $name = $this->displayName($shift->guardUser);
-        $station = $this->stationLabel($shift->guardProfile);
+        $identity = $this->resolveGuardIdentity($shift);
+        $name = $identity['name'];
+        $station = $identity['station'] ?: self::DEFAULT_STATION;
         $clockOut = $clockOutAt instanceof Carbon
             ? $clockOutAt
             : ($clockOutAt ? Carbon::parse($clockOutAt, 'Asia/Manila') : $this->now());
@@ -740,21 +805,24 @@ class GuardDutyService
         ActivityLogService::log(
             action: 'Guard Duty Ended',
             module: 'Guard Duty',
-            description: $name.' ended duty at the '.$station.'.',
+            description: 'Guard duty ended: '.$name
+                .($identity['badge_number'] ? ' (Badge '.$identity['badge_number'].')' : '')
+                .' at '.$station.'.',
             entityType: 'GuardDutyShift',
             entityId: (int) $shift->shift_id,
             oldValues: [
                 'shift_id' => (int) $shift->shift_id,
-                'guard_user_id' => (int) $shift->guard_user_id,
+                'guard_personnel_id' => $identity['personnel_id'],
+                'guard_user_id' => $identity['user_id'],
                 'guard_name' => $name,
-                'station' => $shift->guardProfile?->station,
+                'badge_number' => $identity['badge_number'],
+                'station' => $station,
                 'kiosk_user_id' => $kioskUserId,
                 'clock_in_at' => optional($shift->clock_in_at)?->toDateTimeString(),
             ],
             newValues: [
                 'clock_out_at' => $clockOut->toDateTimeString(),
-            ],
-            userId: (int) $shift->guard_user_id
+            ]
         );
     }
 
@@ -762,89 +830,72 @@ class GuardDutyService
         string $previousName,
         string $newName,
         GuardDutyShift $shift,
-        int $kioskUserId,
-        ?Guard $newGuard = null
+        int $kioskUserId
     ): void {
-        $station = $this->stationLabel($newGuard ?: $shift->guardProfile);
+        $identity = $this->resolveGuardIdentity($shift);
+        $station = $identity['station'] ?: self::DEFAULT_STATION;
 
         ActivityLogService::log(
             action: 'Guard Changed',
             module: 'Guard Duty',
-            description: 'Guard duty changed from '.$previousName.' to '.$newName.' at the '.$station.'.',
+            description: 'Guard duty changed from '.$previousName.' to '.$newName.' at '.$station.'.',
             entityType: 'GuardDutyShift',
             entityId: (int) $shift->shift_id,
             newValues: [
                 'shift_id' => (int) $shift->shift_id,
                 'previous_guard_name' => $previousName,
                 'new_guard_name' => $newName,
-                'station' => $newGuard?->station ?? $shift->guardProfile?->station,
+                'guard_personnel_id' => $identity['personnel_id'],
+                'station' => $station,
                 'kiosk_user_id' => $kioskUserId,
                 'clock_in_at' => optional($shift->clock_in_at)?->toDateTimeString(),
-            ],
-            userId: (int) $shift->guard_user_id
+            ]
         );
     }
 
-    protected function logFailedAuthentication(string $email): void
+    protected function logFailedPinVerification(?GuardPersonnel $personnel, int $guardPersonnelId): void
     {
+        $label = $personnel
+            ? $personnel->displayName()
+            : ($guardPersonnelId > 0 ? 'Guard #'.$guardPersonnelId : 'an unknown guard');
+
         ActivityLogService::log(
-            action: 'Failed Login',
+            action: 'Failed Duty PIN Verification',
             module: 'Guard Duty',
-            description: 'Failed guard on-duty authentication attempt for '.$email.'.',
-            entityType: 'User',
+            description: 'Failed duty PIN verification for '.$label.'.',
+            entityType: 'GuardPersonnel',
+            entityId: $personnel?->guard_personnel_id ?: ($guardPersonnelId > 0 ? $guardPersonnelId : null),
             status: ActivityLogService::STATUS_FAILED,
             userId: null
         );
     }
 
-    protected function passwordMatches(User $user, string $inputPassword): bool
+    protected function rateLimitKey(string $identity, ?string $ipAddress): string
     {
-        $stored = (string) ($user->getAttributes()['password_hash'] ?? '');
-
-        if ($stored === '') {
-            return false;
-        }
-
-        if (str_starts_with($stored, '$')) {
-            return Hash::check($inputPassword, $stored);
-        }
-
-        return hash_equals($stored, $inputPassword);
+        return 'guard-duty-pin:'.strtolower(trim($identity)).'|'.($ipAddress ?: 'unknown');
     }
 
-    protected function isAccountActive(User $user): bool
+    protected function assertNotRateLimited(string $identity, ?string $ipAddress): void
     {
-        $status = strtolower(trim((string) ($user->status ?? 'active')));
-
-        return ! in_array($status, ['inactive', 'disabled', 'suspended', 'recycle_bin', 'deleted'], true);
-    }
-
-    protected function rateLimitKey(string $email, ?string $ipAddress): string
-    {
-        return 'guard-duty-auth:'.strtolower(trim($email)).'|'.($ipAddress ?: 'unknown');
-    }
-
-    protected function assertNotRateLimited(string $email, ?string $ipAddress): void
-    {
-        $key = $this->rateLimitKey($email, $ipAddress);
-        $ipKey = 'guard-duty-auth-ip:'.($ipAddress ?: 'unknown');
+        $key = $this->rateLimitKey($identity, $ipAddress);
+        $ipKey = 'guard-duty-pin-ip:'.($ipAddress ?: 'unknown');
 
         if (RateLimiter::tooManyAttempts($key, 5) || RateLimiter::tooManyAttempts($ipKey, 10)) {
             throw ValidationException::withMessages([
-                'email' => self::RATE_LIMIT_MESSAGE,
+                'duty_pin' => self::RATE_LIMIT_MESSAGE,
             ]);
         }
     }
 
-    protected function hitRateLimiter(string $email, ?string $ipAddress): void
+    protected function hitRateLimiter(string $identity, ?string $ipAddress): void
     {
-        RateLimiter::hit($this->rateLimitKey($email, $ipAddress), 15 * 60);
-        RateLimiter::hit('guard-duty-auth-ip:'.($ipAddress ?: 'unknown'), 15 * 60);
+        RateLimiter::hit($this->rateLimitKey($identity, $ipAddress), 5 * 60);
+        RateLimiter::hit('guard-duty-pin-ip:'.($ipAddress ?: 'unknown'), 5 * 60);
     }
 
-    protected function clearRateLimiter(string $email, ?string $ipAddress): void
+    protected function clearRateLimiter(string $identity, ?string $ipAddress): void
     {
-        RateLimiter::clear($this->rateLimitKey($email, $ipAddress));
+        RateLimiter::clear($this->rateLimitKey($identity, $ipAddress));
     }
 
     protected function now(): Carbon

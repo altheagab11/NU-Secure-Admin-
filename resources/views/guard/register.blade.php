@@ -3968,16 +3968,20 @@
 			color: #334155;
 		}
 
-		body.self-registration-mode .guard-duty-field input {
+		body.self-registration-mode .guard-duty-field input,
+		body.self-registration-mode .guard-duty-field select {
 			height: 44px;
 			border: 1px solid #dbe2ef;
 			border-radius: 12px;
 			padding: 0 14px;
 			font-size: 14px;
 			color: #0f172a;
+			background: #fff;
+			width: 100%;
 		}
 
-		body.self-registration-mode .guard-duty-field input:focus {
+		body.self-registration-mode .guard-duty-field input:focus,
+		body.self-registration-mode .guard-duty-field select:focus {
 			outline: none;
 			border-color: #243c96;
 			box-shadow: 0 0 0 3px rgba(36, 60, 150, 0.12);
@@ -6782,7 +6786,7 @@
 			<form id="guardDutyForm" autocomplete="off">
 				<div class="confirmation-modal-header">
 					<h2 class="confirmation-modal-title" id="guardDutyModalTitle">Set Guard on Duty</h2>
-					<p class="confirmation-modal-subtitle" id="guardDutyModalSubtitle">Sign in with an active guard account to assign the officer on duty.</p>
+					<p class="confirmation-modal-subtitle" id="guardDutyModalSubtitle">Select the security guard currently assigned and enter their Duty PIN.</p>
 				</div>
 				<div class="confirmation-modal-body">
 					<div class="guard-duty-current is-hidden" id="guardDutyCurrentWrap">
@@ -6791,18 +6795,28 @@
 						<small id="guardDutyCurrentSince">Since —</small>
 					</div>
 					<div class="guard-duty-field">
-						<label for="guardDutyEmail" id="guardDutyEmailLabel">Email / Guard Account</label>
-						<input id="guardDutyEmail" name="email" type="email" required maxlength="255" autocomplete="username">
+						<label for="guardDutyPersonnel">Security Guard *</label>
+						<select id="guardDutyPersonnel" name="guard_personnel_id" required>
+							<option value="">Select Security Guard</option>
+						</select>
 					</div>
 					<div class="guard-duty-field">
-						<label for="guardDutyPassword">Password</label>
-						<input id="guardDutyPassword" name="password" type="password" required maxlength="255" autocomplete="current-password">
+						<label for="guardDutyPin">Duty PIN *</label>
+						<input id="guardDutyPin" name="duty_pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+					</div>
+					<div class="guard-duty-field">
+						<label for="guardDutyStation">Station</label>
+						<input id="guardDutyStation" name="station" type="text" value="Lobby" readonly>
+					</div>
+					<div class="guard-duty-field">
+						<label>Current Date &amp; Time</label>
+						<input type="text" value="Automatically recorded" readonly>
 					</div>
 					<p class="guard-duty-error" id="guardDutyError" role="alert"></p>
 				</div>
 				<div class="confirmation-modal-footer">
 					<button type="button" class="confirmation-modal-btn secondary" id="guardDutyCancelBtn">Cancel</button>
-					<button type="submit" class="confirmation-modal-btn primary" id="guardDutySubmitBtn">Confirm</button>
+					<button type="submit" class="confirmation-modal-btn primary" id="guardDutySubmitBtn">Confirm Duty</button>
 				</div>
 			</form>
 		</div>
@@ -6814,8 +6828,8 @@
 		<div class="confirmation-modal-card">
 			<form id="endDutyForm" autocomplete="off">
 				<div class="confirmation-modal-header">
-					<h2 class="confirmation-modal-title" id="endDutyModalTitle">End Guard Duty</h2>
-					<p class="confirmation-modal-subtitle">The current guard must confirm their password before this shift can be closed.</p>
+					<h2 class="confirmation-modal-title" id="endDutyModalTitle">End Duty</h2>
+					<p class="confirmation-modal-subtitle">Enter the current guard's Duty PIN to confirm ending this shift.</p>
 				</div>
 				<div class="confirmation-modal-body">
 					<div class="end-duty-profile" id="endDutyProfile">
@@ -6832,14 +6846,14 @@
 						Visitor self-registration will be temporarily disabled until another guard is assigned.
 					</p>
 					<div class="guard-duty-field">
-						<label for="endDutyPassword">Password</label>
-						<input id="endDutyPassword" name="password" type="password" required maxlength="255" autocomplete="current-password">
+						<label for="endDutyPin">Enter Duty PIN to confirm</label>
+						<input id="endDutyPin" name="duty_pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
 					</div>
 					<p class="guard-duty-error" id="endDutyError" role="alert"></p>
 				</div>
 				<div class="confirmation-modal-footer">
 					<button type="button" class="confirmation-modal-btn secondary" id="endDutyCancelBtn">Cancel</button>
-					<button type="submit" class="confirmation-modal-btn danger" id="endDutySubmitBtn">Confirm End Duty</button>
+					<button type="submit" class="confirmation-modal-btn danger" id="endDutySubmitBtn">End Duty</button>
 				</div>
 			</form>
 		</div>
@@ -6848,12 +6862,12 @@
 	<div class="confirmation-modal is-hidden" id="logoutDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="logoutDutyModalTitle">
 		<div class="confirmation-modal-card">
 			<div class="confirmation-modal-header">
-				<h2 class="confirmation-modal-title" id="logoutDutyModalTitle">You are currently marked as the Guard on Duty.</h2>
+				<h2 class="confirmation-modal-title" id="logoutDutyModalTitle">A guard is currently on duty.</h2>
 				<p class="confirmation-modal-subtitle">What would you like to do?</p>
 			</div>
 			<div class="confirmation-modal-body">
 				<p class="end-duty-warning">
-					Logout Only keeps the current shift active. End Duty &amp; Logout closes the shift and then signs this kiosk out.
+					Logout Only keeps the current shift active. End Duty &amp; Logout closes the shift and then signs this station out.
 				</p>
 			</div>
 			<div class="confirmation-modal-footer is-choice">
@@ -6940,7 +6954,7 @@
 								<div class="kiosk-guard-duty-copy">
 									<p class="kiosk-guard-duty-label">Guard on Duty</p>
 									<h3 class="kiosk-guard-duty-name">No Guard Currently Assigned</h3>
-									<p>Visitor self-registration is temporarily unavailable until a security guard is assigned.</p>
+									<p>Select the security guard currently assigned before enabling visitor self-registration.</p>
 								</div>
 								<div class="kiosk-guard-duty-side">
 									<button type="button" class="kiosk-guard-duty-btn" id="kioskSetGuardBtn">Set Guard on Duty</button>
@@ -6955,20 +6969,19 @@
 									<h3 class="kiosk-guard-duty-name" id="kioskGuardDutyName">{{ $activeGuardName !== '' ? $activeGuardName : 'Security Guard' }}</h3>
 									<p class="kiosk-guard-duty-meta" id="kioskGuardDutyMeta">
 										@if ($hasActiveGuard)
-											Security Guard{{ $activeGuardBadge !== '' ? ' • Badge '.$activeGuardBadge : '' }}
+											Badge No. {{ $activeGuardBadge !== '' ? $activeGuardBadge : '—' }} • {{ $activeGuardStation !== '' ? $activeGuardStation : 'Lobby' }}
 										@endif
 									</p>
 									<p class="kiosk-guard-duty-meta" id="kioskGuardDutyStation">
 										@if ($hasActiveGuard)
-											{{ $activeGuardStation !== '' ? $activeGuardStation : 'Self-Registration' }}
+											Security personnel is currently available.
 										@endif
 									</p>
 								</div>
 								<div class="kiosk-guard-duty-side">
 									<span class="kiosk-guard-duty-status">ON DUTY</span>
-									<p class="kiosk-guard-duty-since" id="kioskGuardDutySince">{{ $hasActiveGuard && $activeGuardSince ? 'Since '.$activeGuardSince : '' }}</p>
+									<p class="kiosk-guard-duty-since" id="kioskGuardDutySince">{{ $hasActiveGuard && $activeGuardSince ? 'Duty started: '.$activeGuardSince : '' }}</p>
 									<div class="kiosk-guard-duty-actions">
-										<button type="button" class="kiosk-guard-duty-btn secondary" id="kioskChangeGuardBtn">Change Guard</button>
 										<button type="button" class="kiosk-guard-duty-btn danger" id="kioskEndDutyBtn">End Duty</button>
 									</div>
 								</div>
@@ -7894,6 +7907,7 @@
 		(() => {
 			const urls = {
 				current: @json(route('self-registration.guard-on-duty')),
+				available: @json(route('self-registration.available-guards')),
 				assign: @json(route('self-registration.guard-on-duty.assign')),
 				change: @json(route('self-registration.guard-on-duty.change')),
 				end: @json(route('self-registration.guard-on-duty.end')),
@@ -7912,9 +7926,9 @@
 			const form = document.getElementById('guardDutyForm');
 			const titleEl = document.getElementById('guardDutyModalTitle');
 			const subtitleEl = document.getElementById('guardDutyModalSubtitle');
-			const emailLabel = document.getElementById('guardDutyEmailLabel');
-			const emailInput = document.getElementById('guardDutyEmail');
-			const passwordInput = document.getElementById('guardDutyPassword');
+			const personnelSelect = document.getElementById('guardDutyPersonnel');
+			const pinInput = document.getElementById('guardDutyPin');
+			const stationInput = document.getElementById('guardDutyStation');
 			const errorEl = document.getElementById('guardDutyError');
 			const submitBtn = document.getElementById('guardDutySubmitBtn');
 			const currentWrap = document.getElementById('guardDutyCurrentWrap');
@@ -7922,7 +7936,7 @@
 			const currentSinceEl = document.getElementById('guardDutyCurrentSince');
 			const endDutyModal = document.getElementById('endDutyModal');
 			const endDutyForm = document.getElementById('endDutyForm');
-			const endDutyPassword = document.getElementById('endDutyPassword');
+			const endDutyPin = document.getElementById('endDutyPin');
 			const endDutyError = document.getElementById('endDutyError');
 			const endDutySubmitBtn = document.getElementById('endDutySubmitBtn');
 			const endDutyGuardName = document.getElementById('endDutyGuardName');
@@ -7935,6 +7949,7 @@
 			let modalMode = 'assign';
 			let currentShift = null;
 			let logoutAfterEnd = false;
+			let isSubmittingDuty = false;
 
 			const syncKioskTypeHeaderOffset = () => {
 				if (!document.body.classList.contains('kiosk-type-select')) {
@@ -7978,7 +7993,7 @@
 				});
 			};
 
-			const clearPasswordField = (input) => {
+			const clearPinField = (input) => {
 				if (input) {
 					input.value = '';
 				}
@@ -8016,22 +8031,20 @@
 
 				const guard = currentShift.guard || {};
 				const badge = String(guard.badge_number || '').trim();
-				const station = String(guard.station || '').trim();
+				const station = String(guard.station || '').trim() || 'Lobby';
 				const since = formatDutySince(currentShift.clock_in_at);
 
 				if (nameEl) {
 					nameEl.textContent = guard.name || 'Security Guard';
 				}
 				if (metaEl) {
-					metaEl.textContent = badge !== ''
-						? `Security Guard • Badge ${badge}`
-						: 'Security Guard';
+					metaEl.textContent = `Badge No. ${badge !== '' ? badge : '—'} • ${station}`;
 				}
 				if (stationEl) {
-					stationEl.textContent = station !== '' ? station : 'Self-Registration';
+					stationEl.textContent = 'Security personnel is currently available.';
 				}
 				if (sinceEl) {
-					sinceEl.textContent = since ? `Since ${since}` : '';
+					sinceEl.textContent = since ? `Duty started: ${since}` : '';
 				}
 			};
 
@@ -8041,15 +8054,19 @@
 				}
 			};
 
-			const setModalBusy = (busy) => {
+			const setModalBusy = (busy, label) => {
+				isSubmittingDuty = busy;
 				if (submitBtn) {
 					submitBtn.disabled = busy;
+					submitBtn.textContent = busy
+						? (label || 'Starting duty...')
+						: (modalMode === 'change' ? 'Confirm Guard Change' : 'Confirm Duty');
 				}
-				if (emailInput) {
-					emailInput.disabled = busy;
+				if (personnelSelect) {
+					personnelSelect.disabled = busy;
 				}
-				if (passwordInput) {
-					passwordInput.disabled = busy;
+				if (pinInput) {
+					pinInput.disabled = busy;
 				}
 			};
 
@@ -8062,9 +8079,10 @@
 			const setEndDutyBusy = (busy) => {
 				if (endDutySubmitBtn) {
 					endDutySubmitBtn.disabled = busy;
+					endDutySubmitBtn.textContent = busy ? 'Ending duty...' : 'End Duty';
 				}
-				if (endDutyPassword) {
-					endDutyPassword.disabled = busy;
+				if (endDutyPin) {
+					endDutyPin.disabled = busy;
 				}
 			};
 
@@ -8078,11 +8096,54 @@
 				el?.setAttribute('aria-hidden', 'true');
 			};
 
-			const openModal = (mode) => {
+			const populateAvailableGuards = async () => {
+				if (!personnelSelect) {
+					return;
+				}
+
+				personnelSelect.innerHTML = '<option value="">Loading guards...</option>';
+				personnelSelect.disabled = true;
+
+				try {
+					const response = await fetch(urls.available, {
+						headers: { 'Accept': 'application/json' },
+						credentials: 'same-origin',
+					});
+					const payload = await response.json().catch(() => ({}));
+					const guards = Array.isArray(payload.data) ? payload.data : [];
+
+					personnelSelect.innerHTML = '<option value="">Select Security Guard</option>';
+
+					if (guards.length === 0) {
+						setModalError(payload.message || 'No active security guards are available. Please contact the administrator.');
+						personnelSelect.disabled = true;
+						return;
+					}
+
+					guards.forEach((guard) => {
+						const option = document.createElement('option');
+						option.value = String(guard.id);
+						option.textContent = `${guard.full_name} — Badge ${guard.badge_number}`;
+						personnelSelect.appendChild(option);
+					});
+
+					personnelSelect.disabled = false;
+					setModalError('');
+				} catch (error) {
+					personnelSelect.innerHTML = '<option value="">Select Security Guard</option>';
+					personnelSelect.disabled = true;
+					setModalError('Unable to load security guards. Please try again.');
+				}
+			};
+
+			const openModal = async (mode) => {
 				modalMode = mode;
 				setModalError('');
 				if (form) {
 					form.reset();
+				}
+				if (stationInput) {
+					stationInput.value = 'Lobby';
 				}
 
 				const isChange = mode === 'change';
@@ -8091,14 +8152,11 @@
 				}
 				if (subtitleEl) {
 					subtitleEl.textContent = isChange
-						? 'The incoming guard must authenticate before taking over this kiosk.'
-						: 'Sign in with an active guard account to assign the officer on duty.';
-				}
-				if (emailLabel) {
-					emailLabel.textContent = isChange ? 'New Guard Email' : 'Email / Guard Account';
+						? 'Select the incoming security guard and enter their Duty PIN.'
+						: 'Select the security guard currently assigned and enter their Duty PIN.';
 				}
 				if (submitBtn) {
-					submitBtn.textContent = isChange ? 'Confirm Guard Change' : 'Confirm';
+					submitBtn.textContent = isChange ? 'Confirm Guard Change' : 'Confirm Duty';
 				}
 
 				currentWrap?.classList.toggle('is-hidden', !isChange);
@@ -8113,7 +8171,8 @@
 				}
 
 				openModalEl(modal);
-				window.setTimeout(() => emailInput?.focus(), 50);
+				await populateAvailableGuards();
+				window.setTimeout(() => personnelSelect?.focus(), 50);
 			};
 
 			const closeModal = () => {
@@ -8121,12 +8180,15 @@
 				setModalBusy(false);
 				setModalError('');
 				form?.reset();
+				if (stationInput) {
+					stationInput.value = 'Lobby';
+				}
 			};
 
 			const populateEndDutyModal = (shift) => {
 				const guard = shift?.guard || {};
 				const badge = String(guard.badge_number || '').trim();
-				const station = String(guard.station || '').trim();
+				const station = String(guard.station || '').trim() || 'Lobby';
 				const since = formatDutySince(shift?.clock_in_at);
 
 				if (endDutyGuardName) {
@@ -8136,7 +8198,7 @@
 					endDutyGuardBadge.textContent = badge !== '' ? `Badge No. ${badge}` : 'Badge No. —';
 				}
 				if (endDutyGuardStation) {
-					endDutyGuardStation.textContent = station !== '' ? station : 'Self-Registration';
+					endDutyGuardStation.textContent = station;
 				}
 				if (endDutyStartedAt) {
 					endDutyStartedAt.textContent = since || '—';
@@ -8147,11 +8209,11 @@
 				logoutAfterEnd = afterLogout;
 				setEndDutyError('');
 				endDutyForm?.reset();
-				clearPasswordField(endDutyPassword);
+				clearPinField(endDutyPin);
 				populateEndDutyModal(currentShift);
 				closeModalEl(logoutDutyModal);
 				openModalEl(endDutyModal);
-				window.setTimeout(() => endDutyPassword?.focus(), 50);
+				window.setTimeout(() => endDutyPin?.focus(), 50);
 			};
 
 			const closeEndDutyModal = () => {
@@ -8159,7 +8221,7 @@
 				setEndDutyBusy(false);
 				setEndDutyError('');
 				endDutyForm?.reset();
-				clearPasswordField(endDutyPassword);
+				clearPinField(endDutyPin);
 				logoutAfterEnd = false;
 			};
 
@@ -8187,37 +8249,51 @@
 
 			const submitGuardDuty = async (event) => {
 				event.preventDefault();
-				setModalError('');
-
-				const email = String(emailInput?.value || '').trim();
-				const password = String(passwordInput?.value || '');
-
-				if (!email || !password) {
-					setModalError('Email and password are required.');
+				if (isSubmittingDuty) {
 					return;
 				}
 
-				setModalBusy(true);
+				setModalError('');
+
+				const guardPersonnelId = Number(personnelSelect?.value || 0);
+				const dutyPin = String(pinInput?.value || '').trim();
+				const station = String(stationInput?.value || 'Lobby').trim() || 'Lobby';
+
+				if (!guardPersonnelId) {
+					setModalError('Please select a security guard.');
+					return;
+				}
+
+				if (!/^\d{6}$/.test(dutyPin)) {
+					setModalError('Duty PIN must be exactly 6 digits.');
+					return;
+				}
+
+				setModalBusy(true, 'Verifying...');
 
 				try {
 					const response = await fetch(modalMode === 'change' ? urls.change : urls.assign, {
 						method: 'POST',
 						headers: csrfHeaders(),
 						credentials: 'same-origin',
-						body: JSON.stringify({ email, password }),
+						body: JSON.stringify({
+							guard_personnel_id: guardPersonnelId,
+							duty_pin: dutyPin,
+							station,
+						}),
 					});
 					const payload = await response.json().catch(() => ({}));
 
 					if (!response.ok || payload.success === false) {
-						throw new Error(payload.message || 'Invalid guard credentials.');
+						throw new Error(payload.message || 'Incorrect Duty PIN. Please verify your PIN and try again.');
 					}
 
 					renderGuardState(payload);
 					closeModal();
 				} catch (error) {
-					setModalError(error?.message || 'Invalid guard credentials.');
-					clearPasswordField(passwordInput);
-					passwordInput?.focus();
+					setModalError(error?.message || 'Incorrect Duty PIN. Please verify your PIN and try again.');
+					clearPinField(pinInput);
+					pinInput?.focus();
 				} finally {
 					setModalBusy(false);
 				}
@@ -8227,9 +8303,9 @@
 				event.preventDefault();
 				setEndDutyError('');
 
-				const password = String(endDutyPassword?.value || '');
-				if (!password) {
-					setEndDutyError('Password is required.');
+				const dutyPin = String(endDutyPin?.value || '').trim();
+				if (!/^\d{6}$/.test(dutyPin)) {
+					setEndDutyError('Duty PIN must be exactly 6 digits.');
 					return;
 				}
 
@@ -8240,12 +8316,12 @@
 						method: 'POST',
 						headers: csrfHeaders(),
 						credentials: 'same-origin',
-						body: JSON.stringify({ password }),
+						body: JSON.stringify({ duty_pin: dutyPin }),
 					});
 					const payload = await response.json().catch(() => ({}));
 
 					if (!response.ok || payload.success === false) {
-						throw new Error(payload.message || 'Invalid guard credentials.');
+						throw new Error(payload.message || 'Incorrect Duty PIN. Please verify your PIN and try again.');
 					}
 
 					renderGuardState(payload);
@@ -8256,9 +8332,9 @@
 						submitLogoutForm();
 					}
 				} catch (error) {
-					setEndDutyError(error?.message || 'Invalid guard credentials.');
-					clearPasswordField(endDutyPassword);
-					endDutyPassword?.focus();
+					setEndDutyError(error?.message || 'Incorrect Duty PIN. Please verify your PIN and try again.');
+					clearPinField(endDutyPin);
+					endDutyPin?.focus();
 				} finally {
 					setEndDutyBusy(false);
 				}
@@ -8284,7 +8360,6 @@
 			};
 
 			document.getElementById('kioskSetGuardBtn')?.addEventListener('click', () => openModal('assign'));
-			document.getElementById('kioskChangeGuardBtn')?.addEventListener('click', () => openModal('change'));
 			document.getElementById('kioskEndDutyBtn')?.addEventListener('click', () => openEndDutyModal(false));
 			document.getElementById('guardDutyCancelBtn')?.addEventListener('click', closeModal);
 			document.getElementById('endDutyCancelBtn')?.addEventListener('click', closeEndDutyModal);
@@ -8297,6 +8372,11 @@
 			logoutBtn?.addEventListener('click', handleLogoutClick);
 			form?.addEventListener('submit', submitGuardDuty);
 			endDutyForm?.addEventListener('submit', submitEndDuty);
+			[pinInput, endDutyPin].forEach((input) => {
+				input?.addEventListener('input', () => {
+					input.value = input.value.replace(/\D/g, '').slice(0, 6);
+				});
+			});
 			modal?.addEventListener('click', (event) => {
 				if (event.target === modal) {
 					closeModal();

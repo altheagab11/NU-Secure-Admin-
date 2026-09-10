@@ -150,7 +150,7 @@ class AdminGuardDutyController extends Controller
     protected function findShift(int $shiftId): ?GuardDutyShift
     {
         return GuardDutyShift::query()
-            ->with(['guardUser', 'guardProfile'])
+            ->with(['guardUser', 'guardProfile', 'guardPersonnel'])
             ->withCount('visits')
             ->find($shiftId);
     }

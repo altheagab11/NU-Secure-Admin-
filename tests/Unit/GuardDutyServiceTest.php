@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Exceptions\GuardDutyUnavailableException;
 use App\Http\Controllers\GuardDutyController;
 use App\Models\GuardDutyShift;
+use App\Models\GuardPersonnel;
 use App\Models\User;
 use App\Models\Visit;
 use App\Services\GuardDutyService;
@@ -31,11 +32,14 @@ class GuardDutyServiceTest extends TestCase
         $shift = new GuardDutyShift;
         $visit = new Visit;
         $user = new User;
+        $personnel = new GuardPersonnel;
 
         $this->assertInstanceOf(HasMany::class, $shift->visits());
         $this->assertSame('duty_shift_id', $shift->visits()->getForeignKeyName());
         $this->assertInstanceOf(BelongsTo::class, $visit->dutyShift());
         $this->assertInstanceOf(BelongsTo::class, $visit->onDutyGuard());
+        $this->assertInstanceOf(BelongsTo::class, $shift->guardPersonnel());
+        $this->assertInstanceOf(HasMany::class, $personnel->dutyShifts());
         $this->assertInstanceOf(HasMany::class, $user->dutyShifts());
     }
 
@@ -50,7 +54,7 @@ class GuardDutyServiceTest extends TestCase
             'No security guard is currently assigned. Please contact the security desk.',
             GuardDutyUnavailableException::missing()->getMessage()
         );
-        $this->assertSame('Invalid guard credentials.', GuardDutyService::INVALID_CREDENTIALS_MESSAGE);
+        $this->assertSame('Incorrect Duty PIN. Please verify your PIN and try again.', GuardDutyService::INVALID_CREDENTIALS_MESSAGE);
         $this->assertSame('No active guard duty shift was found.', GuardDutyService::NO_ACTIVE_SHIFT_MESSAGE);
     }
 

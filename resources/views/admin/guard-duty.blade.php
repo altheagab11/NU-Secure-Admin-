@@ -652,6 +652,9 @@
 				</div>
 				<div class="refresh-meta">
 					<span id="lastUpdatedLabel">Last updated: just now</span>
+					<a href="{{ route('admin.guard-personnel') }}" class="btn btn-primary btn-sm">
+						<i class="bi bi-people-fill me-1"></i> Manage Guards
+					</a>
 					<button type="button" class="btn btn-outline-primary btn-sm" id="refreshDutyBtn">
 						<i class="bi bi-arrow-clockwise me-1"></i> Refresh
 					</button>
