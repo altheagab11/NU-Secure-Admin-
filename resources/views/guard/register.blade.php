@@ -484,6 +484,10 @@
 			font-weight: 700;
 			cursor: pointer;
 			min-width: 118px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
 		}
 
 		.confirmation-modal-btn.secondary {
@@ -498,6 +502,287 @@
 
 		.confirmation-modal-btn:hover {
 			filter: brightness(0.97);
+		}
+
+		.photo-consent-modal-card {
+			width: min(100%, 560px);
+			background: #ffffff;
+			border-radius: 20px;
+			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+			overflow: hidden;
+			border: 1px solid rgba(148, 163, 184, 0.2);
+		}
+
+		.photo-consent-header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 16px;
+			padding: 22px 24px 8px;
+		}
+
+		.photo-consent-header-main {
+			display: flex;
+			align-items: flex-start;
+			gap: 14px;
+			min-width: 0;
+		}
+
+		.photo-consent-icon {
+			flex: 0 0 48px;
+			width: 48px;
+			height: 48px;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #e8f1ff;
+			border: 1px solid #d6e6ff;
+			color: #1d4ed8;
+			font-size: 1.25rem;
+		}
+
+		.photo-consent-heading {
+			min-width: 0;
+		}
+
+		.photo-consent-heading h2 {
+			margin: 0;
+			font-size: 1.35rem;
+			font-weight: 800;
+			color: #0f172a;
+			letter-spacing: -0.02em;
+			line-height: 1.2;
+		}
+
+		.photo-consent-heading p {
+			margin: 8px 0 0;
+			font-size: 0.92rem;
+			line-height: 1.5;
+			color: #64748b;
+		}
+
+		.photo-consent-close {
+			flex: 0 0 auto;
+			width: 36px;
+			height: 36px;
+			border: 0;
+			border-radius: 10px;
+			background: transparent;
+			color: #94a3b8;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 1.15rem;
+			cursor: pointer;
+			transition: background 0.15s ease, color 0.15s ease;
+		}
+
+		.photo-consent-close:hover {
+			background: #f1f5f9;
+			color: #475569;
+		}
+
+		.photo-consent-body {
+			padding: 8px 24px 6px;
+		}
+
+		.photo-consent-preview-wrap {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 14px;
+			margin: 0 0 16px;
+		}
+
+		.photo-consent-preview {
+			width: min(100%, 420px);
+			aspect-ratio: 16 / 10;
+			object-fit: cover;
+			border-radius: 16px;
+			border: 1px solid #e2e8f0;
+			background: #0f172a;
+			box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+		}
+
+		.photo-consent-success {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 8px 14px;
+			border-radius: 999px;
+			background: #dcfce7;
+			color: #166534;
+			font-size: 0.86rem;
+			font-weight: 700;
+			line-height: 1;
+		}
+
+		.photo-consent-success-icon {
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #16a34a;
+			color: #ffffff;
+			font-size: 0.7rem;
+		}
+
+		.photo-consent-privacy {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 14px 16px;
+			border-radius: 14px;
+			background: #f1f5f9;
+			border: 1px solid #e2e8f0;
+		}
+
+		.photo-consent-privacy-icon {
+			flex: 0 0 42px;
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #1e3a8a;
+			color: #ffffff;
+			font-size: 1.05rem;
+		}
+
+		.photo-consent-privacy-divider {
+			flex: 0 0 1px;
+			align-self: stretch;
+			width: 1px;
+			background: #cbd5e1;
+		}
+
+		.photo-consent-privacy p {
+			margin: 0;
+			min-width: 0;
+			font-size: 0.86rem;
+			line-height: 1.45;
+			color: #334155;
+		}
+
+		.photo-consent-footer {
+			display: flex;
+			justify-content: flex-end;
+			flex-wrap: wrap;
+			gap: 12px;
+			padding: 18px 24px 24px;
+		}
+
+		.photo-consent-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-height: 46px;
+			padding: 11px 18px;
+			border-radius: 12px;
+			font-size: 0.95rem;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+		}
+
+		.photo-consent-btn-secondary {
+			border: 1.5px solid #cbd5e1;
+			background: #ffffff;
+			color: #1e293b;
+		}
+
+		.photo-consent-btn-secondary:hover {
+			background: #f8fafc;
+			border-color: #94a3b8;
+		}
+
+		.photo-consent-btn-primary {
+			border: 0;
+			background: #2563eb;
+			color: #ffffff;
+			box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+		}
+
+		.photo-consent-btn-primary:hover {
+			background: #1d4ed8;
+			transform: translateY(-1px);
+		}
+
+		@media (max-width: 560px) {
+			.photo-consent-header,
+			.photo-consent-body,
+			.photo-consent-footer {
+				padding-left: 16px;
+				padding-right: 16px;
+			}
+
+			.photo-consent-header-main {
+				gap: 10px;
+			}
+
+			.photo-consent-icon {
+				width: 42px;
+				height: 42px;
+				flex-basis: 42px;
+				font-size: 1.1rem;
+			}
+
+			.photo-consent-heading h2 {
+				font-size: 1.15rem;
+			}
+
+			.photo-consent-footer {
+				flex-direction: column-reverse;
+			}
+
+			.photo-consent-btn {
+				width: 100%;
+			}
+
+			.photo-consent-privacy {
+				align-items: flex-start;
+			}
+
+			.photo-consent-privacy-divider {
+				display: none;
+			}
+		}
+
+		.retake-capture-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-height: 48px;
+			padding: 10px 18px;
+			border-radius: 12px;
+			border: 1.5px solid #243c96;
+			background: #ffffff;
+			color: #243c96;
+			font-size: 14px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+		}
+
+		.retake-capture-btn:hover {
+			background: #243c96;
+			color: #ffffff;
+			box-shadow: 0 6px 16px rgba(36, 60, 150, 0.18);
+		}
+
+		.retake-capture-btn.is-hidden {
+			display: none !important;
+		}
+
+		body.self-registration-mode .retake-capture-btn {
+			min-height: 52px;
+			border-radius: 14px;
 		}
 
 		.menu {
@@ -1563,6 +1848,29 @@
 			overflow-wrap: anywhere;
 			color: #073f8c;
 			font-size: 15px;
+		}
+
+		.qr-success-route-copy {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			min-width: 0;
+			gap: 2px;
+		}
+
+		.qr-success-route-floor {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			color: #475569;
+			font-size: 12px;
+			font-weight: 600;
+			line-height: 1.3;
+		}
+
+		.qr-success-route-floor .bi {
+			font-size: 11px;
+			color: #0962c6;
 		}
 
 		.qr-success-route-arrow {
@@ -6780,6 +7088,53 @@
 		</div>
 	</div>
 
+	<div class="confirmation-modal is-hidden" id="photoConsentModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="photoConsentModalTitle">
+		<div class="photo-consent-modal-card">
+			<div class="photo-consent-header">
+				<div class="photo-consent-header-main">
+					<div class="photo-consent-icon" aria-hidden="true">
+						<i class="bi bi-camera-fill"></i>
+					</div>
+					<div class="photo-consent-heading">
+						<h2 id="photoConsentModalTitle">Confirm Your Photo</h2>
+						<p id="photoConsentModalSubtitle">Please review your captured photo before continuing. This photo will be used on your visitor pass for identity verification during your visit.</p>
+					</div>
+				</div>
+				<button type="button" class="photo-consent-close" id="photoConsentCloseBtn" aria-label="Close photo confirmation">
+					<i class="bi bi-x-lg" aria-hidden="true"></i>
+				</button>
+			</div>
+			<div class="photo-consent-body">
+				<div class="photo-consent-preview-wrap">
+					<img id="photoConsentPreview" class="photo-consent-preview" alt="Captured visitor photo preview">
+					<span class="photo-consent-success">
+						<span class="photo-consent-success-icon" aria-hidden="true">
+							<i class="bi bi-check-lg"></i>
+						</span>
+						Photo captured successfully
+					</span>
+				</div>
+				<div class="photo-consent-privacy">
+					<div class="photo-consent-privacy-icon" aria-hidden="true">
+						<i class="bi bi-shield-lock-fill"></i>
+					</div>
+					<span class="photo-consent-privacy-divider" aria-hidden="true"></span>
+					<p>Your photo may be viewed only by authorized campus security personnel for visitor identification and security purposes.</p>
+				</div>
+			</div>
+			<div class="photo-consent-footer">
+				<button type="button" class="photo-consent-btn photo-consent-btn-secondary" id="photoConsentRecaptureBtn">
+					<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+					Retake Photo
+				</button>
+				<button type="button" class="photo-consent-btn photo-consent-btn-primary" id="photoConsentConfirmBtn">
+					<i class="bi bi-check-lg" aria-hidden="true"></i>
+					Use This Photo
+				</button>
+			</div>
+		</div>
+	</div>
+
 	@if ($showKioskTypePicker)
 	<div class="confirmation-modal is-hidden" id="guardDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guardDutyModalTitle">
 		<div class="confirmation-modal-card">
@@ -7132,6 +7487,10 @@
 											<i class="bi bi-arrow-clockwise"></i>
 											<span id="scanActionText">Scan ID Card</span>
 										</button>
+										<button type="button" class="retake-capture-btn is-hidden" id="retakeCaptureBtn" aria-label="Recapture photo">
+											<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+											<span>Recapture</span>
+										</button>
 										<div class="divider kiosk-or-divider">
 											<span></span>
 											<small>OR</small>
@@ -7198,6 +7557,10 @@
 									<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
 								</svg>
 								<span id="scanActionText">Scan ID Card</span>
+							</button>
+							<button type="button" class="retake-capture-btn is-hidden" id="retakeCaptureBtn" aria-label="Recapture photo">
+								<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+								<span>Recapture</span>
 							</button>
 							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
 						</div>
@@ -8562,7 +8925,16 @@
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
 		let existingVisitorModalResolver = null;
-		let autoEnrolleeOfficeNames = [];
+		let autoEnrolleeOffices = [];
+		let awaitingPhotoConsent = false;
+		let pendingFaceCaptureBlob = null;
+
+		const photoConsentModal = document.getElementById('photoConsentModal');
+		const photoConsentPreview = document.getElementById('photoConsentPreview');
+		const photoConsentRecaptureBtn = document.getElementById('photoConsentRecaptureBtn');
+		const photoConsentConfirmBtn = document.getElementById('photoConsentConfirmBtn');
+		const photoConsentCloseBtn = document.getElementById('photoConsentCloseBtn');
+		const retakeCaptureBtn = document.getElementById('retakeCaptureBtn');
 
 		const formatVisitorAddress = (visitor) => {
 			if (!visitor) {
@@ -8866,6 +9238,10 @@
 			galleryAction.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
+			if (!isPictureStep || isCompleteStep) {
+				closePhotoConsentModal();
+				setPhotoReviewUi(false);
+			}
 			updateKioskSummaryProgress();
 		};
 
@@ -8942,34 +9318,63 @@
 			syncSelectAllState();
 		};
 
+		const escapeTicketHtml = (value) => String(value || '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+
+		const normalizeOfficeFloor = (floor) => String(floor || '').trim();
+
+		const formatOfficeDestinationLabel = (officeName, floor) => {
+			const name = String(officeName || '').trim();
+			const floorLabel = normalizeOfficeFloor(floor);
+			if (!name) {
+				return floorLabel || '';
+			}
+			return floorLabel ? `${name} — ${floorLabel}` : name;
+		};
+
 		const getSelectedDestinationOffices = () => {
 			if (registerType === 'contractor') {
 				const text = (destinationOfficeText?.value || '').trim();
-				return text ? [text] : [];
+				return text ? [{ name: text, floor: '' }] : [];
 			}
 
 			if (registerType === 'enrollee') {
-				return autoEnrolleeOfficeNames.filter(Boolean);
+				return autoEnrolleeOffices
+					.filter((office) => office?.name)
+					.map((office) => ({
+						name: office.name,
+						floor: normalizeOfficeFloor(office.floor),
+					}));
 			}
 
 			const offices = getOfficeCheckboxes()
 				.filter((input) => input.checked)
 				.map((input) => {
+					const floor = normalizeOfficeFloor(input.dataset.floor);
 					const label = input.closest('label') || input.parentElement?.querySelector('label') || input.parentElement;
 					const named = label?.querySelector('.office-details strong, strong');
 					if (named?.textContent) {
-						return named.textContent.trim();
+						return { name: named.textContent.trim(), floor };
 					}
 
 					const text = label?.textContent || input.parentElement?.textContent || '';
-					return text.replace(/\s*Tap to select\s*/gi, '').trim();
+					const name = text
+						.replace(/\s*Tap to select\s*/gi, '')
+						.replace(/\s*—\s*[\w\s]+Floor\s*/gi, '')
+						.replace(/\s*\([\w\s]+Floor\)\s*/gi, '')
+						.trim();
+
+					return { name, floor };
 				})
-				.filter(Boolean);
+				.filter((office) => office.name);
 
 			if (isOtherDestination) {
 				const text = (otherDestinationText?.value || '').trim();
 				if (text) {
-					offices.push(text);
+					offices.push({ name: text, floor: '' });
 				}
 			}
 
@@ -8978,7 +9383,14 @@
 
 		const getSelectedDestinationText = () => {
 			const offices = getSelectedDestinationOffices();
-			return offices.length ? offices.join(', ') : '-';
+			if (!offices.length) {
+				return '-';
+			}
+
+			return offices
+				.map((office) => formatOfficeDestinationLabel(office.name, office.floor))
+				.filter(Boolean)
+				.join(', ');
 		};
 
 		const renderTicketRouteList = () => {
@@ -8987,21 +9399,27 @@
 			}
 
 			const offices = getSelectedDestinationOffices();
-			const items = offices.length ? offices : ['No destination specified'];
+			const items = offices.length ? offices : [{ name: 'No destination specified', floor: '' }];
 
-			ticketRouteList.innerHTML = items.map((officeName, index) => `
+			ticketRouteList.innerHTML = items.map((office, index) => {
+				const floorLabel = normalizeOfficeFloor(office.floor);
+				const floorHtml = floorLabel
+					? `<small class="qr-success-route-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>${escapeTicketHtml(floorLabel)}</small>`
+					: '';
+
+				return `
 				<div class="qr-success-route-item">
 					<div class="qr-success-route-item-left">
 						<span class="qr-success-route-number">${index + 1}</span>
-						<strong>${String(officeName)
-							.replace(/&/g, '&amp;')
-							.replace(/</g, '&lt;')
-							.replace(/>/g, '&gt;')
-							.replace(/"/g, '&quot;')}</strong>
+						<div class="qr-success-route-copy">
+							<strong>${escapeTicketHtml(office.name)}</strong>
+							${floorHtml}
+						</div>
 					</div>
 					<svg class="qr-success-route-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
 				</div>
-			`).join('');
+			`;
+			}).join('');
 		};
 
 		const toTitleCase = (value) => {
@@ -9372,43 +9790,81 @@
 			frozenFrame.classList.remove('visible');
 		};
 
-		const capturePicture = () => {
-			if (hasSavedRegistration) {
-				cameraStatus.textContent = 'Registration is already completed.';
-				return;
+		const openPhotoConsentModal = (previewUrl) => {
+			if (photoConsentPreview) {
+				photoConsentPreview.src = previewUrl || '';
 			}
+			photoConsentModal?.classList.remove('is-hidden');
+			photoConsentModal?.setAttribute('aria-hidden', 'false');
+		};
 
-			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
-				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
-				return;
+		const closePhotoConsentModal = () => {
+			photoConsentModal?.classList.add('is-hidden');
+			photoConsentModal?.setAttribute('aria-hidden', 'true');
+		};
+
+		const setPhotoReviewUi = (active) => {
+			awaitingPhotoConsent = active;
+			retakeCaptureBtn?.classList.toggle('is-hidden', !active);
+			if (scanAction) {
+				scanAction.disabled = active;
 			}
+			if (flipCameraBtn) {
+				flipCameraBtn.disabled = active;
+			}
+			if (galleryAction) {
+				galleryAction.disabled = active;
+			}
+		};
 
-			captureCanvas.width = cameraFeed.videoWidth;
-			captureCanvas.height = cameraFeed.videoHeight;
-			const context = captureCanvas.getContext('2d');
-			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-			freezeCurrentFrame();
-			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.70);
+		const resetPendingFaceCapture = () => {
+			pendingFaceCaptureBlob = null;
+			capturedPictureData = '';
+			faceIdCapturePublicPath = '';
+			faceIdCapturePreviewUrl = '';
+		};
+
+		const recaptureFacePhoto = async () => {
+			closePhotoConsentModal();
+			setPhotoReviewUi(false);
+			resetPendingFaceCapture();
+			loadingOverlay.classList.add('is-hidden');
+			clearFrozenFrame();
+			if (scanAction) {
+				scanAction.disabled = false;
+			}
+			cameraStatus.textContent = 'Ready to recapture. Position your face and ID, then capture again.';
+			await startCamera();
+		};
+
+		const proceedWithFaceCapture = (imagePayload) => {
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = 'Processing capture...';
-			scanAction.disabled = true;
+			if (scanAction) {
+				scanAction.disabled = true;
+			}
+			retakeCaptureBtn?.classList.add('is-hidden');
 
 			const finishCaptureFailure = (message) => {
 				loadingText.textContent = message || 'Failed to save. Try again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
 					clearFrozenFrame();
-					scanAction.disabled = false;
+					setPhotoReviewUi(false);
+					resetPendingFaceCapture();
+					if (scanAction) {
+						scanAction.disabled = false;
+					}
 					startCamera();
 				}, 2000);
 			};
 
-			const uploadFaceCapture = (imagePayload) => {
+			const uploadFaceCapture = (payload) => {
 				const formData = new FormData();
-				if (imagePayload instanceof Blob) {
-					formData.append('image', imagePayload, 'face-id.jpg');
+				if (payload instanceof Blob) {
+					formData.append('image', payload, 'face-id.jpg');
 				} else {
-					formData.append('image', imagePayload);
+					formData.append('image', payload);
 				}
 				formData.append('step', 3);
 
@@ -9423,8 +9879,9 @@
 
 			const handleCaptureSuccess = (data) => {
 				faceIdCapturePublicPath = data.bucket_file_path || data.path || '';
-				// Prefer signed preview URL; fall back to the in-memory capture so the ticket always shows the photo.
 				faceIdCapturePreviewUrl = data.preview_url || data.public_url || capturedPictureData || '';
+				awaitingPhotoConsent = false;
+				pendingFaceCaptureBlob = null;
 
 				loadingText.textContent = 'Generating QR ticket...';
 				const qrMeta = createQrMeta();
@@ -9453,7 +9910,9 @@
 						loadingText.textContent = 'QR generated and visitor saved successfully.';
 						setTimeout(() => {
 							loadingOverlay.classList.add('is-hidden');
-							scanAction.disabled = true;
+							if (scanAction) {
+								scanAction.disabled = true;
+							}
 							cameraStatus.textContent = 'Registration completed successfully.';
 						}, 1000);
 					})
@@ -9463,27 +9922,67 @@
 						loadingText.textContent = error.message || 'Failed to save visitor details. Try again.';
 						setTimeout(() => {
 							loadingOverlay.classList.add('is-hidden');
-							scanAction.disabled = true;
+							if (scanAction) {
+								scanAction.disabled = true;
+							}
 						}, 1500);
 					});
 			};
 
-			captureCanvas.toBlob((blob) => {
-				const uploadPromise = blob
-					? uploadFaceCapture(blob)
-					: uploadFaceCapture(capturedPictureData);
+			return uploadFaceCapture(imagePayload)
+				.then(data => {
+					if (data.success) {
+						return handleCaptureSuccess(data);
+					}
+					finishCaptureFailure('Failed to save. Try again.');
+				})
+				.catch(error => {
+					console.error('Capture error:', error);
+					finishCaptureFailure(error?.message || 'Error saving capture. Try again.');
+				});
+		};
 
-				uploadPromise
-					.then(data => {
-						if (data.success) {
-							return handleCaptureSuccess(data);
-						}
-						finishCaptureFailure('Failed to save. Try again.');
-					})
-					.catch(error => {
-						console.error('Capture error:', error);
-						finishCaptureFailure(error?.message || 'Error saving capture. Try again.');
-					});
+		const confirmFacePhotoConsent = () => {
+			if (!awaitingPhotoConsent || (!capturedPictureData && !pendingFaceCaptureBlob)) {
+				return;
+			}
+
+			closePhotoConsentModal();
+			const payload = pendingFaceCaptureBlob || capturedPictureData;
+			proceedWithFaceCapture(payload);
+		};
+
+		const capturePicture = () => {
+			if (hasSavedRegistration) {
+				cameraStatus.textContent = 'Registration is already completed.';
+				return;
+			}
+
+			if (awaitingPhotoConsent) {
+				openPhotoConsentModal(capturedPictureData);
+				return;
+			}
+
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
+				return;
+			}
+
+			captureCanvas.width = cameraFeed.videoWidth;
+			captureCanvas.height = cameraFeed.videoHeight;
+			const context = captureCanvas.getContext('2d');
+			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+			freezeCurrentFrame();
+			capturedPictureData = captureCanvas.toDataURL('image/jpeg', 0.70);
+			pendingFaceCaptureBlob = null;
+			cameraStatus.textContent = 'Please review your photo and confirm consent to continue.';
+			setPhotoReviewUi(true);
+			openPhotoConsentModal(capturedPictureData);
+
+			captureCanvas.toBlob((blob) => {
+				if (blob && awaitingPhotoConsent) {
+					pendingFaceCaptureBlob = blob;
+				}
 			}, 'image/jpeg', 0.70);
 		};
 
@@ -10009,6 +10508,11 @@
 		};
 
 		scanAction?.addEventListener('click', () => {
+			if (awaitingPhotoConsent) {
+				openPhotoConsentModal(capturedPictureData);
+				return;
+			}
+
 			if (!activeStream) {
 				startCamera();
 				return;
@@ -10024,9 +10528,38 @@
 			}
 		});
 
+		retakeCaptureBtn?.addEventListener('click', () => {
+			if (!awaitingPhotoConsent || hasSavedRegistration) {
+				return;
+			}
+			recaptureFacePhoto();
+		});
+
+		photoConsentRecaptureBtn?.addEventListener('click', () => {
+			if (!awaitingPhotoConsent || hasSavedRegistration) {
+				return;
+			}
+			recaptureFacePhoto();
+		});
+
+		photoConsentCloseBtn?.addEventListener('click', () => {
+			if (!awaitingPhotoConsent || hasSavedRegistration) {
+				return;
+			}
+			recaptureFacePhoto();
+		});
+
+		photoConsentConfirmBtn?.addEventListener('click', () => {
+			if (!awaitingPhotoConsent || hasSavedRegistration) {
+				return;
+			}
+			confirmFacePhotoConsent();
+		});
+
 		flipCameraBtn?.addEventListener('click', () => {
 			if (
 				flipCameraBtn.disabled ||
+				awaitingPhotoConsent ||
 				!activeStream ||
 				!loadingOverlay.classList.contains('is-hidden')
 			) {
@@ -10822,7 +11355,7 @@ body.android-thermal-print .foot {
 		visitorProvince?.addEventListener('input', syncRegionFromProvince);
 		visitorProvince?.addEventListener('change', syncRegionFromProvince);
 
-		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select') => {
+		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select', floor = '') => {
 			const choice = document.createElement('div');
 			choice.className = 'kiosk-office-choice';
 			if (officeId === OTHERS_OFFICE_VALUE) {
@@ -10838,6 +11371,9 @@ body.android-thermal-print .foot {
 			input.name = officeId === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 			input.className = 'office-checkbox';
 			input.value = String(officeId);
+			if (floor) {
+				input.dataset.floor = floor;
+			}
 			input.addEventListener('change', syncDestinationSelection);
 
 			const label = document.createElement('label');
@@ -10854,7 +11390,8 @@ body.android-thermal-print .foot {
 			const strong = document.createElement('strong');
 			strong.textContent = officeName;
 			const small = document.createElement('small');
-			small.textContent = subtitle;
+			const floorLabel = normalizeOfficeFloor(floor);
+			small.textContent = floorLabel || subtitle;
 			details.appendChild(strong);
 			details.appendChild(small);
 
@@ -10874,7 +11411,7 @@ body.android-thermal-print .foot {
 		};
 
 		const renderOfficeList = (offices) => {
-			autoEnrolleeOfficeNames = [];
+			autoEnrolleeOffices = [];
 			isOtherDestination = false;
 			selectedOfficeId = null;
 			hideAndClearOtherDestination();
@@ -10890,13 +11427,17 @@ body.android-thermal-print .foot {
 					.map((office) => ({
 						office_id: Number(office?.office_id),
 						office_name: String(office?.office_name || '').trim(),
+						floor: normalizeOfficeFloor(office?.floor),
 					}))
 					.filter((office) => Number.isInteger(office.office_id) && office.office_id > 0 && office.office_name)
 				: [];
 
 			if (registerType === 'enrollee') {
 				selectedOfficeIds = normalizedOffices.map((office) => String(office.office_id));
-				autoEnrolleeOfficeNames = normalizedOffices.map((office) => office.office_name);
+				autoEnrolleeOffices = normalizedOffices.map((office) => ({
+					name: office.office_name,
+					floor: office.floor,
+				}));
 				return;
 			}
 
@@ -10914,7 +11455,7 @@ body.android-thermal-print .foot {
 				return;
 			}
 
-			const appendGuardOfficeOption = (value, text) => {
+			const appendGuardOfficeOption = (value, text, floor = '') => {
 				const label = document.createElement('label');
 				label.className = 'office-option';
 				label.tabIndex = 0;
@@ -10924,6 +11465,9 @@ body.android-thermal-print .foot {
 				input.name = value === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 				input.className = 'office-checkbox';
 				input.value = String(value);
+				if (floor) {
+					input.dataset.floor = floor;
+				}
 				input.addEventListener('change', syncDestinationSelection);
 				bindOfficeOptionKeyboard(label, input);
 
@@ -10934,12 +11478,17 @@ body.android-thermal-print .foot {
 
 			if (isSelfRegistrationKiosk) {
 				normalizedOffices.forEach((office) => {
-					destinationOffice.appendChild(createKioskOfficeChoice(office.office_id, office.office_name));
+					destinationOffice.appendChild(
+						createKioskOfficeChoice(office.office_id, office.office_name, 'Tap to select', office.floor)
+					);
 				});
 				destinationOffice.appendChild(createKioskOfficeChoice(OTHERS_OFFICE_VALUE, 'Others', 'Tap to enter destination'));
 			} else {
 				normalizedOffices.forEach((office) => {
-					appendGuardOfficeOption(office.office_id, office.office_name);
+					const labelText = office.floor
+						? `${office.office_name} — ${office.floor}`
+						: office.office_name;
+					appendGuardOfficeOption(office.office_id, labelText, office.floor);
 				});
 				appendGuardOfficeOption(OTHERS_OFFICE_VALUE, 'Others — Tap to enter destination');
 			}
@@ -10966,7 +11515,7 @@ body.android-thermal-print .foot {
 				selectedOfficeId = null;
 				isOtherDestination = false;
 				hideAndClearOtherDestination();
-				autoEnrolleeOfficeNames = [];
+				autoEnrolleeOffices = [];
 
 				if (destinationOffice) {
 					destinationOffice.innerHTML = '';
@@ -10982,12 +11531,12 @@ body.android-thermal-print .foot {
 			releaseCamera();
 			clearFrozenFrame();
 			loadingOverlay.classList.add('is-hidden');
+			closePhotoConsentModal();
+			setPhotoReviewUi(false);
+			resetPendingFaceCapture();
 
 			currentStep = 1;
 			preferredFacingMode = 'environment';
-			capturedPictureData = '';
-			faceIdCapturePublicPath = '';
-			faceIdCapturePreviewUrl = '';
 			hasSavedRegistration = false;
 			lastTicketQrPayload = '';
 			existingVisitorMatch = null;
@@ -10996,7 +11545,7 @@ body.android-thermal-print .foot {
 			selectedOfficeId = null;
 			isOtherDestination = false;
 			hideAndClearOtherDestination();
-			autoEnrolleeOfficeNames = [];
+			autoEnrolleeOffices = [];
 
 			const selectAllInput = getSelectAllInput();
 			if (selectAllInput) {
