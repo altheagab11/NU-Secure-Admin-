@@ -595,12 +595,40 @@
 			line-height: 1.3;
 		}
 
+		.step-body .step-floor {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			margin-top: 4px;
+			font-size: 0.8rem;
+			font-weight: 700;
+			color: var(--blue-mid);
+		}
+
+		.step-body .step-floor .bi {
+			font-size: 0.78rem;
+		}
+
 		.step-body span {
 			display: block;
 			margin-top: 3px;
 			font-size: 0.8rem;
 			color: var(--muted);
 			line-height: 1.4;
+		}
+
+		.current-panel .current-floor {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			margin: 0 0 6px;
+			font-size: 0.82rem;
+			font-weight: 700;
+			color: #c2410c;
+		}
+
+		.current-panel.is-complete .current-floor {
+			color: #166534;
 		}
 
 		.step-badge {
@@ -791,6 +819,9 @@
 						<div class="current-num" aria-hidden="true">{{ $current_step['order'] }}</div>
 						<div>
 							<h3>{{ $current_step['title'] }}</h3>
+							@if (!empty($current_step['floor']))
+								<p class="current-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $current_step['floor'] }}</p>
+							@endif
 							<p>{{ $current_step['subtitle'] ?: 'Proceed to the assigned office and present your QR pass.' }}</p>
 						</div>
 					</div>
@@ -843,6 +874,9 @@
 							<div class="step-num">{{ $step['order'] }}</div>
 							<div class="step-body">
 								<strong>{{ $step['title'] }}</strong>
+								@if (!empty($step['floor']))
+									<span class="step-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $step['floor'] }}</span>
+								@endif
 								@if (!empty($step['subtitle']))
 									<span>{{ $step['subtitle'] }}</span>
 								@endif

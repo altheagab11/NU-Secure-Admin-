@@ -109,7 +109,10 @@ class EnrolleeProgressController extends Controller
         );
 
         $nextDestination = is_array($current)
-            ? trim((string) ($current['title'] ?? ''))
+            ? $this->formatOfficeWithFloor(
+                (string) ($current['title'] ?? ''),
+                (string) ($current['floor'] ?? '')
+            )
             : '';
 
         $wrongOffice = $isComplete
@@ -164,6 +167,7 @@ class EnrolleeProgressController extends Controller
                 'os.remarks',
                 'os.office_id',
                 'o.office_name',
+                'o.floor',
             ])
             ->first();
 
@@ -199,7 +203,10 @@ class EnrolleeProgressController extends Controller
             return null;
         }
 
-        $scannedOffice = trim((string) ($wrongScan->office_name ?? ''));
+        $scannedOffice = $this->formatOfficeWithFloor(
+            (string) ($wrongScan->office_name ?? ''),
+            (string) ($wrongScan->floor ?? '')
+        );
         if ($scannedOffice === '') {
             $scannedOffice = 'an unlisted office';
         }
@@ -216,6 +223,18 @@ class EnrolleeProgressController extends Controller
             'next_destination' => $destination,
             'scanned_at' => $scanTime ? (string) $scanTime : null,
         ];
+    }
+
+    protected function formatOfficeWithFloor(?string $officeName, ?string $floor): string
+    {
+        $name = trim((string) $officeName);
+        $floorLabel = trim((string) $floor);
+
+        if ($name === '') {
+            return $floorLabel;
+        }
+
+        return $floorLabel !== '' ? $name.' ('.$floorLabel.')' : $name;
     }
 
     protected function extractExpectedOfficeFromRemarks(string $remarks): string
@@ -244,6 +263,7 @@ class EnrolleeProgressController extends Controller
                 'oe.arrived_at',
                 'oe.office_id',
                 'o.office_name',
+                'o.floor',
                 'xs.status_name as status_name',
             ])
             ->orderBy('oe.expected_order')
@@ -255,6 +275,7 @@ class EnrolleeProgressController extends Controller
                 return [
                     'order' => $row->expected_order !== null ? (int) $row->expected_order : ($index + 1),
                     'title' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
+                    'floor' => trim((string) ($row->floor ?? '')),
                     'subtitle' => $this->defaultSubtitleForOffice(
                         (string) ($row->office_name ?? ''),
                         $row->expected_order !== null ? (int) $row->expected_order : ($index + 1)
@@ -277,6 +298,7 @@ class EnrolleeProgressController extends Controller
             ->select([
                 'es.step_order',
                 'o.office_name',
+                'o.floor',
                 'ep.completed_at',
                 'st.status_name',
             ])
@@ -288,6 +310,7 @@ class EnrolleeProgressController extends Controller
             return [
                 'order' => $row->step_order !== null ? (int) $row->step_order : ($index + 1),
                 'title' => trim((string) ($row->office_name ?? '')) ?: 'Enrollment Step',
+                'floor' => trim((string) ($row->floor ?? '')),
                 'subtitle' => $this->defaultSubtitleForOffice(
                     (string) ($row->office_name ?? ''),
                     $row->step_order !== null ? (int) $row->step_order : ($index + 1)
@@ -318,6 +341,7 @@ class EnrolleeProgressController extends Controller
             $classified[] = [
                 'order' => (int) ($step['order'] ?? 0),
                 'title' => (string) ($step['title'] ?? 'Enrollment Step'),
+                'floor' => trim((string) ($step['floor'] ?? '')),
                 'subtitle' => (string) ($step['subtitle'] ?? ''),
                 'state' => $state,
                 'badge' => $state === 'done' ? 'Done' : ($state === 'current' ? 'Current' : 'Pending'),
