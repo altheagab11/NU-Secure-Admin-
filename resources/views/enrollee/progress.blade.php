@@ -366,105 +366,105 @@
 			color: #166534;
 		}
 
-		.wrong-office-page-alert {
-			display: flex;
-			gap: 12px;
-			align-items: flex-start;
-			padding: 14px 16px;
-			border-radius: 16px;
-			background: var(--red-soft);
-			border: 1.5px solid var(--red-border);
-			margin-bottom: 16px;
-			box-shadow: var(--shadow);
+		.wrong-office-modal {
+			position: fixed;
+			inset: 0;
+			z-index: 1200;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			background: rgba(15, 23, 42, 0.55);
+			backdrop-filter: blur(3px);
 		}
 
-		.wrong-office-page-alert .wrong-icon {
-			width: 42px;
-			height: 42px;
+		.wrong-office-modal.is-open {
+			display: flex;
+		}
+
+		.wrong-office-dialog {
+			width: min(420px, 100%);
+			background: #fff;
+			border-radius: 20px;
+			border: 1.5px solid var(--red-border);
+			box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+			padding: 24px 22px 20px;
+			text-align: center;
+			animation: wrongOfficePop 0.22s ease-out;
+		}
+
+		@keyframes wrongOfficePop {
+			from {
+				opacity: 0;
+				transform: translateY(12px) scale(0.96);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		.wrong-office-dialog .wrong-icon {
+			width: 64px;
+			height: 64px;
+			margin: 0 auto 14px;
 			border-radius: 50%;
 			background: var(--red);
 			color: #fff;
 			display: grid;
 			place-items: center;
-			font-size: 1.15rem;
-			flex-shrink: 0;
+			font-size: 1.7rem;
 		}
 
-		.wrong-office-page-alert strong {
-			display: block;
-			margin: 0 0 4px;
-			font-size: 1rem;
+		.wrong-office-dialog h3 {
+			margin: 0 0 8px;
+			font-size: 1.25rem;
 			font-weight: 800;
 			color: #991b1b;
 		}
 
-		.wrong-office-page-alert p {
+		.wrong-office-dialog p {
 			margin: 0;
-			font-size: 0.88rem;
-			line-height: 1.45;
-			color: #9f1239;
-		}
-
-		.wrong-office-page-alert .wrong-next-inline {
-			margin-top: 8px;
-			font-weight: 800;
-			color: #7f1d1d;
-		}
-
-		.wrong-office-banner {
-			display: flex;
-			gap: 14px;
-			align-items: flex-start;
-			padding: 16px;
-			border-radius: 16px;
-			background: var(--red-soft);
-			border: 1.5px solid var(--red-border);
-			margin-bottom: 12px;
-		}
-
-		.wrong-office-banner .wrong-icon {
-			width: 52px;
-			height: 52px;
-			border-radius: 50%;
-			background: var(--red);
-			color: #fff;
-			display: grid;
-			place-items: center;
-			font-size: 1.4rem;
-			flex-shrink: 0;
-		}
-
-		.wrong-office-banner h3 {
-			margin: 0 0 6px;
-			font-size: 1rem;
-			font-weight: 800;
-			line-height: 1.3;
-			color: #991b1b;
-		}
-
-		.wrong-office-banner p {
-			margin: 0;
-			font-size: 0.86rem;
+			font-size: 0.92rem;
 			line-height: 1.5;
 			color: #9f1239;
 		}
 
-		.wrong-office-banner .wrong-scanned {
-			margin-top: 8px;
+		.wrong-office-dialog .wrong-scanned {
+			margin-top: 10px;
 			font-weight: 700;
 			color: #7f1d1d;
 		}
 
-		.wrong-office-banner .wrong-next {
-			margin-top: 10px;
-			padding: 10px 12px;
-			border-radius: 12px;
-			background: #fff;
+		.wrong-office-dialog .wrong-next {
+			margin-top: 14px;
+			padding: 12px 14px;
+			border-radius: 14px;
+			background: var(--red-soft);
 			border: 1px solid var(--red-border);
 			color: #991b1b;
-			font-size: 0.88rem;
-			font-weight: 700;
+			font-size: 0.95rem;
+			font-weight: 800;
 			line-height: 1.4;
+		}
+
+		.wrong-office-dialog .wrong-office-ok {
+			margin-top: 18px;
+			width: 100%;
+			border: 0;
+			border-radius: 12px;
+			padding: 12px 16px;
+			background: var(--red);
+			color: #fff;
+			font-size: 0.95rem;
+			font-weight: 800;
+			cursor: pointer;
+		}
+
+		.wrong-office-dialog .wrong-office-ok:hover,
+		.wrong-office-dialog .wrong-office-ok:focus-visible {
+			background: #b91c1c;
+			outline: none;
 		}
 
 		.info-box {
@@ -734,17 +734,6 @@
 			</div>
 		</header>
 
-		@if (!empty($wrong_office))
-			<div class="wrong-office-page-alert" role="alert" aria-live="assertive">
-				<div class="wrong-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
-				<div>
-					<strong>Wrong office</strong>
-					<p>You were scanned at <b>{{ $wrong_office['scanned_office'] }}</b>.</p>
-					<p class="wrong-next-inline">Please proceed to {{ $wrong_office['next_destination'] }}.</p>
-				</div>
-			</div>
-		@endif
-
 		<section class="grid-top">
 			<article class="card">
 				<p class="eyebrow">Enrollment Route</p>
@@ -788,20 +777,6 @@
 
 			<article class="card current-card">
 				<h2>Current Step</h2>
-
-				@if (!empty($wrong_office))
-					<div class="wrong-office-banner" role="alert" aria-live="assertive">
-						<div class="wrong-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
-						<div>
-							<h3>Wrong office</h3>
-							<p class="wrong-scanned">You were scanned at {{ $wrong_office['scanned_office'] }}.</p>
-							<p>That is not your current destination on the enrollment route.</p>
-							<div class="wrong-next">
-								Please proceed to {{ $wrong_office['next_destination'] }}.
-							</div>
-						</div>
-					</div>
-				@endif
 
 				@if ($is_complete)
 					<div class="current-panel is-complete">
@@ -885,11 +860,108 @@
 		</section>
 	</div>
 
+	<div
+		class="wrong-office-modal"
+		id="wrongOfficeModal"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="wrongOfficeTitle"
+		aria-hidden="true"
+	>
+		<div class="wrong-office-dialog">
+			<div class="wrong-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
+			<h3 id="wrongOfficeTitle">Wrong office</h3>
+			<p class="wrong-scanned" id="wrongOfficeScanned">You were scanned at an unlisted office.</p>
+			<p>That is not your current destination on the enrollment route.</p>
+			<div class="wrong-next" id="wrongOfficeNext">Please proceed to your next assigned office.</div>
+			<button type="button" class="wrong-office-ok" id="wrongOfficeOkBtn">Got it</button>
+		</div>
+	</div>
+
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<script nonce="{{ $cspNonce }}">
 		(() => {
 			const officeQrPayload = @json($office_qr_payload);
 			const officeQrHost = document.getElementById('officeQrCode');
+			const wrongOfficeData = @json($wrong_office ?? null);
+			const wrongOfficeModal = document.getElementById('wrongOfficeModal');
+			const wrongOfficeScanned = document.getElementById('wrongOfficeScanned');
+			const wrongOfficeNext = document.getElementById('wrongOfficeNext');
+			const wrongOfficeOkBtn = document.getElementById('wrongOfficeOkBtn');
+			const dismissKey = 'enrollee_wrong_office_dismissed';
+
+			const getDismissedScanId = () => {
+				try {
+					return Number(sessionStorage.getItem(dismissKey) || 0);
+				} catch (error) {
+					return 0;
+				}
+			};
+
+			const setDismissedScanId = (scanId) => {
+				try {
+					sessionStorage.setItem(dismissKey, String(scanId || 0));
+				} catch (error) {
+					// Ignore storage failures on private browsers.
+				}
+			};
+
+			const closeWrongOfficeModal = () => {
+				if (!wrongOfficeModal) return;
+				wrongOfficeModal.classList.remove('is-open');
+				wrongOfficeModal.setAttribute('aria-hidden', 'true');
+				document.body.style.overflow = '';
+			};
+
+			const openWrongOfficeModal = (notice) => {
+				if (!wrongOfficeModal || !notice) return;
+
+				const scanId = Number(notice.scan_id || 0);
+				if (scanId > 0 && scanId === getDismissedScanId()) {
+					return;
+				}
+
+				if (wrongOfficeScanned) {
+					wrongOfficeScanned.textContent = `You were scanned at ${notice.scanned_office || 'an unlisted office'}.`;
+				}
+				if (wrongOfficeNext) {
+					wrongOfficeNext.textContent = `Please proceed to ${notice.next_destination || 'your next assigned office'}.`;
+				}
+
+				wrongOfficeModal.classList.add('is-open');
+				wrongOfficeModal.setAttribute('aria-hidden', 'false');
+				document.body.style.overflow = 'hidden';
+				wrongOfficeOkBtn?.focus();
+			};
+
+			wrongOfficeOkBtn?.addEventListener('click', () => {
+				if (wrongOfficeData?.scan_id) {
+					setDismissedScanId(wrongOfficeData.scan_id);
+				}
+				closeWrongOfficeModal();
+			});
+
+			wrongOfficeModal?.addEventListener('click', (event) => {
+				if (event.target === wrongOfficeModal) {
+					if (wrongOfficeData?.scan_id) {
+						setDismissedScanId(wrongOfficeData.scan_id);
+					}
+					closeWrongOfficeModal();
+				}
+			});
+
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape' && wrongOfficeModal?.classList.contains('is-open')) {
+					if (wrongOfficeData?.scan_id) {
+						setDismissedScanId(wrongOfficeData.scan_id);
+					}
+					closeWrongOfficeModal();
+				}
+			});
+
+			if (wrongOfficeData) {
+				openWrongOfficeModal(wrongOfficeData);
+			}
 
 			if (officeQrHost && officeQrPayload && typeof QRCode !== 'undefined') {
 				officeQrHost.innerHTML = '';
@@ -933,6 +1005,14 @@
 					].join('|');
 
 					if (nextKey !== currentKey) {
+						// New wrong-office scan should always pop up again.
+						if (next.wrong_office?.scan_id && next.wrong_office.scan_id !== (wrongOfficeData?.scan_id || 0)) {
+							try {
+								sessionStorage.removeItem(dismissKey);
+							} catch (error) {
+								// Ignore storage failures.
+							}
+						}
 						window.location.reload();
 					}
 				} catch (error) {
