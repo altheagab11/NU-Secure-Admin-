@@ -1047,6 +1047,36 @@
 			backdrop-filter: none;
 			-webkit-backdrop-filter: none;
 			box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.id-guide.is-detecting {
+			border-color: rgba(34, 197, 94, 0.95);
+			box-shadow:
+				inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+				0 0 0 4px rgba(34, 197, 94, 0.18);
+			animation: id-guide-detect-pulse 1.1s ease-in-out infinite;
+		}
+
+		.id-guide.is-locked {
+			border-color: rgba(37, 99, 235, 0.98);
+			box-shadow:
+				inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+				0 0 0 5px rgba(37, 99, 235, 0.22);
+			animation: none;
+		}
+
+		@keyframes id-guide-detect-pulse {
+			0%, 100% {
+				box-shadow:
+					inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+					0 0 0 3px rgba(34, 197, 94, 0.14);
+			}
+			50% {
+				box-shadow:
+					inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+					0 0 0 7px rgba(34, 197, 94, 0.28);
+			}
 		}
 
 		.id-guide .corner {
@@ -5610,6 +5640,19 @@
 			background: transparent;
 			backdrop-filter: none;
 			-webkit-backdrop-filter: none;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		body.self-registration-mode .id-guide.is-detecting {
+			border-color: #22c55e;
+			box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.22);
+			animation: id-guide-detect-pulse 1.1s ease-in-out infinite;
+		}
+
+		body.self-registration-mode .id-guide.is-locked {
+			border-color: #2563eb;
+			box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.24);
+			animation: none;
 		}
 
 		body.self-registration-mode .id-guide::after {
@@ -8224,7 +8267,7 @@
 								<section class="qr-success-route-card">
 									<div class="qr-success-route-heading">
 										<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-13A7 7 0 0 0 5 9c0 7 7 13 7 13Z"/><circle cx="12" cy="9" r="2"/></svg>
-										<h3>Visit route</h3>
+										<h3>Visit route (in order)</h3>
 									</div>
 									<div class="qr-success-route-list" id="ticketRouteList"></div>
 									<div class="qr-success-route-note">
@@ -8928,6 +8971,16 @@
 		let autoEnrolleeOffices = [];
 		let awaitingPhotoConsent = false;
 		let pendingFaceCaptureBlob = null;
+		let idCaptureLocked = false;
+		let idAutoDetectTimer = null;
+		let idDetectStableHits = 0;
+		let idDetectPrevMean = null;
+		let idDetectWarmupUntil = 0;
+		const ID_DETECT_INTERVAL_MS = 160;
+		const ID_DETECT_REQUIRED_HITS = 8;
+		const ID_DETECT_WARMUP_MS = 1200;
+		const idDetectCanvas = document.createElement('canvas');
+		const idDetectCtx = idDetectCanvas.getContext('2d', { willReadFrequently: true });
 
 		const photoConsentModal = document.getElementById('photoConsentModal');
 		const photoConsentPreview = document.getElementById('photoConsentPreview');
@@ -9242,6 +9295,11 @@
 				closePhotoConsentModal();
 				setPhotoReviewUi(false);
 			}
+			if (isIdStep) {
+				startIdAutoDetect();
+			} else {
+				stopIdAutoDetect();
+			}
 			updateKioskSummaryProgress();
 		};
 
@@ -9326,6 +9384,15 @@
 
 		const normalizeOfficeFloor = (floor) => String(floor || '').trim();
 
+		const formatOfficeDestinationLabel = (officeName, floor) => {
+			const name = String(officeName || '').trim();
+			const floorLabel = normalizeOfficeFloor(floor);
+			if (!name) {
+				return floorLabel || '';
+			}
+			return floorLabel ? `${name} — ${floorLabel}` : name;
+		};
+
 		const getSelectedDestinationOffices = () => {
 			if (registerType === 'contractor') {
 				const text = (destinationOfficeText?.value || '').trim();
@@ -9379,7 +9446,7 @@
 			}
 
 			return offices
-				.map((office) => String(office.name || '').trim())
+				.map((office) => formatOfficeDestinationLabel(office.name, office.floor))
 				.filter(Boolean)
 				.join(', ');
 		};
@@ -9642,6 +9709,8 @@
 		};
 
 		const releaseCamera = () => {
+			stopIdAutoDetect();
+
 			if (!activeStream) {
 				return;
 			}
@@ -9714,7 +9783,11 @@
 
 				setCameraState(true, currentStep === 3
 					? 'Camera is ready. Center your face and hold your ID beside it.'
-					: 'Camera is ready. Position the ID inside the frame.');
+					: 'Position your ID in the frame. Auto-capture waits until the text is clear — or tap Scan ID Card.');
+				if (currentStep === 1) {
+					idCaptureLocked = false;
+					startIdAutoDetect();
+				}
 			} catch (error) {
 				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
 			} finally {
@@ -10276,12 +10349,292 @@
 				: 'QR generated and visitor saved successfully.';
 		};
 
+		const setIdDetectStatus = (mode) => {
+			const messages = {
+				idle: 'Position your ID in the frame. Auto-capture waits until the text is clear — or tap Scan ID Card.',
+				searching: 'Searching for ID… keep the card flat and fully inside the frame.',
+				blurry: 'ID is still blurry. Hold steady and move closer until the text looks sharp.',
+				unclear: 'ID found, but details are not readable yet. Reduce glare and keep text in focus.',
+				detecting: 'ID is clear and readable — hold steady…',
+				capturing: 'ID locked. Capturing now…',
+			};
+			const message = messages[mode] || messages.idle;
+			const titles = {
+				idle: 'Camera Ready',
+				searching: 'Camera Ready',
+				blurry: 'Image Too Blurry',
+				unclear: 'Text Not Clear',
+				detecting: 'ID Ready',
+				capturing: 'Capturing ID',
+			};
+
+			if (cameraStatus) {
+				cameraStatus.textContent = message;
+			}
+			if (kioskCameraStatusText) {
+				kioskCameraStatusText.textContent = message;
+			}
+			if (kioskCameraStatusTitle) {
+				kioskCameraStatusTitle.textContent = titles[mode] || titles.idle;
+			}
+		};
+
+		const stopIdAutoDetect = () => {
+			if (idAutoDetectTimer) {
+				clearInterval(idAutoDetectTimer);
+				idAutoDetectTimer = null;
+			}
+			idDetectStableHits = 0;
+			idDetectPrevMean = null;
+			idGuide?.classList.remove('is-detecting', 'is-locked');
+		};
+
+		const analyzeIdFramePresence = () => {
+			const vw = cameraFeed.videoWidth;
+			const vh = cameraFeed.videoHeight;
+			if (!vw || !vh || !idDetectCtx) {
+				return {
+					present: false,
+					sharp: false,
+					readable: false,
+					ready: false,
+					quality: 'searching',
+					motion: 999,
+				};
+			}
+
+			const targetW = 480;
+			const targetH = Math.max(270, Math.round((targetW * vh) / vw));
+			idDetectCanvas.width = targetW;
+			idDetectCanvas.height = targetH;
+			idDetectCtx.drawImage(cameraFeed, 0, 0, targetW, targetH);
+
+			const roiW = Math.floor(targetW * 0.72);
+			const roiH = Math.max(120, Math.floor(roiW / 1.58));
+			const roiX = Math.floor((targetW - roiW) / 2);
+			const roiY = Math.floor((targetH - roiH) / 2);
+			const imageData = idDetectCtx.getImageData(roiX, roiY, roiW, roiH);
+			const pixels = imageData.data;
+			const gray = new Float32Array(roiW * roiH);
+
+			let sum = 0;
+			for (let i = 0, p = 0; i < pixels.length; i += 4, p += 1) {
+				const value = (0.299 * pixels[i]) + (0.587 * pixels[i + 1]) + (0.114 * pixels[i + 2]);
+				gray[p] = value;
+				sum += value;
+			}
+
+			const mean = sum / gray.length;
+			let variance = 0;
+			for (let i = 0; i < gray.length; i += 1) {
+				const delta = gray[i] - mean;
+				variance += delta * delta;
+			}
+			variance /= gray.length;
+			const std = Math.sqrt(variance);
+
+			let lapSum = 0;
+			let lapSq = 0;
+			let lapCount = 0;
+			for (let y = 1; y < roiH - 1; y += 1) {
+				for (let x = 1; x < roiW - 1; x += 1) {
+					const index = (y * roiW) + x;
+					const lap = (
+						(4 * gray[index])
+						- gray[index - 1]
+						- gray[index + 1]
+						- gray[index - roiW]
+						- gray[index + roiW]
+					);
+					const absLap = Math.abs(lap);
+					lapSum += absLap;
+					lapSq += absLap * absLap;
+					lapCount += 1;
+				}
+			}
+			const sharpness = lapCount ? (lapSum / lapCount) : 0;
+			const lapVariance = lapCount ? ((lapSq / lapCount) - (sharpness * sharpness)) : 0;
+
+			const inset = Math.max(5, Math.floor(Math.min(roiW, roiH) * 0.08));
+			let borderEdge = 0;
+			let borderCount = 0;
+
+			for (let x = 0; x < roiW; x += 2) {
+				for (let t = 0; t < inset; t += 1) {
+					borderEdge += Math.abs(gray[(t * roiW) + x] - gray[((t + inset) * roiW) + x]);
+					borderEdge += Math.abs(
+						gray[((roiH - 1 - t) * roiW) + x]
+						- gray[((roiH - 1 - t - inset) * roiW) + x]
+					);
+					borderCount += 2;
+				}
+			}
+
+			for (let y = inset; y < roiH - inset; y += 2) {
+				for (let t = 0; t < inset; t += 1) {
+					borderEdge += Math.abs(gray[(y * roiW) + t] - gray[(y * roiW) + t + inset]);
+					borderEdge += Math.abs(
+						gray[(y * roiW) + (roiW - 1 - t)]
+						- gray[(y * roiW) + (roiW - 1 - t - inset)]
+					);
+					borderCount += 2;
+				}
+			}
+
+			const borderScore = borderCount ? (borderEdge / borderCount) : 0;
+
+			// Text readability proxy: mid-strength local edges inside the card (printed characters).
+			const pad = Math.max(10, Math.floor(Math.min(roiW, roiH) * 0.14));
+			let textHits = 0;
+			let textEnergy = 0;
+			let textSamples = 0;
+			for (let y = pad; y < roiH - pad; y += 1) {
+				for (let x = pad; x < roiW - pad - 1; x += 1) {
+					const dx = Math.abs(gray[(y * roiW) + x] - gray[(y * roiW) + x + 1]);
+					const dy = Math.abs(gray[(y * roiW) + x] - gray[((y + 1) * roiW) + x]);
+					const edge = Math.max(dx, dy);
+					textSamples += 1;
+					// Ignore flat areas and huge glare/border jumps; keep character-like edges.
+					if (edge > 16 && edge < 95) {
+						textHits += 1;
+						textEnergy += edge;
+					}
+				}
+			}
+			const textDensity = textSamples ? (textHits / textSamples) : 0;
+			const textScore = textHits ? (textEnergy / textHits) : 0;
+
+			const motion = idDetectPrevMean == null ? 0 : Math.abs(mean - idDetectPrevMean);
+			idDetectPrevMean = mean;
+
+			const present = std > 28 && borderScore > 12;
+			const sharp = sharpness > 11.5 && lapVariance > 95;
+			const readable = textDensity > 0.085 && textScore > 24 && std > 32;
+			const stable = motion < 7.5;
+			const ready = present && sharp && readable && stable;
+
+			let quality = 'searching';
+			if (ready) {
+				quality = 'detecting';
+			} else if (present && !sharp) {
+				quality = 'blurry';
+			} else if (present && sharp && !readable) {
+				quality = 'unclear';
+			} else if (present && !stable) {
+				quality = 'blurry';
+			}
+
+			return {
+				present,
+				sharp,
+				readable,
+				ready,
+				quality,
+				motion,
+				std,
+				sharpness,
+				lapVariance,
+				borderScore,
+				textDensity,
+				textScore,
+			};
+		};
+
+		const tickIdAutoDetect = () => {
+			if (
+				currentStep !== 1
+				|| idCaptureLocked
+				|| !activeStream
+				|| cameraFeed.readyState < 2
+				|| !loadingOverlay.classList.contains('is-hidden')
+			) {
+				return;
+			}
+
+			if (Date.now() < idDetectWarmupUntil) {
+				setIdDetectStatus('idle');
+				idGuide?.classList.remove('is-detecting');
+				return;
+			}
+
+			const result = analyzeIdFramePresence();
+			if (!result.ready) {
+				idDetectStableHits = 0;
+				idGuide?.classList.remove('is-detecting');
+				setIdDetectStatus(result.quality || 'searching');
+				return;
+			}
+
+			idDetectStableHits += 1;
+			idGuide?.classList.add('is-detecting');
+			setIdDetectStatus('detecting');
+
+			if (idDetectStableHits >= ID_DETECT_REQUIRED_HITS) {
+				triggerIdCapture('auto');
+			}
+		};
+
+		const startIdAutoDetect = () => {
+			stopIdAutoDetect();
+
+			if (currentStep !== 1 || !activeStream || hasSavedRegistration || idCaptureLocked) {
+				return;
+			}
+
+			idDetectWarmupUntil = Date.now() + ID_DETECT_WARMUP_MS;
+			idAutoDetectTimer = setInterval(tickIdAutoDetect, ID_DETECT_INTERVAL_MS);
+			setIdDetectStatus('idle');
+		};
+
+		const triggerIdCapture = (source = 'manual') => {
+			if (currentStep !== 1 || idCaptureLocked || hasSavedRegistration) {
+				return;
+			}
+
+			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
+				if (cameraStatus) {
+					cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
+				}
+				return;
+			}
+
+			idCaptureLocked = true;
+			stopIdAutoDetect();
+			idGuide?.classList.add('is-locked');
+			setIdDetectStatus('capturing');
+
+			captureCanvas.width = cameraFeed.videoWidth;
+			captureCanvas.height = cameraFeed.videoHeight;
+			const context = captureCanvas.getContext('2d');
+			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
+
+			freezeCurrentFrame();
+
+			captureCanvas.toBlob((blob) => {
+				if (!blob) {
+					console.error('❌ Failed to create blob from canvas');
+					idCaptureLocked = false;
+					idGuide?.classList.remove('is-locked');
+					clearFrozenFrame();
+					startCamera();
+					return;
+				}
+
+				const progressText = source === 'auto'
+					? 'ID auto-captured. Parsing details…'
+					: 'Parsing ID scan…';
+				parseIdOnlyAndProceed(blob, progressText);
+			}, 'image/jpeg', 0.85);
+		};
+
 		const parseIdOnlyAndProceed = (capturedIdData, progressText = 'Parsing ID scan...', options = {}) => {
 			const {
 				restartCameraOnError = true,
 				showFrozenAfterSuccess = false
 			} = options;
 
+			stopIdAutoDetect();
+			idCaptureLocked = true;
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = progressText;
 			scanAction.disabled = true;
@@ -10310,6 +10663,7 @@
 					loadingOverlay.classList.add('is-hidden');
 					scanAction.disabled = false;
 					galleryAction.disabled = false;
+					idCaptureLocked = false;
 					currentStep = 2;
 					updateStepUI();
 					if (existingVisitorConfirmed) {
@@ -10334,6 +10688,7 @@
 						}
 						scanAction.disabled = false;
 						galleryAction.disabled = false;
+						idCaptureLocked = false;
 						currentStep = 2;
 						updateStepUI();
 						if (restartCameraOnError) {
@@ -10344,27 +10699,7 @@
 		};
 
 		const captureIdAndProceed = () => {
-			if (!cameraFeed.videoWidth || !cameraFeed.videoHeight) {
-				cameraStatus.textContent = 'Waiting for camera feed. Try again in a second.';
-				return;
-			}
-
-			captureCanvas.width = cameraFeed.videoWidth;
-			captureCanvas.height = cameraFeed.videoHeight;
-			const context = captureCanvas.getContext('2d');
-			context.drawImage(cameraFeed, 0, 0, captureCanvas.width, captureCanvas.height);
-
-			freezeCurrentFrame();
-
-			// Convert canvas to Blob and proceed (avoid base64 encoding)
-			captureCanvas.toBlob((blob) => {
-				if (!blob) {
-					console.error('❌ Failed to create blob from canvas');
-					return;
-				}
-				console.log('✓ Canvas blob created, size:', blob.size);
-				parseIdOnlyAndProceed(blob, 'Parsing ID scan...');
-			}, 'image/jpeg', 0.85);
+			triggerIdCapture('manual');
 		};
 
 		const parseAndFillIdData = (capturedIdData) => {
@@ -10473,10 +10808,15 @@
 				return;
 			}
 
+			stopIdAutoDetect();
+			idCaptureLocked = true;
+
 			const reader = new FileReader();
 			reader.onload = () => {
 				if (typeof reader.result !== 'string') {
+					idCaptureLocked = false;
 					alert('Unable to read selected image. Please try another file.');
+					startIdAutoDetect();
 					return;
 				}
 
@@ -10489,11 +10829,15 @@
 						});
 					})
 					.catch(() => {
+						idCaptureLocked = false;
 						alert('Unable to preview selected image. Please try another file.');
+						startCamera();
 					});
 			};
 			reader.onerror = () => {
+				idCaptureLocked = false;
 				alert('Unable to read selected image. Please try another file.');
+				startIdAutoDetect();
 			};
 			reader.readAsDataURL(file);
 		};
@@ -10510,7 +10854,7 @@
 			}
 
 			if (currentStep === 1) {
-				captureIdAndProceed();
+				triggerIdCapture('manual');
 				return;
 			}
 
@@ -11525,6 +11869,7 @@ body.android-thermal-print .foot {
 			closePhotoConsentModal();
 			setPhotoReviewUi(false);
 			resetPendingFaceCapture();
+			idCaptureLocked = false;
 
 			currentStep = 1;
 			preferredFacingMode = 'environment';
