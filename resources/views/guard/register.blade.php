@@ -8224,7 +8224,7 @@
 								<section class="qr-success-route-card">
 									<div class="qr-success-route-heading">
 										<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-13A7 7 0 0 0 5 9c0 7 7 13 7 13Z"/><circle cx="12" cy="9" r="2"/></svg>
-										<h3>Visit route (in order)</h3>
+										<h3>Visit route</h3>
 									</div>
 									<div class="qr-success-route-list" id="ticketRouteList"></div>
 									<div class="qr-success-route-note">
@@ -9326,15 +9326,6 @@
 
 		const normalizeOfficeFloor = (floor) => String(floor || '').trim();
 
-		const formatOfficeDestinationLabel = (officeName, floor) => {
-			const name = String(officeName || '').trim();
-			const floorLabel = normalizeOfficeFloor(floor);
-			if (!name) {
-				return floorLabel || '';
-			}
-			return floorLabel ? `${name} — ${floorLabel}` : name;
-		};
-
 		const getSelectedDestinationOffices = () => {
 			if (registerType === 'contractor') {
 				const text = (destinationOfficeText?.value || '').trim();
@@ -9388,7 +9379,7 @@
 			}
 
 			return offices
-				.map((office) => formatOfficeDestinationLabel(office.name, office.floor))
+				.map((office) => String(office.name || '').trim())
 				.filter(Boolean)
 				.join(', ');
 		};

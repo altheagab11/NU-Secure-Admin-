@@ -94,6 +94,7 @@ class EnrolleeProgressController extends Controller
         $current = collect($classified)->firstWhere('state', 'current');
         $remaining = max(0, $total - $completed);
         $percent = $total > 0 ? (int) round(($completed / $total) * 100) : 0;
+        $isComplete = $total > 0 && $completed >= $total;
 
         $passCode = trim((string) ($visit->pass_number ?? ''));
         if ($passCode === '') {
@@ -106,6 +107,14 @@ class EnrolleeProgressController extends Controller
         $visitorName = trim(
             trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? ''))
         );
+
+        $nextDestination = is_array($current)
+            ? trim((string) ($current['title'] ?? ''))
+            : '';
+
+        $wrongOffice = $isComplete
+            ? null
+            : $this->resolveLatestWrongOfficeNotice((int) $visit->visit_id, $nextDestination);
 
         return [
             'pass_code' => $passCode,
@@ -123,9 +132,102 @@ class EnrolleeProgressController extends Controller
             'percent' => $percent,
             'current_step' => $current,
             'steps' => $classified,
-            'is_complete' => $total > 0 && $completed >= $total,
+            'is_complete' => $isComplete,
+            'wrong_office' => $wrongOffice,
             'poll_url' => route('enrollee.progress.status', ['token' => $visit->qr_token]),
         ];
+    }
+
+    /**
+     * Surface the latest wrong-office (or out-of-order) scan so the enrollee phone UI can guide them.
+     *
+     * @return array{scan_id: int, scanned_office: string, next_destination: string, scanned_at: string|null}|null
+     */
+    protected function resolveLatestWrongOfficeNotice(int $visitId, string $nextDestination): ?array
+    {
+        if ($visitId <= 0) {
+            return null;
+        }
+
+        $wrongScan = DB::table('office_scan as os')
+            ->leftJoin('office as o', 'o.office_id', '=', 'os.office_id')
+            ->where('os.visit_id', $visitId)
+            ->where(function ($query) {
+                $query->whereRaw("LOWER(COALESCE(os.remarks, '')) LIKE ?", ['%wrong office%'])
+                    ->orWhereRaw("LOWER(COALESCE(os.remarks, '')) LIKE ?", ['%previous office incomplete%']);
+            })
+            ->orderByDesc('os.scan_time')
+            ->orderByDesc('os.scan_id')
+            ->select([
+                'os.scan_id',
+                'os.scan_time',
+                'os.remarks',
+                'os.office_id',
+                'o.office_name',
+            ])
+            ->first();
+
+        if (! $wrongScan) {
+            return null;
+        }
+
+        $scanId = (int) ($wrongScan->scan_id ?? 0);
+        $scanTime = $wrongScan->scan_time ?? null;
+
+        // Clear the notice once a successful office check-in happens after this failed scan.
+        $laterArrival = DB::table('office_expectation')
+            ->where('visit_id', $visitId)
+            ->whereNotNull('arrived_at')
+            ->when($scanTime, fn ($query) => $query->where('arrived_at', '>=', $scanTime))
+            ->exists();
+
+        if ($laterArrival) {
+            return null;
+        }
+
+        $laterValidScan = DB::table('office_scan as os')
+            ->leftJoin('validation_status as vs', 'vs.validation_status_id', '=', 'os.validation_status_id')
+            ->where('os.visit_id', $visitId)
+            ->where('os.scan_id', '>', $scanId)
+            ->where(function ($query) {
+                $query->whereRaw("LOWER(COALESCE(vs.status_name, '')) LIKE ?", ['%valid%'])
+                    ->orWhereRaw("LOWER(COALESCE(os.remarks, '')) LIKE ?", ['%office check-in%']);
+            })
+            ->exists();
+
+        if ($laterValidScan) {
+            return null;
+        }
+
+        $scannedOffice = trim((string) ($wrongScan->office_name ?? ''));
+        if ($scannedOffice === '') {
+            $scannedOffice = 'an unlisted office';
+        }
+
+        $expectedFromRemarks = $this->extractExpectedOfficeFromRemarks((string) ($wrongScan->remarks ?? ''));
+        $destination = $nextDestination !== '' ? $nextDestination : $expectedFromRemarks;
+        if ($destination === '') {
+            $destination = 'your next assigned office';
+        }
+
+        return [
+            'scan_id' => $scanId,
+            'scanned_office' => $scannedOffice,
+            'next_destination' => $destination,
+            'scanned_at' => $scanTime ? (string) $scanTime : null,
+        ];
+    }
+
+    protected function extractExpectedOfficeFromRemarks(string $remarks): string
+    {
+        if (preg_match('/(?:Next expected|Expected):\s*(.+)$/i', trim($remarks), $matches)) {
+            $label = trim((string) ($matches[1] ?? ''));
+            $label = preg_replace('/\s*\[[^\]]+\]\s*$/', '', $label) ?? $label;
+
+            return trim($label);
+        }
+
+        return '';
     }
 
     /**

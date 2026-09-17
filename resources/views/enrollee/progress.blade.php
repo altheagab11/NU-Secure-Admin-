@@ -21,6 +21,9 @@
 			--orange: #ea580c;
 			--orange-soft: #ffedd5;
 			--orange-border: #fdba74;
+			--red: #dc2626;
+			--red-soft: #fef2f2;
+			--red-border: #fecaca;
 			--gray: #94a3b8;
 			--gray-soft: #f8fafc;
 			--gray-border: #e2e8f0;
@@ -363,6 +366,107 @@
 			color: #166534;
 		}
 
+		.wrong-office-page-alert {
+			display: flex;
+			gap: 12px;
+			align-items: flex-start;
+			padding: 14px 16px;
+			border-radius: 16px;
+			background: var(--red-soft);
+			border: 1.5px solid var(--red-border);
+			margin-bottom: 16px;
+			box-shadow: var(--shadow);
+		}
+
+		.wrong-office-page-alert .wrong-icon {
+			width: 42px;
+			height: 42px;
+			border-radius: 50%;
+			background: var(--red);
+			color: #fff;
+			display: grid;
+			place-items: center;
+			font-size: 1.15rem;
+			flex-shrink: 0;
+		}
+
+		.wrong-office-page-alert strong {
+			display: block;
+			margin: 0 0 4px;
+			font-size: 1rem;
+			font-weight: 800;
+			color: #991b1b;
+		}
+
+		.wrong-office-page-alert p {
+			margin: 0;
+			font-size: 0.88rem;
+			line-height: 1.45;
+			color: #9f1239;
+		}
+
+		.wrong-office-page-alert .wrong-next-inline {
+			margin-top: 8px;
+			font-weight: 800;
+			color: #7f1d1d;
+		}
+
+		.wrong-office-banner {
+			display: flex;
+			gap: 14px;
+			align-items: flex-start;
+			padding: 16px;
+			border-radius: 16px;
+			background: var(--red-soft);
+			border: 1.5px solid var(--red-border);
+			margin-bottom: 12px;
+		}
+
+		.wrong-office-banner .wrong-icon {
+			width: 52px;
+			height: 52px;
+			border-radius: 50%;
+			background: var(--red);
+			color: #fff;
+			display: grid;
+			place-items: center;
+			font-size: 1.4rem;
+			flex-shrink: 0;
+		}
+
+		.wrong-office-banner h3 {
+			margin: 0 0 6px;
+			font-size: 1rem;
+			font-weight: 800;
+			line-height: 1.3;
+			color: #991b1b;
+		}
+
+		.wrong-office-banner p {
+			margin: 0;
+			font-size: 0.86rem;
+			line-height: 1.5;
+			color: #9f1239;
+		}
+
+		.wrong-office-banner .wrong-scanned {
+			margin-top: 8px;
+			font-weight: 700;
+			color: #7f1d1d;
+		}
+
+		.wrong-office-banner .wrong-next {
+			margin-top: 10px;
+			padding: 10px 12px;
+			border-radius: 12px;
+			background: #fff;
+			border: 1px solid var(--red-border);
+			color: #991b1b;
+			font-size: 0.88rem;
+			font-weight: 700;
+			line-height: 1.4;
+		}
+
 		.info-box {
 			display: flex;
 			gap: 10px;
@@ -630,6 +734,17 @@
 			</div>
 		</header>
 
+		@if (!empty($wrong_office))
+			<div class="wrong-office-page-alert" role="alert" aria-live="assertive">
+				<div class="wrong-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
+				<div>
+					<strong>Wrong office</strong>
+					<p>You were scanned at <b>{{ $wrong_office['scanned_office'] }}</b>.</p>
+					<p class="wrong-next-inline">Please proceed to {{ $wrong_office['next_destination'] }}.</p>
+				</div>
+			</div>
+		@endif
+
 		<section class="grid-top">
 			<article class="card">
 				<p class="eyebrow">Enrollment Route</p>
@@ -673,6 +788,20 @@
 
 			<article class="card current-card">
 				<h2>Current Step</h2>
+
+				@if (!empty($wrong_office))
+					<div class="wrong-office-banner" role="alert" aria-live="assertive">
+						<div class="wrong-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
+						<div>
+							<h3>Wrong office</h3>
+							<p class="wrong-scanned">You were scanned at {{ $wrong_office['scanned_office'] }}.</p>
+							<p>That is not your current destination on the enrollment route.</p>
+							<div class="wrong-next">
+								Please proceed to {{ $wrong_office['next_destination'] }}.
+							</div>
+						</div>
+					</div>
+				@endif
 
 				@if ($is_complete)
 					<div class="current-panel is-complete">
@@ -788,12 +917,19 @@
 					if (!payload?.success || !payload?.data) return;
 
 					const next = payload.data;
-					const currentKey = @json($completed_steps . '|' . $percent . '|' . ($current_step['order'] ?? 0) . '|' . ($is_complete ? 1 : 0));
+					const currentKey = @json(
+						$completed_steps
+						. '|' . $percent
+						. '|' . ($current_step['order'] ?? 0)
+						. '|' . ($is_complete ? 1 : 0)
+						. '|' . ($wrong_office['scan_id'] ?? 0)
+					);
 					const nextKey = [
 						next.completed_steps,
 						next.percent,
 						next.current_step?.order || 0,
 						next.is_complete ? 1 : 0,
+						next.wrong_office?.scan_id || 0,
 					].join('|');
 
 					if (nextKey !== currentKey) {
@@ -804,7 +940,8 @@
 				}
 			};
 
-			setInterval(reloadIfChanged, 15000);
+			setInterval(reloadIfChanged, 5000);
+			setTimeout(reloadIfChanged, 1500);
 		})();
 	</script>
 </body>
