@@ -10629,7 +10629,6 @@
 
 		const parseIdOnlyAndProceed = (capturedIdData, progressText = 'Parsing ID scan...', options = {}) => {
 			const {
-				restartCameraOnError = true,
 				showFrozenAfterSuccess = false
 			} = options;
 
@@ -10640,12 +10639,43 @@
 			scanAction.disabled = true;
 			galleryAction.disabled = true;
 
+			const stayOnIdScan = (message) => {
+				existingVisitorMatch = null;
+				existingVisitorConfirmed = false;
+				loadingText.textContent = message || 'No valid ID detected. Please scan again.';
+				setTimeout(() => {
+					loadingOverlay.classList.add('is-hidden');
+					clearFrozenFrame();
+					scanAction.disabled = false;
+					galleryAction.disabled = false;
+					idCaptureLocked = false;
+					currentStep = 1;
+					updateStepUI();
+					preferredFacingMode = 'environment';
+					if (cameraStatus) {
+						cameraStatus.textContent = message || 'No valid ID detected. Align a clear ID and try again.';
+					}
+					if (kioskCameraStatusText) {
+						kioskCameraStatusText.textContent = message || 'No valid ID detected. Align a clear ID and try again.';
+					}
+					if (kioskCameraStatusTitle) {
+						kioskCameraStatusTitle.textContent = 'Scan Required';
+					}
+					startCamera();
+				}, 1400);
+			};
+
 			Promise.resolve()
 				.then(() => parseAndFillIdData(capturedIdData))
 				.then(async (parseResult) => {
 					const parsedSuccessfully = Boolean(parseResult?.parsedSuccessfully);
 					existingVisitorMatch = parseResult?.existingVisitor || null;
 					existingVisitorConfirmed = false;
+
+					if (!parsedSuccessfully) {
+						stayOnIdScan(parseResult?.message || 'No valid ID was scanned. Please try again with a clearer ID.');
+						return;
+					}
 
 					if (existingVisitorMatch && existingVisitorMatch.exists) {
 						existingVisitorConfirmed = await openExistingVisitorModal(existingVisitorMatch);
@@ -10672,34 +10702,22 @@
 							? 'Returning enrollee confirmed. Generate the QR ticket to resume unfinished enrollment progress.'
 							: 'Existing visitor confirmed. Review the details and generate the QR ticket.';
 					} else {
-						cameraStatus.textContent = parsedSuccessfully
-							? 'ID parsed successfully. Verify details before proceeding.'
-							: 'ID parsed with limited data. Please complete missing details manually.';
+						cameraStatus.textContent = 'ID parsed successfully. Verify details before proceeding.';
 					}
 				})
 				.catch(() => {
-					existingVisitorMatch = null;
-					existingVisitorConfirmed = false;
-					loadingText.textContent = 'Failed to parse ID. You can fill details manually.';
-					setTimeout(() => {
-						loadingOverlay.classList.add('is-hidden');
-						if (!showFrozenAfterSuccess) {
-							clearFrozenFrame();
-						}
-						scanAction.disabled = false;
-						galleryAction.disabled = false;
-						idCaptureLocked = false;
-						currentStep = 2;
-						updateStepUI();
-						if (restartCameraOnError) {
-							releaseCamera();
-						}
-					}, 1200);
+					stayOnIdScan('Unable to read the ID. Please scan again.');
 				});
 		};
 
 		const captureIdAndProceed = () => {
 			triggerIdCapture('manual');
+		};
+
+		const hasReadableIdIdentity = (formData = {}) => {
+			const firstName = String(formData.first_name || '').trim();
+			const lastName = String(formData.last_name || '').trim();
+			return firstName.length >= 2 || lastName.length >= 2;
 		};
 
 		const parseAndFillIdData = (capturedIdData) => {
@@ -10738,14 +10756,23 @@
 					return {
 						parsedSuccessfully: false,
 						existingVisitor: null,
+						message: data.message || 'No valid ID was detected in the capture.',
+					};
+				}
+
+				const fillData = data.form_data || {};
+				if (!hasReadableIdIdentity(fillData)) {
+					console.warn('❌ OCR returned no readable name fields');
+					return {
+						parsedSuccessfully: false,
+						existingVisitor: null,
+						message: 'ID details could not be read clearly. Please scan again.',
 					};
 				}
 
 				console.log('✓ OCR SUCCESS! Extracted:', data.extracted_data);
 				console.log('✓ Form data to fill:', data.form_data);
 
-				// Auto-fill form with extracted data
-				const fillData = data.form_data || {};
 				console.log('✓ About to call autofillVisitorForm...');
 				autofillVisitorForm(fillData);
 				console.log('✓ autofillVisitorForm complete');
@@ -10757,6 +10784,7 @@
 				return {
 					parsedSuccessfully: true,
 					existingVisitor,
+					message: '',
 				};
 			})
 			.catch(error => {
