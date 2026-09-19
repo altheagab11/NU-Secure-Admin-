@@ -10782,7 +10782,6 @@
 			}
 
 			const rawName = (ticketVisitorName?.textContent || '-').trim();
-			const rawDest = (ticketDestination?.textContent || '-').trim();
 			const rawNameUpper = rawName.toUpperCase();
 
 			const formatNameForPrint = (name) => {
@@ -10803,27 +10802,43 @@
 				return `${esc(line1)}<br/>${esc(line2)}`;
 			};
 
-			const formatDestForPrint = (dest) => {
-				const t = dest.trim();
-				if (!t || t === '-') {
-					return esc(t || '-');
+			const formatDateForPrint = () => {
+				const now = new Date();
+				const dateOpts = {
+					timeZone: 'Asia/Manila',
+					year: 'numeric',
+					month: 'short',
+					day: 'numeric',
+				};
+				const timeOpts = {
+					timeZone: 'Asia/Manila',
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true,
+				};
+				try {
+					const datePart = new Intl.DateTimeFormat('en-PH', dateOpts).format(now);
+					const timePart = new Intl.DateTimeFormat('en-PH', timeOpts).format(now);
+					return `${datePart}  ${timePart}`;
+				} catch (_) {
+					const datePart = now.toLocaleDateString('en-PH', {
+						year: 'numeric',
+						month: 'short',
+						day: 'numeric',
+					});
+					const timePart = now.toLocaleTimeString('en-PH', {
+						hour: 'numeric',
+						minute: '2-digit',
+						hour12: true,
+					});
+					return `${datePart}  ${timePart}`;
 				}
-				if (t.length <= 18) {
-					return esc(t);
-				}
-				const parts = t.split(/\s+/).filter(Boolean);
-				if (parts.length <= 1) {
-					return esc(t);
-				}
-				const mid = Math.ceil(parts.length / 2);
-				return `${esc(parts.slice(0, mid).join(' '))}<br/>${esc(parts.slice(mid).join(' '))}`;
 			};
 
 			const nameHtml = formatNameForPrint(rawName);
-			const destHtml = formatDestForPrint(rawDest);
+			const dateHtml = esc(formatDateForPrint());
 
 			const nameSizeClass = isAndroid ? '' : (rawNameUpper.length > 30 ? 'txt-tiny' : (rawNameUpper.length > 18 ? 'txt-small' : ''));
-			const destSizeClass = isAndroid ? '' : (rawDest.length > 24 ? 'txt-tiny' : (rawDest.length > 16 ? 'txt-small' : ''));
 			const controlNoPrint = esc((ticketControlNumber?.textContent || '-').trim());
 			const pageCss = isAndroid
 				? '@@page { size: 58mm auto; margin: 0; }'
@@ -10877,7 +10892,7 @@ body {
 	text-align: left;
 }
 .receipt-title {
-	margin: 0 0 0.45em;
+	margin: 0.35em 0;
 	padding: 0;
 	text-align: center;
 	font-size: 11pt;
@@ -10887,7 +10902,7 @@ body {
 	line-height: 1.2;
 }
 .dash-line {
-	margin: 0 0 0.95em;
+	margin: 0;
 	padding: 0;
 	text-align: center;
 	font-family: ui-monospace, Consolas, "Liberation Mono", monospace;
@@ -10897,6 +10912,15 @@ body {
 	letter-spacing: 0;
 	white-space: nowrap;
 	overflow: hidden;
+}
+.dash-line.dash-after-title {
+	margin: 0 0 0.85em;
+}
+.dash-line.dash-before-foot {
+	margin: 0.85em 0 0.35em;
+}
+.dash-line.dash-after-foot {
+	margin: 0.35em 0 0;
 }
 .fields {
 	margin: 0;
@@ -10926,20 +10950,24 @@ body {
 	line-height: 1.2;
 	margin-bottom: 0.95em;
 }
-.field-value.dest-val {
+.field-value.date-val {
 	text-transform: none;
 	font-weight: 600;
-	margin-bottom: 1.05em;
+	margin-bottom: 0.85em;
+}
+.field-value.control-val {
+	text-transform: none;
+	font-weight: 700;
+	margin-bottom: 0.35em;
+	letter-spacing: 0.02em;
 }
 .field-value.name-val.txt-small { font-size: 7.1pt; line-height: 1.18; }
 .field-value.name-val.txt-tiny { font-size: 6.35pt; line-height: 1.15; }
-.field-value.dest-val.txt-small { font-size: 9pt; }
-.field-value.dest-val.txt-tiny { font-size: 8pt; line-height: 1.22; }
 .qr-wrap {
 	margin: 0 auto;
 	width: 100%;
 	text-align: center;
-	padding: 0.15em 0 0.35em;
+	padding: 0.25em 0 0.65em;
 }
 .qr-table {
 	width: 100%;
@@ -10954,41 +10982,21 @@ body {
 .qr-img {
 	display: block;
 	margin: 0 auto;
-	width: 34mm;
-	max-width: 86%;
+	width: 38mm;
+	max-width: 92%;
 	height: auto;
 	aspect-ratio: 1 / 1;
 	object-fit: contain;
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
-.control-label {
-	margin: 0.35em 0 0.1em;
-	padding: 0;
-	text-align: center;
-	font-size: 7pt;
-	font-weight: 800;
-	letter-spacing: 0.07em;
-	text-transform: uppercase;
-}
-.control-value {
-	margin: 0;
-	padding: 0;
-	text-align: center;
-	font-size: 9pt;
-	font-weight: 700;
-	letter-spacing: 0.03em;
-	line-height: 1.2;
-	word-wrap: break-word;
-	overflow-wrap: anywhere;
-}
 .foot {
-	margin: 2mm 0 0;
+	margin: 0;
 	padding: 0;
 	font-size: 8pt;
 	font-weight: 500;
 	text-align: center;
-	line-height: 1.15;
+	line-height: 1.2;
 }
 @@media print {
 	body {
@@ -11047,11 +11055,20 @@ body.android-thermal-print .receipt-title {
 	text-align: center;
 	letter-spacing: 1px;
 	line-height: 1.2;
-	margin: 0 0 0.35em;
+	margin: 0.35em 0;
 }
 body.android-thermal-print .dash-line {
 	font-size: 9pt;
+	margin: 0;
+}
+body.android-thermal-print .dash-line.dash-after-title {
 	margin: 0 0 0.7em;
+}
+body.android-thermal-print .dash-line.dash-before-foot {
+	margin: 0.7em 0 0.35em;
+}
+body.android-thermal-print .dash-line.dash-after-foot {
+	margin: 0.35em 0 0;
 }
 body.android-thermal-print .field-label {
 	font-size: 11pt;
@@ -11066,9 +11083,8 @@ body.android-thermal-print .field-value.name-val.txt-tiny {
 	line-height: 1.25;
 	margin-bottom: 0.7em;
 }
-body.android-thermal-print .field-value.dest-val,
-body.android-thermal-print .field-value.dest-val.txt-small,
-body.android-thermal-print .field-value.dest-val.txt-tiny {
+body.android-thermal-print .field-value.date-val,
+body.android-thermal-print .field-value.control-val {
 	font-size: 12pt;
 	font-weight: 700;
 	line-height: 1.25;
@@ -11086,8 +11102,8 @@ body.android-thermal-print .qr-table td {
 body.android-thermal-print .qr-img {
 	display: block;
 	margin: 0 auto;
-	width: 34mm !important;
-	height: 34mm !important;
+	width: 42mm !important;
+	height: 42mm !important;
 	max-width: none !important;
 	max-height: none !important;
 	aspect-ratio: 1 / 1;
@@ -11095,23 +11111,11 @@ body.android-thermal-print .qr-img {
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 }
-body.android-thermal-print .control-label {
-	font-size: 12pt;
-	font-weight: 900;
-	letter-spacing: 0.06em;
-	margin: 0.4em 0 0.12em;
-}
-body.android-thermal-print .control-value {
-	font-size: 16pt;
-	font-weight: 900;
-	letter-spacing: 0.02em;
-	line-height: 1.2;
-}
 body.android-thermal-print .foot {
 	font-size: 10.5pt;
 	font-weight: 500;
 	text-align: center;
-	margin: 2.5mm 0 0;
+	margin: 0;
 }
 @@media print {
 	html.android-thermal-print,
@@ -11144,24 +11148,15 @@ body.android-thermal-print .foot {
 	body.android-thermal-print .field-value.name-val,
 	body.android-thermal-print .field-value.name-val.txt-small,
 	body.android-thermal-print .field-value.name-val.txt-tiny,
-	body.android-thermal-print .field-value.dest-val,
-	body.android-thermal-print .field-value.dest-val.txt-small,
-	body.android-thermal-print .field-value.dest-val.txt-tiny {
+	body.android-thermal-print .field-value.date-val,
+	body.android-thermal-print .field-value.control-val {
 		font-size: 12pt !important;
 	}
 	body.android-thermal-print .qr-img {
-		width: 34mm !important;
-		height: 34mm !important;
+		width: 42mm !important;
+		height: 42mm !important;
 		max-width: none !important;
 		max-height: none !important;
-	}
-	body.android-thermal-print .control-label {
-		font-size: 12pt !important;
-		font-weight: 900 !important;
-	}
-	body.android-thermal-print .control-value {
-		font-size: 16pt !important;
-		font-weight: 900 !important;
 	}
 	body.android-thermal-print .foot {
 		font-size: 10.5pt !important;
@@ -11171,13 +11166,14 @@ body.android-thermal-print .foot {
 </head>
 <body class="${isAndroid ? 'android-thermal-print' : ''}">
 <div class="receipt">
-	<p class="receipt-title">VISITOR QR PASS</p>
 	<p class="dash-line" aria-hidden="true">${dashedLineText}</p>
+	<p class="receipt-title">VISITOR QR PASS</p>
+	<p class="dash-line dash-after-title" aria-hidden="true">${dashedLineText}</p>
 	<div class="fields">
 		<p class="field-label">NAME:</p>
 		<p class="field-value name-val ${nameSizeClass}">${nameHtml}</p>
-		<p class="field-label">DESTINATION:</p>
-		<p class="field-value dest-val ${destSizeClass}">${destHtml}</p>
+		<p class="field-label">DATE:</p>
+		<p class="field-value date-val">${dateHtml}</p>
 	</div>
 	<div class="qr-wrap">
 		<table class="qr-table" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
@@ -11185,10 +11181,14 @@ body.android-thermal-print .foot {
 				<img class="qr-img" src="${escAttr(qrSrc)}" width="400" height="400" alt="">
 			</td></tr>
 		</table>
-		<p class="control-label">CONTROL NUMBER</p>
-		<p class="control-value">${controlNoPrint}</p>
 	</div>
-	<p class="foot">Please present this ticket.</p>
+	<div class="fields">
+		<p class="field-label">CONTROL NO:</p>
+		<p class="field-value control-val">${controlNoPrint}</p>
+	</div>
+	<p class="dash-line dash-before-foot" aria-hidden="true">${dashedLineText}</p>
+	<p class="foot">Present this ticket on exit</p>
+	<p class="dash-line dash-after-foot" aria-hidden="true">${dashedLineText}</p>
 </div>
 </body>
 </html>`;
