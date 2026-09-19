@@ -323,11 +323,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
-			overflow-x: hidden;
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-			box-sizing: border-box;
+			padding: 20px;
 			background: rgba(15, 23, 42, 0.62);
 			backdrop-filter: blur(4px);
 		}
@@ -508,31 +504,12 @@
 			filter: brightness(0.97);
 		}
 
-		#photoConsentModal.confirmation-modal {
-			/* flex-start + margin:auto centers when short, avoids top-clip when tall */
-			align-items: flex-start;
-			justify-content: center;
-		}
-
 		.photo-consent-modal-card {
-			width: 100%;
-			max-width: 560px;
-			margin: auto;
-			max-height: calc(100dvh - 24px);
-			max-height: calc(
-				100dvh
-				- max(12px, env(safe-area-inset-top, 0px))
-				- max(12px, env(safe-area-inset-bottom, 0px))
-			);
-			display: flex;
-			flex-direction: column;
+			width: min(100%, 560px);
 			background: #ffffff;
 			border-radius: 20px;
 			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
-			overflow-x: hidden;
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-			box-sizing: border-box;
+			overflow: hidden;
 			border: 1px solid rgba(148, 163, 184, 0.2);
 		}
 
@@ -542,7 +519,6 @@
 			justify-content: space-between;
 			gap: 16px;
 			padding: 22px 24px 8px;
-			flex-shrink: 0;
 		}
 
 		.photo-consent-header-main {
@@ -609,8 +585,6 @@
 
 		.photo-consent-body {
 			padding: 8px 24px 6px;
-			flex: 1 1 auto;
-			min-height: 0;
 		}
 
 		.photo-consent-preview-wrap {
@@ -622,12 +596,9 @@
 		}
 
 		.photo-consent-preview {
-			width: 100%;
-			max-width: min(100%, 420px);
-			height: auto;
-			max-height: min(280px, 32dvh);
+			width: min(100%, 420px);
 			aspect-ratio: 16 / 10;
-			object-fit: contain;
+			object-fit: cover;
 			border-radius: 16px;
 			border: 1px solid #e2e8f0;
 			background: #0f172a;
@@ -703,12 +674,6 @@
 			flex-wrap: wrap;
 			gap: 12px;
 			padding: 18px 24px 24px;
-			flex-shrink: 0;
-			position: sticky;
-			bottom: 0;
-			background: #ffffff;
-			border-top: 1px solid #eef2f7;
-			z-index: 1;
 		}
 
 		.photo-consent-btn {
@@ -748,49 +713,6 @@
 			transform: translateY(-1px);
 		}
 
-		@media (max-width: 768px), (max-height: 750px) {
-			.photo-consent-modal-card {
-				max-height: calc(
-					100dvh
-					- max(12px, env(safe-area-inset-top, 0px))
-					- max(12px, env(safe-area-inset-bottom, 0px))
-				);
-			}
-
-			.photo-consent-header {
-				padding: 14px 18px 6px;
-				gap: 10px;
-			}
-
-			.photo-consent-heading p {
-				margin-top: 6px;
-				font-size: 0.86rem;
-			}
-
-			.photo-consent-body {
-				padding: 4px 18px 4px;
-			}
-
-			.photo-consent-preview-wrap {
-				gap: 10px;
-				margin: 0 0 10px;
-			}
-
-			.photo-consent-preview {
-				max-height: min(200px, 28dvh);
-			}
-
-			.photo-consent-privacy {
-				padding: 10px 12px;
-				gap: 10px;
-			}
-
-			.photo-consent-footer {
-				padding: 12px 18px max(14px, env(safe-area-inset-bottom, 0px));
-				gap: 10px;
-			}
-		}
-
 		@media (max-width: 560px) {
 			.photo-consent-header,
 			.photo-consent-body,
@@ -814,10 +736,6 @@
 				font-size: 1.15rem;
 			}
 
-			.photo-consent-preview {
-				max-height: min(180px, 26dvh);
-			}
-
 			.photo-consent-footer {
 				flex-direction: column-reverse;
 			}
@@ -832,28 +750,6 @@
 
 			.photo-consent-privacy-divider {
 				display: none;
-			}
-		}
-
-		@media (max-height: 640px) {
-			.photo-consent-preview {
-				max-height: min(140px, 22dvh);
-			}
-
-			.photo-consent-success {
-				padding: 6px 10px;
-				font-size: 0.8rem;
-			}
-
-			.photo-consent-privacy-icon {
-				width: 34px;
-				height: 34px;
-				flex-basis: 34px;
-				font-size: 0.9rem;
-			}
-
-			.photo-consent-privacy p {
-				font-size: 0.8rem;
 			}
 		}
 
@@ -2238,12 +2134,8 @@
 			}
 
 			.confirmation-modal {
-				padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+				padding: 12px;
 				align-items: flex-end;
-			}
-
-			#photoConsentModal.confirmation-modal {
-				align-items: flex-start;
 			}
 
 			.confirmation-modal-card {
@@ -2251,12 +2143,6 @@
 				max-height: min(92dvh, 640px);
 				overflow-y: auto;
 				border-radius: 16px 16px 0 0;
-				margin-top: auto;
-			}
-
-			#photoConsentModal .photo-consent-modal-card {
-				border-radius: 20px;
-				margin: auto;
 			}
 
 			.confirmation-photo-panel {
