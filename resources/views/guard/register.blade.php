@@ -504,255 +504,6 @@
 			filter: brightness(0.97);
 		}
 
-		.photo-consent-modal-card {
-			width: min(100%, 560px);
-			background: #ffffff;
-			border-radius: 20px;
-			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
-			overflow: hidden;
-			border: 1px solid rgba(148, 163, 184, 0.2);
-		}
-
-		.photo-consent-header {
-			display: flex;
-			align-items: flex-start;
-			justify-content: space-between;
-			gap: 16px;
-			padding: 22px 24px 8px;
-		}
-
-		.photo-consent-header-main {
-			display: flex;
-			align-items: flex-start;
-			gap: 14px;
-			min-width: 0;
-		}
-
-		.photo-consent-icon {
-			flex: 0 0 48px;
-			width: 48px;
-			height: 48px;
-			border-radius: 50%;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #e8f1ff;
-			border: 1px solid #d6e6ff;
-			color: #1d4ed8;
-			font-size: 1.25rem;
-		}
-
-		.photo-consent-heading {
-			min-width: 0;
-		}
-
-		.photo-consent-heading h2 {
-			margin: 0;
-			font-size: 1.35rem;
-			font-weight: 800;
-			color: #0f172a;
-			letter-spacing: -0.02em;
-			line-height: 1.2;
-		}
-
-		.photo-consent-heading p {
-			margin: 8px 0 0;
-			font-size: 0.92rem;
-			line-height: 1.5;
-			color: #64748b;
-		}
-
-		.photo-consent-close {
-			flex: 0 0 auto;
-			width: 36px;
-			height: 36px;
-			border: 0;
-			border-radius: 10px;
-			background: transparent;
-			color: #94a3b8;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 1.15rem;
-			cursor: pointer;
-			transition: background 0.15s ease, color 0.15s ease;
-		}
-
-		.photo-consent-close:hover {
-			background: #f1f5f9;
-			color: #475569;
-		}
-
-		.photo-consent-body {
-			padding: 8px 24px 6px;
-		}
-
-		.photo-consent-preview-wrap {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 14px;
-			margin: 0 0 16px;
-		}
-
-		.photo-consent-preview {
-			width: min(100%, 420px);
-			aspect-ratio: 16 / 10;
-			object-fit: cover;
-			border-radius: 16px;
-			border: 1px solid #e2e8f0;
-			background: #0f172a;
-			box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
-		}
-
-		.photo-consent-success {
-			display: inline-flex;
-			align-items: center;
-			gap: 8px;
-			padding: 8px 14px;
-			border-radius: 999px;
-			background: #dcfce7;
-			color: #166534;
-			font-size: 0.86rem;
-			font-weight: 700;
-			line-height: 1;
-		}
-
-		.photo-consent-success-icon {
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #16a34a;
-			color: #ffffff;
-			font-size: 0.7rem;
-		}
-
-		.photo-consent-privacy {
-			display: flex;
-			align-items: center;
-			gap: 14px;
-			padding: 14px 16px;
-			border-radius: 14px;
-			background: #f1f5f9;
-			border: 1px solid #e2e8f0;
-		}
-
-		.photo-consent-privacy-icon {
-			flex: 0 0 42px;
-			width: 42px;
-			height: 42px;
-			border-radius: 50%;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: #1e3a8a;
-			color: #ffffff;
-			font-size: 1.05rem;
-		}
-
-		.photo-consent-privacy-divider {
-			flex: 0 0 1px;
-			align-self: stretch;
-			width: 1px;
-			background: #cbd5e1;
-		}
-
-		.photo-consent-privacy p {
-			margin: 0;
-			min-width: 0;
-			font-size: 0.86rem;
-			line-height: 1.45;
-			color: #334155;
-		}
-
-		.photo-consent-footer {
-			display: flex;
-			justify-content: flex-end;
-			flex-wrap: wrap;
-			gap: 12px;
-			padding: 18px 24px 24px;
-		}
-
-		.photo-consent-btn {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			gap: 8px;
-			min-height: 46px;
-			padding: 11px 18px;
-			border-radius: 12px;
-			font-size: 0.95rem;
-			font-weight: 700;
-			cursor: pointer;
-			transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-		}
-
-		.photo-consent-btn-secondary {
-			border: 1.5px solid #cbd5e1;
-			background: #ffffff;
-			color: #1e293b;
-		}
-
-		.photo-consent-btn-secondary:hover {
-			background: #f8fafc;
-			border-color: #94a3b8;
-		}
-
-		.photo-consent-btn-primary {
-			border: 0;
-			background: #2563eb;
-			color: #ffffff;
-			box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
-		}
-
-		.photo-consent-btn-primary:hover {
-			background: #1d4ed8;
-			transform: translateY(-1px);
-		}
-
-		@media (max-width: 560px) {
-			.photo-consent-header,
-			.photo-consent-body,
-			.photo-consent-footer {
-				padding-left: 16px;
-				padding-right: 16px;
-			}
-
-			.photo-consent-header-main {
-				gap: 10px;
-			}
-
-			.photo-consent-icon {
-				width: 42px;
-				height: 42px;
-				flex-basis: 42px;
-				font-size: 1.1rem;
-			}
-
-			.photo-consent-heading h2 {
-				font-size: 1.15rem;
-			}
-
-			.photo-consent-footer {
-				flex-direction: column-reverse;
-			}
-
-			.photo-consent-btn {
-				width: 100%;
-			}
-
-			.photo-consent-privacy {
-				align-items: flex-start;
-			}
-
-			.photo-consent-privacy-divider {
-				display: none;
-			}
-		}
-
 		.retake-capture-btn {
 			display: inline-flex;
 			align-items: center;
@@ -7132,48 +6883,29 @@
 	</div>
 
 	<div class="confirmation-modal is-hidden" id="photoConsentModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="photoConsentModalTitle">
-		<div class="photo-consent-modal-card">
-			<div class="photo-consent-header">
-				<div class="photo-consent-header-main">
-					<div class="photo-consent-icon" aria-hidden="true">
-						<i class="bi bi-camera-fill"></i>
-					</div>
-					<div class="photo-consent-heading">
-						<h2 id="photoConsentModalTitle">Confirm Your Photo</h2>
-						<p id="photoConsentModalSubtitle">Please review your captured photo before continuing. This photo will be used on your visitor pass for identity verification during your visit.</p>
-					</div>
-				</div>
-				<button type="button" class="photo-consent-close" id="photoConsentCloseBtn" aria-label="Close photo confirmation">
-					<i class="bi bi-x-lg" aria-hidden="true"></i>
-				</button>
+		<div class="confirmation-modal-card">
+			<div class="confirmation-modal-header">
+				<h2 class="confirmation-modal-title" id="photoConsentModalTitle">Confirm Your Photo</h2>
+				<p class="confirmation-modal-subtitle" id="photoConsentModalSubtitle">Please review your captured photo before continuing. This photo will be used on your visitor pass for identity verification during your visit.</p>
 			</div>
-			<div class="photo-consent-body">
-				<div class="photo-consent-preview-wrap">
-					<img id="photoConsentPreview" class="photo-consent-preview" alt="Captured visitor photo preview">
-					<span class="photo-consent-success">
-						<span class="photo-consent-success-icon" aria-hidden="true">
-							<i class="bi bi-check-lg"></i>
-						</span>
-						Photo captured successfully
-					</span>
-				</div>
-				<div class="photo-consent-privacy">
-					<div class="photo-consent-privacy-icon" aria-hidden="true">
-						<i class="bi bi-shield-lock-fill"></i>
+			<div class="confirmation-modal-body">
+				<div class="confirmation-photo-panel">
+					<div class="confirmation-photo-frame">
+						<img id="photoConsentPreview" alt="Captured visitor photo preview">
 					</div>
-					<span class="photo-consent-privacy-divider" aria-hidden="true"></span>
-					<p>Your photo may be viewed only by authorized campus security personnel for visitor identification and security purposes.</p>
+					<div class="confirmation-photo-copy">
+						<span class="confirmation-photo-badge">Captured Photo</span>
+						<p class="confirmation-photo-note">Photo captured successfully. Review this photo before continuing.</p>
+					</div>
+				</div>
+
+				<div class="confirmation-summary">
+					<p class="confirmation-photo-note">Your photo may be viewed only by authorized campus security personnel for visitor identification and security purposes.</p>
 				</div>
 			</div>
-			<div class="photo-consent-footer">
-				<button type="button" class="photo-consent-btn photo-consent-btn-secondary" id="photoConsentRecaptureBtn">
-					<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
-					Retake Photo
-				</button>
-				<button type="button" class="photo-consent-btn photo-consent-btn-primary" id="photoConsentConfirmBtn">
-					<i class="bi bi-check-lg" aria-hidden="true"></i>
-					Use This Photo
-				</button>
+			<div class="confirmation-modal-footer">
+				<button type="button" class="confirmation-modal-btn secondary" id="photoConsentRecaptureBtn">Retake Photo</button>
+				<button type="button" class="confirmation-modal-btn primary" id="photoConsentConfirmBtn">Use This Photo</button>
 			</div>
 		</div>
 	</div>
@@ -8986,7 +8718,6 @@
 		const photoConsentPreview = document.getElementById('photoConsentPreview');
 		const photoConsentRecaptureBtn = document.getElementById('photoConsentRecaptureBtn');
 		const photoConsentConfirmBtn = document.getElementById('photoConsentConfirmBtn');
-		const photoConsentCloseBtn = document.getElementById('photoConsentCloseBtn');
 		const retakeCaptureBtn = document.getElementById('retakeCaptureBtn');
 
 		const formatVisitorAddress = (visitor) => {
@@ -10899,13 +10630,6 @@
 		});
 
 		photoConsentRecaptureBtn?.addEventListener('click', () => {
-			if (!awaitingPhotoConsent || hasSavedRegistration) {
-				return;
-			}
-			recaptureFacePhoto();
-		});
-
-		photoConsentCloseBtn?.addEventListener('click', () => {
 			if (!awaitingPhotoConsent || hasSavedRegistration) {
 				return;
 			}
