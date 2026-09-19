@@ -11086,8 +11086,8 @@ body.android-thermal-print .qr-table td {
 body.android-thermal-print .qr-img {
 	display: block;
 	margin: 0 auto;
-	width: 40mm !important;
-	height: 40mm !important;
+	width: 34mm !important;
+	height: 34mm !important;
 	max-width: none !important;
 	max-height: none !important;
 	aspect-ratio: 1 / 1;
@@ -11150,8 +11150,8 @@ body.android-thermal-print .foot {
 		font-size: 12pt !important;
 	}
 	body.android-thermal-print .qr-img {
-		width: 40mm !important;
-		height: 40mm !important;
+		width: 34mm !important;
+		height: 34mm !important;
 		max-width: none !important;
 		max-height: none !important;
 	}
