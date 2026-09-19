@@ -10982,8 +10982,8 @@ body {
 .qr-img {
 	display: block;
 	margin: 0 auto;
-	width: 38mm;
-	max-width: 92%;
+	width: 32mm;
+	max-width: 86%;
 	height: auto;
 	aspect-ratio: 1 / 1;
 	object-fit: contain;
