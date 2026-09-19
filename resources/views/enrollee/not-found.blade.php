@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	@include('partials.mobile-app-head')
 	<title>Enrollee Pass Not Found</title>
 	<style nonce="{{ $cspNonce }}">
 		:root {

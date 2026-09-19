@@ -21,6 +21,9 @@
 		</div>
 	</div>
 	<div class="guard-topbar-right">
+		<button type="button" class="guard-icon-btn js-fullscreen-toggle" aria-label="Enter full screen" title="Enter full screen" aria-pressed="false">
+			<i class="bi bi-arrows-fullscreen" data-fullscreen-icon aria-hidden="true"></i>
+		</button>
 		<a href="/guard/alert" class="guard-icon-btn" aria-label="Active alerts{{ $topbarAlertCount > 0 ? ' ('.$topbarAlertCount.' unread)' : '' }}">
 			<i class="bi bi-bell" aria-hidden="true"></i>
 			@if ($topbarAlertCount > 0)

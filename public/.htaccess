@@ -5,6 +5,10 @@
 # X-Frame-Options: anti-clickjacking (blocks cross-origin framing).
 # Content-Security-Policy is set by Laravel middleware (per-request script nonce).
 
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+</IfModule>
+
 <IfModule mod_headers.c>
     Header always set Strict-Transport-Security "max-age=300" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
 

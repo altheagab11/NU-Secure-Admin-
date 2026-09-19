@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.mobile-app-head')
     <title>Password Reset Successful - NU-SECURE</title>
     <style nonce="{{ $cspNonce }}">
         @include('auth.partials.auth-styles')

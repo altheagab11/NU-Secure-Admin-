@@ -1,10 +1,22 @@
 html {
+	width: 100%;
+	min-height: 100%;
+	min-height: 100dvh;
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
 }
 
+html,
 body {
-	overflow-x: clip;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	min-height: 100%;
+	min-height: 100dvh;
+	overflow-x: hidden;
 }
 
 img,
@@ -19,14 +31,19 @@ canvas {
 }
 
 .layout {
+	display: flex;
+	width: 100%;
+	max-width: 100%;
 	min-height: 100vh;
 	min-height: 100dvh;
-	width: 100%;
+	box-sizing: border-box;
 }
 
 .main {
 	min-width: 0;
 	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .guard-nav-backdrop {
@@ -129,11 +146,23 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	position: relative;
 	text-decoration: none;
 	flex-shrink: 0;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
 }
 
 .guard-icon-btn:hover {
 	background: #eef4ff;
 	color: #39459a;
+}
+
+button.guard-icon-btn {
+	font: inherit;
+	padding: 0;
+}
+
+.guard-icon-btn.is-fullscreen-active {
+	background: #eef4ff;
+	border-color: #c7d7ff;
 }
 
 .guard-icon-btn__dot {
@@ -181,6 +210,50 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	color: #39459a;
 }
 
+.self-reg-fullscreen-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0.45rem 0.9rem;
+	border: 1.5px solid rgba(255, 255, 255, 0.55);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font-weight: 600;
+	font-size: 0.88rem;
+	line-height: 1.2;
+	cursor: pointer;
+	flex-shrink: 0;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.self-reg-header-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.self-reg-fullscreen-btn:hover,
+.self-reg-fullscreen-btn.is-fullscreen-active {
+	background: rgba(255, 255, 255, 0.2);
+	color: #fff;
+}
+
+.self-reg-fullscreen-btn .bi {
+	font-size: 1rem;
+}
+
+.self-reg-header-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+
 /* Legacy mobile topbar class (kept for print-ticket selectors) */
 .guard-mobile-topbar {
 	display: none;
@@ -221,8 +294,12 @@ body.guard-sidebar-open .guard-nav-backdrop {
 		margin-left: 0 !important;
 		flex: 1;
 		min-height: 0;
+		min-height: 100dvh;
 		width: 100%;
 		max-width: 100%;
+		padding-left: max(12px, env(safe-area-inset-left, 0px));
+		padding-right: max(12px, env(safe-area-inset-right, 0px));
+		padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
 	}
 
 	.guard-menu-btn {
@@ -245,6 +322,10 @@ body.guard-sidebar-open .guard-nav-backdrop {
 	.guard-topbar-date {
 		font-size: 0.8rem;
 	}
+
+	.guard-topbar-right {
+		gap: 8px;
+	}
 }
 
 /* Compact tablets / large phones */
@@ -259,6 +340,15 @@ body.guard-sidebar-open .guard-nav-backdrop {
 
 	.brand-subtitle {
 		font-size: 0.7rem;
+	}
+
+	.self-reg-fullscreen-btn [data-fullscreen-label] {
+		display: none;
+	}
+
+	.self-reg-fullscreen-btn {
+		width: 44px;
+		padding: 0;
 	}
 }
 

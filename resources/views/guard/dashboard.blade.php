@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	@include('partials.mobile-app-head')
 	<title>Guard Dashboard</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -22,14 +22,30 @@
 			box-sizing: border-box;
 		}
 
+		html {
+			width: 100%;
+			min-height: 100%;
+			min-height: 100dvh;
+		}
+
+		html,
 		body {
+			width: 100%;
 			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			min-height: 100%;
+			min-height: 100dvh;
+			overflow-x: hidden;
 			background: var(--sidebar-bg);
 			color: #0f172a;
 		}
 
 		.layout {
 			display: flex;
+			width: 100%;
 			min-height: 100vh;
 			min-height: 100dvh;
 		}
@@ -37,6 +53,7 @@
 		.sidebar {
 			width: 260px;
 			min-height: 100vh;
+			min-height: 100dvh;
 			background: linear-gradient(180deg, #243c96 0%, #2d3fa3 45%, #3146b4 100%);
 			color: #fff;
 			padding: 18px 14px;
@@ -46,6 +63,7 @@
 			left: 0;
 			bottom: 0;
 			height: 100vh;
+			height: 100dvh;
 			overflow-y: auto;
 			z-index: 1000;
 		}

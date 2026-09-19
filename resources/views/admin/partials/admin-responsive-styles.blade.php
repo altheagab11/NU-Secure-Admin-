@@ -1,10 +1,22 @@
 html {
+	width: 100%;
+	min-height: 100%;
+	min-height: 100dvh;
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
 }
 
+html,
 body {
-	overflow-x: clip !important;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	min-height: 100%;
+	min-height: 100dvh;
+	overflow-x: hidden !important;
 }
 
 img,
@@ -18,11 +30,16 @@ video {
 	min-width: 0 !important;
 	width: 100%;
 	max-width: 100%;
+	min-height: 100vh;
+	min-height: 100dvh;
+	box-sizing: border-box;
 }
 
 .main {
 	min-width: 0;
+	width: 100%;
 	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .admin-nav-backdrop {

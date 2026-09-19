@@ -54,7 +54,7 @@ class ContentSecurityPolicy
 
             "media-src 'self' blob:",
 
-            "manifest-src 'none'",
+            "manifest-src 'self'",
 
             "frame-src 'self' https://challenges.cloudflare.com",
 

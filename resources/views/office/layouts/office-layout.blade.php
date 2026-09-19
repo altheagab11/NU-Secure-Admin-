@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	@include('partials.mobile-app-head')
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>@yield('title', $pageTitle ?? 'Office Portal') — NU-Secure</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -35,15 +35,28 @@
 		}
 
 		* { box-sizing: border-box; }
+		html {
+			width: 100%;
+			min-height: 100%;
+			min-height: 100dvh;
+		}
+		html,
 		body {
+			width: 100%;
 			margin: 0;
+			padding: 0;
+		}
+		body {
+			min-height: 100%;
+			min-height: 100dvh;
+			overflow-x: hidden;
 			background: var(--nu-bg);
 			color: var(--nu-text);
-			min-height: 100vh;
 		}
 
 		.office-layout {
 			display: flex;
+			width: 100%;
 			min-height: 100vh;
 			min-height: 100dvh;
 		}
@@ -52,6 +65,7 @@
 		.office-sidebar {
 			width: 260px;
 			min-height: 100vh;
+			min-height: 100dvh;
 			background: linear-gradient(180deg, #243c96 0%, #2d3fa3 45%, #3146b4 100%);
 			color: #fff;
 			padding: 18px 14px;
@@ -61,6 +75,7 @@
 			left: 0;
 			bottom: 0;
 			height: 100vh;
+			height: 100dvh;
 			overflow-y: auto;
 			z-index: 1000;
 			transition: transform .25s ease;
@@ -262,8 +277,13 @@
 			margin-left: 260px;
 			min-width: 0;
 			min-height: 100vh;
+			min-height: 100dvh;
 			padding: 20px 22px 24px;
+			padding-left: max(22px, env(safe-area-inset-left, 0px));
+			padding-right: max(22px, env(safe-area-inset-right, 0px));
+			padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
 			background: #f7f8ff;
+			box-sizing: border-box;
 		}
 
 		.office-topbar {
@@ -291,8 +311,10 @@
 			width: 42px; height: 42px; border-radius: 14px; border: 1px solid #e4ebf7;
 			background: #f8fbff; color: var(--nu-primary); display: inline-flex;
 			align-items: center; justify-content: center; position: relative; text-decoration: none;
+			cursor: pointer; font: inherit; padding: 0; -webkit-tap-highlight-color: transparent;
 		}
 		.icon-btn:hover { background: #eef4ff; color: var(--nu-primary); }
+		.icon-btn.is-fullscreen-active { background: #eef4ff; border-color: #c7d7ff; }
 		.icon-btn .dot {
 			position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
 			border-radius: 50%; background: var(--nu-danger);
@@ -526,6 +548,9 @@
 				</div>
 			</div>
 			<div class="topbar-right">
+				<button type="button" class="icon-btn js-fullscreen-toggle" aria-label="Enter full screen" title="Enter full screen" aria-pressed="false">
+					<i class="bi bi-arrows-fullscreen" data-fullscreen-icon aria-hidden="true"></i>
+				</button>
 				<a href="{{ route('office.notifications') }}" class="icon-btn" aria-label="Notifications">
 					<i class="bi bi-bell" aria-hidden="true"></i>
 					@if($unreadCount > 0)<span class="dot" aria-hidden="true"></span>@endif
@@ -581,6 +606,7 @@
 	});
 })();
 </script>
+@include('partials.fullscreen-toggle-script')
 @stack('scripts')
 @include('partials.live-auto-refresh', [
 	'liveRefreshIntervalMs' => 10000,

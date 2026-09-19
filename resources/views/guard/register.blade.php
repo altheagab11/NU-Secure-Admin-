@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	@include('partials.mobile-app-head')
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Register Visitor</title>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,14 +18,30 @@
 			box-sizing: border-box;
 		}
 
+		html {
+			width: 100%;
+			min-height: 100%;
+			min-height: 100dvh;
+		}
+
+		html,
 		body {
+			width: 100%;
 			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			min-height: 100%;
+			min-height: 100dvh;
+			overflow-x: hidden;
 			background: var(--sidebar-bg);
 			color: #0f172a;
 		}
 
 		.layout {
 			display: flex;
+			width: 100%;
 			min-height: 100vh;
 			min-height: 100dvh;
 		}
@@ -41,6 +57,7 @@
 		.sidebar {
 			width: 260px;
 			min-height: 100vh;
+			min-height: 100dvh;
 			background: linear-gradient(180deg, #243c96 0%, #2d3fa3 45%, #3146b4 100%);
 			color: #fff;
 			padding: 18px 14px;
@@ -51,6 +68,8 @@
 			overflow-y: auto;
 			overflow-x: hidden;
 			z-index: 1000;
+			height: 100vh;
+			height: 100dvh;
 		}
 
 		.sidebar::-webkit-scrollbar {
@@ -504,13 +523,34 @@
 			filter: brightness(0.97);
 		}
 
+		/* Photo consent modal: keep within dynamic viewport; scroll when needed */
+		#photoConsentModal.confirmation-modal {
+			align-items: center;
+			justify-content: center;
+			overflow-x: hidden;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			padding:
+				max(12px, env(safe-area-inset-top, 0px))
+				12px
+				max(12px, env(safe-area-inset-bottom, 0px));
+			box-sizing: border-box;
+		}
+
 		.photo-consent-modal-card {
-			width: min(100%, 560px);
+			width: 100%;
+			max-width: 560px;
+			max-height: calc(100vh - 24px);
+			max-height: calc(100dvh - 24px);
+			margin: auto;
+			display: flex;
+			flex-direction: column;
 			background: #ffffff;
 			border-radius: 20px;
 			box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
 			overflow: hidden;
 			border: 1px solid rgba(148, 163, 184, 0.2);
+			box-sizing: border-box;
 		}
 
 		.photo-consent-header {
@@ -519,6 +559,7 @@
 			justify-content: space-between;
 			gap: 16px;
 			padding: 22px 24px 8px;
+			flex-shrink: 0;
 		}
 
 		.photo-consent-header-main {
@@ -585,6 +626,11 @@
 
 		.photo-consent-body {
 			padding: 8px 24px 6px;
+			flex: 1 1 auto;
+			min-height: 0;
+			overflow-x: hidden;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.photo-consent-preview-wrap {
@@ -596,9 +642,13 @@
 		}
 
 		.photo-consent-preview {
-			width: min(100%, 420px);
-			aspect-ratio: 16 / 10;
-			object-fit: cover;
+			display: block;
+			width: 100%;
+			max-width: min(100%, 420px);
+			height: auto;
+			max-height: min(42vh, 280px);
+			max-height: min(42dvh, 280px);
+			object-fit: contain;
 			border-radius: 16px;
 			border: 1px solid #e2e8f0;
 			background: #0f172a;
@@ -674,6 +724,13 @@
 			flex-wrap: wrap;
 			gap: 12px;
 			padding: 18px 24px 24px;
+			flex-shrink: 0;
+			position: sticky;
+			bottom: 0;
+			z-index: 1;
+			background: #ffffff;
+			border-top: 1px solid #eef2f7;
+			box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.04);
 		}
 
 		.photo-consent-btn {
@@ -713,6 +770,75 @@
 			transform: translateY(-1px);
 		}
 
+		@media (max-width: 768px), (max-height: 750px) {
+			#photoConsentModal.confirmation-modal {
+				align-items: flex-start;
+				justify-content: center;
+			}
+
+			.photo-consent-modal-card {
+				margin: 0 auto;
+				max-height: calc(
+					100vh
+					- max(12px, env(safe-area-inset-top, 0px))
+					- max(12px, env(safe-area-inset-bottom, 0px))
+				);
+				max-height: calc(
+					100dvh
+					- max(12px, env(safe-area-inset-top, 0px))
+					- max(12px, env(safe-area-inset-bottom, 0px))
+				);
+				border-radius: 16px;
+			}
+
+			.photo-consent-header {
+				padding: 14px 16px 6px;
+				gap: 10px;
+			}
+
+			.photo-consent-body {
+				padding: 4px 16px 8px;
+			}
+
+			.photo-consent-footer {
+				padding: 12px 16px max(14px, env(safe-area-inset-bottom, 0px));
+				gap: 10px;
+			}
+
+			.photo-consent-preview-wrap {
+				gap: 10px;
+				margin: 0 0 10px;
+			}
+
+			.photo-consent-preview {
+				max-height: min(32vh, 220px);
+				max-height: min(32dvh, 220px);
+				border-radius: 12px;
+				box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+			}
+
+			.photo-consent-heading p {
+				margin-top: 6px;
+				font-size: 0.86rem;
+			}
+
+			.photo-consent-privacy {
+				gap: 10px;
+				padding: 10px 12px;
+			}
+
+			.photo-consent-privacy-icon {
+				flex-basis: 36px;
+				width: 36px;
+				height: 36px;
+				font-size: 0.95rem;
+			}
+
+			.photo-consent-btn {
+				min-height: 44px;
+			}
+		}
+
 		@media (max-width: 560px) {
 			.photo-consent-header,
 			.photo-consent-body,
@@ -750,6 +876,26 @@
 
 			.photo-consent-privacy-divider {
 				display: none;
+			}
+
+			.photo-consent-preview {
+				max-height: min(28vh, 200px);
+				max-height: min(28dvh, 200px);
+			}
+		}
+
+		@media (max-height: 640px) {
+			.photo-consent-preview {
+				max-height: min(24vh, 160px);
+				max-height: min(24dvh, 160px);
+			}
+
+			.photo-consent-privacy {
+				padding: 8px 10px;
+			}
+
+			.photo-consent-privacy p {
+				font-size: 0.8rem;
 			}
 		}
 
@@ -2138,6 +2284,15 @@
 				align-items: flex-end;
 			}
 
+			/* Photo consent: override bottom-sheet alignment; keep centered when height allows */
+			#photoConsentModal.confirmation-modal {
+				align-items: center;
+				padding:
+					max(12px, env(safe-area-inset-top, 0px))
+					12px
+					max(12px, env(safe-area-inset-bottom, 0px));
+			}
+
 			.confirmation-modal-card {
 				width: 100%;
 				max-height: min(92dvh, 640px);
@@ -2207,6 +2362,13 @@
 			.ticket-btn {
 				flex: 1 1 auto;
 				min-width: min(100%, 140px);
+			}
+		}
+
+		/* After shared mobile modal rules: short viewports pin photo consent to the top */
+		@media (max-width: 768px), (max-height: 750px) {
+			#photoConsentModal.confirmation-modal {
+				align-items: flex-start;
 			}
 		}
 
@@ -7272,12 +7434,18 @@
 						</div>
 					</div>
 					@endif
-					<a href="{{ route('logout') }}"
-					   class="self-reg-logout-btn"
-					   id="selfRegLogoutBtn">
-						<i class="bi bi-box-arrow-right"></i>
-						<span>Logout</span>
-					</a>
+					<div class="self-reg-header-actions">
+						<button type="button" class="self-reg-fullscreen-btn js-fullscreen-toggle" aria-label="Enter full screen" title="Enter full screen" aria-pressed="false">
+							<i class="bi bi-arrows-fullscreen" data-fullscreen-icon aria-hidden="true"></i>
+							<span data-fullscreen-label>Full Screen</span>
+						</button>
+						<a href="{{ route('logout') }}"
+						   class="self-reg-logout-btn"
+						   id="selfRegLogoutBtn">
+							<i class="bi bi-box-arrow-right"></i>
+							<span>Logout</span>
+						</a>
+					</div>
 					<form id="self-reg-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
 						@csrf
 					</form>

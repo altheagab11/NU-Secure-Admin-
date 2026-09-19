@@ -1,0 +1,19 @@
+{
+	"name": "NU-Secure",
+	"short_name": "NU-Secure",
+	"description": "NU-Secure Visitor Monitoring System",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#243c96",
+	"theme_color": "#243c96",
+	"icons": [
+		{
+			"src": "/picture/lipa.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		}
+	]
+}

@@ -25,6 +25,9 @@
 		</div>
 	</div>
 	<div class="admin-topbar-right">
+		<button type="button" class="admin-icon-btn js-fullscreen-toggle" aria-label="Enter full screen" title="Enter full screen" aria-pressed="false">
+			<i class="bi bi-arrows-fullscreen" data-fullscreen-icon aria-hidden="true"></i>
+		</button>
 		<a href="/admin/alerts" class="admin-icon-btn" aria-label="Alerts{{ $topbarAlertCount > 0 ? ' ('.$topbarAlertCount.' unresolved)' : '' }}">
 			<i class="bi bi-bell" aria-hidden="true"></i>
 			@if ($topbarAlertCount > 0)

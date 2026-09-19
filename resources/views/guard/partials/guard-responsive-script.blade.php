@@ -48,3 +48,4 @@
 	});
 })();
 </script>
+@include('partials.fullscreen-toggle-script')
