@@ -7177,6 +7177,7 @@
 		</div>
 	</div>
 	@endif
+	
 
 	@if ($isSelfRegisteredRole)
 	<div class="confirmation-modal is-hidden" id="endDutyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="endDutyModalTitle">
