@@ -6838,7 +6838,7 @@
 		<div class="confirmation-modal-card">
 			<div class="confirmation-modal-header">
 				<h2 class="confirmation-modal-title" id="existingVisitorModalTitle">Existing Visitor Found</h2>
-				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor record. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.</p>
+				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.</p>
 			</div>
 			<div class="confirmation-modal-body">
 				<div class="confirmation-photo-panel">
@@ -6864,10 +6864,6 @@
 					<div class="confirmation-summary-row">
 						<span class="confirmation-summary-label">Birthday</span>
 						<span class="confirmation-summary-value" id="existingVisitorModalBirthday">-</span>
-					</div>
-					<div class="confirmation-summary-row">
-						<span class="confirmation-summary-label">Saved Address</span>
-						<span class="confirmation-summary-value" id="existingVisitorModalAddressState">-</span>
 					</div>
 					<div class="confirmation-summary-row is-hidden" id="existingVisitorModalProgressRow">
 						<span class="confirmation-summary-label">Enrollment Progress</span>
@@ -8626,7 +8622,6 @@
 		const existingVisitorModalName = document.getElementById('existingVisitorModalName');
 		const existingVisitorModalContact = document.getElementById('existingVisitorModalContact');
 		const existingVisitorModalBirthday = document.getElementById('existingVisitorModalBirthday');
-		const existingVisitorModalAddressState = document.getElementById('existingVisitorModalAddressState');
 		const existingVisitorModalProgressRow = document.getElementById('existingVisitorModalProgressRow');
 		const existingVisitorModalProgress = document.getElementById('existingVisitorModalProgress');
 		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
@@ -9887,6 +9882,8 @@
 				return;
 			}
 
+			// Match is name + birthday only. Keep the current form address
+			// (from the new ID scan) because a returning visitor's address can change.
 			if (visitorFirstName && existingVisitor.first_name) {
 				visitorFirstName.value = toTitleCase(existingVisitor.first_name);
 			}
@@ -9896,25 +9893,6 @@
 			if (visitorBirthday && existingVisitor.birthday) {
 				visitorBirthday.value = String(existingVisitor.birthday).trim();
 			}
-			if (visitorHouseNo && existingVisitor.house_no) {
-				visitorHouseNo.value = String(existingVisitor.house_no).trim();
-			}
-			if (visitorStreet && existingVisitor.street) {
-				visitorStreet.value = String(existingVisitor.street).trim();
-			}
-			if (visitorBarangay && existingVisitor.barangay) {
-				visitorBarangay.value = String(existingVisitor.barangay).trim();
-			}
-			if (visitorCity && existingVisitor.city_municipality) {
-				visitorCity.value = String(existingVisitor.city_municipality).trim();
-			}
-			if (visitorProvince && existingVisitor.province) {
-				visitorProvince.value = String(existingVisitor.province).trim();
-			}
-			if (visitorRegion && existingVisitor.region) {
-				visitorRegion.value = String(existingVisitor.region).trim();
-			}
-			syncRegionFromProvince();
 			if (visitorPhoneNumber && existingVisitor.contact_no) {
 				const digits = String(existingVisitor.contact_no).replace(/\D/g, '');
 				visitorPhoneNumber.value = isSelfRegistrationKiosk
@@ -9958,7 +9936,6 @@
 			const fullName = `${toTitleCase(existingVisitor.first_name)} ${toTitleCase(existingVisitor.last_name)}`.trim() || 'Unknown visitor';
 			const contactNo = String(existingVisitor.contact_no || '-').trim() || '-';
 			const birthday = String(existingVisitor.birthday || '-').trim() || '-';
-			const addressText = formatVisitorAddress(existingVisitor);
 			const previewUrl = String(existingVisitor.photo_preview_url || existingVisitor.photo_path || '').trim();
 			const hasPreviewPhoto = Boolean(previewUrl);
 			const unfinished = existingVisitor.unfinished_enrollee && existingVisitor.unfinished_enrollee.has_unfinished
@@ -9973,7 +9950,7 @@
 			if (existingVisitorModalSubtitle) {
 				existingVisitorModalSubtitle.textContent = unfinished
 					? 'This enrollee has unfinished office steps. Confirm to resume the same enrollment progress on the new QR pass.'
-					: 'We found a matching visitor record. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.';
+					: 'We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.';
 			}
 			if (existingVisitorModalName) {
 				existingVisitorModalName.textContent = fullName;
@@ -9983,9 +9960,6 @@
 			}
 			if (existingVisitorModalBirthday) {
 				existingVisitorModalBirthday.textContent = birthday;
-			}
-			if (existingVisitorModalAddressState) {
-				existingVisitorModalAddressState.textContent = addressText;
 			}
 			if (existingVisitorModalProgressRow && existingVisitorModalProgress) {
 				if (unfinished) {

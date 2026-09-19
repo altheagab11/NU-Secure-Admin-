@@ -706,12 +706,14 @@ class GuardVisitorController extends Controller
     }
 
     /**
-     * Find existing visitor for registration dedup by exact first+last name.
+     * Find existing visitor for registration dedup by name + birthday.
+     * Address is not part of the match because it can change between visits.
      */
     protected function findVisitorForRegistration(array $validated, ?int $visitorId = null): ?object
     {
         $firstName = trim((string) ($validated['first_name'] ?? ''));
         $lastName = trim((string) ($validated['last_name'] ?? ''));
+        $birthday = $this->normalizeBirthdayValue($validated['birthday'] ?? null);
 
         $baseQuery = static function () {
             return DB::table('visitor')
@@ -719,13 +721,14 @@ class GuardVisitorController extends Controller
                 ->orderByDesc('visitor_id');
         };
 
-        if ($firstName === '' || $lastName === '') {
+        if ($firstName === '' || $lastName === '' || $birthday === null) {
             return null;
         }
 
         $query = $baseQuery()
             ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
             ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
+            ->whereDate('birthday', '=', $birthday)
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
@@ -1170,7 +1173,8 @@ class GuardVisitorController extends Controller
     }
 
     /**
-     * Try to find an existing visitor by exact first+last name.
+     * Find an existing visitor by first name, last name, and birthday only.
+     * Address is intentionally excluded because it can change between visits.
      */
     protected function findExistingVisitorRecord(array $formData, array $extracted, string $registerType = 'normal'): array
     {
