@@ -58,23 +58,11 @@
 	position: relative;
 	text-decoration: none;
 	flex-shrink: 0;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
 }
 
 .admin-icon-btn:hover {
 	background: #eef4ff;
 	color: #39459a;
-}
-
-button.admin-icon-btn {
-	font: inherit;
-	padding: 0;
-}
-
-.admin-icon-btn.is-fullscreen-active {
-	background: #eef4ff;
-	border-color: #c7d7ff;
 }
 
 .admin-icon-btn__dot {
