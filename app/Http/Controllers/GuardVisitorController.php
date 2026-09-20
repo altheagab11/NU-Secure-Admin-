@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\GuardDutyUnavailableException;
 use App\Services\ActivityLogService;
+use App\Services\ExistingVisitorLookupService;
 use App\Services\GuardDutyService;
 use App\Services\OCRService;
 use Carbon\Carbon;
@@ -17,7 +18,10 @@ use Illuminate\Validation\Rule;
 
 class GuardVisitorController extends Controller
 {
-    public function __construct(protected GuardDutyService $guardDutyService) {}
+    public function __construct(
+        protected GuardDutyService $guardDutyService,
+        protected ExistingVisitorLookupService $existingVisitorLookupService,
+    ) {}
 
     public function processExitScan(Request $request)
     {
@@ -706,40 +710,38 @@ class GuardVisitorController extends Controller
     }
 
     /**
-     * Find existing visitor for registration dedup by name + birthday.
-     * Address is not part of the match because it can change between visits.
+     * Find the confirmed existing visitor for registration reuse.
+     * Match is normalized Full Name + Birthday, scoped to the selected visitor_id.
+     * Never auto-picks the first of several people who share the same name and birthday.
      */
     protected function findVisitorForRegistration(array $validated, ?int $visitorId = null): ?object
     {
-        $firstName = trim((string) ($validated['first_name'] ?? ''));
-        $lastName = trim((string) ($validated['last_name'] ?? ''));
-        $birthday = $this->normalizeBirthdayValue($validated['birthday'] ?? null);
-
-        $baseQuery = static function () {
-            return DB::table('visitor')
-                ->select('visitor_id', 'address_id', 'visitor_photo_with_id_url')
-                ->orderByDesc('visitor_id');
-        };
-
-        if ($firstName === '' || $lastName === '' || $birthday === null) {
+        if ($visitorId === null || $visitorId <= 0) {
             return null;
         }
 
-        $query = $baseQuery()
-            ->whereRaw("LOWER(TRIM(COALESCE(first_name, ''))) = ?", [Str::lower($firstName)])
-            ->whereRaw("LOWER(TRIM(COALESCE(last_name, ''))) = ?", [Str::lower($lastName)])
+        $firstName = trim((string) ($validated['first_name'] ?? ''));
+        $lastName = trim((string) ($validated['last_name'] ?? ''));
+        $birthday = $this->normalizeBirthdayValue($validated['birthday'] ?? null);
+        $normalizedName = $this->existingVisitorLookupService->normalizeFullName($firstName, $lastName);
+
+        if ($normalizedName === '' || $birthday === null) {
+            return null;
+        }
+
+        $nameExpression = $this->existingVisitorLookupService->normalizedFullNameExpression();
+
+        return DB::table('visitor')
+            ->select('visitor_id', 'address_id', 'visitor_photo_with_id_url')
+            ->where('visitor_id', $visitorId)
+            ->whereRaw("{$nameExpression} = ?", [$normalizedName])
             ->whereDate('birthday', '=', $birthday)
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
                     ->whereColumn('vi.visitor_id', 'visitor.visitor_id');
-            });
-
-        if ($visitorId !== null && $visitorId > 0) {
-            $query->where('visitor_id', $visitorId);
-        }
-
-        return $query->first();
+            })
+            ->first();
     }
 
     /**
@@ -1156,6 +1158,9 @@ class GuardVisitorController extends Controller
                 'extracted_data' => $extracted,
                 'form_data' => $formData,
                 'existing_visitor' => $existingVisitor,
+                'status' => $existingVisitor['status'] ?? ExistingVisitorLookupService::STATUS_NO_MATCH,
+                'match_count' => $existingVisitor['match_count'] ?? 0,
+                'visitors' => $existingVisitor['visitors'] ?? [],
                 'raw_text' => $ocrResult['raw_text'],
                 'confidence' => $ocrResult['confidence'] ?? 0,
             ]);
@@ -1173,63 +1178,101 @@ class GuardVisitorController extends Controller
     }
 
     /**
-     * Find an existing visitor by first name, last name, and birthday only.
+     * Look up existing visitors using the guard's final Full Name + Birthday
+     * after the parsed values have been reviewed or corrected.
+     */
+    public function lookupExistingVisitor(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
+            'birthday' => ['nullable', 'string', 'max:50'],
+            'register_type' => ['nullable', 'string', Rule::in(['normal', 'contractor', 'enrollee'])],
+        ]);
+
+        $existingVisitor = $this->findExistingVisitorRecord(
+            [
+                'first_name' => $validated['first_name'] ?? '',
+                'last_name' => $validated['last_name'] ?? '',
+                'birthday' => $validated['birthday'] ?? '',
+            ],
+            [],
+            (string) ($validated['register_type'] ?? 'normal')
+        );
+
+        return response()->json([
+            'success' => true,
+            'status' => $existingVisitor['status'] ?? ExistingVisitorLookupService::STATUS_NO_MATCH,
+            'match_count' => $existingVisitor['match_count'] ?? 0,
+            'visitors' => $existingVisitor['visitors'] ?? [],
+            'existing_visitor' => $existingVisitor,
+        ]);
+    }
+
+    /**
+     * Find ALL existing visitors by normalized full name and birthday.
      * Address is intentionally excluded because it can change between visits.
+     * Name + birthday is not unique: multiple people may share both values.
      */
     protected function findExistingVisitorRecord(array $formData, array $extracted, string $registerType = 'normal'): array
     {
         $firstName = trim((string) ($formData['first_name'] ?? ''));
         $lastName = trim((string) ($formData['last_name'] ?? ''));
-
-        $baseQuery = static function () {
-            return DB::table('visitor as v')
-                ->leftJoin('address as a', 'a.address_id', '=', 'v.address_id')
-                ->select([
-                    'v.visitor_id',
-                    'v.first_name',
-                    'v.last_name',
-                    'v.birthday',
-                    'v.contact_no',
-                    'v.visitor_photo_with_id_url',
-                    'a.house_no',
-                    'a.street',
-                    'a.barangay',
-                    'a.city_municipality',
-                    'a.province',
-                    'a.region',
-                    'v.created_at',
-                ]);
-        };
-
-        if ($firstName === '' || $lastName === '') {
-            return ['exists' => false];
-        }
-
+        $normalizedName = $this->existingVisitorLookupService->normalizeFullName($firstName, $lastName);
         $birthday = $this->normalizeBirthdayValue($formData['birthday'] ?? null);
-        if ($birthday === null) {
-            return ['exists' => false];
+
+        if ($normalizedName === '' || $birthday === null) {
+            return $this->existingVisitorLookupService->buildLookupPayload([]);
         }
 
-        $record = $baseQuery()
-            ->whereRaw("LOWER(TRIM(COALESCE(v.first_name, ''))) = ?", [Str::lower($firstName)])
-            ->whereRaw("LOWER(TRIM(COALESCE(v.last_name, ''))) = ?", [Str::lower($lastName)])
+        $nameExpression = $this->existingVisitorLookupService->normalizedFullNameExpression('v');
+
+        $records = DB::table('visitor as v')
+            ->leftJoin('address as a', 'a.address_id', '=', 'v.address_id')
+            ->select([
+                'v.visitor_id',
+                'v.first_name',
+                'v.last_name',
+                'v.birthday',
+                'v.contact_no',
+                'v.visitor_photo_with_id_url',
+                'a.house_no',
+                'a.street',
+                'a.barangay',
+                'a.city_municipality',
+                'a.province',
+                'a.region',
+                'v.created_at',
+            ])
+            ->whereRaw("{$nameExpression} = ?", [$normalizedName])
             ->whereDate('v.birthday', '=', $birthday)
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('visit as vi')
                     ->whereColumn('vi.visitor_id', 'v.visitor_id');
             })
-            ->orderByDesc('v.created_at')
-            ->orderByDesc('v.visitor_id')
-            ->first();
+            ->orderBy('v.visitor_id')
+            ->get();
 
-        if (! $record) {
-            return ['exists' => false];
-        }
+        $visitors = $records->map(function ($record) use ($registerType) {
+            return $this->formatExistingVisitorMatch($record, $registerType);
+        })->values()->all();
 
+        return $this->existingVisitorLookupService->buildLookupPayload($visitors);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function formatExistingVisitorMatch(object $record, string $registerType = 'normal'): array
+    {
         $photoPath = trim((string) ($record->visitor_photo_with_id_url ?? ''));
-
         $previewUrl = $this->resolveVisitorPhotoUrl($photoPath);
+        $firstName = (string) ($record->first_name ?? '');
+        $lastName = (string) ($record->last_name ?? '');
+        $contactNo = (string) ($record->contact_no ?? '');
+        $birthday = $this->normalizeBirthdayValue($record->birthday);
+
         logger()->info('Existing visitor photo preview resolved', [
             'visitor_id' => (int) $record->visitor_id,
             'photo_path' => $photoPath,
@@ -1237,14 +1280,16 @@ class GuardVisitorController extends Controller
         ]);
 
         $payload = [
-            'exists' => true,
-            'match_basis' => 'name_birthday',
+            'id' => (int) $record->visitor_id,
             'visitor_id' => (int) $record->visitor_id,
-            'first_name' => (string) ($record->first_name ?? ''),
-            'last_name' => (string) ($record->last_name ?? ''),
-            'birthday' => $this->normalizeBirthdayValue($record->birthday),
+            'full_name' => trim($firstName.' '.$lastName),
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'birth_date' => $birthday,
+            'birthday' => $birthday,
             'control_number' => '',
-            'contact_no' => (string) ($record->contact_no ?? ''),
+            'contact_no' => $contactNo,
+            'masked_contact_number' => $this->existingVisitorLookupService->maskContactNumber($contactNo),
             // pass_number is per-visit; never reuse the previous visit's number
             'pass_number' => '',
             'house_no' => (string) ($record->house_no ?? ''),
@@ -1255,6 +1300,8 @@ class GuardVisitorController extends Controller
             'region' => (string) ($record->region ?? ''),
             'photo_path' => $photoPath,
             'photo_preview_url' => $previewUrl,
+            'validation_photo' => $previewUrl,
+            'match_basis' => 'name_birthday',
             'unfinished_enrollee' => null,
         ];
 

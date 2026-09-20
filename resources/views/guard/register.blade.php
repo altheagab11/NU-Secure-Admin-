@@ -504,6 +504,162 @@
 			filter: brightness(0.97);
 		}
 
+		.confirmation-modal.is-stacked {
+			z-index: 1300;
+		}
+
+		.confirmation-modal-card.is-multiple {
+			width: min(100%, 740px);
+			max-height: 85vh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.confirmation-modal-card.is-multiple .confirmation-modal-header {
+			flex-shrink: 0;
+			padding: 16px 20px 12px;
+		}
+
+		.confirmation-modal-card.is-multiple .confirmation-modal-subtitle {
+			margin-top: 6px;
+			font-size: 13px;
+			line-height: 1.45;
+		}
+
+		.confirmation-modal-card.is-multiple .confirmation-modal-body {
+			flex: 1 1 auto;
+			min-height: 0;
+			padding: 10px 16px 8px;
+			overflow-y: auto;
+		}
+
+		.existing-visitor-choice-list {
+			display: grid;
+			gap: 10px;
+			padding: 2px;
+		}
+
+		.confirmation-modal-card.is-multiple .confirmation-modal-footer {
+			flex-shrink: 0;
+			justify-content: stretch;
+			gap: 10px;
+			padding: 12px 16px 16px;
+			border-top: 1px solid #e5e7eb;
+			background: #ffffff;
+		}
+
+		.confirmation-modal-card.is-multiple .confirmation-modal-btn {
+			flex: 1 1 0;
+			min-width: 0;
+		}
+
+		.existing-visitor-choice {
+			position: relative;
+			display: grid;
+			grid-template-columns: auto 64px minmax(0, 1fr);
+			gap: 12px;
+			align-items: center;
+			padding: 12px 14px;
+			padding-right: 118px;
+			border-radius: 14px;
+			border: 1.5px solid #dbe3ef;
+			background: #ffffff;
+			cursor: pointer;
+			text-align: left;
+		}
+
+		.existing-visitor-choice.is-selected {
+			border-color: #3b4497;
+			background: #f5f7ff;
+			box-shadow: 0 0 0 2px rgba(59, 68, 151, 0.14);
+		}
+
+		.existing-visitor-choice-radio {
+			margin: 0;
+			width: 18px;
+			height: 18px;
+			accent-color: #3b4497;
+			flex-shrink: 0;
+		}
+
+		.existing-visitor-choice-photo {
+			position: relative;
+			width: 64px;
+			height: 64px;
+			border-radius: 12px;
+			overflow: hidden;
+			flex-shrink: 0;
+			background: #0f172a;
+			border: 1px solid rgba(148, 163, 184, 0.28);
+		}
+
+		.existing-visitor-choice-photo img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+
+		.existing-visitor-choice-photo .confirmation-photo-placeholder {
+			padding: 6px;
+			font-size: 10px;
+			line-height: 1.25;
+			font-weight: 600;
+		}
+
+		.existing-visitor-choice-details {
+			min-width: 0;
+			display: grid;
+			gap: 3px;
+		}
+
+		.existing-visitor-choice-name {
+			margin: 0;
+			font-size: 15px;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.25;
+		}
+
+		.existing-visitor-choice-meta {
+			margin: 0;
+			font-size: 13px;
+			line-height: 1.35;
+			color: #0f172a;
+			font-weight: 600;
+		}
+
+		.existing-visitor-choice-meta span {
+			color: #64748b;
+			font-weight: 600;
+			margin-right: 4px;
+		}
+
+		.existing-visitor-choice-badge {
+			position: absolute;
+			top: 12px;
+			right: 12px;
+			display: inline-flex;
+			align-items: center;
+			padding: 5px 10px;
+			border-radius: 999px;
+			background: rgba(59, 68, 151, 0.12);
+			color: #3b4497;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.01em;
+			line-height: 1;
+			white-space: nowrap;
+			pointer-events: none;
+		}
+
+		#multipleExistingVisitorUseBtn:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+			filter: none;
+		}
+
 		.retake-capture-btn {
 			display: inline-flex;
 			align-items: center;
@@ -1947,6 +2103,32 @@
 				min-width: 0;
 			}
 
+			.confirmation-modal-card.is-multiple {
+				max-height: min(88dvh, 720px);
+				overflow: hidden;
+				border-radius: 16px 16px 0 0;
+			}
+
+			.existing-visitor-choice {
+				grid-template-columns: auto 56px minmax(0, 1fr);
+				gap: 10px;
+				padding: 10px 12px;
+				padding-right: 108px;
+			}
+
+			.existing-visitor-choice-photo {
+				width: 56px;
+				height: 56px;
+				border-radius: 10px;
+			}
+
+			.existing-visitor-choice-badge {
+				top: 10px;
+				right: 10px;
+				padding: 4px 8px;
+				font-size: 10px;
+			}
+
 			.visitor-details-grid {
 				grid-template-columns: 1fr;
 			}
@@ -2136,7 +2318,7 @@
 		body.self-registration-mode .main {
 			margin-left: 0 !important;
 			padding: 0 !important;
-			padding-top: calc(72px + env(safe-area-inset-top)) !important;
+			padding-top: calc(var(--self-reg-header-height, 70px) + env(safe-area-inset-top, 0px)) !important;
 			display: flex;
 			flex-direction: column;
 			gap: 0;
@@ -2839,13 +3021,13 @@
 		body.self-registration-mode .kiosk-verify-layout {
 			flex: 1;
 			display: grid;
-			grid-template-columns: minmax(0, 1fr) 310px;
+			grid-template-columns: minmax(0, 1fr) minmax(240px, 310px);
 			align-items: start;
-			gap: 20px;
+			gap: clamp(14px, 1.6vw, 20px);
 			min-height: 0;
-			width: min(1680px, calc(100% - 40px));
+			width: min(1680px, calc(100% - 32px));
 			margin: 0 auto;
-			padding: 22px 20px max(24px, env(safe-area-inset-bottom));
+			padding: 22px 16px max(24px, env(safe-area-inset-bottom));
 			overflow-x: hidden;
 			overflow-y: auto;
 			-webkit-overflow-scrolling: touch;
@@ -3607,13 +3789,13 @@
 			align-items: stretch;
 			justify-content: flex-start;
 			align-self: center;
-			width: min(100%, 1100px);
+			width: min(calc(100% - 32px), 1100px);
 			max-width: 1100px;
 			min-height: 0;
 			overflow-x: hidden;
 			overflow-y: auto;
 			margin: 0 auto;
-			padding: 24px 28px 32px;
+			padding: clamp(16px, 2vw, 28px) clamp(16px, 2vw, 28px) 32px;
 			background: transparent;
 			gap: 14px;
 			scrollbar-width: thin;
@@ -3725,16 +3907,23 @@
 			flex: 1;
 			display: flex;
 			align-items: center;
+			align-items: safe center;
 			justify-content: center;
+			justify-content: safe center;
 			min-height: 0;
-			padding: 24px;
+			min-width: 0;
+			width: 100%;
+			max-width: 100%;
+			overflow-x: hidden;
+			overflow-y: auto;
+			padding: 24px clamp(16px, 2.4vw, 32px);
 			background: linear-gradient(rgba(31, 52, 143, 0.72), rgba(31, 52, 143, 0.72)),
 				url('{{ asset('picture/lipa.png') }}') no-repeat center center / cover;
 		}
 
 		/* Type picker: extend background to the top so no body-color stripe shows under the fixed header. */
 		body.self-registration-mode.kiosk-type-select {
-			--self-reg-header-height: calc(72px + env(safe-area-inset-top, 0px));
+			--self-reg-header-height: 70px;
 			background: #1f348f;
 		}
 
@@ -3760,7 +3949,9 @@
 		}
 
 		body.self-registration-mode .kiosk-type-picker-inner {
-			width: min(100%, 960px);
+			width: min(100%, 1040px);
+			max-width: 100%;
+			margin-block: auto;
 			text-align: center;
 		}
 
@@ -3791,6 +3982,8 @@
 			display: flex;
 			align-items: center;
 			gap: 14px;
+			min-width: 0;
+			max-width: 100%;
 			padding: 14px 16px;
 			border-radius: 16px;
 			background: rgba(255, 255, 255, 0.92);
@@ -4092,7 +4285,8 @@
 		body.self-registration-mode .kiosk-type-grid {
 			display: grid;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 18px;
+			gap: clamp(12px, 1.5vw, 18px);
+			width: 100%;
 		}
 
 		body.self-registration-mode .kiosk-type-card {
@@ -4100,9 +4294,10 @@
 			flex-direction: column;
 			align-items: center;
 			justify-content: center;
-			gap: 12px;
-			min-height: 220px;
-			padding: 28px 20px;
+			gap: clamp(8px, 1.4vh, 12px);
+			min-width: 0;
+			min-height: clamp(150px, 26dvh, 220px);
+			padding: clamp(16px, 2.4vh, 28px) clamp(12px, 1.5vw, 20px);
 			border: 2px solid #dbe2ef;
 			border-radius: 20px;
 			background: #fff;
@@ -4141,13 +4336,13 @@
 		}
 
 		body.self-registration-mode .kiosk-type-icon {
-			width: 64px;
-			height: 64px;
+			width: clamp(48px, 6vw, 64px);
+			height: clamp(48px, 6vw, 64px);
 			border-radius: 18px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 28px;
+			font-size: clamp(22px, 2.4vw, 28px);
 			background: #eef2ff;
 			color: #243c96;
 		}
@@ -4163,16 +4358,19 @@
 		}
 
 		body.self-registration-mode .kiosk-type-name {
-			font-size: 1.15rem;
+			font-size: clamp(0.95rem, 1.4vw, 1.15rem);
 			font-weight: 700;
 			color: #0f172a;
+			max-width: 100%;
+			overflow-wrap: anywhere;
 		}
 
 		body.self-registration-mode .kiosk-type-desc {
-			font-size: 0.88rem;
+			font-size: clamp(0.78rem, 1.1vw, 0.88rem);
 			color: #64748b;
 			line-height: 1.45;
-			max-width: 220px;
+			max-width: min(220px, 100%);
+			overflow-wrap: anywhere;
 		}
 
 		body.self-registration-mode .kiosk-type-switcher {
@@ -4420,7 +4618,7 @@
 			}
 		}
 
-		@media (max-width: 1100px) {
+		@media (max-width: 1023.98px) {
 			body.self-registration-mode .kiosk-scan-layout,
 			body.self-registration-mode .scan-layout.kiosk-scan-layout {
 				display: flex !important;
@@ -5095,6 +5293,7 @@
 			--vms-muted: #64748b;
 			--vms-border: #d8e1ed;
 			--vms-shadow-small: 0 2px 8px rgba(15, 23, 42, 0.05);
+			--self-reg-header-height: 70px;
 		}
 
 		body.self-registration-mode .self-registration-header {
@@ -5104,13 +5303,13 @@
 			right: 0;
 			z-index: 300;
 			width: 100%;
-			min-height: 70px;
-			padding: 9px 18px;
-			padding-top: max(9px, env(safe-area-inset-top));
+			min-height: 64px;
+			padding: 8px clamp(12px, 1.6vw, 22px);
+			padding-top: max(8px, env(safe-area-inset-top));
 			display: grid;
-			grid-template-columns: minmax(230px, 1fr) auto minmax(230px, 1fr);
+			grid-template-columns: minmax(140px, 1fr) minmax(0, auto) minmax(96px, 1fr);
 			align-items: center;
-			gap: 20px;
+			gap: clamp(8px, 1.2vw, 20px);
 			background: var(--vms-primary);
 			color: #fff;
 			box-shadow: 0 3px 15px rgba(31, 55, 140, 0.18);
@@ -5208,15 +5407,15 @@
 		}
 
 		body.self-registration-mode .self-reg-stepper {
-			width: 430px;
+			width: min(430px, 100%);
 			min-width: 0;
 			display: grid;
 			grid-template-columns:
+				minmax(58px, auto)
+				minmax(24px, 1fr)
 				minmax(70px, auto)
-				minmax(55px, 1fr)
-				minmax(85px, auto)
-				minmax(55px, 1fr)
-				minmax(70px, auto);
+				minmax(24px, 1fr)
+				minmax(58px, auto);
 			align-items: start;
 			gap: 0;
 		}
@@ -5245,18 +5444,20 @@
 
 		body.self-registration-mode .scan-layout.kiosk-scan-layout {
 			width: 100%;
+			max-width: 100%;
 			flex: 1;
 			display: grid;
-			grid-template-columns: minmax(0, 1fr) 350px;
+			grid-template-columns: minmax(0, 1fr) minmax(260px, min(32vw, 360px));
 			align-items: stretch;
 			overflow: visible;
 			min-height: 0;
+			min-width: 0;
 		}
 
 		body.self-registration-mode .scan-main.kiosk-scan-main {
 			min-width: 0;
 			width: 100%;
-			padding: 20px 22px 16px;
+			padding: clamp(12px, 1.6vw, 22px) clamp(14px, 1.8vw, 22px) 16px;
 			overflow: visible;
 			display: block;
 		}
@@ -5306,8 +5507,8 @@
 		body.self-registration-mode .scanner-zone.camera-frame {
 			position: relative;
 			width: 100%;
-			min-height: 280px;
-			max-height: 400px;
+			min-height: 180px;
+			max-height: min(42dvh, 420px);
 			aspect-ratio: 16 / 10;
 			flex: none;
 			height: auto;
@@ -5712,6 +5913,170 @@
 			color: #991b1b;
 		}
 
+		body.self-registration-mode .kiosk-manual-entry-panel {
+			display: none;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-panel.is-active {
+			display: block;
+		}
+
+		body.self-registration-mode.is-manual-entry .kiosk-id-scan-view {
+			display: none;
+		}
+
+		body.self-registration-mode.is-manual-entry .kiosk-bottom-panels {
+			display: none;
+		}
+
+		body.self-registration-mode.is-manual-entry .kiosk-scan-heading {
+			display: none;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-card {
+			background: #fff;
+			border-radius: 22px;
+			border: 1px solid #dbe3ef;
+			box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+			overflow: hidden;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-head {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			padding: 24px 26px;
+			border-bottom: 1px solid #edf1f7;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-head-icon {
+			width: 48px;
+			height: 48px;
+			border-radius: 14px;
+			background: #edf2ff;
+			color: #2945a5;
+			display: grid;
+			place-items: center;
+			font-size: 25px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-head h2 {
+			margin: 0;
+			font-size: clamp(1.25rem, 2vw, 1.65rem);
+			font-weight: 800;
+			color: #111827;
+			line-height: 1.25;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-head p {
+			margin: 6px 0 0;
+			color: #64748b;
+			font-size: 0.95rem;
+			line-height: 1.45;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-body {
+			padding: 22px 26px 26px;
+			display: grid;
+			gap: 18px;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-note {
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+			margin: 0;
+			padding: 12px 14px;
+			border-radius: 12px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			color: #475569;
+			font-size: 0.9rem;
+			line-height: 1.45;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-note .bi {
+			color: #2945a5;
+			font-size: 1.05rem;
+			margin-top: 1px;
+			flex-shrink: 0;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px;
+			justify-content: space-between;
+			margin-top: 4px;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-back,
+		body.self-registration-mode .kiosk-manual-entry-check {
+			min-height: 46px;
+			padding: 10px 18px;
+			border-radius: 11px;
+			font-size: 13px;
+			font-weight: 750;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			cursor: pointer;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-back {
+			border: 2px solid #cbd5e1;
+			background: #fff;
+			color: #334155;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-back:hover:not(:disabled) {
+			background: #f8fafc;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-check {
+			border: 0;
+			background: var(--vms-primary);
+			color: #fff;
+			box-shadow: 0 6px 14px rgba(44, 72, 170, 0.2);
+			margin-left: auto;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-check:hover:not(:disabled) {
+			background: var(--vms-primary-dark);
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-check:disabled,
+		body.self-registration-mode .kiosk-manual-entry-back:disabled {
+			opacity: 0.65;
+			cursor: not-allowed;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-error {
+			margin: 0;
+			color: #b91c1c;
+			font-size: 0.88rem;
+			font-weight: 600;
+		}
+
+		body.self-registration-mode .kiosk-manual-entry-error.is-hidden {
+			display: none;
+		}
+
+		.manual-entry-panel {
+			display: none;
+			margin-top: 12px;
+			padding: 16px;
+			border: 1px solid #dbe3ef;
+			border-radius: 12px;
+			background: #fff;
+		}
+
+		.manual-entry-panel.is-active {
+			display: block;
+		}
+
 		body.self-registration-mode .scan-actions {
 			display: grid;
 			gap: 11px;
@@ -5836,37 +6201,361 @@
 			margin: 0;
 		}
 
-		/* Large laptop / Windows mid screens — keep side-by-side, tighten frame */
-		@media screen and (min-width: 1101px) and (max-width: 1600px) {
+		/*
+		 * Windows desktop / laptop (1024px+).
+		 * Keep a side-by-side kiosk layout on all typical Windows sizes,
+		 * including 1366x768, 1280x720 (150% scaling), and 1536x864 (125%).
+		 */
+		@media screen and (min-width: 1024px) {
+			body.self-registration-mode,
+			body.self-registration-mode .layout,
+			body.self-registration-mode .main,
+			body.self-registration-mode .self-registration-body,
+			body.self-registration-mode .register-flow,
+			body.self-registration-mode .kiosk-type-picker {
+				max-width: 100%;
+				min-width: 0;
+			}
+
+			body.self-registration-mode .visitor-step:not(.is-hidden),
+			body.self-registration-mode .register-flow > .visitor-step:not(.is-hidden),
+			body.self-registration-mode .scanner-card:not(.is-hidden),
+			body.self-registration-mode .kiosk-scan-layout,
+			body.self-registration-mode .scan-layout.kiosk-scan-layout,
+			body.self-registration-mode .kiosk-verify-layout {
+				overflow-x: hidden !important;
+				overflow-y: visible !important;
+				height: auto;
+				max-height: none;
+			}
+
+			body.self-registration-mode .kiosk-controls {
+				width: 100%;
+				max-width: none;
+			}
+
 			body.self-registration-mode .self-registration-header {
-				grid-template-columns: minmax(180px, 1fr) auto minmax(120px, 1fr);
-				gap: 12px;
+				grid-template-columns: minmax(150px, 1fr) minmax(0, auto) minmax(110px, 1fr);
 			}
 
 			body.self-registration-mode .self-reg-stepper {
-				width: min(100%, 410px);
+				width: min(100%, 430px);
+			}
+
+			body.self-registration-mode .self-reg-step {
+				min-width: 0;
+			}
+
+			body.self-registration-mode .self-reg-step-label {
+				white-space: nowrap;
+				font-size: clamp(0.58rem, 0.72vw, 0.68rem);
 			}
 
 			body.self-registration-mode .scan-layout.kiosk-scan-layout {
-				grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+				display: grid !important;
+				grid-template-columns: minmax(0, 1fr) minmax(260px, min(30vw, 340px));
+				flex-direction: unset;
 			}
 
-			body.self-registration-mode .scanner-zone.camera-frame {
-				min-height: 260px;
-				max-height: 380px;
+			body.self-registration-mode .scan-sidebar.kiosk-controls {
+				order: 0;
+				width: 100%;
+				padding: clamp(14px, 1.6vw, 20px);
+				border-left: 1px solid var(--vms-border);
+				border-top: 0;
+				position: relative;
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame,
+			body.self-registration-mode .scanner-zone {
+				min-height: 180px;
+				max-height: min(42dvh, 420px);
 				aspect-ratio: 16 / 10;
 			}
 
 			body.self-registration-mode .id-guide {
 				width: min(400px, 70%);
 			}
+
+			body.self-registration-mode .kiosk-office-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+			}
+
+			body.self-registration-mode .kiosk-form-grid.cols-2,
+			body.self-registration-mode .kiosk-form-grid.cols-3 {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			body.self-registration-mode .kiosk-type-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+			}
+
+			body.self-registration-mode .kiosk-privacy-card {
+				width: min(100%, 640px);
+				max-height: min(86vh, 720px);
+			}
+		}
+
+		@media screen and (min-width: 1440px) {
+			body.self-registration-mode .kiosk-office-grid {
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+			}
+
+			body.self-registration-mode .scan-layout.kiosk-scan-layout {
+				grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame {
+				max-height: min(46dvh, 460px);
+			}
+		}
+
+		/* Short Windows laptops: 900px tall and below (1440x900, 1600x900) */
+		@media screen and (min-width: 1024px) and (max-height: 900px) {
+			body.self-registration-mode {
+				--self-reg-header-height: 62px;
+			}
+
+			body.self-registration-mode .self-registration-header {
+				min-height: 58px;
+				padding-top: 6px;
+				padding-bottom: 6px;
+			}
+
+			body.self-registration-mode .kiosk-back-bar {
+				padding: 6px 16px 4px;
+			}
+
+			body.self-registration-mode .scan-main.kiosk-scan-main {
+				padding-top: 10px;
+				padding-bottom: 10px;
+			}
+
+			body.self-registration-mode .scan-heading.kiosk-scan-heading {
+				margin-bottom: 8px;
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame {
+				max-height: min(34dvh, 320px);
+				min-height: 170px;
+			}
+
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
+				margin-top: 10px;
+				gap: 10px;
+			}
+
+			body.self-registration-mode .info-card.kiosk-info-card {
+				padding: 12px 14px;
+			}
+
+			body.self-registration-mode .kiosk-type-card {
+				min-height: clamp(140px, 24vh, 190px);
+				padding: 16px 14px;
+			}
+
+			body.self-registration-mode .kiosk-type-picker-title {
+				font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+			}
+
+			body.self-registration-mode.kiosk-type-select .kiosk-type-picker {
+				padding-bottom: 16px;
+			}
+		}
+
+		/* Common Windows laptop heights: 1366x768, 1280x720, 150% of 1080p */
+		@media screen and (min-width: 1024px) and (max-height: 800px) {
+			body.self-registration-mode {
+				--self-reg-header-height: 56px;
+			}
+
+			body.self-registration-mode .self-registration-header {
+				min-height: 52px;
+				padding-top: 5px;
+				padding-bottom: 5px;
+				gap: 8px;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-icon {
+				width: 36px;
+				height: 36px;
+				font-size: 18px;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-title span {
+				font-size: 1.05rem;
+			}
+
+			body.self-registration-mode .self-reg-step-num {
+				width: 26px;
+				height: 26px;
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .self-reg-step-line {
+				margin-top: 12px;
+			}
+
+			body.self-registration-mode .kiosk-back-bar {
+				padding: 4px 14px 2px;
+			}
+
+			body.self-registration-mode .kiosk-back-bar .kiosk-back-btn {
+				min-height: 32px;
+				padding: 5px 12px;
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .scan-heading .kiosk-scan-title {
+				font-size: 1.05rem;
+			}
+
+			body.self-registration-mode .scan-heading .kiosk-scan-desc {
+				font-size: 12px;
+				margin-top: 4px;
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame {
+				max-height: min(30dvh, 260px);
+				min-height: 160px;
+			}
+
+			body.self-registration-mode .id-guide {
+				width: min(340px, 62%);
+			}
+
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
+				margin-top: 8px;
+				gap: 8px;
+			}
+
+			body.self-registration-mode .info-card.kiosk-info-card {
+				padding: 10px 12px;
+			}
+
+			body.self-registration-mode .info-card-title h2,
+			body.self-registration-mode .kiosk-info-card-title {
+				font-size: 12px;
+				margin-bottom: 8px;
+			}
+
+			body.self-registration-mode .tips-list li,
+			body.self-registration-mode .kiosk-tips-list li {
+				font-size: 11px;
+				gap: 6px;
+			}
+
+			body.self-registration-mode .desktop-id-item,
+			body.self-registration-mode .kiosk-id-chip {
+				min-height: 34px;
+				padding: 6px 8px;
+				font-size: 11px;
+			}
+
+			body.self-registration-mode .scan-sidebar.kiosk-controls {
+				padding: 12px 14px;
+			}
+
+			body.self-registration-mode .sidebar-section {
+				margin-top: 12px;
+			}
+
+			body.self-registration-mode .scan-button.scan-action,
+			body.self-registration-mode .upload-button.gallery-action {
+				min-height: 40px;
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .vms-footer.kiosk-reg-footer {
+				padding: 8px 12px;
+			}
+
+			body.self-registration-mode .kiosk-type-picker-title {
+				margin-bottom: 4px;
+				font-size: 1.4rem;
+			}
+
+			body.self-registration-mode .kiosk-type-picker-subtitle {
+				margin-bottom: 12px;
+				font-size: 0.9rem;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty {
+				margin-bottom: 12px;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-card {
+				padding: 10px 12px;
+				gap: 10px;
+			}
+
+			body.self-registration-mode .kiosk-type-card {
+				min-height: 132px;
+				padding: 14px 12px;
+				gap: 8px;
+			}
+
+			body.self-registration-mode .kiosk-type-icon {
+				width: 44px;
+				height: 44px;
+				font-size: 20px;
+				border-radius: 14px;
+			}
+
+			body.self-registration-mode .kiosk-verify-head,
+			body.self-registration-mode .kiosk-manual-entry-head {
+				padding: 16px 18px;
+				gap: 12px;
+			}
+
+			body.self-registration-mode .kiosk-verify-form-body,
+			body.self-registration-mode .kiosk-manual-entry-body {
+				padding: 16px 18px 20px;
+			}
+
+			body.self-registration-mode .kiosk-form-section {
+				padding: 16px 0;
+			}
+
+			body.self-registration-mode .self-registration-brand .brand-subtitle {
+				display: none;
+			}
+		}
+
+		@media screen and (min-width: 1024px) and (max-width: 1280px) {
+			body.self-registration-mode .self-registration-header {
+				grid-template-columns: minmax(120px, 0.9fr) minmax(0, auto) minmax(88px, 0.8fr);
+				gap: 8px;
+			}
+
+			body.self-registration-mode .self-reg-stepper {
+				width: min(100%, 380px);
+			}
+
+			body.self-registration-mode .kiosk-office-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			body.self-registration-mode .kiosk-verify-layout {
+				grid-template-columns: minmax(0, 1fr) 250px;
+				width: min(100% - 24px, 1680px);
+				gap: 14px;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-card {
+				flex-wrap: wrap;
+			}
+
+			body.self-registration-mode .kiosk-guard-duty-side {
+				margin-left: auto;
+			}
 		}
 
 		/*
-		 * Tablet + iPad (incl. iPad Pro 1024×1366 portrait).
+		 * Tablet + iPad (narrower than typical Windows laptop).
 		 * Stack scan layout so camera fills width (no tiny centered feed).
 		 */
-		@media screen and (min-width: 768px) and (max-width: 1100px) {
+		@media screen and (min-width: 768px) and (max-width: 1023.98px) {
 			body.self-registration-mode .self-registration-header {
 				position: fixed;
 				top: 0;
@@ -6048,7 +6737,7 @@
 		}
 
 		/* Tablet portrait: fit ID scan step on one screen (normal / enrollee / contractor) */
-		@media screen and (min-width: 768px) and (max-width: 1100px) and (orientation: portrait) {
+		@media screen and (min-width: 768px) and (max-width: 1023.98px) and (orientation: portrait) {
 			body.self-registration-mode .main {
 				padding-top: calc(118px + env(safe-area-inset-top)) !important;
 			}
@@ -6838,7 +7527,7 @@
 		<div class="confirmation-modal-card">
 			<div class="confirmation-modal-header">
 				<h2 class="confirmation-modal-title" id="existingVisitorModalTitle">Existing Visitor Found</h2>
-				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.</p>
+				<p class="confirmation-modal-subtitle" id="existingVisitorModalSubtitle">We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Not This Person to create a new visitor record instead.</p>
 			</div>
 			<div class="confirmation-modal-body">
 				<div class="confirmation-photo-panel">
@@ -6872,8 +7561,37 @@
 				</div>
 			</div>
 			<div class="confirmation-modal-footer">
-				<button type="button" class="confirmation-modal-btn secondary" id="existingVisitorModalCancel">Cancel (New Visitor)</button>
+				<button type="button" class="confirmation-modal-btn secondary" id="existingVisitorModalCancel">Not This Person</button>
 				<button type="button" class="confirmation-modal-btn primary" id="existingVisitorModalConfirm">Yes, Continue</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="confirmation-modal is-hidden" id="multipleExistingVisitorsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="multipleExistingVisitorsModalTitle">
+		<div class="confirmation-modal-card is-multiple">
+			<div class="confirmation-modal-header">
+				<h2 class="confirmation-modal-title" id="multipleExistingVisitorsModalTitle">Multiple Existing Visitors Found</h2>
+				<p class="confirmation-modal-subtitle" id="multipleExistingVisitorsModalSubtitle">We found multiple visitor records with the same name and birthday. Compare the saved validation photos and visitor details, then select the correct visitor before continuing.</p>
+			</div>
+			<div class="confirmation-modal-body">
+				<div class="existing-visitor-choice-list" id="multipleExistingVisitorList" role="radiogroup" aria-labelledby="multipleExistingVisitorsModalTitle"></div>
+			</div>
+			<div class="confirmation-modal-footer">
+				<button type="button" class="confirmation-modal-btn secondary" id="multipleExistingVisitorNoneBtn">None of These - New Visitor</button>
+				<button type="button" class="confirmation-modal-btn primary" id="multipleExistingVisitorUseBtn" disabled>Use Selected Visitor</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="confirmation-modal is-hidden is-stacked" id="registerNewVisitorConfirmModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="registerNewVisitorConfirmTitle">
+		<div class="confirmation-modal-card">
+			<div class="confirmation-modal-header">
+				<h2 class="confirmation-modal-title" id="registerNewVisitorConfirmTitle">Register as New Visitor?</h2>
+				<p class="confirmation-modal-subtitle" id="registerNewVisitorConfirmMessage">Only continue if the visitor shown is not the person currently registering. Creating a new visitor will create a separate visitor record.</p>
+			</div>
+			<div class="confirmation-modal-footer">
+				<button type="button" class="confirmation-modal-btn secondary" id="registerNewVisitorGoBackBtn">Go Back</button>
+				<button type="button" class="confirmation-modal-btn primary" id="registerNewVisitorConfirmBtn">Register New Visitor</button>
 			</div>
 		</div>
 	</div>
@@ -7028,7 +7746,7 @@
 						<div class="self-reg-stepper">
 							<div class="self-reg-step is-active" data-step="1">
 								<span class="self-reg-step-num">1</span>
-								<span class="self-reg-step-label">ID Scan</span>
+								<span class="self-reg-step-label">Identify Visitor</span>
 							</div>
 							<span class="self-reg-step-line" data-after="1"></span>
 							<div class="self-reg-step" data-step="2">
@@ -7140,7 +7858,7 @@
 				<section class="register-flow">
 					<div class="flow-head">
 						<div class="flow-step-meta">
-							<p class="flow-step-name" id="flowStepName">ID Scan</p>
+							<p class="flow-step-name" id="flowStepName">Identify Visitor</p>
 							<p class="flow-step-count" id="flowStepCount">Step 1 of 3</p>
 						</div>
 					</div>
@@ -7151,12 +7869,56 @@
 							<section class="kiosk-scan-main scan-main">
 								<div class="kiosk-scan-heading scan-heading">
 									<h2 class="kiosk-scan-title" id="kioskScanTitle">
-										<i class="bi bi-camera-video-fill"></i>
+										<i class="bi bi-camera-video-fill" id="kioskScanTitleIcon"></i>
 										<span id="kioskScanTitleText">Scan Your Identification Card</span>
 									</h2>
 									<p class="kiosk-scan-desc" id="kioskScanDesc">Position your ID card within the frame. Ensure all details are clear and visible.</p>
 								</div>
 
+								<div class="kiosk-manual-entry-panel" id="manualEntryPanel" aria-hidden="true">
+									<div class="kiosk-manual-entry-card">
+										<header class="kiosk-manual-entry-head">
+											<div class="kiosk-manual-entry-head-icon" aria-hidden="true">
+												<i class="bi bi-keyboard-fill"></i>
+											</div>
+											<div>
+												<h2>Enter Visitor Details</h2>
+												<p>Enter the visitor's full name and birthday to check for an existing visitor record.</p>
+											</div>
+										</header>
+										<div class="kiosk-manual-entry-body">
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="manualEntryFullName">Full Name <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<input class="visitor-input" id="manualEntryFullName" name="manual_full_name" type="text" placeholder="Enter full name" autocomplete="name" maxlength="255">
+												</div>
+											</div>
+											<div class="visitor-input-group">
+												<label class="kiosk-field-label" for="manualEntryBirthday">Birthday <span class="required-mark">*</span></label>
+												<div class="kiosk-input-wrap">
+													<input class="visitor-input" id="manualEntryBirthday" name="manual_birthday" type="date" placeholder="YYYY-MM-DD" autocomplete="bday" max="{{ now()->subDay()->format('Y-m-d') }}">
+												</div>
+											</div>
+											<p class="kiosk-manual-entry-note">
+												<i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+												<span>Enter the complete name exactly as shown on the visitor's valid identification.</span>
+											</p>
+											<p class="kiosk-manual-entry-error is-hidden" id="manualEntryError" role="alert"></p>
+											<div class="kiosk-manual-entry-actions">
+												<button type="button" class="kiosk-manual-entry-back" id="manualEntryBackBtn">
+													<i class="bi bi-camera-video" aria-hidden="true"></i>
+													<span>Back to ID Scan</span>
+												</button>
+												<button type="button" class="kiosk-manual-entry-check" id="manualEntryCheckBtn">
+													<span>Check Visitor</span>
+													<i class="bi bi-search" aria-hidden="true"></i>
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="kiosk-id-scan-view" id="idScanView">
 								<div class="camera-section">
 									<div class="scanner-zone camera-frame">
 										<video id="cameraFeed" class="camera-feed camera-video" autoplay playsinline muted></video>
@@ -7226,6 +7988,7 @@
 										</div>
 									</section>
 								</div>
+								</div>
 							</section>
 
 							<aside class="kiosk-controls scan-sidebar">
@@ -7255,8 +8018,8 @@
 								<section class="sidebar-section action-section">
 									<div class="scan-actions scan-actions-row">
 										<button type="button" class="scan-button scan-action" id="scanAction">
-											<i class="bi bi-arrow-clockwise"></i>
-											<span id="scanActionText">Scan ID Card</span>
+											<i class="bi bi-keyboard-fill" id="scanActionIcon" aria-hidden="true"></i>
+											<span id="scanActionText">Manual Entry</span>
 										</button>
 										<button type="button" class="retake-capture-btn is-hidden" id="retakeCaptureBtn" aria-label="Recapture photo">
 											<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
@@ -7273,7 +8036,7 @@
 										</button>
 									</div>
 									<input type="file" id="idGalleryInput" class="is-hidden" accept="image/jpeg,image/png,image/webp,image/*">
-									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the camera is unavailable, upload a clear photo of your ID.</p>
+									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually or upload a clear image of the ID.</p>
 								</section>
 
 							</aside>
@@ -7321,13 +8084,28 @@
 						</div>
 						<p class="camera-status" id="cameraStatus">Starting camera...</p>
 						<canvas id="captureCanvas" class="is-hidden"></canvas>
-						<div class="scan-actions-row">
+						<div class="manual-entry-panel" id="manualEntryPanel" aria-hidden="true">
+							<h3 style="margin:0 0 8px;font-size:1.05rem;">Enter Visitor Details</h3>
+							<p style="margin:0 0 14px;color:#64748b;font-size:0.9rem;">Enter the visitor's full name and birthday to check for an existing visitor record.</p>
+							<div class="visitor-input-group" style="margin-bottom:12px;">
+								<label class="visitor-label" for="manualEntryFullName">Full Name <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="manualEntryFullName" name="manual_full_name" type="text" placeholder="Enter full name" autocomplete="name" maxlength="255">
+							</div>
+							<div class="visitor-input-group" style="margin-bottom:12px;">
+								<label class="visitor-label" for="manualEntryBirthday">Birthday <span class="required-mark">*</span></label>
+								<input class="visitor-input" id="manualEntryBirthday" name="manual_birthday" type="date" placeholder="YYYY-MM-DD" autocomplete="bday" max="{{ now()->subDay()->format('Y-m-d') }}">
+							</div>
+							<p style="margin:0 0 12px;color:#475569;font-size:0.85rem;">Enter the complete name exactly as shown on the visitor's valid identification.</p>
+							<p class="kiosk-manual-entry-error is-hidden" id="manualEntryError" role="alert"></p>
+							<div class="scan-actions-row" style="margin-top:8px;">
+								<button type="button" class="gallery-action" id="manualEntryBackBtn">Back to ID Scan</button>
+								<button type="button" class="scan-action" id="manualEntryCheckBtn">Check Visitor</button>
+							</div>
+						</div>
+						<div class="scan-actions-row" id="idScanView">
 							<button type="button" class="scan-action" id="scanAction">
-								<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-									<path d="M7 4v3M17 4v3M4 8h16M6 20h12a2 2 0 0 0 2-2V8H4v10a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-									<rect x="9" y="11" width="6" height="5" rx="1" fill="currentColor"/>
-								</svg>
-								<span id="scanActionText">Scan ID Card</span>
+								<i class="bi bi-keyboard-fill" id="scanActionIcon" aria-hidden="true"></i>
+								<span id="scanActionText">Manual Entry</span>
 							</button>
 							<button type="button" class="retake-capture-btn is-hidden" id="retakeCaptureBtn" aria-label="Recapture photo">
 								<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
@@ -7336,7 +8114,7 @@
 							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
 						</div>
 						<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
-						<p class="gallery-hint is-hidden" id="galleryHint">If camera is unavailable, you can upload a clear photo of the ID.</p>
+						<p class="gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually or upload a clear photo of the ID.</p>
 						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
 							<ul class="id-types-list">
@@ -7494,9 +8272,9 @@
 										<div class="kiosk-id-scan-status">
 											<i class="bi bi-check-lg" aria-hidden="true"></i>
 											<div>
-												<strong>ID Scan Completed</strong>
+												<strong>Visitor Identified</strong>
 												<span>Completed</span>
-												<small>ID information was captured successfully.</small>
+												<small>Visitor identity was confirmed successfully.</small>
 											</div>
 										</div>
 									</div>
@@ -7767,9 +8545,9 @@
 									<div class="kiosk-id-scan-status">
 										<i class="bi bi-check-lg" aria-hidden="true"></i>
 										<div>
-											<strong>ID Scan Completed</strong>
+											<strong>Visitor Identified</strong>
 											<span>Completed</span>
-											<small>ID information was captured successfully.</small>
+											<small>Visitor identity was confirmed successfully.</small>
 										</div>
 									</div>
 								</div>
@@ -8085,25 +8863,28 @@
 			let logoutAfterEnd = false;
 			let isSubmittingDuty = false;
 
-			const syncKioskTypeHeaderOffset = () => {
-				if (!document.body.classList.contains('kiosk-type-select')) {
-					return;
-				}
-
+			const syncSelfRegHeaderOffset = () => {
 				const header = document.querySelector('.self-registration-header');
-				const picker = document.querySelector('.kiosk-type-picker');
-				if (!header || !picker) {
+				if (!header) {
 					return;
 				}
 
-				const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+				const headerHeight = Math.max(52, Math.ceil(header.getBoundingClientRect().height));
 				document.documentElement.style.setProperty('--self-reg-header-height', `${headerHeight}px`);
-				picker.style.paddingTop = `${headerHeight + 24}px`;
+				document.body.style.setProperty('--self-reg-header-height', `${headerHeight}px`);
+
+				const picker = document.querySelector('.kiosk-type-picker');
+				if (document.body.classList.contains('kiosk-type-select') && picker) {
+					picker.style.paddingTop = `${headerHeight + 24}px`;
+				}
 			};
 
-			syncKioskTypeHeaderOffset();
-			window.addEventListener('resize', syncKioskTypeHeaderOffset);
-			window.addEventListener('orientationchange', syncKioskTypeHeaderOffset);
+			syncSelfRegHeaderOffset();
+			window.addEventListener('resize', syncSelfRegHeaderOffset);
+			window.addEventListener('orientationchange', syncSelfRegHeaderOffset);
+			if (document.fonts?.ready) {
+				document.fonts.ready.then(syncSelfRegHeaderOffset).catch(() => {});
+			}
 
 			const csrfHeaders = () => ({
 				'Content-Type': 'application/json',
@@ -8587,9 +9368,18 @@
 		const visitorStepPanel = document.getElementById('visitorStepPanel');
 		const scanAction = document.getElementById('scanAction');
 		const scanActionText = document.getElementById('scanActionText');
+		const scanActionIcon = document.getElementById('scanActionIcon');
 		const galleryAction = document.getElementById('galleryAction');
 		const idGalleryInput = document.getElementById('idGalleryInput');
 		const galleryHint = document.getElementById('galleryHint');
+		const manualEntryPanel = document.getElementById('manualEntryPanel');
+		const manualEntryFullName = document.getElementById('manualEntryFullName');
+		const manualEntryBirthday = document.getElementById('manualEntryBirthday');
+		const manualEntryError = document.getElementById('manualEntryError');
+		const manualEntryBackBtn = document.getElementById('manualEntryBackBtn');
+		const manualEntryCheckBtn = document.getElementById('manualEntryCheckBtn');
+		const idScanView = document.getElementById('idScanView');
+		const kioskScanTitleIcon = document.getElementById('kioskScanTitleIcon');
 		const loadingOverlay = document.getElementById('loadingOverlay');
 		const loadingText = document.getElementById('loadingText');
 		const generateQrBtn = document.getElementById('generateQrBtn');
@@ -8626,6 +9416,14 @@
 		const existingVisitorModalProgress = document.getElementById('existingVisitorModalProgress');
 		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
 		const existingVisitorModalCancel = document.getElementById('existingVisitorModalCancel');
+		const multipleExistingVisitorsModal = document.getElementById('multipleExistingVisitorsModal');
+		const multipleExistingVisitorList = document.getElementById('multipleExistingVisitorList');
+		const multipleExistingVisitorNoneBtn = document.getElementById('multipleExistingVisitorNoneBtn');
+		const multipleExistingVisitorUseBtn = document.getElementById('multipleExistingVisitorUseBtn');
+		const registerNewVisitorConfirmModal = document.getElementById('registerNewVisitorConfirmModal');
+		const registerNewVisitorConfirmMessage = document.getElementById('registerNewVisitorConfirmMessage');
+		const registerNewVisitorGoBackBtn = document.getElementById('registerNewVisitorGoBackBtn');
+		const registerNewVisitorConfirmBtn = document.getElementById('registerNewVisitorConfirmBtn');
 		const visitorPhoneNumber = document.getElementById('visitorPhoneNumber');
 		const destinationOffice = document.getElementById('destinationOffice');
 		const destinationOfficeText = document.getElementById('destinationOfficeText');
@@ -8695,6 +9493,12 @@
 		let existingVisitorMatch = null;
 		let existingVisitorConfirmed = false;
 		let existingVisitorModalResolver = null;
+		let multipleExistingVisitorMatches = [];
+		let multipleExistingVisitorSelectedId = null;
+		let multipleExistingVisitorModalResolver = null;
+		let lastExistingVisitorLookupKey = '';
+		let manualEntryMode = false;
+		let newVisitorConfirmContext = 'single';
 		let autoEnrolleeOffices = [];
 		let awaitingPhotoConsent = false;
 		let pendingFaceCaptureBlob = null;
@@ -8913,6 +9717,241 @@
 			});
 		};
 
+		const splitFullNameForLookup = (fullName) => {
+			const parts = String(fullName || '').trim().replace(/\s+/g, ' ').split(' ').filter(Boolean);
+			if (!parts.length) {
+				return { first_name: '', last_name: '' };
+			}
+			if (parts.length === 1) {
+				return { first_name: parts[0], last_name: '' };
+			}
+			return {
+				first_name: parts.slice(0, -1).join(' '),
+				last_name: parts[parts.length - 1],
+			};
+		};
+
+		const setManualEntryError = (message) => {
+			if (!manualEntryError) {
+				return;
+			}
+			const text = String(message || '').trim();
+			manualEntryError.textContent = text;
+			manualEntryError.classList.toggle('is-hidden', !text);
+		};
+
+		const updateScanActionButton = () => {
+			if (!scanActionText) {
+				return;
+			}
+
+			let label = 'Manual Entry';
+			let iconClass = 'bi bi-keyboard-fill';
+
+			if (!activeStream) {
+				label = 'Retry Camera';
+				iconClass = 'bi bi-arrow-clockwise';
+			} else if (currentStep === 3) {
+				label = 'Capture Face + ID';
+				iconClass = 'bi bi-camera-fill';
+			}
+
+			scanActionText.textContent = label;
+			if (scanActionIcon) {
+				scanActionIcon.className = iconClass;
+			}
+		};
+
+		const setManualEntryMode = (enabled) => {
+			manualEntryMode = Boolean(enabled) && currentStep === 1;
+
+			document.body.classList.toggle('is-manual-entry', manualEntryMode);
+
+			if (manualEntryPanel) {
+				manualEntryPanel.classList.toggle('is-active', manualEntryMode);
+				manualEntryPanel.setAttribute('aria-hidden', manualEntryMode ? 'false' : 'true');
+			}
+
+			if (!isSelfRegistrationKiosk && scannerZone) {
+				scannerZone.classList.toggle('is-hidden', manualEntryMode);
+			}
+
+			if (!isSelfRegistrationKiosk && idScanView) {
+				idScanView.classList.toggle('is-hidden', manualEntryMode);
+			}
+
+			if (kioskScanTitleIcon) {
+				kioskScanTitleIcon.className = manualEntryMode
+					? 'bi bi-keyboard-fill'
+					: (currentStep === 3 ? 'bi bi-person-bounding-box' : 'bi bi-camera-video-fill');
+			}
+
+			if (kioskScanTitleText) {
+				kioskScanTitleText.textContent = manualEntryMode
+					? 'Enter Visitor Details'
+					: (currentStep === 3 ? 'Capture Face and ID' : 'Scan Your Identification Card');
+			}
+
+			if (kioskScanDesc) {
+				kioskScanDesc.textContent = manualEntryMode
+					? "Enter the visitor's full name and birthday to check for an existing visitor record."
+					: (currentStep === 3
+						? 'Center your face in the oval and hold your ID beside it before capturing.'
+						: 'Position your ID card within the frame. Ensure all details are clear and visible.');
+			}
+
+			if (manualEntryMode) {
+				stopIdAutoDetect();
+				setManualEntryError('');
+				if (kioskCameraStatusTitle) {
+					kioskCameraStatusTitle.textContent = 'Manual Entry Mode';
+				}
+				if (kioskCameraStatusText) {
+					kioskCameraStatusText.textContent = 'Enter name and birthday, or go back to resume automatic ID scanning.';
+				}
+				if (cameraStatus) {
+					cameraStatus.textContent = 'Manual Entry Mode. Automatic ID scanning is paused.';
+				}
+				if (kioskCameraBadgeText) {
+					kioskCameraBadgeText.textContent = 'Manual Entry';
+				}
+				manualEntryFullName?.focus();
+			} else if (currentStep === 1) {
+				if (activeStream) {
+					startIdAutoDetect();
+					if (kioskCameraStatusTitle) {
+						kioskCameraStatusTitle.textContent = 'Camera Ready';
+					}
+					if (kioskCameraBadgeText) {
+						kioskCameraBadgeText.textContent = 'Camera Ready';
+					}
+					setIdDetectStatus('idle');
+				}
+			}
+
+			updateScanActionButton();
+		};
+
+		const showManualEntryMode = () => {
+			if (currentStep !== 1 || idCaptureLocked || hasSavedRegistration) {
+				return;
+			}
+			setManualEntryMode(true);
+		};
+
+		const showIdScanMode = () => {
+			setManualEntryMode(false);
+		};
+
+		const applyManualEntryIdentityToForm = () => {
+			const fullName = String(manualEntryFullName?.value || '').trim().replace(/\s+/g, ' ');
+			const birthday = String(manualEntryBirthday?.value || '').trim();
+			const split = splitFullNameForLookup(fullName);
+
+			if (visitorFirstName) {
+				visitorFirstName.value = toTitleCase(split.first_name);
+				visitorFirstName.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+			if (visitorLastName) {
+				visitorLastName.value = toTitleCase(split.last_name);
+				visitorLastName.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+			if (visitorBirthday) {
+				visitorBirthday.value = birthday;
+				visitorBirthday.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+
+			return { fullName, birthday, ...split };
+		};
+
+		const proceedFromIdentityStep = async (lookup) => {
+			await promptForExistingVisitorDecision(lookup || null);
+			lastExistingVisitorLookupKey = getCurrentIdentityLookupKey();
+
+			releaseCamera();
+			clearFrozenFrame();
+			loadingOverlay?.classList.add('is-hidden');
+			if (scanAction) {
+				scanAction.disabled = false;
+			}
+			if (galleryAction) {
+				galleryAction.disabled = false;
+			}
+			idCaptureLocked = false;
+			manualEntryMode = false;
+			document.body.classList.remove('is-manual-entry');
+			manualEntryPanel?.classList.remove('is-active');
+			manualEntryPanel?.setAttribute('aria-hidden', 'true');
+			currentStep = 2;
+			updateStepUI();
+
+			if (existingVisitorConfirmed) {
+				const unfinished = existingVisitorMatch?.unfinished_enrollee?.has_unfinished;
+				if (cameraStatus) {
+					cameraStatus.textContent = unfinished
+						? 'Returning enrollee confirmed. Generate the QR ticket to resume unfinished enrollment progress.'
+						: 'Existing visitor confirmed. Review the details and generate the QR ticket.';
+				}
+			} else if (cameraStatus) {
+				cameraStatus.textContent = 'Visitor details ready. Verify information before proceeding.';
+			}
+		};
+
+		const checkManualEntryVisitor = async () => {
+			if (currentStep !== 1 || !manualEntryMode) {
+				return;
+			}
+
+			const fullName = String(manualEntryFullName?.value || '').trim().replace(/\s+/g, ' ');
+			const birthday = String(manualEntryBirthday?.value || '').trim();
+
+			if (!fullName) {
+				setManualEntryError('Please enter the visitor\'s full name.');
+				manualEntryFullName?.focus();
+				return;
+			}
+			if (!birthday) {
+				setManualEntryError('Please enter the visitor\'s birthday.');
+				manualEntryBirthday?.focus();
+				return;
+			}
+
+			setManualEntryError('');
+			if (manualEntryCheckBtn) {
+				manualEntryCheckBtn.disabled = true;
+			}
+			if (manualEntryBackBtn) {
+				manualEntryBackBtn.disabled = true;
+			}
+			if (scanAction) {
+				scanAction.disabled = true;
+			}
+			if (galleryAction) {
+				galleryAction.disabled = true;
+			}
+
+			try {
+				applyManualEntryIdentityToForm();
+				const lookup = await lookupExistingVisitorsFromForm();
+				await proceedFromIdentityStep(lookup);
+			} catch (error) {
+				setManualEntryError(error?.message || 'Unable to check existing visitors. Please try again.');
+				if (scanAction) {
+					scanAction.disabled = false;
+				}
+				if (galleryAction) {
+					galleryAction.disabled = false;
+				}
+			} finally {
+				if (manualEntryCheckBtn) {
+					manualEntryCheckBtn.disabled = false;
+				}
+				if (manualEntryBackBtn) {
+					manualEntryBackBtn.disabled = false;
+				}
+			}
+		};
+
 		const updateStepUI = () => {
 			if (!hasRegisterFlow) {
 				return;
@@ -8926,7 +9965,7 @@
 			const isEnrolleeInfoStep = isFormStep && registerType === 'enrollee';
 
 			flowStepName.textContent = isIdStep
-				? 'ID Scan'
+				? 'Identify Visitor'
 				: (isFormStep ? (registerType === 'enrollee' ? 'Visitor Information' : 'Visitor Information') : (isPictureStep ? 'Face + ID' : 'Visitor Registered'));
 			flowStepCount.textContent = isIdStep ? 'Step 1 of 3' : (isFormStep ? 'Step 2 of 3' : (isPictureStep ? 'Step 3 of 3' : 'Completed'));
 
@@ -8953,22 +9992,30 @@
 					: (isFormStep ? 'STEP 2 OF 3' : (isPictureStep ? 'STEP 3 OF 3' : 'STEP 1 OF 3'));
 			}
 
-			if (kioskScanTitleText) {
-				kioskScanTitleText.textContent = isIdStep
-					? 'Scan Your Identification Card'
-					: (isPictureStep ? 'Capture Face and ID' : 'Scan Your Identification Card');
-			}
+			if (!manualEntryMode) {
+				if (kioskScanTitleText) {
+					kioskScanTitleText.textContent = isIdStep
+						? 'Scan Your Identification Card'
+						: (isPictureStep ? 'Capture Face and ID' : 'Scan Your Identification Card');
+				}
 
-			if (kioskScanDesc) {
-				kioskScanDesc.textContent = isIdStep
-					? 'Position your ID card within the frame. Ensure all details are clear and visible.'
-					: (isPictureStep
-						? 'Center your face in the oval and hold your ID beside it before capturing.'
-						: 'Position your ID card within the frame. Ensure all details are clear and visible.');
+				if (kioskScanDesc) {
+					kioskScanDesc.textContent = isIdStep
+						? 'Position your ID card within the frame. Ensure all details are clear and visible.'
+						: (isPictureStep
+							? 'Center your face in the oval and hold your ID beside it before capturing.'
+							: 'Position your ID card within the frame. Ensure all details are clear and visible.');
+				}
+
+				if (kioskScanTitleIcon) {
+					kioskScanTitleIcon.className = isPictureStep
+						? 'bi bi-person-bounding-box'
+						: 'bi bi-camera-video-fill';
+				}
 			}
 
 			if (kioskBottomPanels) {
-				kioskBottomPanels.classList.toggle('is-hidden', !isIdStep);
+				kioskBottomPanels.classList.toggle('is-hidden', !isIdStep || manualEntryMode);
 			}
 
 			if (kioskRegFooter) {
@@ -9010,20 +10057,35 @@
 			}
 
 			pictureGuide.classList.toggle('is-hidden', !isPictureStep);
-			idGuide.classList.toggle('is-hidden', !isIdStep);
+			idGuide.classList.toggle('is-hidden', !isIdStep || manualEntryMode);
 			if (idTypesPanel) {
 				idTypesPanel.classList.toggle('is-hidden', !isIdStep);
 			}
 			galleryAction.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
-			scanActionText.textContent = isPictureStep ? 'Capture Face + ID' : 'Scan ID Card';
+			updateScanActionButton();
 			if (!isPictureStep || isCompleteStep) {
 				closePhotoConsentModal();
 				setPhotoReviewUi(false);
 			}
-			if (isIdStep) {
+			if (!isIdStep && manualEntryMode) {
+				manualEntryMode = false;
+			}
+			document.body.classList.toggle('is-manual-entry', Boolean(manualEntryMode && isIdStep));
+			if (manualEntryPanel) {
+				const showManual = Boolean(manualEntryMode && isIdStep);
+				manualEntryPanel.classList.toggle('is-active', showManual);
+				manualEntryPanel.setAttribute('aria-hidden', showManual ? 'false' : 'true');
+			}
+			if (!isSelfRegistrationKiosk && scannerZone) {
+				scannerZone.classList.toggle('is-hidden', Boolean(manualEntryMode && isIdStep));
+			}
+			if (!isSelfRegistrationKiosk && idScanView) {
+				idScanView.classList.toggle('is-hidden', Boolean(manualEntryMode && isIdStep));
+			}
+			if (isIdStep && !manualEntryMode) {
 				startIdAutoDetect();
-			} else {
+			} else if (!isIdStep || manualEntryMode) {
 				stopIdAutoDetect();
 			}
 			updateKioskSummaryProgress();
@@ -9416,13 +10478,7 @@
 				kioskCameraStatusText.textContent = message;
 			}
 
-			if (!isOn) {
-				scanActionText.textContent = 'Retry Camera';
-			} else if (currentStep === 3) {
-				scanActionText.textContent = 'Capture Face + ID';
-			} else {
-				scanActionText.textContent = 'Scan ID Card';
-			}
+			updateScanActionButton();
 			scanAction.disabled = false;
 		};
 
@@ -9509,10 +10565,12 @@
 
 				setCameraState(true, currentStep === 3
 					? 'Camera is ready. Center your face and hold your ID beside it.'
-					: 'Position your ID in the frame. Auto-capture waits until the text is clear — or tap Scan ID Card.');
+					: 'Position your ID in the frame. Auto-capture waits until the text is clear.');
 				if (currentStep === 1) {
 					idCaptureLocked = false;
-					startIdAutoDetect();
+					if (!manualEntryMode) {
+						startIdAutoDetect();
+					}
 				}
 			} catch (error) {
 				setCameraState(false, 'Camera permission denied or unavailable. Click Retry Camera after allowing access.');
@@ -9856,7 +10914,7 @@
 				qr_payload: qrMeta?.qr_payload || null,
 				existing_visitor_confirmed: Boolean(existingVisitorConfirmed && existingVisitorMatch?.exists),
 				existing_visitor_id: existingVisitorConfirmed && existingVisitorMatch?.exists
-					? Number(existingVisitorMatch.visitor_id || 0)
+					? Number(existingVisitorMatch.visitor_id || existingVisitorMatch.id || 0)
 					: null,
 			};
 
@@ -9910,6 +10968,7 @@
 		};
 
 		const closeExistingVisitorModal = (result) => {
+			hideRegisterNewVisitorConfirm();
 			if (existingVisitorModal) {
 				existingVisitorModal.classList.add('is-hidden');
 				existingVisitorModal.setAttribute('aria-hidden', 'true');
@@ -9926,6 +10985,227 @@
 				existingVisitorModalResolver(result);
 				existingVisitorModalResolver = null;
 			}
+		};
+
+		const hideRegisterNewVisitorConfirm = () => {
+			if (registerNewVisitorConfirmModal) {
+				registerNewVisitorConfirmModal.classList.add('is-hidden');
+				registerNewVisitorConfirmModal.setAttribute('aria-hidden', 'true');
+			}
+		};
+
+		const showRegisterNewVisitorConfirm = (context) => {
+			newVisitorConfirmContext = context === 'multiple' ? 'multiple' : 'single';
+			if (registerNewVisitorConfirmMessage) {
+				registerNewVisitorConfirmMessage.textContent = newVisitorConfirmContext === 'multiple'
+					? 'Only continue if none of the listed visitor records belong to the person currently registering. Creating a new visitor will create a separate visitor record.'
+					: 'Only continue if the visitor shown is not the person currently registering. Creating a new visitor will create a separate visitor record.';
+			}
+			if (registerNewVisitorConfirmModal) {
+				registerNewVisitorConfirmModal.classList.remove('is-hidden');
+				registerNewVisitorConfirmModal.setAttribute('aria-hidden', 'false');
+			}
+		};
+
+		const isRegisterNewVisitorConfirmOpen = () => Boolean(
+			registerNewVisitorConfirmModal && !registerNewVisitorConfirmModal.classList.contains('is-hidden')
+		);
+
+		const maskContactNumberClient = (value) => {
+			const digits = String(value || '').replace(/\D/g, '');
+			if (!digits) {
+				return '-';
+			}
+			if (digits.length < 6) {
+				return '*'.repeat(digits.length);
+			}
+			return `${digits.slice(0, 4)}${'*'.repeat(digits.length - 6)}${digits.slice(-2)}`;
+		};
+
+		const normalizeLookupName = (value) => String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+		const getCurrentIdentityLookupKey = () => {
+			const name = normalizeLookupName(`${visitorFirstName?.value || ''} ${visitorLastName?.value || ''}`);
+			const birthday = String(visitorBirthday?.value || '').trim();
+			return name && birthday ? `${name}|${birthday}` : '';
+		};
+
+		const visitorRecordId = (visitor) => Number(visitor?.visitor_id || visitor?.id || 0);
+
+		const closeMultipleExistingVisitorsModal = (result) => {
+			hideRegisterNewVisitorConfirm();
+			if (multipleExistingVisitorsModal) {
+				multipleExistingVisitorsModal.classList.add('is-hidden');
+				multipleExistingVisitorsModal.setAttribute('aria-hidden', 'true');
+			}
+			if (multipleExistingVisitorList) {
+				multipleExistingVisitorList.innerHTML = '';
+			}
+			if (multipleExistingVisitorUseBtn) {
+				multipleExistingVisitorUseBtn.disabled = true;
+			}
+			multipleExistingVisitorSelectedId = null;
+
+			if (multipleExistingVisitorModalResolver) {
+				multipleExistingVisitorModalResolver(result);
+				multipleExistingVisitorModalResolver = null;
+			}
+		};
+
+		const bindVisitorChoicePhoto = (img, placeholder, previewUrl) => {
+			const hasPreviewPhoto = Boolean(previewUrl);
+			if (placeholder) {
+				placeholder.classList.toggle('is-hidden', hasPreviewPhoto);
+			}
+			if (!img) {
+				return;
+			}
+			img.classList.toggle('is-hidden', !hasPreviewPhoto);
+			img.onload = () => {
+				if (placeholder) {
+					placeholder.classList.add('is-hidden');
+				}
+				img.classList.remove('is-hidden');
+			};
+			img.onerror = () => {
+				if (placeholder) {
+					placeholder.classList.remove('is-hidden');
+				}
+				img.classList.add('is-hidden');
+			};
+			img.src = hasPreviewPhoto ? previewUrl : '';
+		};
+
+		const setMultipleVisitorSelection = (visitorId) => {
+			multipleExistingVisitorSelectedId = Number(visitorId) || 0;
+			if (multipleExistingVisitorUseBtn) {
+				multipleExistingVisitorUseBtn.disabled = multipleExistingVisitorSelectedId <= 0;
+			}
+			multipleExistingVisitorList?.querySelectorAll('.existing-visitor-choice').forEach((card) => {
+				const cardId = Number(card.getAttribute('data-visitor-id') || 0);
+				const isSelected = cardId === multipleExistingVisitorSelectedId;
+				card.classList.toggle('is-selected', isSelected);
+				const radio = card.querySelector('input[type="radio"]');
+				if (radio) {
+					radio.checked = isSelected;
+				}
+			});
+		};
+
+		const renderMultipleVisitorCards = (visitors) => {
+			if (!multipleExistingVisitorList) {
+				return;
+			}
+
+			multipleExistingVisitorList.innerHTML = visitors.map((visitor, index) => {
+				const id = visitorRecordId(visitor);
+				const fullName = String(visitor.full_name || `${toTitleCase(visitor.first_name)} ${toTitleCase(visitor.last_name)}`).trim() || 'Unknown visitor';
+				const maskedContact = String(visitor.masked_contact_number || maskContactNumberClient(visitor.contact_no) || '-').trim() || '-';
+				const birthday = String(visitor.birth_date || visitor.birthday || '-').trim() || '-';
+				const photoId = `multipleExistingVisitorPhoto-${id || index}`;
+				const placeholderId = `multipleExistingVisitorPhotoPlaceholder-${id || index}`;
+				const escapeHtml = (value) => String(value || '')
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;');
+
+				return `
+					<label class="existing-visitor-choice" data-visitor-id="${id}">
+						<input class="existing-visitor-choice-radio" type="radio" name="multipleExistingVisitorChoice" value="${id}" aria-label="Select ${escapeHtml(fullName)}">
+						<div class="existing-visitor-choice-photo">
+							<img id="${photoId}" alt="Saved visitor photo">
+							<div class="confirmation-photo-placeholder is-hidden" id="${placeholderId}">No photo</div>
+						</div>
+						<div class="existing-visitor-choice-details">
+							<p class="existing-visitor-choice-name">${escapeHtml(fullName)}</p>
+							<p class="existing-visitor-choice-meta"><span>Contact Number:</span>${escapeHtml(maskedContact)}</p>
+							<p class="existing-visitor-choice-meta"><span>Birthday:</span>${escapeHtml(birthday)}</p>
+						</div>
+						<span class="existing-visitor-choice-badge">Validation Photo</span>
+					</label>
+				`;
+			}).join('');
+
+			visitors.forEach((visitor, index) => {
+				const id = visitorRecordId(visitor);
+				const previewUrl = String(visitor.validation_photo || visitor.photo_preview_url || visitor.photo_path || '').trim();
+				bindVisitorChoicePhoto(
+					document.getElementById(`multipleExistingVisitorPhoto-${id || index}`),
+					document.getElementById(`multipleExistingVisitorPhotoPlaceholder-${id || index}`),
+					previewUrl
+				);
+			});
+		};
+
+		const openMultipleExistingVisitorsModal = (lookup) => {
+			const visitors = Array.isArray(lookup?.visitors) ? lookup.visitors : [];
+			if (!visitors.length || !multipleExistingVisitorsModal) {
+				return Promise.resolve(false);
+			}
+
+			multipleExistingVisitorMatches = visitors;
+			multipleExistingVisitorSelectedId = null;
+			renderMultipleVisitorCards(visitors);
+			if (multipleExistingVisitorUseBtn) {
+				multipleExistingVisitorUseBtn.disabled = true;
+			}
+
+			multipleExistingVisitorsModal.classList.remove('is-hidden');
+			multipleExistingVisitorsModal.setAttribute('aria-hidden', 'false');
+
+			return new Promise((resolve) => {
+				multipleExistingVisitorModalResolver = resolve;
+			});
+		};
+
+		const lookupExistingVisitorsFromForm = async () => {
+			const response = await fetch('/guard/lookup-existing-visitor', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+				},
+				body: JSON.stringify({
+					first_name: visitorFirstName?.value || '',
+					last_name: visitorLastName?.value || '',
+					birthday: visitorBirthday?.value || '',
+					register_type: registerType || 'normal',
+				}),
+			});
+
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok || !data.success) {
+				throw new Error(data.message || 'Failed to check existing visitors.');
+			}
+
+			return data.existing_visitor || null;
+		};
+
+		const promptForExistingVisitorDecision = async (lookup) => {
+			existingVisitorMatch = lookup && lookup.exists ? lookup : null;
+			existingVisitorConfirmed = false;
+
+			if (!lookup || lookup.status === 'no_match' || !lookup.exists) {
+				existingVisitorMatch = null;
+				return false;
+			}
+
+			if (lookup.status === 'multiple_matches') {
+				existingVisitorConfirmed = await openMultipleExistingVisitorsModal(lookup);
+			} else {
+				existingVisitorConfirmed = await openExistingVisitorModal(lookup);
+			}
+
+			if (existingVisitorConfirmed && existingVisitorMatch) {
+				applyExistingVisitorData(existingVisitorMatch);
+				return true;
+			}
+
+			existingVisitorMatch = null;
+			existingVisitorConfirmed = false;
+			return false;
 		};
 
 		const openExistingVisitorModal = (existingVisitor) => {
@@ -9950,7 +11230,7 @@
 			if (existingVisitorModalSubtitle) {
 				existingVisitorModalSubtitle.textContent = unfinished
 					? 'This enrollee has unfinished office steps. Confirm to resume the same enrollment progress on the new QR pass.'
-					: 'We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Cancel to create a new visitor record instead.';
+					: 'We found a matching visitor by name and birthday. Please confirm whether this is the same person before continuing. Tap Not This Person to create a new visitor record instead.';
 			}
 			if (existingVisitorModalName) {
 				existingVisitorModalName.textContent = fullName;
@@ -10055,8 +11335,12 @@
 		};
 
 		const setIdDetectStatus = (mode) => {
+			if (manualEntryMode) {
+				return;
+			}
+
 			const messages = {
-				idle: 'Position your ID in the frame. Auto-capture waits until the text is clear — or tap Scan ID Card.',
+				idle: 'Position your ID in the frame. Auto-capture waits until the text is clear.',
 				searching: 'Searching for ID… keep the card flat and fully inside the frame.',
 				blurry: 'ID is still blurry. Hold steady and move closer until the text looks sharp.',
 				unclear: 'ID found, but details are not readable yet. Reduce glare and keep text in focus.',
@@ -10248,6 +11532,7 @@
 		const tickIdAutoDetect = () => {
 			if (
 				currentStep !== 1
+				|| manualEntryMode
 				|| idCaptureLocked
 				|| !activeStream
 				|| cameraFeed.readyState < 2
@@ -10282,7 +11567,7 @@
 		const startIdAutoDetect = () => {
 			stopIdAutoDetect();
 
-			if (currentStep !== 1 || !activeStream || hasSavedRegistration || idCaptureLocked) {
+			if (currentStep !== 1 || manualEntryMode || !activeStream || hasSavedRegistration || idCaptureLocked) {
 				return;
 			}
 
@@ -10347,6 +11632,11 @@
 			const stayOnIdScan = (message) => {
 				existingVisitorMatch = null;
 				existingVisitorConfirmed = false;
+				lastExistingVisitorLookupKey = '';
+				manualEntryMode = false;
+				document.body.classList.remove('is-manual-entry');
+				manualEntryPanel?.classList.remove('is-active');
+				manualEntryPanel?.setAttribute('aria-hidden', 'true');
 				loadingText.textContent = message || 'No valid ID detected. Please scan again.';
 				setTimeout(() => {
 					loadingOverlay.classList.add('is-hidden');
@@ -10382,14 +11672,8 @@
 						return;
 					}
 
-					if (existingVisitorMatch && existingVisitorMatch.exists) {
-						existingVisitorConfirmed = await openExistingVisitorModal(existingVisitorMatch);
-						if (existingVisitorConfirmed) {
-							applyExistingVisitorData(existingVisitorMatch);
-						} else {
-							existingVisitorMatch = null;
-						}
-					}
+					await promptForExistingVisitorDecision(parseResult?.existingVisitor || null);
+					lastExistingVisitorLookupKey = getCurrentIdentityLookupKey();
 
 					releaseCamera();
 					if (!showFrozenAfterSuccess) {
@@ -10399,6 +11683,10 @@
 					scanAction.disabled = false;
 					galleryAction.disabled = false;
 					idCaptureLocked = false;
+					manualEntryMode = false;
+					document.body.classList.remove('is-manual-entry');
+					manualEntryPanel?.classList.remove('is-active');
+					manualEntryPanel?.setAttribute('aria-hidden', 'true');
 					currentStep = 2;
 					updateStepUI();
 					if (existingVisitorConfirmed) {
@@ -10587,12 +11875,37 @@
 			}
 
 			if (currentStep === 1) {
-				triggerIdCapture('manual');
+				showManualEntryMode();
 				return;
 			}
 
 			if (currentStep === 3) {
 				capturePicture();
+			}
+		});
+
+		manualEntryBackBtn?.addEventListener('click', () => {
+			if (currentStep !== 1) {
+				return;
+			}
+			showIdScanMode();
+		});
+
+		manualEntryCheckBtn?.addEventListener('click', () => {
+			checkManualEntryVisitor();
+		});
+
+		manualEntryFullName?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				manualEntryBirthday?.focus();
+			}
+		});
+
+		manualEntryBirthday?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				checkManualEntryVisitor();
 			}
 		});
 
@@ -11245,6 +12558,18 @@ body.android-thermal-print .foot {
 			const input = event.target;
 			const selectedFile = input?.files?.[0];
 			if (selectedFile) {
+				if (manualEntryMode) {
+					manualEntryMode = false;
+					document.body.classList.remove('is-manual-entry');
+					manualEntryPanel?.classList.remove('is-active');
+					manualEntryPanel?.setAttribute('aria-hidden', 'true');
+					if (!isSelfRegistrationKiosk && scannerZone) {
+						scannerZone.classList.remove('is-hidden');
+					}
+					if (!isSelfRegistrationKiosk && idScanView) {
+						idScanView.classList.remove('is-hidden');
+					}
+				}
 				importIdFromGallery(selectedFile);
 			}
 
@@ -11258,6 +12583,10 @@ body.android-thermal-print .foot {
 
 			currentStep = 1;
 			preferredFacingMode = 'environment';
+			manualEntryMode = false;
+			document.body.classList.remove('is-manual-entry');
+			manualEntryPanel?.classList.remove('is-active');
+			manualEntryPanel?.setAttribute('aria-hidden', 'true');
 			updateStepUI();
 			startCamera();
 		});
@@ -11270,7 +12599,7 @@ body.android-thermal-print .foot {
 			generateQrBtn?.click();
 		});
 
-		generateQrBtn?.addEventListener('click', () => {
+		generateQrBtn?.addEventListener('click', async () => {
 			if (hasSavedRegistration) {
 				alert('Registration has already been completed.');
 				return;
@@ -11329,6 +12658,22 @@ body.android-thermal-print .foot {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				alert('No enrollee destination offices are available. Please check enrollee steps setup.');
 				return;
+			}
+
+			const lookupKey = getCurrentIdentityLookupKey();
+			if (lookupKey && lookupKey !== lastExistingVisitorLookupKey) {
+				loadingOverlay.classList.remove('is-hidden');
+				loadingText.textContent = 'Checking existing visitor records...';
+				try {
+					const lookup = await lookupExistingVisitorsFromForm();
+					loadingOverlay.classList.add('is-hidden');
+					await promptForExistingVisitorDecision(lookup);
+					lastExistingVisitorLookupKey = getCurrentIdentityLookupKey();
+				} catch (error) {
+					loadingOverlay.classList.add('is-hidden');
+					alert(error.message || 'Unable to check existing visitors. Please try again.');
+					return;
+				}
 			}
 
 			if (existingVisitorConfirmed && existingVisitorMatch?.exists) {
@@ -11596,6 +12941,17 @@ body.android-thermal-print .foot {
 			setPhotoReviewUi(false);
 			resetPendingFaceCapture();
 			idCaptureLocked = false;
+			manualEntryMode = false;
+			document.body.classList.remove('is-manual-entry');
+			manualEntryPanel?.classList.remove('is-active');
+			manualEntryPanel?.setAttribute('aria-hidden', 'true');
+			if (manualEntryFullName) {
+				manualEntryFullName.value = '';
+			}
+			if (manualEntryBirthday) {
+				manualEntryBirthday.value = '';
+			}
+			setManualEntryError('');
 
 			currentStep = 1;
 			preferredFacingMode = 'environment';
@@ -11603,6 +12959,7 @@ body.android-thermal-print .foot {
 			lastTicketQrPayload = '';
 			existingVisitorMatch = null;
 			existingVisitorConfirmed = false;
+			lastExistingVisitorLookupKey = '';
 			selectedOfficeIds = [];
 			selectedOfficeId = null;
 			isOtherDestination = false;
@@ -11680,18 +13037,94 @@ body.android-thermal-print .foot {
 		});
 
 		existingVisitorModalCancel?.addEventListener('click', () => {
-			closeExistingVisitorModal(false);
+			showRegisterNewVisitorConfirm('single');
 		});
 
 		existingVisitorModal?.addEventListener('click', (event) => {
-			if (event.target === existingVisitorModal) {
+			if (event.target === existingVisitorModal && !isRegisterNewVisitorConfirmOpen()) {
+				showRegisterNewVisitorConfirm('single');
+			}
+		});
+
+		multipleExistingVisitorList?.addEventListener('click', (event) => {
+			const card = event.target.closest('.existing-visitor-choice');
+			if (!card) {
+				return;
+			}
+			setMultipleVisitorSelection(card.getAttribute('data-visitor-id'));
+		});
+
+		multipleExistingVisitorList?.addEventListener('change', (event) => {
+			const radio = event.target.closest('input[type="radio"]');
+			if (!radio) {
+				return;
+			}
+			setMultipleVisitorSelection(radio.value);
+		});
+
+		multipleExistingVisitorUseBtn?.addEventListener('click', () => {
+			const selected = multipleExistingVisitorMatches.find(
+				(visitor) => visitorRecordId(visitor) === Number(multipleExistingVisitorSelectedId || 0)
+			);
+			if (!selected) {
+				return;
+			}
+
+			existingVisitorMatch = {
+				...selected,
+				exists: true,
+				status: 'single_match',
+				match_count: 1,
+				visitors: [selected],
+			};
+			closeMultipleExistingVisitorsModal(true);
+		});
+
+		multipleExistingVisitorNoneBtn?.addEventListener('click', () => {
+			showRegisterNewVisitorConfirm('multiple');
+		});
+
+		multipleExistingVisitorsModal?.addEventListener('click', (event) => {
+			if (event.target === multipleExistingVisitorsModal && !isRegisterNewVisitorConfirmOpen()) {
+				showRegisterNewVisitorConfirm('multiple');
+			}
+		});
+
+		registerNewVisitorGoBackBtn?.addEventListener('click', () => {
+			hideRegisterNewVisitorConfirm();
+		});
+
+		registerNewVisitorConfirmBtn?.addEventListener('click', () => {
+			if (newVisitorConfirmContext === 'multiple') {
+				closeMultipleExistingVisitorsModal(false);
+			} else {
 				closeExistingVisitorModal(false);
 			}
 		});
 
+		registerNewVisitorConfirmModal?.addEventListener('click', (event) => {
+			if (event.target === registerNewVisitorConfirmModal) {
+				hideRegisterNewVisitorConfirm();
+			}
+		});
+
 		document.addEventListener('keydown', (event) => {
-			if (event.key === 'Escape' && existingVisitorModal && !existingVisitorModal.classList.contains('is-hidden')) {
-				closeExistingVisitorModal(false);
+			if (event.key !== 'Escape') {
+				return;
+			}
+
+			if (isRegisterNewVisitorConfirmOpen()) {
+				hideRegisterNewVisitorConfirm();
+				return;
+			}
+
+			if (multipleExistingVisitorsModal && !multipleExistingVisitorsModal.classList.contains('is-hidden')) {
+				showRegisterNewVisitorConfirm('multiple');
+				return;
+			}
+
+			if (existingVisitorModal && !existingVisitorModal.classList.contains('is-hidden')) {
+				showRegisterNewVisitorConfirm('single');
 			}
 		});
 

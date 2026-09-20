@@ -236,4 +236,5 @@ Route::middleware(['auth', 'role:2,4'])->prefix('guard')->group(function () {
     Route::get('/offices', [GuardVisitorController::class, 'getOffices']);
     Route::post('/capture', [GuardVisitorController::class, 'saveCapture']);
     Route::post('/parse-id', [GuardVisitorController::class, 'parseId']);
+    Route::post('/lookup-existing-visitor', [GuardVisitorController::class, 'lookupExistingVisitor']);
 });
