@@ -6310,8 +6310,9 @@
 			}
 		}
 
-		/* Short Windows laptops: 900px tall and below (1440x900, 1600x900) */
-		@media screen and (min-width: 1024px) and (max-height: 900px) {
+		/* Short Windows laptops: 900px tall and below (1440x900, 1600x900).
+		   Hover/fine-pointer only — do not shrink camera on landscape tablets (e.g. Redmi Pad). */
+		@media screen and (min-width: 1024px) and (max-height: 900px) and (hover: hover) and (pointer: fine) {
 			body.self-registration-mode {
 				--self-reg-header-height: 62px;
 			}
@@ -6363,8 +6364,9 @@
 			}
 		}
 
-		/* Common Windows laptop heights: 1366x768, 1280x720, 150% of 1080p */
-		@media screen and (min-width: 1024px) and (max-height: 800px) {
+		/* Common Windows laptop heights: 1366x768, 1280x720, 150% of 1080p.
+		   Keep hover/fine-pointer so tablet landscape (Redmi Pad ~1280x800) is not capped. */
+		@media screen and (min-width: 1024px) and (max-height: 800px) and (hover: hover) and (pointer: fine) {
 			body.self-registration-mode {
 				--self-reg-header-height: 56px;
 			}
@@ -6548,6 +6550,57 @@
 
 			body.self-registration-mode .kiosk-guard-duty-side {
 				margin-left: auto;
+			}
+		}
+
+		/*
+		 * Landscape tablets at desktop CSS widths (Redmi Pad 2 ~1280×800, iPad landscape).
+		 * Short-laptop caps above are mouse-only; give the scan viewport real height here.
+		 */
+		@media screen and (min-width: 1024px) and (max-height: 900px) and (orientation: landscape) and (hover: none),
+			screen and (min-width: 1024px) and (max-height: 900px) and (orientation: landscape) and (pointer: coarse) {
+			body.self-registration-mode .camera-section {
+				max-width: none;
+			}
+
+			body.self-registration-mode .scanner-zone.camera-frame,
+			body.self-registration-mode .scanner-zone {
+				width: 100%;
+				min-height: min(52dvh, 420px);
+				max-height: min(58dvh, 460px);
+				aspect-ratio: 16 / 10;
+				flex: none;
+			}
+
+			body.self-registration-mode .id-guide {
+				width: min(74%, 500px);
+			}
+
+			body.self-registration-mode .scan-heading.kiosk-scan-heading {
+				margin-bottom: 6px;
+			}
+
+			body.self-registration-mode .scan-heading .kiosk-scan-title {
+				font-size: 1.1rem;
+			}
+
+			body.self-registration-mode .scan-heading .kiosk-scan-desc {
+				margin-top: 4px;
+				font-size: 12px;
+			}
+
+			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
+				margin-top: 10px;
+				gap: 10px;
+			}
+
+			body.self-registration-mode .info-card.kiosk-info-card {
+				padding: 10px 12px;
+			}
+
+			body.self-registration-mode .tips-list li,
+			body.self-registration-mode .kiosk-tips-list li {
+				font-size: 12px;
 			}
 		}
 
