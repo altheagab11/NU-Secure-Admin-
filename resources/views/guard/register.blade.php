@@ -4646,9 +4646,9 @@
 			body.self-registration-mode .scanner-zone,
 			body.self-registration-mode .scanner-zone.camera-frame {
 				flex: none;
-				min-height: 180px;
-				max-height: min(36vh, 320px);
-				aspect-ratio: 16 / 10;
+				min-height: 220px;
+				max-height: min(42vh, 380px);
+				aspect-ratio: 16 / 11;
 			}
 
 			body.self-registration-mode .camera-section,
@@ -5507,9 +5507,9 @@
 		body.self-registration-mode .scanner-zone.camera-frame {
 			position: relative;
 			width: 100%;
-			min-height: 180px;
-			max-height: min(42dvh, 420px);
-			aspect-ratio: 16 / 10;
+			min-height: 220px;
+			max-height: min(48dvh, 480px);
+			aspect-ratio: 16 / 11;
 			flex: none;
 			height: auto;
 			overflow: hidden;
@@ -6268,9 +6268,9 @@
 
 			body.self-registration-mode .scanner-zone.camera-frame,
 			body.self-registration-mode .scanner-zone {
-				min-height: 180px;
-				max-height: min(42dvh, 420px);
-				aspect-ratio: 16 / 10;
+				min-height: 220px;
+				max-height: min(48dvh, 480px);
+				aspect-ratio: 16 / 11;
 			}
 
 			body.self-registration-mode .id-guide {
@@ -6306,7 +6306,7 @@
 			}
 
 			body.self-registration-mode .scanner-zone.camera-frame {
-				max-height: min(46dvh, 460px);
+				max-height: min(52dvh, 520px);
 			}
 		}
 
@@ -6336,8 +6336,8 @@
 			}
 
 			body.self-registration-mode .scanner-zone.camera-frame {
-				max-height: min(34dvh, 320px);
-				min-height: 170px;
+				max-height: min(40dvh, 380px);
+				min-height: 200px;
 			}
 
 			body.self-registration-mode .desktop-info-cards.kiosk-bottom-panels {
@@ -6416,8 +6416,8 @@
 			}
 
 			body.self-registration-mode .scanner-zone.camera-frame {
-				max-height: min(30dvh, 260px);
-				min-height: 160px;
+				max-height: min(36dvh, 320px);
+				min-height: 190px;
 			}
 
 			body.self-registration-mode .id-guide {
@@ -6682,9 +6682,9 @@
 
 			body.self-registration-mode .scanner-zone.camera-frame {
 				width: 100%;
-				min-height: 220px;
-				max-height: min(38vh, 360px);
-				aspect-ratio: 16 / 10;
+				min-height: 260px;
+				max-height: min(46vh, 440px);
+				aspect-ratio: 16 / 11;
 				flex: none;
 			}
 
@@ -6793,9 +6793,9 @@
 
 			body.self-registration-mode .scanner-zone.camera-frame,
 			body.self-registration-mode .scanner-zone {
-				max-height: min(26vh, 240px);
-				min-height: 160px;
-				aspect-ratio: 16 / 10;
+				max-height: min(34vh, 320px);
+				min-height: 220px;
+				aspect-ratio: 16 / 11;
 			}
 
 			body.self-registration-mode .id-guide {
@@ -7121,14 +7121,14 @@
 
 			body.self-registration-mode .scanner-zone.camera-frame {
 				width: 100%;
-				min-height: 220px;
+				min-height: 280px;
 				max-height: none;
-				aspect-ratio: 4 / 3;
+				aspect-ratio: 5 / 4;
 				border-radius: 16px;
 			}
 
 			body.self-registration-mode .id-guide {
-				width: min(74%, 290px);
+				width: min(78%, 320px);
 			}
 
 			body.self-registration-mode .id-guide-content {
@@ -7257,7 +7257,7 @@
 			}
 
 			body.self-registration-mode .scanner-zone.camera-frame {
-				min-height: 190px;
+				min-height: 250px;
 			}
 
 			body.self-registration-mode .scan-sidebar.kiosk-controls {
@@ -7267,8 +7267,8 @@
 
 		@media screen and (max-height: 500px) and (orientation: landscape) {
 			body.self-registration-mode .scanner-zone.camera-frame {
-				min-height: 200px;
-				aspect-ratio: 16 / 9;
+				min-height: 240px;
+				aspect-ratio: 16 / 10;
 			}
 
 			body.self-registration-mode .self-registration-header {
