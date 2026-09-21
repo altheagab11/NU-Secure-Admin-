@@ -9697,6 +9697,44 @@
 			},
 		});
 
+		const completeReturnConfirmOptions = () => ({
+			toast: true,
+			position: 'top',
+			icon: 'question',
+			iconColor: '#2563eb',
+			title: 'Complete and leave this screen?',
+			text: isSelfRegistrationKiosk
+				? 'Your visitor pass has been saved. Please confirm that the visitor has their QR pass ready before returning to the start screen.'
+				: 'This visitor pass has been saved. Please confirm before leaving this ticket screen and returning to the dashboard.',
+			showCancelButton: true,
+			confirmButtonText: 'Yes, complete',
+			cancelButtonText: 'Stay here',
+			focusCancel: true,
+			reverseButtons: true,
+			buttonsStyling: false,
+			customClass: {
+				popup: 'leave-register-toast',
+				title: 'leave-register-toast-title',
+				htmlContainer: 'leave-register-toast-text',
+				confirmButton: 'leave-register-toast-btn leave-register-toast-btn-leave',
+				cancelButton: 'leave-register-toast-btn leave-register-toast-btn-stay',
+				actions: 'leave-register-toast-actions',
+			},
+		});
+
+		const confirmCompleteAndReturn = async () => {
+			if (typeof window.Swal?.fire !== 'function') {
+				return window.confirm(
+					isSelfRegistrationKiosk
+						? 'Complete registration and return to the start screen?'
+						: 'Complete registration and return to the dashboard?'
+				);
+			}
+
+			const result = await window.Swal.fire(completeReturnConfirmOptions());
+			return Boolean(result.isConfirmed);
+		};
+
 		const confirmKioskNavigation = (targetHref) => {
 			if (!targetHref) {
 				return;
@@ -13261,13 +13299,18 @@ body.android-thermal-print .foot {
 			startCamera();
 		};
 
-		newVisitorAfterTicketBtn?.addEventListener('click', (event) => {
-			bypassNativeBeforeUnloadPrompt = true;
+		newVisitorAfterTicketBtn?.addEventListener('click', async (event) => {
+			event.preventDefault();
 
-			if (isSelfRegistrationKiosk) {
-				event.preventDefault();
-				window.location.href = '/guard/register';
+			const shouldLeave = await confirmCompleteAndReturn();
+			if (!shouldLeave) {
+				return;
 			}
+
+			bypassNativeBeforeUnloadPrompt = true;
+			window.location.href = isSelfRegistrationKiosk
+				? '/guard/register'
+				: (newVisitorAfterTicketBtn.getAttribute('href') || '/guard/dashboard');
 		});
 
 		window.addEventListener('afterprint', () => {
