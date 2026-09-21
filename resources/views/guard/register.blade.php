@@ -323,9 +323,13 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
+			place-items: center;
 			padding: 20px;
+			padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
 			background: rgba(15, 23, 42, 0.62);
 			backdrop-filter: blur(4px);
+			overflow: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.confirmation-modal.is-hidden {
@@ -334,11 +338,16 @@
 
 		.confirmation-modal-card {
 			width: min(100%, 520px);
+			max-width: calc(100vw - 24px);
+			max-height: min(92dvh, 920px);
+			margin: auto;
 			background: #ffffff;
 			border-radius: 18px;
 			box-shadow: 0 24px 80px rgba(15, 23, 42, 0.3);
 			overflow: hidden;
+			overflow-y: auto;
 			border: 1px solid rgba(148, 163, 184, 0.22);
+			flex-shrink: 0;
 		}
 
 		.confirmation-modal-header {
@@ -510,10 +519,12 @@
 
 		.confirmation-modal-card.is-multiple {
 			width: min(100%, 740px);
-			max-height: 85vh;
+			max-width: calc(100vw - 24px);
+			max-height: min(85dvh, 820px);
 			display: flex;
 			flex-direction: column;
 			overflow: hidden;
+			margin: auto;
 		}
 
 		.confirmation-modal-card.is-multiple .confirmation-modal-header {
@@ -2075,15 +2086,19 @@
 			}
 
 			.confirmation-modal {
-				padding: 12px;
-				align-items: flex-end;
+				padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+				align-items: center;
+				justify-content: center;
+				place-items: center;
 			}
 
 			.confirmation-modal-card {
-				width: 100%;
-				max-height: min(92dvh, 640px);
+				width: min(100%, 520px);
+				max-width: calc(100vw - 24px);
+				max-height: min(90dvh, 720px);
+				margin: auto;
 				overflow-y: auto;
-				border-radius: 16px 16px 0 0;
+				border-radius: 16px;
 			}
 
 			.confirmation-photo-panel {
@@ -2110,7 +2125,8 @@
 			.confirmation-modal-card.is-multiple {
 				max-height: min(88dvh, 720px);
 				overflow: hidden;
-				border-radius: 16px 16px 0 0;
+				border-radius: 16px;
+				margin: auto;
 			}
 
 			.existing-visitor-choice {
@@ -7416,6 +7432,38 @@
 			color: #fff;
 		}
 
+		.required-fields-toast.swal2-popup {
+			width: auto !important;
+			max-width: min(560px, calc(100vw - 24px));
+			margin-top: 16px !important;
+			padding: 14px 16px 12px !important;
+			border-radius: 12px !important;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15) !important;
+		}
+
+		.required-fields-toast .swal2-icon {
+			width: 2em;
+			height: 2em;
+			margin: 0 10px 0 0 !important;
+			border-width: 2px;
+		}
+
+		.required-fields-toast-title {
+			font-size: 15px !important;
+			font-weight: 700 !important;
+			color: #111827 !important;
+			margin: 0 !important;
+			text-align: left !important;
+		}
+
+		.required-fields-toast-text {
+			font-size: 13px !important;
+			color: #4b5563 !important;
+			margin: 4px 0 0 !important;
+			text-align: left !important;
+			line-height: 1.45 !important;
+		}
+
 		.qr-print-holder {
 			position: fixed;
 			left: -4000px;
@@ -9631,8 +9679,8 @@
 			position: 'top',
 			icon: 'warning',
 			iconColor: '#f59e0b',
-			title: 'Leave this page?',
-			text: 'Unsaved registration progress will be lost.',
+			title: 'Do you want to leave this page?',
+			text: 'Your registration is not finished. Unsaved details on this step will be lost if you leave.',
 			showCancelButton: true,
 			confirmButtonText: 'Leave page',
 			cancelButtonText: 'Stay here',
@@ -9680,12 +9728,95 @@
 
 		const confirmLeaveRegisterFlow = async () => {
 			if (typeof window.Swal?.fire !== 'function') {
-				return window.confirm('Unsaved registration progress will be lost. Leave this page?');
+				return window.confirm('Do you want to leave this page? Unsaved registration progress will be lost.');
 			}
 
 			const result = await window.Swal.fire(leaveRegisterConfirmOptions());
 
 			return Boolean(result.isConfirmed);
+		};
+
+		const getRequiredFieldLabel = (field) => {
+			if (!field) {
+				return 'Required field';
+			}
+
+			const byFor = field.id
+				? document.querySelector(`label[for="${CSS.escape(field.id)}"]`)
+				: null;
+			const wrapperLabel = field.closest('.visitor-input-group, .kiosk-input-wrap, .form-group')
+				?.querySelector('label, .kiosk-field-label');
+			const labelEl = byFor || wrapperLabel;
+			const raw = String(labelEl?.textContent || field.getAttribute('aria-label') || field.name || field.id || 'Required field')
+				.replace(/\*/g, '')
+				.replace(/\s+/g, ' ')
+				.trim();
+
+			return raw || 'Required field';
+		};
+
+		const showRequiredFieldsNotice = async (title, text) => {
+			const noticeTitle = title || 'Required information missing';
+			const noticeText = text || 'Please complete all required fields before continuing.';
+
+			if (typeof window.Swal?.fire !== 'function') {
+				window.alert(`${noticeTitle}\n\n${noticeText}`);
+				return;
+			}
+
+			await window.Swal.fire({
+				toast: true,
+				position: 'top',
+				icon: 'info',
+				iconColor: '#2563eb',
+				title: noticeTitle,
+				text: noticeText,
+				showConfirmButton: true,
+				confirmButtonText: 'Got it',
+				buttonsStyling: false,
+				timer: 5200,
+				timerProgressBar: true,
+				customClass: {
+					popup: 'required-fields-toast',
+					title: 'required-fields-toast-title',
+					htmlContainer: 'required-fields-toast-text',
+					confirmButton: 'leave-register-toast-btn leave-register-toast-btn-leave',
+					actions: 'leave-register-toast-actions',
+				},
+			});
+		};
+
+		const collectMissingRequiredFields = (panel) => {
+			const requiredFields = Array.from(
+				panel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []
+			);
+
+			return requiredFields
+				.filter((field) => !String(field.value || '').trim())
+				.map((field) => ({ field, label: getRequiredFieldLabel(field) }));
+		};
+
+		const formatMissingFieldsMessage = (missingItems) => {
+			if (!missingItems.length) {
+				return 'Please complete all required fields before continuing.';
+			}
+
+			const labels = missingItems.map((item) => item.label);
+			if (labels.length === 1) {
+				return `${labels[0]} is required before you can continue.`;
+			}
+
+			if (labels.length === 2) {
+				return `${labels[0]} and ${labels[1]} still need to be completed.`;
+			}
+
+			const shown = labels.slice(0, 3).join(', ');
+			const remaining = labels.length - 3;
+			if (remaining > 0) {
+				return `${shown}, and ${remaining} more required field${remaining === 1 ? '' : 's'} still need to be completed.`;
+			}
+
+			return `${shown} still need to be completed.`;
 		};
 
 		guardSidebarNavEl?.addEventListener('click', (e) => {
@@ -12665,8 +12796,13 @@ body.android-thermal-print .foot {
 			input.value = '';
 		});
 
-		document.getElementById('kioskVerifyBackBtn')?.addEventListener('click', () => {
+		document.getElementById('kioskVerifyBackBtn')?.addEventListener('click', async () => {
 			if (hasSavedRegistration) {
+				return;
+			}
+
+			const shouldLeave = await confirmLeaveRegisterFlow();
+			if (!shouldLeave) {
 				return;
 			}
 
@@ -12690,37 +12826,47 @@ body.android-thermal-print .foot {
 
 		generateQrBtn?.addEventListener('click', async () => {
 			if (hasSavedRegistration) {
-				alert('Registration has already been completed.');
+				await showRequiredFieldsNotice(
+					'Registration already completed',
+					'This visitor registration has already been saved. You can continue from the completed ticket screen.'
+				);
 				return;
 			}
 
 			ensureAutoControlNumber();
 
 			const activeStepPanel = registerType === 'enrollee' ? enrolleeStepPanel : visitorStepPanel;
-			const requiredFields = Array.from(activeStepPanel?.querySelectorAll('.visitor-input[required], .visitor-textarea[required]') || []);
+			const missingRequired = collectMissingRequiredFields(activeStepPanel);
 
-			for (const field of requiredFields) {
-				if (!field.value.trim()) {
-					field.focus();
-					alert('Please complete all required fields.');
-					return;
-				}
+			if (missingRequired.length) {
+				missingRequired[0].field.focus();
+				await showRequiredFieldsNotice(
+					'Please complete the required fields',
+					formatMissingFieldsMessage(missingRequired)
+				);
+				return;
 			}
 
 			const cleanPhone = (visitorPhoneNumber?.value || '').replace(/\D/g, '');
 			const expectedPhoneLength = isSelfRegistrationKiosk ? 10 : 11;
 			if (visitorPhoneNumber && cleanPhone.length !== expectedPhoneLength) {
 				visitorPhoneNumber.focus();
-				alert(isSelfRegistrationKiosk
-					? 'Phone Number must be exactly 10 digits (without the leading zero).'
-					: 'Phone Number must be exactly 11 digits.');
+				await showRequiredFieldsNotice(
+					'Phone number is incomplete',
+					isSelfRegistrationKiosk
+						? 'Enter a valid 10-digit mobile number without the leading zero to continue.'
+						: 'Enter a valid 11-digit mobile number to continue.'
+				);
 				return;
 			}
 
 			if (registerType === 'contractor') {
 				if (!destinationOfficeText?.value.trim()) {
 					destinationOfficeText?.focus();
-					alert('Please enter Destination Office.');
+					await showRequiredFieldsNotice(
+						'Destination required',
+						'Please enter the destination office before continuing.'
+					);
 					return;
 				}
 			} else if (registerType === 'normal') {
@@ -12730,7 +12876,10 @@ body.android-thermal-print .foot {
 
 				if (!hasOffice && !hasOther) {
 					destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-					alert('Please select at least one office to visit.');
+					await showRequiredFieldsNotice(
+						'Office selection required',
+						'Select at least one office to visit before continuing.'
+					);
 					return;
 				}
 
@@ -12739,13 +12888,19 @@ body.android-thermal-print .foot {
 					if (!customDestination) {
 						showOtherDestinationField();
 						otherDestinationText?.focus();
-						alert('Please specify the office or destination you want to visit.');
+						await showRequiredFieldsNotice(
+							'Destination details required',
+							'Please specify the office or destination you want to visit.'
+						);
 						return;
 					}
 				}
 			} else if (registerType === 'enrollee' && !selectedOfficeIds.length) {
 				destinationOffice?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				alert('No enrollee destination offices are available. Please check enrollee steps setup.');
+				await showRequiredFieldsNotice(
+					'Enrollee route unavailable',
+					'No enrollee destination offices are configured. Please contact the administrator.'
+				);
 				return;
 			}
 
