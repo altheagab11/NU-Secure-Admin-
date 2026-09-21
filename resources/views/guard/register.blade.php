@@ -1699,6 +1699,10 @@
 			padding: 16px 28px;
 		}
 
+		.qr-success-info-card--purpose-only {
+			grid-template-columns: 1fr;
+		}
+
 		.qr-success-info-item {
 			display: grid;
 			grid-template-columns: 34px 1fr;
@@ -5982,6 +5986,10 @@
 			gap: 18px;
 		}
 
+		body.self-registration-mode .kiosk-manual-entry-body > .kiosk-form-grid {
+			margin-top: 0;
+		}
+
 		body.self-registration-mode .kiosk-manual-entry-note {
 			display: flex;
 			align-items: flex-start;
@@ -7607,6 +7615,10 @@
 						<span class="confirmation-summary-label">Birthday</span>
 						<span class="confirmation-summary-value" id="existingVisitorModalBirthday">-</span>
 					</div>
+					<div class="confirmation-summary-row">
+						<span class="confirmation-summary-label">Address</span>
+						<span class="confirmation-summary-value" id="existingVisitorModalAddress">-</span>
+					</div>
 					<div class="confirmation-summary-row is-hidden" id="existingVisitorModalProgressRow">
 						<span class="confirmation-summary-label">Enrollment Progress</span>
 						<span class="confirmation-summary-value" id="existingVisitorModalProgress">-</span>
@@ -7936,14 +7948,22 @@
 											</div>
 											<div>
 												<h2>Enter Visitor Details</h2>
-												<p>Enter the visitor's full name and birthday to check for an existing visitor record.</p>
+												<p>Enter the visitor's first name, last name, and birthday to check for an existing visitor record.</p>
 											</div>
 										</header>
 										<div class="kiosk-manual-entry-body">
-											<div class="visitor-input-group">
-												<label class="kiosk-field-label" for="manualEntryFullName">Full Name <span class="required-mark">*</span></label>
-												<div class="kiosk-input-wrap">
-													<input class="visitor-input" id="manualEntryFullName" name="manual_full_name" type="text" placeholder="Enter full name" autocomplete="name" maxlength="255">
+											<div class="kiosk-form-grid cols-2">
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="manualEntryFirstName">First Name <span class="required-mark">*</span></label>
+													<div class="kiosk-input-wrap">
+														<input class="visitor-input" id="manualEntryFirstName" name="manual_first_name" type="text" placeholder="Enter first name" autocomplete="given-name" maxlength="255">
+													</div>
+												</div>
+												<div class="visitor-input-group">
+													<label class="kiosk-field-label" for="manualEntryLastName">Last Name <span class="required-mark">*</span></label>
+													<div class="kiosk-input-wrap">
+														<input class="visitor-input" id="manualEntryLastName" name="manual_last_name" type="text" placeholder="Enter last name" autocomplete="family-name" maxlength="255">
+													</div>
 												</div>
 											</div>
 											<div class="visitor-input-group">
@@ -7954,7 +7974,7 @@
 											</div>
 											<p class="kiosk-manual-entry-note">
 												<i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-												<span>Enter the complete name exactly as shown on the visitor's valid identification.</span>
+												<span>Enter the first and last name exactly as shown on the visitor's valid identification.</span>
 											</p>
 											<p class="kiosk-manual-entry-error is-hidden" id="manualEntryError" role="alert"></p>
 											<div class="kiosk-manual-entry-actions">
@@ -8139,16 +8159,22 @@
 						<canvas id="captureCanvas" class="is-hidden"></canvas>
 						<div class="manual-entry-panel" id="manualEntryPanel" aria-hidden="true">
 							<h3 style="margin:0 0 8px;font-size:1.05rem;">Enter Visitor Details</h3>
-							<p style="margin:0 0 14px;color:#64748b;font-size:0.9rem;">Enter the visitor's full name and birthday to check for an existing visitor record.</p>
-							<div class="visitor-input-group" style="margin-bottom:12px;">
-								<label class="visitor-label" for="manualEntryFullName">Full Name <span class="required-mark">*</span></label>
-								<input class="visitor-input" id="manualEntryFullName" name="manual_full_name" type="text" placeholder="Enter full name" autocomplete="name" maxlength="255">
+							<p style="margin:0 0 14px;color:#64748b;font-size:0.9rem;">Enter the visitor's first name, last name, and birthday to check for an existing visitor record.</p>
+							<div class="visitor-details-grid" style="margin-bottom:12px;">
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="manualEntryFirstName">First Name <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="manualEntryFirstName" name="manual_first_name" type="text" placeholder="Enter first name" autocomplete="given-name" maxlength="255">
+								</div>
+								<div class="visitor-input-group">
+									<label class="visitor-label" for="manualEntryLastName">Last Name <span class="required-mark">*</span></label>
+									<input class="visitor-input" id="manualEntryLastName" name="manual_last_name" type="text" placeholder="Enter last name" autocomplete="family-name" maxlength="255">
+								</div>
 							</div>
 							<div class="visitor-input-group" style="margin-bottom:12px;">
 								<label class="visitor-label" for="manualEntryBirthday">Birthday <span class="required-mark">*</span></label>
 								<input class="visitor-input" id="manualEntryBirthday" name="manual_birthday" type="date" placeholder="YYYY-MM-DD" autocomplete="bday" max="{{ now()->subDay()->format('Y-m-d') }}">
 							</div>
-							<p style="margin:0 0 12px;color:#475569;font-size:0.85rem;">Enter the complete name exactly as shown on the visitor's valid identification.</p>
+							<p style="margin:0 0 12px;color:#475569;font-size:0.85rem;">Enter the first and last name exactly as shown on the visitor's valid identification.</p>
 							<p class="kiosk-manual-entry-error is-hidden" id="manualEntryError" role="alert"></p>
 							<div class="scan-actions-row" style="margin-top:8px;">
 								<button type="button" class="gallery-action" id="manualEntryBackBtn">Back to ID Scan</button>
@@ -8801,7 +8827,7 @@
 									</section>
 								</div>
 
-								<section class="qr-success-info-card">
+								<section class="qr-success-info-card qr-success-info-card--purpose-only">
 									<div class="qr-success-info-item">
 										<div class="qr-success-detail-icon" aria-hidden="true">
 											<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/></svg>
@@ -8811,22 +8837,12 @@
 											<strong class="qr-success-info-value" id="ticketPurpose">-</strong>
 										</div>
 									</div>
-									<div class="qr-success-info-divider"></div>
-									<div class="qr-success-info-item qr-success-info-destination">
-										<div class="qr-success-detail-icon" aria-hidden="true">
-											<svg viewBox="0 0 24 24"><path d="M3 8h18v12H3zM8 8V5h8v3"/></svg>
-										</div>
-										<div>
-											<span class="qr-success-detail-label">Destination</span>
-											<strong class="qr-success-info-value" id="ticketDestination">-</strong>
-										</div>
-									</div>
 								</section>
 
 								<section class="qr-success-route-card">
 									<div class="qr-success-route-heading">
 										<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6 7-13A7 7 0 0 0 5 9c0 7 7 13 7 13Z"/><circle cx="12" cy="9" r="2"/></svg>
-										<h3>Visit route (in order)</h3>
+										<h3 id="ticketRouteHeading">{{ $registerType === 'normal' ? 'Visit route' : 'Visit route (in order)' }}</h3>
 									</div>
 									<div class="qr-success-route-list" id="ticketRouteList"></div>
 									<div class="qr-success-route-note">
@@ -9426,7 +9442,8 @@
 		const idGalleryInput = document.getElementById('idGalleryInput');
 		const galleryHint = document.getElementById('galleryHint');
 		const manualEntryPanel = document.getElementById('manualEntryPanel');
-		const manualEntryFullName = document.getElementById('manualEntryFullName');
+		const manualEntryFirstName = document.getElementById('manualEntryFirstName');
+		const manualEntryLastName = document.getElementById('manualEntryLastName');
 		const manualEntryBirthday = document.getElementById('manualEntryBirthday');
 		const manualEntryError = document.getElementById('manualEntryError');
 		const manualEntryBackBtn = document.getElementById('manualEntryBackBtn');
@@ -9445,7 +9462,6 @@
 		const ticketVisitorName = document.getElementById('ticketVisitorName');
 		const ticketPassNumber = document.getElementById('ticketPassNumber');
 		const ticketPurpose = document.getElementById('ticketPurpose');
-		const ticketDestination = document.getElementById('ticketDestination');
 		const ticketRouteList = document.getElementById('ticketRouteList');
 		const ticketPhoto = document.getElementById('ticketPhoto');
 		const ticketPhotoFallback = document.getElementById('ticketPhotoFallback');
@@ -9465,6 +9481,7 @@
 		const existingVisitorModalName = document.getElementById('existingVisitorModalName');
 		const existingVisitorModalContact = document.getElementById('existingVisitorModalContact');
 		const existingVisitorModalBirthday = document.getElementById('existingVisitorModalBirthday');
+		const existingVisitorModalAddress = document.getElementById('existingVisitorModalAddress');
 		const existingVisitorModalProgressRow = document.getElementById('existingVisitorModalProgressRow');
 		const existingVisitorModalProgress = document.getElementById('existingVisitorModalProgress');
 		const existingVisitorModalConfirm = document.getElementById('existingVisitorModalConfirm');
@@ -9770,20 +9787,6 @@
 			});
 		};
 
-		const splitFullNameForLookup = (fullName) => {
-			const parts = String(fullName || '').trim().replace(/\s+/g, ' ').split(' ').filter(Boolean);
-			if (!parts.length) {
-				return { first_name: '', last_name: '' };
-			}
-			if (parts.length === 1) {
-				return { first_name: parts[0], last_name: '' };
-			}
-			return {
-				first_name: parts.slice(0, -1).join(' '),
-				last_name: parts[parts.length - 1],
-			};
-		};
-
 		const setManualEntryError = (message) => {
 			if (!manualEntryError) {
 				return;
@@ -9847,7 +9850,7 @@
 
 			if (kioskScanDesc) {
 				kioskScanDesc.textContent = manualEntryMode
-					? "Enter the visitor's full name and birthday to check for an existing visitor record."
+					? "Enter the visitor's first name, last name, and birthday to check for an existing visitor record."
 					: (currentStep === 3
 						? 'Center your face in the oval and hold your ID beside it before capturing.'
 						: 'Position your ID card within the frame. Ensure all details are clear and visible.');
@@ -9860,7 +9863,7 @@
 					kioskCameraStatusTitle.textContent = 'Manual Entry Mode';
 				}
 				if (kioskCameraStatusText) {
-					kioskCameraStatusText.textContent = 'Enter name and birthday, or go back to resume automatic ID scanning.';
+					kioskCameraStatusText.textContent = 'Enter first name, last name, and birthday, or go back to resume automatic ID scanning.';
 				}
 				if (cameraStatus) {
 					cameraStatus.textContent = 'Manual Entry Mode. Automatic ID scanning is paused.';
@@ -9868,7 +9871,7 @@
 				if (kioskCameraBadgeText) {
 					kioskCameraBadgeText.textContent = 'Manual Entry';
 				}
-				manualEntryFullName?.focus();
+				manualEntryFirstName?.focus();
 			} else if (currentStep === 1) {
 				if (activeStream) {
 					startIdAutoDetect();
@@ -9897,16 +9900,17 @@
 		};
 
 		const applyManualEntryIdentityToForm = () => {
-			const fullName = String(manualEntryFullName?.value || '').trim().replace(/\s+/g, ' ');
+			const firstName = String(manualEntryFirstName?.value || '').trim().replace(/\s+/g, ' ');
+			const lastName = String(manualEntryLastName?.value || '').trim().replace(/\s+/g, ' ');
 			const birthday = String(manualEntryBirthday?.value || '').trim();
-			const split = splitFullNameForLookup(fullName);
+			const fullName = `${firstName} ${lastName}`.trim();
 
 			if (visitorFirstName) {
-				visitorFirstName.value = toTitleCase(split.first_name);
+				visitorFirstName.value = toTitleCase(firstName);
 				visitorFirstName.dispatchEvent(new Event('change', { bubbles: true }));
 			}
 			if (visitorLastName) {
-				visitorLastName.value = toTitleCase(split.last_name);
+				visitorLastName.value = toTitleCase(lastName);
 				visitorLastName.dispatchEvent(new Event('change', { bubbles: true }));
 			}
 			if (visitorBirthday) {
@@ -9914,7 +9918,7 @@
 				visitorBirthday.dispatchEvent(new Event('change', { bubbles: true }));
 			}
 
-			return { fullName, birthday, ...split };
+			return { fullName, birthday, first_name: firstName, last_name: lastName };
 		};
 
 		const proceedFromIdentityStep = async (lookup) => {
@@ -9955,12 +9959,18 @@
 				return;
 			}
 
-			const fullName = String(manualEntryFullName?.value || '').trim().replace(/\s+/g, ' ');
+			const firstName = String(manualEntryFirstName?.value || '').trim().replace(/\s+/g, ' ');
+			const lastName = String(manualEntryLastName?.value || '').trim().replace(/\s+/g, ' ');
 			const birthday = String(manualEntryBirthday?.value || '').trim();
 
-			if (!fullName) {
-				setManualEntryError('Please enter the visitor\'s full name.');
-				manualEntryFullName?.focus();
+			if (!firstName) {
+				setManualEntryError('Please enter the visitor\'s first name.');
+				manualEntryFirstName?.focus();
+				return;
+			}
+			if (!lastName) {
+				setManualEntryError('Please enter the visitor\'s last name.');
+				manualEntryLastName?.focus();
 				return;
 			}
 			if (!birthday) {
@@ -10481,9 +10491,6 @@
 			if (ticketPurpose) {
 				ticketPurpose.textContent = getPurposeReasonValue() || '-';
 			}
-			if (ticketDestination) {
-				ticketDestination.textContent = getSelectedDestinationText();
-			}
 			renderTicketRouteList();
 
 			if (ticketPhoto && faceIdCapturePreviewUrl) {
@@ -10993,8 +11000,6 @@
 				return;
 			}
 
-			// Match is name + birthday only. Keep the current form address
-			// (from the new ID scan) because a returning visitor's address can change.
 			if (visitorFirstName && existingVisitor.first_name) {
 				visitorFirstName.value = toTitleCase(existingVisitor.first_name);
 			}
@@ -11010,6 +11015,25 @@
 					? digits.replace(/^0+/, '').slice(0, 10)
 					: digits.slice(0, 11);
 			}
+
+			const setAddressField = (field, value) => {
+				if (!field) {
+					return;
+				}
+				const nextValue = String(value ?? '').trim();
+				if (nextValue !== '') {
+					field.value = nextValue;
+				}
+			};
+
+			setAddressField(visitorHouseNo, existingVisitor.house_no);
+			setAddressField(visitorStreet, existingVisitor.street);
+			setAddressField(visitorBarangay, existingVisitor.barangay);
+			setAddressField(visitorCity, existingVisitor.city_municipality);
+			setAddressField(visitorProvince, existingVisitor.province);
+			setAddressField(visitorRegion, existingVisitor.region);
+			syncRegionFromProvince();
+
 			// pass_number is per-visit; leave blank so a new ID pass can be entered
 			if (visitorIdPassNumber) {
 				visitorIdPassNumber.value = '';
@@ -11155,6 +11179,7 @@
 				const fullName = String(visitor.full_name || `${toTitleCase(visitor.first_name)} ${toTitleCase(visitor.last_name)}`).trim() || 'Unknown visitor';
 				const maskedContact = String(visitor.masked_contact_number || maskContactNumberClient(visitor.contact_no) || '-').trim() || '-';
 				const birthday = String(visitor.birth_date || visitor.birthday || '-').trim() || '-';
+				const address = formatVisitorAddress(visitor);
 				const photoId = `multipleExistingVisitorPhoto-${id || index}`;
 				const placeholderId = `multipleExistingVisitorPhotoPlaceholder-${id || index}`;
 				const escapeHtml = (value) => String(value || '')
@@ -11175,6 +11200,7 @@
 							<p class="existing-visitor-choice-name">${escapeHtml(fullName)}</p>
 							<p class="existing-visitor-choice-meta"><span>Contact Number:</span>${escapeHtml(maskedContact)}</p>
 							<p class="existing-visitor-choice-meta"><span>Birthday:</span>${escapeHtml(birthday)}</p>
+							<p class="existing-visitor-choice-meta"><span>Address:</span>${escapeHtml(address)}</p>
 						</div>
 						<span class="existing-visitor-choice-badge">Validation Photo</span>
 					</label>
@@ -11293,6 +11319,9 @@
 			}
 			if (existingVisitorModalBirthday) {
 				existingVisitorModalBirthday.textContent = birthday;
+			}
+			if (existingVisitorModalAddress) {
+				existingVisitorModalAddress.textContent = formatVisitorAddress(existingVisitor);
 			}
 			if (existingVisitorModalProgressRow && existingVisitorModalProgress) {
 				if (unfinished) {
@@ -11948,7 +11977,14 @@
 			checkManualEntryVisitor();
 		});
 
-		manualEntryFullName?.addEventListener('keydown', (event) => {
+		manualEntryFirstName?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				manualEntryLastName?.focus();
+			}
+		});
+
+		manualEntryLastName?.addEventListener('keydown', (event) => {
 			if (event.key === 'Enter') {
 				event.preventDefault();
 				manualEntryBirthday?.focus();
@@ -12998,8 +13034,11 @@ body.android-thermal-print .foot {
 			document.body.classList.remove('is-manual-entry');
 			manualEntryPanel?.classList.remove('is-active');
 			manualEntryPanel?.setAttribute('aria-hidden', 'true');
-			if (manualEntryFullName) {
-				manualEntryFullName.value = '';
+			if (manualEntryFirstName) {
+				manualEntryFirstName.value = '';
+			}
+			if (manualEntryLastName) {
+				manualEntryLastName.value = '';
 			}
 			if (manualEntryBirthday) {
 				manualEntryBirthday.value = '';
@@ -13051,7 +13090,6 @@ body.android-thermal-print .foot {
 			if (ticketVisitorName) ticketVisitorName.textContent = '-';
 			if (ticketPassNumber) ticketPassNumber.textContent = '-';
 			if (ticketPurpose) ticketPurpose.textContent = '-';
-			if (ticketDestination) ticketDestination.textContent = '-';
 
 			if (ticketPhoto) {
 				ticketPhoto.src = '';

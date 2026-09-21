@@ -112,6 +112,25 @@
 			box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 		}
 
+		.control-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 8px 14px;
+			border-radius: 999px;
+			background: #fff;
+			border: 1px solid var(--gray-border);
+			color: var(--ink);
+			font-size: 0.82rem;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.control-pill .bi {
+			color: var(--blue-mid);
+			font-size: 0.9rem;
+		}
+
 		.grid-top {
 			display: grid;
 			grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.85fr) minmax(220px, 0.75fr);
@@ -209,6 +228,25 @@
 			font-size: 0.78rem;
 			font-weight: 700;
 			color: var(--muted);
+			letter-spacing: 0.02em;
+		}
+
+		.qr-pass-meta {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 4px;
+			margin-top: 10px;
+		}
+
+		.qr-pass-meta .qr-pass-code {
+			margin-top: 0;
+		}
+
+		.qr-control-number {
+			font-size: 0.84rem;
+			font-weight: 800;
+			color: var(--blue);
 			letter-spacing: 0.02em;
 		}
 
@@ -710,7 +748,8 @@
 				width: 100%;
 			}
 
-			.pass-pill {
+			.pass-pill,
+			.control-pill {
 				max-width: 100%;
 				white-space: normal;
 			}
@@ -759,6 +798,12 @@
 					<span class="dot" aria-hidden="true"></span>
 					<span>QR Pass Active: {{ $pass_code }}</span>
 				</div>
+				@if (!empty($control_number))
+					<div class="control-pill" title="Control Number">
+						<i class="bi bi-hash" aria-hidden="true"></i>
+						<span>Control No.: {{ $control_number }}</span>
+					</div>
+				@endif
 			</div>
 		</header>
 
@@ -847,7 +892,12 @@
 				<div class="qr-frame" aria-label="QR code for office scanning">
 					<div id="officeQrCode"></div>
 				</div>
-				<p class="qr-pass-code">Pass: {{ $pass_code }}</p>
+				<div class="qr-pass-meta">
+					@if (!empty($control_number))
+						<p class="qr-control-number">Control No.: {{ $control_number }}</p>
+					@endif
+					<p class="qr-pass-code">Pass: {{ $pass_code }}</p>
+				</div>
 				<p class="qr-hint">One QR for all offices. Staff scan this from their office portal — the system detects which office scanned.</p>
 			</article>
 		</section>

@@ -43,28 +43,60 @@ class GuardVisitorController extends Controller
             ], 422);
         }
 
-        $visit = DB::table('visit as v')
+        $visitQuery = DB::table('visit as v')
             ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
             ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
-            ->select(
-                'v.visit_id',
-                'v.entry_time',
-                'v.exit_time',
-                'v.exit_status_id',
-                'v.qr_token',
-                'v.visitor_id',
-                'v.purpose_reason',
-                'v.primary_office_id',
-                'v.destination_text',
-                'v.control_number',
-                'v.pass_number',
-                'vr.first_name',
-                'vr.last_name',
-                'vr.visitor_photo_with_id_url',
-                'o.office_name as primary_office_name',
-                'es.exit_status_name'
-            )
+            ->leftJoin('users as ru', 'ru.user_id', '=', 'v.guard_user_id');
+
+        if (Schema::hasColumn('visit', 'duty_shift_id')) {
+            $visitQuery
+                ->leftJoin('guard_duty_shifts as gds', 'gds.shift_id', '=', 'v.duty_shift_id')
+                ->leftJoin('guard_personnel as gp', 'gp.guard_personnel_id', '=', 'gds.guard_personnel_id');
+        }
+
+        if (Schema::hasColumn('visit', 'on_duty_guard_id')) {
+            $visitQuery->leftJoin('users as od', 'od.user_id', '=', 'v.on_duty_guard_id');
+        }
+
+        $select = [
+            'v.visit_id',
+            'v.entry_time',
+            'v.exit_time',
+            'v.exit_status_id',
+            'v.qr_token',
+            'v.visitor_id',
+            'v.purpose_reason',
+            'v.primary_office_id',
+            'v.destination_text',
+            'v.control_number',
+            'v.pass_number',
+            'v.guard_user_id',
+            'vr.first_name',
+            'vr.last_name',
+            'vr.visitor_photo_with_id_url',
+            'o.office_name as primary_office_name',
+            'es.exit_status_name',
+            'ru.first_name as registered_by_first_name',
+            'ru.last_name as registered_by_last_name',
+        ];
+
+        if (Schema::hasColumn('visit', 'on_duty_guard_id')) {
+            $select[] = 'v.on_duty_guard_id';
+            $select[] = 'od.first_name as on_duty_user_first_name';
+            $select[] = 'od.last_name as on_duty_user_last_name';
+        }
+
+        if (Schema::hasColumn('visit', 'duty_shift_id')) {
+            $select[] = 'v.duty_shift_id';
+            $select[] = 'gp.first_name as on_duty_personnel_first_name';
+            $select[] = 'gp.middle_name as on_duty_personnel_middle_name';
+            $select[] = 'gp.last_name as on_duty_personnel_last_name';
+            $select[] = 'gp.badge_number as on_duty_personnel_badge';
+        }
+
+        $visit = $visitQuery
+            ->select($select)
             ->whereNull('v.exit_time')
             ->where(function ($query) use ($parsedQr) {
                 if (! empty($parsedQr['qr_token'])) {
@@ -191,6 +223,7 @@ class GuardVisitorController extends Controller
         $entryTime = null;
         $photoPath = trim((string) ($visit->visitor_photo_with_id_url ?? ''));
         $photoPreviewUrl = $this->resolveVisitorPhotoUrl($photoPath);
+        $registrationMeta = $this->resolveExitRegistrationMeta($visit);
 
         if (! empty($visit->entry_time)) {
             try {
@@ -221,6 +254,10 @@ class GuardVisitorController extends Controller
                 'entry_time' => $entryTime,
                 'exit_time' => $exitAt->toDateTimeString(),
                 'duration_minutes' => $durationMinutes,
+                'is_self_registered' => $registrationMeta['is_self_registered'],
+                'registered_by_label' => $registrationMeta['registered_by_label'],
+                'on_duty_guard_name' => $registrationMeta['on_duty_guard_name'],
+                'on_duty_guard_label' => $registrationMeta['on_duty_guard_label'],
             ],
         ]);
     }
@@ -2529,6 +2566,59 @@ class GuardVisitorController extends Controller
             ->value('exit_status_id');
 
         return $fallback ? (int) $fallback : 3;
+    }
+
+    /**
+     * Build registration labels for the guard exit success modal.
+     *
+     * Self-registered visits show "Self Registered" plus the on-duty guard
+     * assigned at kiosk registration time. Guard-registered visits show
+     * "Registered by {name}".
+     *
+     * @return array{is_self_registered: bool, registered_by_label: string, on_duty_guard_name: string|null, on_duty_guard_label: string|null}
+     */
+    protected function resolveExitRegistrationMeta(object $visit): array
+    {
+        $guardUserId = (int) ($visit->guard_user_id ?? 0);
+        $isSelfRegistered = $guardUserId <= 0;
+
+        $registeredByName = trim(
+            ((string) ($visit->registered_by_first_name ?? '')).' '.((string) ($visit->registered_by_last_name ?? ''))
+        );
+
+        $onDutyPersonnelName = trim(implode(' ', array_filter([
+            trim((string) ($visit->on_duty_personnel_first_name ?? '')),
+            trim((string) ($visit->on_duty_personnel_middle_name ?? '')),
+            trim((string) ($visit->on_duty_personnel_last_name ?? '')),
+        ], static fn (string $part) => $part !== '')));
+
+        $onDutyUserName = trim(
+            ((string) ($visit->on_duty_user_first_name ?? '')).' '.((string) ($visit->on_duty_user_last_name ?? ''))
+        );
+
+        $onDutyGuardName = $onDutyPersonnelName !== ''
+            ? $onDutyPersonnelName
+            : ($onDutyUserName !== '' ? $onDutyUserName : null);
+
+        if ($isSelfRegistered) {
+            return [
+                'is_self_registered' => true,
+                'registered_by_label' => 'Self Registered',
+                'on_duty_guard_name' => $onDutyGuardName,
+                'on_duty_guard_label' => $onDutyGuardName
+                    ? 'Guard on duty: '.$onDutyGuardName
+                    : null,
+            ];
+        }
+
+        return [
+            'is_self_registered' => false,
+            'registered_by_label' => $registeredByName !== ''
+                ? 'Registered by '.$registeredByName
+                : 'Registered by Guard',
+            'on_duty_guard_name' => null,
+            'on_duty_guard_label' => null,
+        ];
     }
 
     protected function parseExitQrPayload(string $rawQr): array

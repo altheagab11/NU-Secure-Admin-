@@ -930,11 +930,26 @@
 			word-break: break-word;
 		}
 
-		.registered-by {
+		.registered-by-block {
 			text-align: center;
+			margin: 28px 0 18px;
+		}
+
+		.registered-by {
 			color: #64748b;
 			font-size: 15px;
-			margin: 28px 0 18px;
+			margin: 0;
+		}
+
+		.on-duty-guard {
+			color: #475569;
+			font-size: 14px;
+			font-weight: 600;
+			margin: 6px 0 0;
+		}
+
+		.on-duty-guard.is-hidden {
+			display: none;
 		}
 
 		.modal-action {
@@ -1060,9 +1075,16 @@
 				font-size: clamp(1.35rem, 6vw, 1.75rem);
 			}
 
-			.registered-by {
+			.registered-by-block {
 				margin: 18px 0 14px;
+			}
+
+			.registered-by {
 				font-size: 14px;
+			}
+
+			.on-duty-guard {
+				font-size: 13px;
 			}
 		}
 
@@ -1398,7 +1420,10 @@
 				</div>
 			</div>
 
-			<p class="registered-by">Registered by Officer Martinez</p>
+			<div class="registered-by-block">
+				<p class="registered-by" id="exitResultRegisteredBy">Self Registered</p>
+				<p class="on-duty-guard is-hidden" id="exitResultOnDutyGuard"></p>
+			</div>
 
 			<div class="modal-action">
 				<button type="button" class="done-btn" id="exitResultDoneButton">
@@ -1443,6 +1468,8 @@
 		const exitResultStatus = document.getElementById('exitResultStatus');
 		const exitResultTimeIn = document.getElementById('exitResultTimeIn');
 		const exitResultTimeOut = document.getElementById('exitResultTimeOut');
+		const exitResultRegisteredBy = document.getElementById('exitResultRegisteredBy');
+		const exitResultOnDutyGuard = document.getElementById('exitResultOnDutyGuard');
 		const csrfToken = '{{ csrf_token() }}';
 
 		let isProcessingScan = false;
@@ -1608,6 +1635,24 @@
 			exitResultStatus.textContent = 'Exited';
 			exitResultTimeIn.textContent = formatDateTime(scanData.entry_time);
 			exitResultTimeOut.textContent = formatDateTime(scanData.exit_time);
+
+			if (exitResultRegisteredBy) {
+				exitResultRegisteredBy.textContent = String(
+					scanData.registered_by_label
+					|| (scanData.is_self_registered ? 'Self Registered' : 'Registered by Guard')
+				).trim();
+			}
+
+			if (exitResultOnDutyGuard) {
+				const onDutyLabel = String(scanData.on_duty_guard_label || '').trim();
+				const onDutyName = String(scanData.on_duty_guard_name || '').trim();
+				const showOnDuty = Boolean(scanData.is_self_registered) && (onDutyLabel !== '' || onDutyName !== '');
+
+				exitResultOnDutyGuard.textContent = showOnDuty
+					? (onDutyLabel || ('Guard on duty: ' + onDutyName))
+					: '';
+				exitResultOnDutyGuard.classList.toggle('is-hidden', !showOnDuty);
+			}
 
 			if (photoUrl) {
 				exitResultPhoto.src = photoUrl;
