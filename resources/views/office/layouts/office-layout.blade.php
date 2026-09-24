@@ -296,6 +296,7 @@
 		.icon-btn .dot {
 			position: absolute; top: 8px; right: 8px; width: 8px; height: 8px;
 			border-radius: 50%; background: var(--nu-danger);
+			
 		}
 
 		.office-card {
