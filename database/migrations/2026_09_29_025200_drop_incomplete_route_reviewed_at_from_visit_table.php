@@ -19,6 +19,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Re-add only when missing (idempotent rollback).
         if (! Schema::hasTable('visit') || Schema::hasColumn('visit', 'incomplete_route_reviewed_at')) {
             return;
         }

@@ -2005,6 +2005,12 @@
 			resolveModal.querySelector('#resolveNotes').value = '';
 			clearResolveNotesError();
 
+			const confirmBtn = document.getElementById('confirmResolveBtn');
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = 'Resolve';
+			}
+
 			pendingResolveAlertId = alert.alert_id;
 			resolveModal.classList.add('is-open');
 			resolveModal.style.display = 'flex';
@@ -2018,6 +2024,11 @@
 				resolveModal.style.display = 'none';
 			}
 			clearResolveNotesError();
+			const confirmBtn = document.getElementById('confirmResolveBtn');
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = 'Resolve';
+			}
 			pendingResolveAlertId = null;
 		}
 
@@ -2139,9 +2150,11 @@
 				const confirmBtn = e.target;
 				confirmBtn.disabled = true;
 				confirmBtn.textContent = 'Resolving...';
-				await resolveAlertClient(pendingResolveAlertId, notes);
-				confirmBtn.disabled = false;
-				confirmBtn.textContent = 'Resolve';
+				const resolved = await resolveAlertClient(pendingResolveAlertId, notes);
+				if (!resolved) {
+					confirmBtn.disabled = false;
+					confirmBtn.textContent = 'Resolve';
+				}
 			}
 		});
 

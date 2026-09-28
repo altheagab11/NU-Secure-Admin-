@@ -1954,6 +1954,11 @@
 			pendingResolveAlertId = alertId;
 			document.getElementById('resolveNotes').value = '';
 			clearResolveNotesError();
+			const confirmBtn = document.getElementById('confirmResolveBtn');
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = 'Resolve';
+			}
 			document.getElementById('r_alert_id').textContent = alert.alert_id || '-';
 			document.getElementById('r_visitor').textContent = alert.visitor_name || '-';
 			document.getElementById('r_alert_type').textContent = alert.alert_type || '-';
@@ -1970,6 +1975,11 @@
 		function closeResolveModal() {
 			document.getElementById('resolveModal').style.display = 'none';
 			clearResolveNotesError();
+			const confirmBtn = document.getElementById('confirmResolveBtn');
+			if (confirmBtn) {
+				confirmBtn.disabled = false;
+				confirmBtn.textContent = 'Resolve';
+			}
 			pendingResolveAlertId = null;
 		}
 
@@ -2022,19 +2032,24 @@
 					notesEl?.focus();
 					return;
 				}
-				e.target.disabled = true;
-				e.target.textContent = 'Resolving...';
+				const confirmBtn = e.target;
+				confirmBtn.disabled = true;
+				confirmBtn.textContent = 'Resolving...';
 				try {
-					await resolveAlertClient(pendingResolveAlertId, notes);
+					const resolved = await resolveAlertClient(pendingResolveAlertId, notes);
+					if (!resolved) {
+						confirmBtn.disabled = false;
+						confirmBtn.textContent = 'Resolve';
+						return;
+					}
 					closeResolveModal();
 					closeAlertModal();
 					window.location.reload();
 				} catch (error) {
 					setResolveNotesError(error.message || 'Unable to resolve this alert right now. Please try again.');
 					notesEl?.focus();
-				} finally {
-					e.target.disabled = false;
-					e.target.textContent = 'Resolve';
+					confirmBtn.disabled = false;
+					confirmBtn.textContent = 'Resolve';
 				}
 			}
 		});
