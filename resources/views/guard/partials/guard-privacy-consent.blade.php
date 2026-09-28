@@ -162,15 +162,15 @@
 			</p>
 			<h3>Information collected</h3>
 			<ul>
-				<li>Identification details from a scanned or uploaded ID, including name, birthday, and address</li>
+				<li>Identification details from a scanned ID, including name, date of birth, and address</li>
 				<li>Contact information, destination, and reason for visit</li>
-				<li>A photograph of the visitor together with their ID for verification</li>
+				<li>A photograph of the visitor with their ID for verification</li>
 				<li>A QR ticket and control number for entry and exit monitoring</li>
 			</ul>
 			<h3>How the information is used</h3>
 			<ul>
 				<li>To verify identity and complete visitor check-in</li>
-				<li>To document the visit and destination inside the campus</li>
+				<li>To document the visit and the destination on campus</li>
 				<li>To support security monitoring, alerts, and incident response</li>
 				<li>To generate and validate the temporary visitor QR ticket</li>
 			</ul>

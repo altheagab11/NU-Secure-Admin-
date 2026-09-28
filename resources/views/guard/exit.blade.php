@@ -984,6 +984,250 @@
 			transform: scale(0.98);
 		}
 
+		.incomplete-route-modal {
+			width: min(100%, 560px);
+			background: #ffffff;
+			border: 2px solid #243c96;
+			border-radius: 22px;
+			box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25);
+			overflow: hidden;
+			animation: modalFadeIn 0.25s ease;
+		}
+
+		.incomplete-route-header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 22px 22px 8px;
+		}
+
+		.incomplete-route-heading {
+			display: flex;
+			align-items: flex-start;
+			gap: 12px;
+			min-width: 0;
+		}
+
+		.incomplete-route-icon {
+			flex: 0 0 42px;
+			width: 42px;
+			height: 42px;
+			border-radius: 12px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #fff7db;
+			border: 1px solid #ffe58a;
+			color: #b45309;
+			font-size: 1.15rem;
+		}
+
+		.incomplete-route-heading h2 {
+			margin: 0;
+			color: #243c96;
+			font-size: 1.35rem;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+			line-height: 1.2;
+		}
+
+		.incomplete-route-heading p {
+			margin: 8px 0 0;
+			color: #64748b;
+			font-size: 0.92rem;
+			line-height: 1.5;
+		}
+
+		.incomplete-route-close {
+			width: 36px;
+			height: 36px;
+			border: 0;
+			border-radius: 10px;
+			background: transparent;
+			color: #94a3b8;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+		}
+
+		.incomplete-route-close:hover {
+			background: #f1f5f9;
+			color: #475569;
+		}
+
+		.incomplete-route-body {
+			padding: 8px 22px 6px;
+		}
+
+		.incomplete-route-section {
+			margin: 0 0 14px;
+			padding: 14px;
+			border-radius: 16px;
+			background: #f4f6fb;
+			border: 1px solid #e2e8f0;
+		}
+
+		.incomplete-route-section h3 {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0 0 10px;
+			color: #243c96;
+			font-size: 0.92rem;
+			font-weight: 800;
+		}
+
+		.incomplete-route-section h3 i {
+			color: #3b6df6;
+		}
+
+		.incomplete-office-list {
+			display: grid;
+			gap: 8px;
+		}
+
+		.incomplete-office-item {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-height: 52px;
+			padding: 10px 12px;
+			border-radius: 12px;
+			background: #ffffff;
+			border: 1px solid #dbe4f5;
+		}
+
+		.incomplete-office-icon {
+			flex: 0 0 34px;
+			width: 34px;
+			height: 34px;
+			border-radius: 10px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: #eef2ff;
+			color: #243c96;
+		}
+
+		.incomplete-office-copy {
+			flex: 1;
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+
+		.incomplete-office-copy strong {
+			color: #0f172a;
+			font-size: 0.95rem;
+		}
+
+		.incomplete-office-copy span {
+			color: #64748b;
+			font-size: 0.82rem;
+			font-weight: 600;
+			white-space: nowrap;
+		}
+
+		.incomplete-reason-copy {
+			margin: 0 0 10px;
+			color: #64748b;
+			font-size: 0.82rem;
+			line-height: 1.45;
+		}
+
+		.incomplete-note {
+			width: 100%;
+			min-height: 84px;
+			resize: vertical;
+			padding: 10px 12px;
+			border-radius: 12px;
+			border: 1px solid #d7e0ec;
+			background: #ffffff;
+			color: #0f172a;
+			font-size: 0.88rem;
+			font-family: inherit;
+		}
+
+		.incomplete-note:focus {
+			outline: none;
+			border-color: #243c96;
+			box-shadow: 0 0 0 3px rgba(36, 60, 150, 0.12);
+		}
+
+		.incomplete-note-count {
+			display: block;
+			margin-top: 6px;
+			color: #94a3b8;
+			font-size: 0.75rem;
+			text-align: right;
+		}
+
+		.incomplete-route-banner {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 0 22px 16px;
+			padding: 10px 12px;
+			border-radius: 12px;
+			background: #fff7db;
+			border: 1px solid #ffe58a;
+			color: #92400e;
+			font-size: 0.82rem;
+			font-weight: 700;
+		}
+
+		.incomplete-route-footer {
+			display: flex;
+			justify-content: flex-end;
+			flex-wrap: wrap;
+			gap: 10px;
+			padding: 0 22px 22px;
+		}
+
+		.incomplete-route-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			min-height: 46px;
+			padding: 10px 16px;
+			border-radius: 12px;
+			font-size: 0.92rem;
+			font-weight: 800;
+			cursor: pointer;
+		}
+
+		.incomplete-route-btn-secondary {
+			border: 1.5px solid #cbd5e1;
+			background: #ffffff;
+			color: #334155;
+		}
+
+		.incomplete-route-btn-secondary:hover {
+			background: #f8fafc;
+		}
+
+		.incomplete-route-btn-primary {
+			border: 0;
+			background: linear-gradient(135deg, #2563eb, #1d4ed8);
+			color: #ffffff;
+			box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+		}
+
+		.incomplete-route-btn-primary:hover {
+			transform: translateY(-1px);
+		}
+
+		.incomplete-route-btn-primary:disabled {
+			opacity: 0.65;
+			cursor: not-allowed;
+			transform: none;
+		}
+
 		@keyframes modalFadeIn {
 			from {
 				opacity: 0;
@@ -1032,6 +1276,24 @@
 			.done-btn {
 				width: 100%;
 				max-width: 100%;
+			}
+
+			.incomplete-route-modal {
+				border-radius: 18px 18px 0 0;
+			}
+
+			.incomplete-route-footer {
+				flex-direction: column-reverse;
+			}
+
+			.incomplete-route-btn {
+				width: 100%;
+			}
+
+			.incomplete-office-copy {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 2px;
 			}
 		}
 
@@ -1434,6 +1696,48 @@
 		</div>
 	</div>
 
+	<div class="exit-modal-overlay" id="incompleteRouteModal" aria-hidden="true">
+		<div class="incomplete-route-modal" role="dialog" aria-modal="true" aria-labelledby="incompleteRouteTitle">
+			<div class="incomplete-route-header">
+				<div class="incomplete-route-heading">
+					<div class="incomplete-route-icon" aria-hidden="true">
+						<i class="bi bi-shield-exclamation"></i>
+					</div>
+					<div>
+						<h2 id="incompleteRouteTitle">Visit route incomplete</h2>
+						<p>This visitor still has unvisited offices on their pass. Exit cannot be completed until a guard reviews this with the visitor.</p>
+					</div>
+				</div>
+				<button type="button" class="incomplete-route-close" id="incompleteRouteCloseBtn" aria-label="Close incomplete route review">
+					<i class="bi bi-x-lg" aria-hidden="true"></i>
+				</button>
+			</div>
+			<div class="incomplete-route-body">
+				<section class="incomplete-route-section">
+					<h3><i class="bi bi-building" aria-hidden="true"></i> Remaining offices</h3>
+					<div class="incomplete-office-list" id="incompleteOfficeList"></div>
+				</section>
+				<section class="incomplete-route-section">
+					<h3><i class="bi bi-chat-dots" aria-hidden="true"></i> Guard conversation note</h3>
+					<p class="incomplete-reason-copy">Add an optional note summarizing the conversation with the visitor.</p>
+					<textarea class="incomplete-note" id="incompleteRouteNote" maxlength="500" placeholder="Add note (optional)..."></textarea>
+					<span class="incomplete-note-count" id="incompleteRouteNoteCount">0 / 500</span>
+				</section>
+			</div>
+			<div class="incomplete-route-banner">
+				<i class="bi bi-lock-fill" aria-hidden="true"></i>
+				Exit is blocked until a guard reviews this with the visitor.
+			</div>
+			<div class="incomplete-route-footer">
+				<button type="button" class="incomplete-route-btn incomplete-route-btn-secondary" id="incompleteRouteCancelBtn">Cancel</button>
+				<button type="button" class="incomplete-route-btn incomplete-route-btn-primary" id="incompleteRouteConfirmBtn">
+					<i class="bi bi-shield-check" aria-hidden="true"></i>
+					Confirm conversation, then allow exit
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	@include('guard.partials.guard-privacy-consent')
 	<script nonce="{{ $cspNonce }}">
@@ -1470,11 +1774,77 @@
 		const exitResultTimeOut = document.getElementById('exitResultTimeOut');
 		const exitResultRegisteredBy = document.getElementById('exitResultRegisteredBy');
 		const exitResultOnDutyGuard = document.getElementById('exitResultOnDutyGuard');
+		const incompleteRouteModal = document.getElementById('incompleteRouteModal');
+		const incompleteOfficeList = document.getElementById('incompleteOfficeList');
+		const incompleteRouteNote = document.getElementById('incompleteRouteNote');
+		const incompleteRouteNoteCount = document.getElementById('incompleteRouteNoteCount');
+		const incompleteRouteCancelBtn = document.getElementById('incompleteRouteCancelBtn');
+		const incompleteRouteCloseBtn = document.getElementById('incompleteRouteCloseBtn');
+		const incompleteRouteConfirmBtn = document.getElementById('incompleteRouteConfirmBtn');
 		const csrfToken = '{{ csrf_token() }}';
 
 		let isProcessingScan = false;
 		let resumeScanTimeout = null;
 		let processingCooldownUntil = 0;
+		let pendingIncompleteQr = '';
+
+		const escapeHtml = (value) => String(value || '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+
+		const updateIncompleteNoteCount = () => {
+			if (!incompleteRouteNoteCount) {
+				return;
+			}
+			const length = String(incompleteRouteNote?.value || '').length;
+			incompleteRouteNoteCount.textContent = `${length} / 500`;
+		};
+
+		const closeIncompleteRouteModal = () => {
+			incompleteRouteModal?.classList.remove('show');
+			incompleteRouteModal?.setAttribute('aria-hidden', 'true');
+			pendingIncompleteQr = '';
+			if (incompleteRouteNote) {
+				incompleteRouteNote.value = '';
+			}
+			updateIncompleteNoteCount();
+			if (incompleteRouteConfirmBtn) {
+				incompleteRouteConfirmBtn.disabled = false;
+			}
+		};
+
+		const showIncompleteRouteModal = (payload) => {
+			const offices = Array.isArray(payload?.data?.remaining_offices)
+				? payload.data.remaining_offices
+				: [];
+
+			if (incompleteOfficeList) {
+				incompleteOfficeList.innerHTML = offices.length
+					? offices.map((office) => {
+						const name = escapeHtml(office.office_name || 'Office');
+						const floor = String(office.floor || '').trim();
+						const floorHtml = floor
+							? `<span>${escapeHtml(floor)}</span>`
+							: '';
+						return `
+							<div class="incomplete-office-item">
+								<div class="incomplete-office-icon" aria-hidden="true"><i class="bi bi-building"></i></div>
+								<div class="incomplete-office-copy">
+									<strong>${name}</strong>
+									${floorHtml}
+								</div>
+							</div>
+						`;
+					}).join('')
+					: '<div class="incomplete-office-item"><div class="incomplete-office-copy"><strong>Unvisited offices were found on this pass.</strong></div></div>';
+			}
+
+			updateIncompleteNoteCount();
+			incompleteRouteModal?.classList.add('show');
+			incompleteRouteModal?.setAttribute('aria-hidden', 'false');
+		};
 
 		const focusScannerInput = () => {
 			if (!scannerInput) {
@@ -1668,7 +2038,7 @@
 			exitResultModal.setAttribute('aria-hidden', 'false');
 		};
 
-		const processQrData = async (rawQrData) => {
+		const processQrData = async (rawQrData, extraPayload = {}) => {
 			const qrData = String(rawQrData || '').trim();
 			if (!qrData) {
 				return;
@@ -1686,7 +2056,9 @@
 			setResult('Scan received. Processing exit...', '');
 			hideFeedbackCards();
 			if (scannerStatus) {
-				scannerStatus.textContent = 'Validating scan against active visitor records...';
+				scannerStatus.textContent = extraPayload.override_incomplete_route
+					? 'Confirming guard review, then completing exit...'
+					: 'Validating scan against active visitor records...';
 			}
 
 			try {
@@ -1697,13 +2069,28 @@
 						'Accept': 'application/json',
 						'X-CSRF-TOKEN': csrfToken
 					},
-					body: JSON.stringify({ qr_data: qrData })
+					body: JSON.stringify({
+						qr_data: qrData,
+						...extraPayload,
+					})
 				});
 
 				const payload = await response.json();
+				if (payload.status === 'incomplete_route') {
+					pendingIncompleteQr = qrData;
+					setResult(payload.message || 'Visit route is incomplete. Guard review is required.', 'error');
+					if (scannerStatus) {
+						scannerStatus.textContent = 'Exit blocked. Review remaining offices with the visitor.';
+					}
+					showIncompleteRouteModal(payload);
+					return;
+				}
+
 				if (!response.ok || payload.status !== 'ok') {
 					throw new Error(payload.message || 'Unable to process scanned QR.');
 				}
+
+				closeIncompleteRouteModal();
 
 				const successData = {
 					...(payload.data || {}),
@@ -1733,6 +2120,10 @@
 				}
 			}
 
+			if (incompleteRouteModal?.classList.contains('show')) {
+				return;
+			}
+
 			if (resumeScanTimeout) {
 				clearTimeout(resumeScanTimeout);
 			}
@@ -1747,6 +2138,25 @@
 			}, 3000);
 
 			focusScannerInput();
+		};
+
+		const confirmIncompleteRouteExit = async () => {
+			if (!pendingIncompleteQr || isProcessingScan) {
+				return;
+			}
+
+			if (incompleteRouteConfirmBtn) {
+				incompleteRouteConfirmBtn.disabled = true;
+			}
+
+			await processQrData(pendingIncompleteQr, {
+				override_incomplete_route: true,
+				conversation_note: String(incompleteRouteNote?.value || '').trim(),
+			});
+
+			if (incompleteRouteConfirmBtn && incompleteRouteModal?.classList.contains('show')) {
+				incompleteRouteConfirmBtn.disabled = false;
+			}
 		};
 
 		const normalizeManualCode = (rawValue) => String(rawValue || '').trim();
@@ -1821,6 +2231,26 @@
 			focusScannerInput();
 		});
 
+		incompleteRouteNote?.addEventListener('input', updateIncompleteNoteCount);
+		incompleteRouteCancelBtn?.addEventListener('click', () => {
+			closeIncompleteRouteModal();
+			if (scannerStatus) {
+				scannerStatus.textContent = 'Exit was not completed. Scanner input ready.';
+			}
+			focusScannerInput();
+		});
+		incompleteRouteCloseBtn?.addEventListener('click', () => {
+			incompleteRouteCancelBtn?.click();
+		});
+		incompleteRouteConfirmBtn?.addEventListener('click', () => {
+			confirmIncompleteRouteExit();
+		});
+		incompleteRouteModal?.addEventListener('click', (event) => {
+			if (event.target === incompleteRouteModal) {
+				incompleteRouteCancelBtn?.click();
+			}
+		});
+
 		exitResultDoneButton?.addEventListener('click', () => {
 			closeExitResultModal();
 			focusScannerInput();
@@ -1867,6 +2297,8 @@
 			'#exitResultModal',
 			'#exitResultModal.show',
 			'#exitResultModal.open',
+			'#incompleteRouteModal',
+			'#incompleteRouteModal.show',
 			'.modal.show',
 		],
 	])

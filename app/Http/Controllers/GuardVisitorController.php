@@ -27,6 +27,8 @@ class GuardVisitorController extends Controller
     {
         $validated = $request->validate([
             'qr_data' => ['required', 'string', 'max:4000'],
+            'override_incomplete_route' => ['sometimes', 'boolean'],
+            'conversation_note' => ['nullable', 'string', 'max:500'],
         ]);
 
         $rawQr = trim((string) $validated['qr_data']);
@@ -47,6 +49,7 @@ class GuardVisitorController extends Controller
             ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
             ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
+            ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
             ->leftJoin('users as ru', 'ru.user_id', '=', 'v.guard_user_id');
 
         if (Schema::hasColumn('visit', 'duty_shift_id')) {
@@ -72,13 +75,16 @@ class GuardVisitorController extends Controller
             'v.control_number',
             'v.pass_number',
             'v.guard_user_id',
+            'v.visit_type_id',
             'vr.first_name',
             'vr.last_name',
             'vr.visitor_photo_with_id_url',
             'o.office_name as primary_office_name',
             'es.exit_status_name',
+            'vt.visit_type_name',
             'ru.first_name as registered_by_first_name',
             'ru.last_name as registered_by_last_name',
+            'ru.role_id as registered_by_role_id',
         ];
 
         if (Schema::hasColumn('visit', 'on_duty_guard_id')) {
@@ -142,6 +148,28 @@ class GuardVisitorController extends Controller
             ], 404);
         }
 
+        $fullName = trim(((string) ($visit->first_name ?? '')).' '.((string) ($visit->last_name ?? '')));
+        $displayName = $fullName !== '' ? $fullName : 'Visitor';
+        $remainingOffices = $this->getUnvisitedDeclaredOffices((int) $visit->visit_id);
+        $overrideIncompleteRoute = (bool) ($validated['override_incomplete_route'] ?? false);
+
+        if (
+            $this->isNormalVisitorDeclaredRoute($visit)
+            && $remainingOffices !== []
+            && ! $overrideIncompleteRoute
+        ) {
+            return response()->json([
+                'status' => 'incomplete_route',
+                'message' => 'This visitor still has unvisited offices on their pass. Exit cannot be completed until a guard reviews this with the visitor.',
+                'data' => [
+                    'visit_id' => (int) $visit->visit_id,
+                    'visitor_name' => $displayName,
+                    'control_number' => trim((string) ($visit->control_number ?? '')),
+                    'remaining_offices' => $remainingOffices,
+                ],
+            ]);
+        }
+
         $exitAt = $this->philippinesNow();
         $durationMinutes = null;
 
@@ -159,6 +187,11 @@ class GuardVisitorController extends Controller
         $skippedExpectationStatusId = $this->resolveSkippedExpectationStatusId();
         $validValidationStatusId = $this->resolveValidValidationStatusId();
         $scannedByUserId = Auth::id();
+        $conversationNote = trim((string) ($validated['conversation_note'] ?? ''));
+        $exitRemarks = $this->buildExitScanRemarks(
+            $overrideIncompleteRoute && $remainingOffices !== [],
+            $conversationNote
+        );
 
         DB::transaction(function () use (
             $visit,
@@ -167,7 +200,8 @@ class GuardVisitorController extends Controller
             $exitedStatusId,
             $skippedExpectationStatusId,
             $validValidationStatusId,
-            $scannedByUserId
+            $scannedByUserId,
+            $exitRemarks
         ) {
             DB::table('visit')
                 ->where('visit_id', $visit->visit_id)
@@ -197,12 +231,9 @@ class GuardVisitorController extends Controller
                 'scanned_by_user_id' => $scannedByUserId ? (int) $scannedByUserId : null,
                 'scan_time' => $exitAt,
                 'validation_status_id' => $validValidationStatusId,
-                'remarks' => 'Guard facility exit scan',
+                'remarks' => $exitRemarks,
             ]);
         });
-
-        $fullName = trim(((string) ($visit->first_name ?? '')).' '.((string) ($visit->last_name ?? '')));
-        $displayName = $fullName !== '' ? $fullName : 'Visitor';
 
         ActivityLogService::log(
             action: 'Visitor Exited',
@@ -217,6 +248,8 @@ class GuardVisitorController extends Controller
                 'pass_number' => trim((string) ($visit->pass_number ?? '')),
                 'exit_time' => $exitAt->toDateTimeString(),
                 'duration_minutes' => $durationMinutes,
+                'incomplete_route_override' => $overrideIncompleteRoute && $remainingOffices !== [],
+                'conversation_note' => $conversationNote !== '' ? $conversationNote : null,
             ]
         );
 
@@ -2571,34 +2604,31 @@ class GuardVisitorController extends Controller
     /**
      * Build registration labels for the guard exit success modal.
      *
-     * Self-registered visits show "Self Registered" plus the on-duty guard
-     * assigned at kiosk registration time. Guard-registered visits show
-     * "Registered by {name}".
+     * Self-registered visits (including older kiosk records that stored the
+     * kiosk account in guard_user_id) show "Self Registered" plus the guard
+     * who was on duty at that time. Desk registrations show "Registered by {name}".
      *
      * @return array{is_self_registered: bool, registered_by_label: string, on_duty_guard_name: string|null, on_duty_guard_label: string|null}
      */
     protected function resolveExitRegistrationMeta(object $visit): array
     {
         $guardUserId = (int) ($visit->guard_user_id ?? 0);
-        $isSelfRegistered = $guardUserId <= 0;
+        $registrarRoleId = (int) ($visit->registered_by_role_id ?? 0);
+        $dutyShiftId = (int) ($visit->duty_shift_id ?? 0);
+        $onDutyGuardId = (int) ($visit->on_duty_guard_id ?? 0);
 
-        $registeredByName = trim(
-            ((string) ($visit->registered_by_first_name ?? '')).' '.((string) ($visit->registered_by_last_name ?? ''))
+        $isSelfRegistered = $guardUserId <= 0
+            || $registrarRoleId === 4
+            || $dutyShiftId > 0
+            || $onDutyGuardId > 0;
+
+        $registeredByName = $this->formatPersonName(
+            $visit->registered_by_first_name ?? null,
+            null,
+            $visit->registered_by_last_name ?? null
         );
 
-        $onDutyPersonnelName = trim(implode(' ', array_filter([
-            trim((string) ($visit->on_duty_personnel_first_name ?? '')),
-            trim((string) ($visit->on_duty_personnel_middle_name ?? '')),
-            trim((string) ($visit->on_duty_personnel_last_name ?? '')),
-        ], static fn (string $part) => $part !== '')));
-
-        $onDutyUserName = trim(
-            ((string) ($visit->on_duty_user_first_name ?? '')).' '.((string) ($visit->on_duty_user_last_name ?? ''))
-        );
-
-        $onDutyGuardName = $onDutyPersonnelName !== ''
-            ? $onDutyPersonnelName
-            : ($onDutyUserName !== '' ? $onDutyUserName : null);
+        $onDutyGuardName = $this->resolveOnDutyGuardNameForVisit($visit);
 
         if ($isSelfRegistered) {
             return [
@@ -2619,6 +2649,119 @@ class GuardVisitorController extends Controller
             'on_duty_guard_name' => null,
             'on_duty_guard_label' => null,
         ];
+    }
+
+    protected function resolveOnDutyGuardNameForVisit(object $visit): ?string
+    {
+        $personnelName = $this->formatPersonName(
+            $visit->on_duty_personnel_first_name ?? null,
+            $visit->on_duty_personnel_middle_name ?? null,
+            $visit->on_duty_personnel_last_name ?? null
+        );
+        if ($personnelName !== '') {
+            return $personnelName;
+        }
+
+        $userName = $this->formatPersonName(
+            $visit->on_duty_user_first_name ?? null,
+            null,
+            $visit->on_duty_user_last_name ?? null
+        );
+        if ($userName !== '') {
+            return $userName;
+        }
+
+        return $this->lookupDutyGuardNameAtEntry($visit);
+    }
+
+    /**
+     * Older kiosk visits may not have on_duty_guard_id / duty_shift_id.
+     * Resolve the guard who covered the kiosk at the visit's entry time.
+     */
+    protected function lookupDutyGuardNameAtEntry(object $visit): ?string
+    {
+        if (! Schema::hasTable('guard_duty_shifts')) {
+            return null;
+        }
+
+        $entryTime = $visit->entry_time ?? null;
+        if ($entryTime === null || trim((string) $entryTime) === '') {
+            return null;
+        }
+
+        $query = DB::table('guard_duty_shifts as gds')
+            ->where('gds.clock_in_at', '<=', $entryTime)
+            ->where(function ($inner) use ($entryTime) {
+                $inner->whereNull('gds.clock_out_at')
+                    ->orWhere('gds.clock_out_at', '>=', $entryTime);
+            });
+
+        $registrarRoleId = (int) ($visit->registered_by_role_id ?? 0);
+        $kioskUserId = (int) ($visit->guard_user_id ?? 0);
+        if (
+            $registrarRoleId === 4
+            && $kioskUserId > 0
+            && Schema::hasColumn('guard_duty_shifts', 'kiosk_user_id')
+        ) {
+            $query->where('gds.kiosk_user_id', $kioskUserId);
+        }
+
+        $select = [];
+        if (
+            Schema::hasTable('guard_personnel')
+            && Schema::hasColumn('guard_duty_shifts', 'guard_personnel_id')
+        ) {
+            $query->leftJoin('guard_personnel as gp', 'gp.guard_personnel_id', '=', 'gds.guard_personnel_id');
+            $select[] = 'gp.first_name as personnel_first_name';
+            $select[] = 'gp.middle_name as personnel_middle_name';
+            $select[] = 'gp.last_name as personnel_last_name';
+        }
+
+        if (Schema::hasColumn('guard_duty_shifts', 'guard_user_id')) {
+            $query->leftJoin('users as od', 'od.user_id', '=', 'gds.guard_user_id');
+            $select[] = 'od.first_name as duty_user_first_name';
+            $select[] = 'od.last_name as duty_user_last_name';
+        }
+
+        if ($select === []) {
+            return null;
+        }
+
+        $row = $query
+            ->select($select)
+            ->orderByDesc('gds.clock_in_at')
+            ->orderByDesc('gds.shift_id')
+            ->first();
+
+        if (! $row) {
+            return null;
+        }
+
+        $personnelName = $this->formatPersonName(
+            $row->personnel_first_name ?? null,
+            $row->personnel_middle_name ?? null,
+            $row->personnel_last_name ?? null
+        );
+        if ($personnelName !== '') {
+            return $personnelName;
+        }
+
+        $userName = $this->formatPersonName(
+            $row->duty_user_first_name ?? null,
+            null,
+            $row->duty_user_last_name ?? null
+        );
+
+        return $userName !== '' ? $userName : null;
+    }
+
+    protected function formatPersonName(mixed $firstName, mixed $middleName = null, mixed $lastName = null): string
+    {
+        return trim(implode(' ', array_filter([
+            trim((string) ($firstName ?? '')),
+            trim((string) ($middleName ?? '')),
+            trim((string) ($lastName ?? '')),
+        ], static fn (string $part) => $part !== '')));
     }
 
     protected function parseExitQrPayload(string $rawQr): array
@@ -2939,6 +3082,69 @@ class GuardVisitorController extends Controller
             ->exists();
 
         return $exists ? $fallbackId : null;
+    }
+
+    /**
+     * Normal visitors with a declared office route (not enrollee / contractor).
+     */
+    protected function isNormalVisitorDeclaredRoute(object $visit): bool
+    {
+        $visitType = strtolower(trim((string) ($visit->visit_type_name ?? '')));
+
+        if (in_array($visitType, ['enrollee', 'contractor'], true)) {
+            return false;
+        }
+
+        return $visitType === 'visitor' || $visitType === 'normal visitor' || $visitType === '';
+    }
+
+    /**
+     * @return list<array{office_id: int, office_name: string, floor: string}>
+     */
+    protected function getUnvisitedDeclaredOffices(int $visitId): array
+    {
+        if ($visitId <= 0 || ! Schema::hasTable('office_expectation')) {
+            return [];
+        }
+
+        $query = DB::table('office_expectation as oe')
+            ->join('office as o', 'o.office_id', '=', 'oe.office_id')
+            ->where('oe.visit_id', $visitId)
+            ->whereNull('oe.arrived_at')
+            ->orderBy('oe.expected_order')
+            ->orderBy('oe.office_id');
+
+        $select = ['oe.office_id', 'o.office_name'];
+        if (Schema::hasColumn('office', 'floor')) {
+            $select[] = 'o.floor';
+        }
+
+        return $query
+            ->get($select)
+            ->map(static function ($row) {
+                return [
+                    'office_id' => (int) $row->office_id,
+                    'office_name' => trim((string) ($row->office_name ?? '')),
+                    'floor' => trim((string) ($row->floor ?? '')),
+                ];
+            })
+            ->filter(static fn (array $office) => $office['office_id'] > 0 && $office['office_name'] !== '')
+            ->values()
+            ->all();
+    }
+
+    protected function buildExitScanRemarks(bool $incompleteOverride, string $note): string
+    {
+        if (! $incompleteOverride) {
+            return 'Guard facility exit scan';
+        }
+
+        $remarks = 'Guard facility exit scan. Incomplete route reviewed with visitor.';
+        if ($note !== '') {
+            $remarks .= ' Note: '.$note;
+        }
+
+        return $remarks;
     }
 
     protected function resolveEnrolleeOfficeIds(): array

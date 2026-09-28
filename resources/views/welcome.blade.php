@@ -121,6 +121,62 @@
             box-shadow: 0 0 0 4px rgba(31, 52, 143, 0.12);
         }
 
+        .password-field {
+            position: relative;
+        }
+
+        .password-field .form-control {
+            padding-right: 48px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #5b6b9a;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            background: rgba(31, 52, 143, 0.08);
+            color: #1f348f;
+        }
+
+        .password-toggle:focus-visible {
+            outline: none;
+            background: rgba(31, 52, 143, 0.1);
+            color: #1f348f;
+            box-shadow: 0 0 0 3px rgba(31, 52, 143, 0.18);
+        }
+
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
+        .password-toggle .icon-hide {
+            display: none;
+        }
+
+        .password-toggle.is-visible .icon-show {
+            display: none;
+        }
+
+        .password-toggle.is-visible .icon-hide {
+            display: block;
+        }
+
         .error-text {
             color: #d93025;
             font-size: 13px;
@@ -286,14 +342,36 @@
 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        class="form-control"
-                        placeholder="Enter your password"
-                        required
-                    >
+                    <div class="password-field">
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            class="form-control"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="passwordToggle"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            title="Show password"
+                        >
+                            <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.77 21.77 0 0 1 5.06-5.94"></path>
+                                <path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a21.83 21.83 0 0 1-2.16 3.19"></path>
+                                <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
                     @error('password')
                         <div class="error-text">{{ $message }}</div>
                     @enderror
@@ -342,9 +420,22 @@
             var form = document.getElementById('login-form');
             var button = document.getElementById('login-submit');
             var captchaError = document.getElementById('captcha-error');
+            var passwordInput = document.getElementById('password');
+            var passwordToggle = document.getElementById('passwordToggle');
             var stage = document.querySelector('.login-stage');
             var wrap = document.querySelector('.login-wrapper');
             var fitFrame = 0;
+
+            if (passwordToggle && passwordInput) {
+                passwordToggle.addEventListener('click', function () {
+                    var showing = passwordInput.type === 'text';
+                    passwordInput.type = showing ? 'password' : 'text';
+                    passwordToggle.classList.toggle('is-visible', !showing);
+                    passwordToggle.setAttribute('aria-pressed', showing ? 'false' : 'true');
+                    passwordToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+                    passwordToggle.setAttribute('title', showing ? 'Show password' : 'Hide password');
+                });
+            }
 
             function fitLoginToViewport() {
                 if (!stage || !wrap) {
