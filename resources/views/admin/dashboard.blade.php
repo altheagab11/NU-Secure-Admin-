@@ -676,6 +676,36 @@
 		.progress-w-20 { width: 20%; }
 		.chart-box-300 { height: 300px; }
 		.chart-box-280 { height: 280px; }
+
+		.dash-chart-card {
+			background: #fff;
+			border: 1px solid #e8ecf1;
+			border-radius: 14px;
+			box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+			height: 100%;
+		}
+
+		.dash-chart-card .card-body {
+			padding: 18px 18px 16px;
+		}
+
+		.dash-chart-title {
+			margin: 0 0 14px;
+			font-size: 15px;
+			font-weight: 700;
+			color: #1e293b;
+			letter-spacing: 0.01em;
+			text-align: left;
+		}
+
+		.dash-chart-canvas {
+			height: 280px;
+			position: relative;
+		}
+
+		.dash-chart-canvas.is-tall {
+			height: 300px;
+		}
 	</style>
 </head>
 <body>
@@ -1087,10 +1117,10 @@
 
 				<div class="row g-4 mb-4">
 					<div class="col-lg-7">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
+						<div class="dash-chart-card">
 							<div class="card-body">
-								<h4 class="fw-semibold text-center mb-3">7-Day Visitor Trend</h4>
-								<div class="bg-light rounded-4 border p-3 chart-box-300">
+								<h4 class="dash-chart-title">7-Day Visitor Trend</h4>
+								<div class="dash-chart-canvas is-tall">
 									<canvas id="visitorTrendChart"></canvas>
 								</div>
 							</div>
@@ -1098,10 +1128,10 @@
 					</div>
 
 					<div class="col-lg-5">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
+						<div class="dash-chart-card">
 							<div class="card-body">
-								<h4 class="fw-semibold text-center mb-3">Visitors by Status</h4>
-								<div class="bg-light rounded-4 border p-3 chart-box-300">
+								<h4 class="dash-chart-title">Visitors by Status</h4>
+								<div class="dash-chart-canvas is-tall">
 									<canvas id="visitorStatusChart"></canvas>
 								</div>
 							</div>
@@ -1229,10 +1259,10 @@
 
 				<div class="row g-4 mb-4">
 					<div class="col-lg-7">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
+						<div class="dash-chart-card">
 							<div class="card-body">
-								<h4 class="fw-semibold text-center mb-3">Visitors by Hour</h4>
-								<div class="bg-light rounded-4 border p-3 chart-box-280">
+								<h4 class="dash-chart-title">Visitors by Hour</h4>
+								<div class="dash-chart-canvas">
 									<canvas id="visitorHourChart"></canvas>
 								</div>
 							</div>
@@ -1240,10 +1270,10 @@
 					</div>
 
 					<div class="col-lg-5">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
+						<div class="dash-chart-card">
 							<div class="card-body">
-								<h4 class="fw-semibold text-center mb-3">Visitors by Office</h4>
-								<div class="bg-light rounded-4 border p-3 chart-box-280">
+								<h4 class="dash-chart-title">Visitors by Office</h4>
+								<div class="dash-chart-canvas">
 									<canvas id="visitorOfficeChart"></canvas>
 								</div>
 							</div>
@@ -1294,8 +1324,47 @@
 		const officeLabels = @json($visitorOfficeLabels ?? []);
 		const officeData = @json($visitorOfficeData ?? []);
 
+		const chartColors = {
+			primary: '#273b9e',
+			primarySoft: 'rgba(39, 59, 158, 0.14)',
+			primaryMuted: '#7c89d4',
+			inside: '#243c96',
+			exited: '#c7d2fe',
+			grid: '#eef2f7',
+			tick: '#64748b',
+			tooltipBg: '#0f172a',
+		};
+
+		const maxInt = (values, fallback = 1) => Math.max(fallback, ...values.map((v) => Number(v) || 0));
+
+		const integerTicks = {
+			precision: 0,
+			stepSize: 1,
+			color: chartColors.tick,
+			font: { size: 11, weight: '500' },
+			callback: (value) => (Number.isInteger(value) ? value : null),
+		};
+
+		const axisGrid = {
+			color: chartColors.grid,
+			drawBorder: false,
+		};
+
+		const sharedTooltip = {
+			backgroundColor: chartColors.tooltipBg,
+			titleFont: { size: 12, weight: '600' },
+			bodyFont: { size: 12 },
+			padding: 10,
+			cornerRadius: 8,
+			displayColors: false,
+		};
+
 		const trendCtx = document.getElementById('visitorTrendChart')?.getContext('2d');
 		if (trendCtx) {
+			const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 280);
+			trendGradient.addColorStop(0, 'rgba(39, 59, 158, 0.28)');
+			trendGradient.addColorStop(1, 'rgba(39, 59, 158, 0.02)');
+
 			new Chart(trendCtx, {
 				type: 'line',
 				data: {
@@ -1303,50 +1372,132 @@
 					datasets: [{
 						label: 'Visitors',
 						data: trendData,
-						borderColor: '#f4c400',
-						backgroundColor: '#f4c400',
-						tension: 0.4,
-						fill: false,
-						pointRadius: 5,
-						pointHoverRadius: 6
+						borderColor: chartColors.primary,
+						backgroundColor: trendGradient,
+						borderWidth: 2.5,
+						tension: 0.35,
+						fill: true,
+						pointRadius: 4,
+						pointHoverRadius: 6,
+						pointBackgroundColor: '#fff',
+						pointBorderColor: chartColors.primary,
+						pointBorderWidth: 2,
+						pointHoverBackgroundColor: chartColors.primary,
+						pointHoverBorderColor: '#fff',
 					}]
 				},
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,
+					interaction: { mode: 'index', intersect: false },
 					plugins: {
-						legend: { display: false }
+						legend: { display: false },
+						tooltip: {
+							...sharedTooltip,
+							callbacks: {
+								label: (ctx) => `${ctx.parsed.y} visitor${ctx.parsed.y === 1 ? '' : 's'}`,
+							},
+						},
 					},
 					scales: {
+						x: {
+							grid: { display: false, drawBorder: false },
+							ticks: { color: chartColors.tick, font: { size: 11 } },
+						},
 						y: {
-							beginAtZero: true
-						}
-					}
-				}
+							beginAtZero: true,
+							suggestedMax: maxInt(trendData),
+							grid: axisGrid,
+							border: { display: false },
+							ticks: integerTicks,
+						},
+					},
+				},
 			});
 		}
 
 		const statusCtx = document.getElementById('visitorStatusChart')?.getContext('2d');
 		if (statusCtx) {
+			const statusTotal = statusData.reduce((sum, value) => sum + (Number(value) || 0), 0);
+
 			new Chart(statusCtx, {
 				type: 'doughnut',
 				data: {
 					labels: statusLabels,
 					datasets: [{
 						data: statusData,
-						backgroundColor: ['#3f4aa0', '#9aa3e5'],
-						borderWidth: 0
+						backgroundColor: [chartColors.inside, chartColors.exited],
+						hoverBackgroundColor: ['#1e327f', '#a5b4fc'],
+						borderWidth: 3,
+						borderColor: '#fff',
+						hoverOffset: 4,
 					}]
 				},
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,
+					cutout: '68%',
 					plugins: {
 						legend: {
-							position: 'right'
-						}
-					}
-				}
+							position: 'right',
+							labels: {
+								boxWidth: 12,
+								boxHeight: 12,
+								borderRadius: 3,
+								useBorderRadius: true,
+								padding: 16,
+								color: '#334155',
+								font: { size: 12, weight: '600' },
+								generateLabels: (chart) => {
+									const data = chart.data;
+									const dataset = data.datasets[0] || {};
+									return (data.labels || []).map((label, index) => {
+										const value = Number((dataset.data || [])[index] || 0);
+										const pct = statusTotal > 0 ? Math.round((value / statusTotal) * 100) : 0;
+										return {
+											text: `${label}  ${value} (${pct}%)`,
+											fillStyle: (dataset.backgroundColor || [])[index],
+											strokeStyle: '#fff',
+											lineWidth: 0,
+											hidden: false,
+											index,
+										};
+									});
+								},
+							},
+						},
+						tooltip: {
+							...sharedTooltip,
+							displayColors: true,
+							callbacks: {
+								label: (ctx) => {
+									const value = Number(ctx.parsed || 0);
+									const pct = statusTotal > 0 ? Math.round((value / statusTotal) * 100) : 0;
+									return ` ${ctx.label}: ${value} (${pct}%)`;
+								},
+							},
+						},
+					},
+				},
+				plugins: [{
+					id: 'statusCenterText',
+					afterDraw(chart) {
+						const { ctx: c, chartArea } = chart;
+						if (!chartArea) return;
+						const cx = (chartArea.left + chartArea.right) / 2;
+						const cy = (chartArea.top + chartArea.bottom) / 2;
+						c.save();
+						c.textAlign = 'center';
+						c.textBaseline = 'middle';
+						c.fillStyle = '#0f172a';
+						c.font = '700 22px Inter, system-ui, sans-serif';
+						c.fillText(String(statusTotal), cx, cy - 8);
+						c.fillStyle = '#64748b';
+						c.font = '600 11px Inter, system-ui, sans-serif';
+						c.fillText('Total', cx, cy + 12);
+						c.restore();
+					},
+				}],
 			});
 		}
 
@@ -1359,22 +1510,48 @@
 					datasets: [{
 						label: 'Visitors',
 						data: hourData,
-						backgroundColor: '#3f4aa0',
-						borderRadius: 6
+						backgroundColor: chartColors.primary,
+						hoverBackgroundColor: chartColors.primaryMuted,
+						borderRadius: 6,
+						borderSkipped: false,
+						maxBarThickness: 18,
 					}]
 				},
 				options: {
 					responsive: true,
 					maintainAspectRatio: false,
+					interaction: { mode: 'index', intersect: false },
 					plugins: {
-						legend: { display: false }
+						legend: { display: false },
+						tooltip: {
+							...sharedTooltip,
+							callbacks: {
+								title: (items) => items[0]?.label || '',
+								label: (ctx) => `${ctx.parsed.y} visitor${ctx.parsed.y === 1 ? '' : 's'}`,
+							},
+						},
 					},
 					scales: {
+						x: {
+							grid: { display: false, drawBorder: false },
+							ticks: {
+								color: chartColors.tick,
+								font: { size: 10 },
+								maxRotation: 45,
+								minRotation: 45,
+								autoSkip: true,
+								maxTicksLimit: 12,
+							},
+						},
 						y: {
-							beginAtZero: true
-						}
-					}
-				}
+							beginAtZero: true,
+							suggestedMax: maxInt(hourData),
+							grid: axisGrid,
+							border: { display: false },
+							ticks: integerTicks,
+						},
+					},
+				},
 			});
 		}
 
@@ -1387,8 +1564,11 @@
 					datasets: [{
 						label: 'Visitors',
 						data: officeData,
-						backgroundColor: '#f4c400',
-						borderRadius: 6
+						backgroundColor: chartColors.primary,
+						hoverBackgroundColor: chartColors.primaryMuted,
+						borderRadius: 8,
+						borderSkipped: false,
+						maxBarThickness: 26,
 					}]
 				},
 				options: {
@@ -1396,17 +1576,31 @@
 					responsive: true,
 					maintainAspectRatio: false,
 					plugins: {
-						legend: { display: false }
+						legend: { display: false },
+						tooltip: {
+							...sharedTooltip,
+							callbacks: {
+								label: (ctx) => `${ctx.parsed.x} visitor${ctx.parsed.x === 1 ? '' : 's'}`,
+							},
+						},
 					},
 					scales: {
 						x: {
 							beginAtZero: true,
+							suggestedMax: maxInt(officeData),
+							grid: axisGrid,
+							border: { display: false },
+							ticks: integerTicks,
+						},
+						y: {
+							grid: { display: false, drawBorder: false },
 							ticks: {
-								stepSize: 1
-							}
-						}
-					}
-				}
+								color: '#334155',
+								font: { size: 12, weight: '600' },
+							},
+						},
+					},
+				},
 			});
 		}
 	</script>

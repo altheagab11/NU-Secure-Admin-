@@ -188,10 +188,8 @@ class GuardVisitorController extends Controller
         $validValidationStatusId = $this->resolveValidValidationStatusId();
         $scannedByUserId = Auth::id();
         $conversationNote = trim((string) ($validated['conversation_note'] ?? ''));
-        $exitRemarks = $this->buildExitScanRemarks(
-            $overrideIncompleteRoute && $remainingOffices !== [],
-            $conversationNote
-        );
+        $incompleteRouteReviewed = $overrideIncompleteRoute && $remainingOffices !== [];
+        $exitRemarks = $this->buildExitScanRemarks($incompleteRouteReviewed);
 
         DB::transaction(function () use (
             $visit,
@@ -201,15 +199,33 @@ class GuardVisitorController extends Controller
             $skippedExpectationStatusId,
             $validValidationStatusId,
             $scannedByUserId,
-            $exitRemarks
+            $exitRemarks,
+            $incompleteRouteReviewed,
+            $conversationNote,
+            $remainingOffices,
+            $displayName
         ) {
+            $visitUpdate = [
+                'exit_time' => $exitAt,
+                'duration_minutes' => $durationMinutes,
+                'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
+            ];
+
+            if ($incompleteRouteReviewed && Schema::hasColumn('visit', 'incomplete_route_reviewed')) {
+                $visitUpdate['incomplete_route_reviewed'] = true;
+
+                if (Schema::hasColumn('visit', 'incomplete_route_note')) {
+                    $visitUpdate['incomplete_route_note'] = $conversationNote !== '' ? $conversationNote : null;
+                }
+
+                if (Schema::hasColumn('visit', 'incomplete_route_reviewed_by')) {
+                    $visitUpdate['incomplete_route_reviewed_by'] = $scannedByUserId ? (int) $scannedByUserId : null;
+                }
+            }
+
             DB::table('visit')
                 ->where('visit_id', $visit->visit_id)
-                ->update([
-                    'exit_time' => $exitAt,
-                    'duration_minutes' => $durationMinutes,
-                    'exit_status_id' => $exitedStatusId ?: $visit->exit_status_id,
-                ]);
+                ->update($visitUpdate);
 
             if ($skippedExpectationStatusId !== null) {
                 DB::table('office_expectation')
@@ -225,14 +241,26 @@ class GuardVisitorController extends Controller
             }
 
             // Facility exit is not tied to a destination office (especially contractors).
-            DB::table('office_scan')->insert([
+            $scanId = DB::table('office_scan')->insertGetId([
                 'visit_id' => (int) $visit->visit_id,
                 'office_id' => null,
                 'scanned_by_user_id' => $scannedByUserId ? (int) $scannedByUserId : null,
                 'scan_time' => $exitAt,
                 'validation_status_id' => $validValidationStatusId,
                 'remarks' => $exitRemarks,
-            ]);
+            ], 'scan_id');
+
+            if ($incompleteRouteReviewed) {
+                $this->createIncompleteRouteAlert(
+                    $visit,
+                    $displayName,
+                    $remainingOffices,
+                    $conversationNote,
+                    $scanId ? (int) $scanId : null,
+                    $scannedByUserId ? (int) $scannedByUserId : null,
+                    $exitAt
+                );
+            }
         });
 
         ActivityLogService::log(
@@ -248,8 +276,8 @@ class GuardVisitorController extends Controller
                 'pass_number' => trim((string) ($visit->pass_number ?? '')),
                 'exit_time' => $exitAt->toDateTimeString(),
                 'duration_minutes' => $durationMinutes,
-                'incomplete_route_override' => $overrideIncompleteRoute && $remainingOffices !== [],
-                'conversation_note' => $conversationNote !== '' ? $conversationNote : null,
+                'incomplete_route_reviewed' => $incompleteRouteReviewed,
+                'incomplete_route_note' => $conversationNote !== '' ? $conversationNote : null,
             ]
         );
 
@@ -3133,18 +3161,82 @@ class GuardVisitorController extends Controller
             ->all();
     }
 
-    protected function buildExitScanRemarks(bool $incompleteOverride, string $note): string
+    protected function buildExitScanRemarks(bool $incompleteOverride): string
     {
         if (! $incompleteOverride) {
             return 'Guard facility exit scan';
         }
 
-        $remarks = 'Guard facility exit scan. Incomplete route reviewed with visitor.';
-        if ($note !== '') {
-            $remarks .= ' Note: '.$note;
+        return 'Guard facility exit scan. Incomplete route reviewed with visitor.';
+    }
+
+    /**
+     * @param  array<int, array{office_id?: int, office_name?: string, floor?: string}>  $remainingOffices
+     */
+    protected function createIncompleteRouteAlert(
+        object $visit,
+        string $displayName,
+        array $remainingOffices,
+        string $conversationNote,
+        ?int $scanId,
+        ?int $resolvedByUserId,
+        Carbon $createdAt
+    ): void {
+        if (! Schema::hasTable('alerts')) {
+            return;
         }
 
-        return $remarks;
+        $officeNames = collect($remainingOffices)
+            ->map(static fn (array $office) => trim((string) ($office['office_name'] ?? '')))
+            ->filter(static fn (string $name) => $name !== '')
+            ->unique()
+            ->values();
+
+        $message = $displayName.' exited with unvisited offices';
+        if ($officeNames->isNotEmpty()) {
+            $message .= ': '.$officeNames->implode(', ');
+        }
+        $message .= '. Guard reviewed this with the visitor before allowing exit.';
+
+        if ($conversationNote !== '') {
+            $message .= ' Note: '.$conversationNote;
+        }
+
+        $resolutionNotes = $conversationNote !== ''
+            ? $conversationNote
+            : 'Incomplete route reviewed with visitor before exit.';
+
+        $alertId = DB::table('alerts')->insertGetId([
+            'visit_id' => (int) $visit->visit_id,
+            'visitor_id' => (int) $visit->visitor_id,
+            'scan_id' => $scanId,
+            'alert_type' => 'Incomplete Route',
+            'severity' => 'Medium',
+            'message' => $message,
+            'status' => 'Resolved',
+            'created_at' => $createdAt,
+            'resolved_at' => $createdAt,
+            'resolved_by' => $resolvedByUserId,
+            'resolution_notes' => $resolutionNotes,
+        ], 'alert_id');
+
+        ActivityLogService::log(
+            action: 'Alert Generated',
+            module: 'Alerts',
+            description: 'Incomplete route alert recorded for '.$displayName.' after guard review.',
+            entityType: 'Alert',
+            entityId: $alertId ? (int) $alertId : null,
+            newValues: [
+                'alert_type' => 'Incomplete Route',
+                'severity' => 'Medium',
+                'status' => 'Resolved',
+                'visitor_name' => $displayName,
+                'visit_id' => (int) $visit->visit_id,
+                'remaining_offices' => $officeNames->all(),
+                'conversation_note' => $conversationNote !== '' ? $conversationNote : null,
+                'resolved_by' => $resolvedByUserId,
+            ]
+        );
     }
 
     protected function resolveEnrolleeOfficeIds(): array

@@ -551,11 +551,13 @@
 			@include('admin.partials.admin-topbar', ['title' => 'Date-Range Reports'])
 			<div class="toolbar">
 				<div>
-					<p class="page-subtitle mb-0">Generate and download multi-day visitor Excel reports for complete calendar days.</p>
+					<p class="page-subtitle mb-0">Multi-day visitor Excel reports with the same columns as Daily Reports, including Incomplete Route details.</p>
 				</div>
-				<a href="{{ route('admin.daily-reports') }}" class="btn btn-outline-primary">
-					<i class="bi bi-file-earmark-excel me-1"></i> Daily Reports
-				</a>
+				<div class="d-flex flex-wrap gap-2">
+					<a href="{{ route('admin.daily-reports') }}" class="btn btn-outline-primary">
+						<i class="bi bi-file-earmark-excel me-1"></i> Daily Reports
+					</a>
+				</div>
 			</div>
 
 			@if (session('success'))
@@ -619,10 +621,9 @@
 					<div class="summary-box" id="rangeSummary" aria-live="polite">
 						<h6>Confirmation Summary</h6>
 						<p><strong>Report Type:</strong> Date-Range Visitor Report</p>
-						<p><strong>Start Date:</strong> <span id="summaryStart">â€”</span></p>
-						<p><strong>End Date:</strong> <span id="summaryEnd">â€”</span></p>
-						<p><strong>Coverage:</strong> Complete calendar days (12:00:00 AM to 11:59:59 PM)</p>
-						<p class="mb-0"><strong>Selected Range:</strong> <span id="summaryDays">â€”</span></p>
+						<p><strong>Start Date:</strong> <span id="summaryStart">—</span></p>
+						<p><strong>End Date:</strong> <span id="summaryEnd">—</span></p>
+						<p class="mb-0"><strong>Coverage:</strong> <span id="summaryDays">—</span></p>
 					</div>
 
 					<div class="generate-actions">
@@ -633,10 +634,10 @@
 								Generating...
 							</span>
 						</button>
-						<button type="button" class="btn btn-outline-secondary" id="resetDateRangeForm">Cancel / Reset</button>
+						<button type="button" class="btn btn-outline-secondary" id="resetDateRangeForm">Reset</button>
 					</div>
 					<p class="small text-muted mt-3 mb-0">
-						Select at least two calendar days and at most {{ $maxRangeDays }} days. Future dates are not allowed. All visitor records from 12:00 AM to 11:59:59 PM are included for each selected date.
+						Choose at least 2 calendar days and at most {{ $maxRangeDays }} days. Future dates are not allowed. Each selected day includes all visitors from 12:00 AM to 11:59:59 PM.
 					</p>
 				</form>
 			</div>
@@ -705,7 +706,7 @@
 									@endphp
 									<tr>
 										<td>{{ optional($report->report_date)->format('M d, Y') }}</td>
-										<td>{{ optional($report->date_range_end)->format('M d, Y') ?: 'â€”' }}</td>
+										<td>{{ optional($report->date_range_end)->format('M d, Y') ?: '—' }}</td>
 										<td><code>{{ $report->file_name }}</code></td>
 										<td>{{ number_format((int) $report->record_count) }}</td>
 										<td>
@@ -717,7 +718,7 @@
 											@endif
 										</td>
 										<td>
-											{{ $report->generated_at ? $report->generated_at->timezone('Asia/Manila')->format('M d, Y h:i A') : 'â€”' }}
+											{{ $report->generated_at ? $report->generated_at->timezone('Asia/Manila')->format('M d, Y h:i A') : '—' }}
 										</td>
 										<td>{{ $generatorName }}</td>
 										<td>
@@ -835,9 +836,11 @@
 
 				if (start && end && end >= start && inclusiveDays(start, end) >= 2 && inclusiveDays(start, end) <= maxRangeDays && (!today || (start <= today && end <= today))) {
 					summary.classList.add('visible');
+					const days = inclusiveDays(start, end);
 					document.getElementById('summaryStart').textContent = formatLongDate(start);
 					document.getElementById('summaryEnd').textContent = formatLongDate(end);
-					document.getElementById('summaryDays').textContent = inclusiveDays(start, end) + ' calendar day(s)';
+					document.getElementById('summaryDays').textContent =
+						days + ' complete calendar day' + (days === 1 ? '' : 's') + ' (12:00:00 AM to 11:59:59 PM)';
 				} else {
 					summary.classList.remove('visible');
 				}

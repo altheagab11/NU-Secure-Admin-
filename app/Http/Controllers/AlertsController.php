@@ -151,6 +151,12 @@ class AlertsController extends Controller
                                 $visitorName,
                                 $passNumber,
                                 $controlNumber,
+                                (string) ($alert['alert_type'] ?? ''),
+                                (string) ($alert['message'] ?? ''),
+                                (string) ($alert['severity'] ?? ''),
+                                (string) ($alert['status'] ?? ''),
+                                (string) $visitOffice,
+                                (string) $scanOffice,
                             ]));
                             $matchesSearch = Str::contains($haystack, Str::lower($search));
                         }

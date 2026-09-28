@@ -1111,7 +1111,7 @@
 							<div class="submenu">
 								<a href="/guard/register?type=normal" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'normal' ? 'active' : '' }}">
 									<i class="bi bi-person"></i>
-									<span>Normal Visitor</span>
+									<span>Visitor</span>
 								</a>
 								<a href="/guard/register?type=enrollee" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'enrollee' ? 'active' : '' }}">
 									<i class="bi bi-mortarboard-fill"></i>

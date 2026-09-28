@@ -119,15 +119,16 @@ class DateRangeVisitorReportServiceTest extends TestCase
         $this->assertSame('NU-Secure Visitor Date-Range Report', $sheet->getCell('A1')->getValue());
         $this->assertStringContainsString('August 1, 2026', (string) $sheet->getCell('A2')->getValue());
         $this->assertStringContainsString('August 3, 2026', (string) $sheet->getCell('A3')->getValue());
-        $this->assertStringContainsString('Complete calendar days', (string) $sheet->getCell('A4')->getValue());
+        $this->assertStringContainsString('Coverage: 3 complete calendar days', (string) $sheet->getCell('A4')->getValue());
         $this->assertStringContainsString('12:00:00 AM to 11:59:59 PM', (string) $sheet->getCell('A4')->getValue());
-        $this->assertStringContainsString('System Admin', (string) $sheet->getCell('A6')->getValue());
-        $this->assertSame('Visit ID', $sheet->getCell('A8')->getValue());
-        $this->assertSame('Control Number', $sheet->getCell('B8')->getValue());
-        $this->assertSame('Total Visitors:', $sheet->getCell('A10')->getValue());
-        $this->assertSame(0, (int) $sheet->getCell('B10')->getValue());
+        $this->assertStringContainsString('System Admin', (string) $sheet->getCell('A7')->getValue());
+        $this->assertStringContainsString('Total Visitors: 0', (string) $sheet->getCell('A5')->getValue());
+        $this->assertSame('Visit ID', $sheet->getCell('A9')->getValue());
+        $this->assertSame('Control Number', $sheet->getCell('B9')->getValue());
+        $this->assertSame('Total Visitors:', $sheet->getCell('A11')->getValue());
+        $this->assertSame(0, (int) $sheet->getCell('B11')->getValue());
         $this->assertNotNull($sheet->getAutoFilter()->getRange());
-        $this->assertSame('A9', $sheet->getFreezePane());
+        $this->assertSame('D10', $sheet->getFreezePane());
     }
 
     #[Test]
@@ -158,19 +159,24 @@ class DateRangeVisitorReportServiceTest extends TestCase
                 'processed_by' => 'Guard One',
                 'alert' => 'None',
                 'remarks' => '',
+                'incomplete_route' => 'No',
+                'incomplete_route_note' => '',
+                'incomplete_route_reviewed_by' => '',
             ],
         ]);
 
         $spreadsheet = $service->buildDateRangeSpreadsheet($start, $end, $rows, 'Admin');
         $sheet = $spreadsheet->getActiveSheet();
 
-        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('B9')->getDataType());
-        $this->assertSame('001234', $sheet->getCell('B9')->getValue());
-        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('F9')->getDataType());
-        $this->assertSame('09171234567', $sheet->getCell('F9')->getValue());
-        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('G9')->getDataType());
-        $this->assertSame('00098765', $sheet->getCell('G9')->getValue());
-        $this->assertSame(1, (int) $sheet->getCell('B11')->getValue());
+        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('B10')->getDataType());
+        $this->assertSame('001234', $sheet->getCell('B10')->getValue());
+        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('F10')->getDataType());
+        $this->assertSame('09171234567', $sheet->getCell('F10')->getValue());
+        $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('G10')->getDataType());
+        $this->assertSame('00098765', $sheet->getCell('G10')->getValue());
+        $this->assertSame('Incomplete Route', $sheet->getCell('T9')->getValue());
+        $this->assertSame('No', $sheet->getCell('T10')->getValue());
+        $this->assertSame(1, (int) $sheet->getCell('B12')->getValue());
     }
 
     #[Test]

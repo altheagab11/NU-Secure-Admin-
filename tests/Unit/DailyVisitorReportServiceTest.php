@@ -29,11 +29,15 @@ class DailyVisitorReportServiceTest extends TestCase
         $this->assertSame('Visit Type', $sheet->getCell('H4')->getValue());
         $this->assertSame('Duration', $sheet->getCell('N4')->getValue());
         $this->assertSame('Alert', $sheet->getCell('R4')->getValue());
+        $this->assertSame('Remarks', $sheet->getCell('S4')->getValue());
+        $this->assertSame('Incomplete Route', $sheet->getCell('T4')->getValue());
+        $this->assertSame('Guard Note', $sheet->getCell('U4')->getValue());
+        $this->assertSame('Reviewed By', $sheet->getCell('V4')->getValue());
         $this->assertNotSame('Identification Type', $sheet->getCell('F4')->getValue());
         $this->assertSame('Total Visitors:', $sheet->getCell('A6')->getValue());
         $this->assertSame(0, (int) $sheet->getCell('B6')->getValue());
         $this->assertNotNull($sheet->getAutoFilter()->getRange());
-        $this->assertSame('A5', $sheet->getFreezePane());
+        $this->assertSame('D5', $sheet->getFreezePane());
     }
 
     #[Test]
@@ -63,6 +67,9 @@ class DailyVisitorReportServiceTest extends TestCase
                 'processed_by' => 'Guard One',
                 'alert' => 'None',
                 'remarks' => '',
+                'incomplete_route' => 'No',
+                'incomplete_route_note' => '',
+                'incomplete_route_reviewed_by' => '',
             ],
         ]);
 
@@ -79,6 +86,7 @@ class DailyVisitorReportServiceTest extends TestCase
         $this->assertSame('Visitor', $sheet->getCell('H5')->getValue());
         $this->assertSame('1 hr 30 mins', $sheet->getCell('N5')->getValue());
         $this->assertSame('None', $sheet->getCell('R5')->getValue());
+        $this->assertSame('No', $sheet->getCell('T5')->getValue());
         $this->assertSame(1, (int) $sheet->getCell('B7')->getValue());
     }
 

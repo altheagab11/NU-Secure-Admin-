@@ -516,6 +516,296 @@
 
 		.offcanvas { width: min(640px, 100vw); }
 
+		#dutyDrawer.offcanvas {
+			width: min(560px, 100vw);
+		}
+
+		#dutyDrawer .offcanvas-header {
+			align-items: flex-start;
+			padding: 18px 20px 14px;
+		}
+
+		#dutyDrawer .offcanvas-body {
+			padding: 18px 20px 24px;
+		}
+
+		#drawerBackBtn {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			color: #243c96;
+			font-size: 13px;
+			font-weight: 700;
+			text-decoration: none;
+			margin-bottom: 6px;
+		}
+
+		#drawerBackBtn:hover {
+			color: #1e327f;
+			text-decoration: underline;
+		}
+
+		.shift-visitors-meta {
+			margin: 0 0 16px;
+			padding: 14px 16px;
+			border: 1px solid #e2e8f0;
+			border-radius: 14px;
+			background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+		}
+
+		.shift-visitors-meta .guard-name {
+			margin: 0 0 4px;
+			font-size: 16px;
+			font-weight: 800;
+			color: #0f172a;
+			line-height: 1.3;
+		}
+
+		.shift-visitors-meta .shift-range {
+			margin: 0;
+			font-size: 13px;
+			color: #64748b;
+			line-height: 1.4;
+		}
+
+		.shift-visitors-meta .shift-count {
+			margin-top: 10px;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 999px;
+			background: #eef2ff;
+			color: #243c96;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.shift-visitor-list {
+			display: grid;
+			gap: 10px;
+		}
+
+		.shift-visitor-card {
+			border: 1px solid #e2e8f0;
+			border-radius: 14px;
+			background: #fff;
+			padding: 14px 14px 12px;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		}
+
+		.shift-visitor-top {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 10px;
+		}
+
+		.shift-visitor-name {
+			margin: 0;
+			font-size: 15px;
+			font-weight: 800;
+			color: #0f172a;
+			line-height: 1.3;
+			word-break: break-word;
+		}
+
+		.shift-visitor-control {
+			margin: 4px 0 0;
+			font-size: 12px;
+			font-weight: 700;
+			color: #64748b;
+			letter-spacing: 0.02em;
+		}
+
+		.shift-visitor-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px 12px;
+		}
+
+		.shift-visitor-field {
+			min-width: 0;
+		}
+
+		.shift-visitor-field.is-full {
+			grid-column: 1 / -1;
+		}
+
+		.shift-visitor-label {
+			display: block;
+			margin-bottom: 2px;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: #94a3b8;
+		}
+
+		.shift-visitor-value {
+			font-size: 13px;
+			font-weight: 600;
+			color: #334155;
+			line-height: 1.35;
+			word-break: break-word;
+		}
+
+		.shift-visitors-pagination {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			flex-wrap: wrap;
+			margin-top: 16px;
+			padding-top: 14px;
+			border-top: 1px solid #e8ecf1;
+		}
+
+		.shift-visitors-pagination .range-label {
+			font-size: 13px;
+			color: #64748b;
+			font-weight: 600;
+		}
+
+		.shift-visitors-pagination .btn {
+			min-width: 88px;
+			font-weight: 700;
+		}
+
+		.duty-detail-stack {
+			display: grid;
+			gap: 12px;
+		}
+
+		.duty-detail-card {
+			border: 1px solid #e2e8f0;
+			border-radius: 14px;
+			background: #fff;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		}
+
+		.duty-detail-card.is-hero {
+			background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+		}
+
+		.duty-detail-card-title {
+			margin: 0 0 12px;
+			font-size: 12px;
+			font-weight: 800;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			color: #39459a;
+		}
+
+		.duty-detail-hero {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 12px;
+			margin-bottom: 14px;
+		}
+
+		.duty-detail-hero-name {
+			margin: 0;
+			font-size: 18px;
+			font-weight: 800;
+			color: #0f172a;
+			line-height: 1.3;
+			word-break: break-word;
+		}
+
+		.duty-detail-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 12px;
+		}
+
+		.duty-detail-field {
+			min-width: 0;
+		}
+
+		.duty-detail-field.is-full {
+			grid-column: 1 / -1;
+		}
+
+		.duty-detail-label {
+			display: block;
+			margin-bottom: 3px;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: #94a3b8;
+		}
+
+		.duty-detail-value {
+			font-size: 14px;
+			font-weight: 700;
+			color: #0f172a;
+			line-height: 1.4;
+			word-break: break-word;
+		}
+
+		.duty-visitors-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.duty-visitors-count {
+			display: flex;
+			align-items: baseline;
+			gap: 8px;
+		}
+
+		.duty-visitors-count strong {
+			font-size: 28px;
+			font-weight: 800;
+			color: #243c96;
+			line-height: 1;
+		}
+
+		.duty-visitors-count span {
+			font-size: 13px;
+			font-weight: 600;
+			color: #64748b;
+		}
+
+		.duty-detail-action {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			border: 0;
+			border-radius: 10px;
+			background: #243c96;
+			color: #fff;
+			font-size: 13px;
+			font-weight: 700;
+			padding: 10px 14px;
+			cursor: pointer;
+		}
+
+		.duty-detail-action:hover {
+			background: #1e327f;
+			color: #fff;
+		}
+
+		.duty-detail-action:disabled {
+			opacity: 0.55;
+			cursor: not-allowed;
+		}
+
+		@media (max-width: 480px) {
+			.shift-visitor-grid,
+			.duty-detail-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+
 		.guard-name { font-weight: 700; color: #0f172a; }
 
 		@media (max-width: 1200px) {
@@ -784,7 +1074,10 @@
 	<div class="offcanvas offcanvas-end" tabindex="-1" id="dutyDrawer" aria-labelledby="dutyDrawerLabel">
 		<div class="offcanvas-header border-bottom">
 			<div>
-				<button type="button" class="btn btn-link p-0 mb-1 d-none" id="drawerBackBtn">Back to details</button>
+				<button type="button" class="btn btn-link p-0 mb-1 d-none" id="drawerBackBtn">
+					<i class="bi bi-arrow-left" aria-hidden="true"></i>
+					Back to details
+				</button>
 				<h5 class="offcanvas-title mb-0" id="dutyDrawerLabel">Guard Duty Details</h5>
 			</div>
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -1002,30 +1295,63 @@
 
 			function renderDetails(shift) {
 				const guard = shift.guard || {};
+				const statusKey = String(shift.status_key || '').toLowerCase();
+				const statusClass = statusKey === 'on_duty' ? 'status-on-duty' : 'status-completed';
+				const statusLabel = shift.status || (statusKey === 'on_duty' ? 'On Duty' : 'Completed');
+				const visitorsCount = Number(shift.visitors_count ?? 0);
+
 				els.drawerMode = 'details';
 				els.drawerLabel.textContent = 'Guard Duty Details';
 				els.drawerBack.classList.add('d-none');
 				els.drawerBody.innerHTML =
-					'<div class="detail-section">' +
-						'<h6>Guard Information</h6>' +
-						'<p class="guard-name mb-2">' + escapeHtml(guard.name || '—') + '</p>' +
-						'<dl class="detail-grid">' +
-							'<dt>Badge Number</dt><dd>' + escapeHtml(guard.badge_number || '—') + '</dd>' +
-							'<dt>Station</dt><dd>' + escapeHtml(guard.station || '—') + '</dd>' +
-						'</dl>' +
-					'</div>' +
-					'<div class="detail-section">' +
-						'<h6>Shift Information</h6>' +
-						'<dl class="detail-grid">' +
-							'<dt>Started</dt><dd>' + escapeHtml(shift.clock_in_detail_label || '—') + '</dd>' +
-							'<dt>Ended</dt><dd>' + escapeHtml(shift.clock_out_detail_label || '—') + '</dd>' +
-							'<dt>Duration</dt><dd>' + escapeHtml(shift.duration_label || '—') + '</dd>' +
-						'</dl>' +
-					'</div>' +
-					'<div class="detail-section">' +
-						'<h6>Visitors During Shift</h6>' +
-						'<p class="guard-name">' + escapeHtml(shift.visitors_count ?? 0) + '</p>' +
-						'<button type="button" class="btn btn-primary mt-2" id="viewVisitorsBtn">View Visitors</button>' +
+					'<div class="duty-detail-stack">' +
+						'<section class="duty-detail-card is-hero">' +
+							'<h6 class="duty-detail-card-title">Guard Information</h6>' +
+							'<div class="duty-detail-hero">' +
+								'<p class="duty-detail-hero-name">' + escapeHtml(guard.name || '—') + '</p>' +
+								'<span class="status-badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span>' +
+							'</div>' +
+							'<div class="duty-detail-grid">' +
+								'<div class="duty-detail-field">' +
+									'<span class="duty-detail-label">Badge Number</span>' +
+									'<div class="duty-detail-value">' + escapeHtml(guard.badge_number || '—') + '</div>' +
+								'</div>' +
+								'<div class="duty-detail-field">' +
+									'<span class="duty-detail-label">Station</span>' +
+									'<div class="duty-detail-value">' + escapeHtml(guard.station || '—') + '</div>' +
+								'</div>' +
+							'</div>' +
+						'</section>' +
+						'<section class="duty-detail-card">' +
+							'<h6 class="duty-detail-card-title">Shift Information</h6>' +
+							'<div class="duty-detail-grid">' +
+								'<div class="duty-detail-field is-full">' +
+									'<span class="duty-detail-label">Started</span>' +
+									'<div class="duty-detail-value">' + escapeHtml(shift.clock_in_detail_label || '—') + '</div>' +
+								'</div>' +
+								'<div class="duty-detail-field is-full">' +
+									'<span class="duty-detail-label">Ended</span>' +
+									'<div class="duty-detail-value">' + escapeHtml(shift.clock_out_detail_label || '—') + '</div>' +
+								'</div>' +
+								'<div class="duty-detail-field">' +
+									'<span class="duty-detail-label">Duration</span>' +
+									'<div class="duty-detail-value">' + escapeHtml(shift.duration_label || '—') + '</div>' +
+								'</div>' +
+							'</div>' +
+						'</section>' +
+						'<section class="duty-detail-card">' +
+							'<h6 class="duty-detail-card-title">Visitors During Shift</h6>' +
+							'<div class="duty-visitors-row">' +
+								'<div class="duty-visitors-count">' +
+									'<strong>' + escapeHtml(visitorsCount) + '</strong>' +
+									'<span>visitor' + (visitorsCount === 1 ? '' : 's') + ' registered</span>' +
+								'</div>' +
+								'<button type="button" class="duty-detail-action" id="viewVisitorsBtn"' + (visitorsCount === 0 ? ' disabled' : '') + '>' +
+									'<i class="bi bi-people" aria-hidden="true"></i>' +
+									'View Visitors' +
+								'</button>' +
+							'</div>' +
+						'</section>' +
 					'</div>';
 
 				const viewBtn = document.getElementById('viewVisitorsBtn');
@@ -1065,38 +1391,60 @@
 					const meta = payload.meta || {};
 					els.drawerLabel.textContent = 'Visitors During Shift';
 
-					let table = '<p class="guard-name mb-1">' + escapeHtml(guard.name || '—') + '</p>' +
-						'<p class="text-muted mb-3">' + escapeHtml(shift.visitors_range_label || '') + '</p>';
+					const totalVisitors = meta.total || rows.length || 0;
+					let html =
+						'<div class="shift-visitors-meta">' +
+							'<p class="guard-name">' + escapeHtml(guard.name || '—') + '</p>' +
+							'<p class="shift-range">' + escapeHtml(shift.visitors_range_label || '—') + '</p>' +
+							'<span class="shift-count"><i class="bi bi-people" aria-hidden="true"></i>' + escapeHtml(totalVisitors) + ' visitor' + (Number(totalVisitors) === 1 ? '' : 's') + '</span>' +
+						'</div>';
 
 					if (!rows.length) {
-						table += '<div class="empty-state"><i class="bi bi-people"></i>No visitors were registered during this shift.</div>';
+						html += '<div class="empty-state"><i class="bi bi-people"></i>No visitors were registered during this shift.</div>';
 					} else {
-						table += '<div class="table-responsive"><table class="table table-sm align-middle">' +
-							'<thead><tr><th>Control Number</th><th>Visitor Name</th><th>Visitor Type</th><th>Destination</th><th>Time In</th><th>Time Out</th><th>Status</th></tr></thead><tbody>' +
-							rows.map(function (visit) {
-								const statusClass = visit.status_key === 'inside' ? 'status-inside' : 'status-exited';
-								return '<tr>' +
-									'<td>' + escapeHtml(visit.control_number) + '</td>' +
-									'<td>' + escapeHtml(visit.visitor_name) + '</td>' +
-									'<td>' + escapeHtml(visit.visit_type) + '</td>' +
-									'<td>' + escapeHtml(visit.destination) + '</td>' +
-									'<td>' + escapeHtml(visit.entry_time_label) + '</td>' +
-									'<td>' + escapeHtml(visit.exit_time_label) + '</td>' +
-									'<td><span class="status-badge ' + statusClass + '">' + escapeHtml(visit.status) + '</span></td>' +
-								'</tr>';
-							}).join('') +
-							'</tbody></table></div>';
+						html += '<div class="shift-visitor-list">' + rows.map(function (visit) {
+							const statusClass = visit.status_key === 'inside' ? 'status-inside' : 'status-exited';
+							return '' +
+								'<article class="shift-visitor-card">' +
+									'<div class="shift-visitor-top">' +
+										'<div>' +
+											'<p class="shift-visitor-name">' + escapeHtml(visit.visitor_name || '—') + '</p>' +
+											'<p class="shift-visitor-control">' + escapeHtml(visit.control_number || '—') + '</p>' +
+										'</div>' +
+										'<span class="status-badge ' + statusClass + '">' + escapeHtml(visit.status || '—') + '</span>' +
+									'</div>' +
+									'<div class="shift-visitor-grid">' +
+										'<div class="shift-visitor-field is-full">' +
+											'<span class="shift-visitor-label">Visitor Type</span>' +
+											'<div class="shift-visitor-value">' + escapeHtml(visit.visit_type || '—') + '</div>' +
+										'</div>' +
+										'<div class="shift-visitor-field is-full">' +
+											'<span class="shift-visitor-label">Destination</span>' +
+											'<div class="shift-visitor-value">' + escapeHtml(visit.destination || '—') + '</div>' +
+										'</div>' +
+										'<div class="shift-visitor-field">' +
+											'<span class="shift-visitor-label">Time In</span>' +
+											'<div class="shift-visitor-value">' + escapeHtml(visit.entry_time_label || '—') + '</div>' +
+										'</div>' +
+										'<div class="shift-visitor-field">' +
+											'<span class="shift-visitor-label">Time Out</span>' +
+											'<div class="shift-visitor-value">' + escapeHtml(visit.exit_time_label || '—') + '</div>' +
+										'</div>' +
+									'</div>' +
+								'</article>';
+						}).join('') + '</div>';
 					}
 
 					const lastPage = meta.last_page || 1;
-					table += '<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">' +
-						'<span class="text-muted small">' + (meta.from || 0) + ' to ' + (meta.to || 0) + ' of ' + (meta.total || 0) + '</span>' +
+					html += '<div class="shift-visitors-pagination">' +
+						'<span class="range-label">' + (meta.from || 0) + ' to ' + (meta.to || 0) + ' of ' + (meta.total || 0) + '</span>' +
 						'<div class="d-flex gap-2">' +
 							'<button type="button" class="btn btn-outline-secondary btn-sm" id="visitorsPrev" ' + (state.visitorsPage <= 1 ? 'disabled' : '') + '>Previous</button>' +
 							'<button type="button" class="btn btn-outline-secondary btn-sm" id="visitorsNext" ' + (state.visitorsPage >= lastPage ? 'disabled' : '') + '>Next</button>' +
-						'</div></div>';
+						'</div>' +
+					'</div>';
 
-					els.drawerBody.innerHTML = table;
+					els.drawerBody.innerHTML = html;
 
 					const prev = document.getElementById('visitorsPrev');
 					const next = document.getElementById('visitorsNext');

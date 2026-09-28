@@ -1092,8 +1092,10 @@
 		}
 		.resolve-divider { border: 0; height: 1px; background: #e5e7eb; margin: 12px 0 14px; }
 		.resolve-notes-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #111827; }
-		.resolve-notes-input { width: 100%; min-height: 88px; resize: vertical; border: 1px solid #d7e0eb; border-radius: 8px; padding: 9px 11px; font-size: 13px; }
-		.resolve-warning { margin: 8px 0 0; font-size: 12px; color: #6b7280; }
+		.resolve-notes-input { width: 100%; min-height: 88px; resize: vertical; border: 1px solid #d7e0eb; border-radius: 8px; padding: 9px 11px; font-size: 13px; outline: none; }
+		.resolve-notes-input.is-invalid { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12); }
+		.resolve-notes-error { display: none; margin: 8px 0 0; font-size: 12.5px; font-weight: 600; color: #b91c1c; line-height: 1.35; }
+		.resolve-notes-error.is-visible { display: block; }
 		.resolve-flow-footer { padding: 14px 22px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e9edf3; }
 		.resolve-action-btn { border-radius: 999px; padding: 7px 16px; font-size: 12px; font-weight: 700; border: 0; cursor: pointer; }
 		.resolve-action-btn.cancel { background: #6b7280; color: #fff; }
@@ -1437,7 +1439,7 @@
 								<div class="submenu">
 									<a href="/guard/register?type=normal" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'normal' ? 'active' : '' }}">
 										<i class="bi bi-person"></i>
-										<span>Normal Visitor</span>
+										<span>Visitor</span>
 									</a>
 
 									<a href="/guard/register?type=enrollee" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'enrollee' ? 'active' : '' }}">
@@ -1730,8 +1732,8 @@
 				</div>
 				<hr class="resolve-divider">
 				<label for="resolveNotes" class="resolve-notes-label">Resolution Notes</label>
-				<textarea id="resolveNotes" class="resolve-notes-input" rows="4" placeholder="Enter how the alert was resolved..."></textarea>
-				<p class="resolve-warning">⚠️ Please describe how this alert was resolved.</p>
+				<textarea id="resolveNotes" class="resolve-notes-input" rows="4" placeholder="Enter how the alert was resolved..." aria-describedby="resolveNotesError"></textarea>
+				<p id="resolveNotesError" class="resolve-notes-error" role="alert" aria-live="polite"></p>
 			</div>
 			<div class="resolve-flow-footer">
 				<button id="cancelResolveBtn" class="resolve-action-btn cancel" type="button">Cancel</button>
@@ -1929,11 +1931,29 @@
 			if (modal) modal.style.display = 'none';
 		}
 
+		function setResolveNotesError(message = '') {
+			const notesEl = document.getElementById('resolveNotes');
+			const errorEl = document.getElementById('resolveNotesError');
+			if (!notesEl || !errorEl) {
+				return;
+			}
+			const text = String(message || '').trim();
+			errorEl.textContent = text;
+			errorEl.classList.toggle('is-visible', text !== '');
+			notesEl.classList.toggle('is-invalid', text !== '');
+			notesEl.setAttribute('aria-invalid', text !== '' ? 'true' : 'false');
+		}
+
+		function clearResolveNotesError() {
+			setResolveNotesError('');
+		}
+
 		function openResolveModal(alertId) {
 			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
 			if (!alert) return;
 			pendingResolveAlertId = alertId;
 			document.getElementById('resolveNotes').value = '';
+			clearResolveNotesError();
 			document.getElementById('r_alert_id').textContent = alert.alert_id || '-';
 			document.getElementById('r_visitor').textContent = alert.visitor_name || '-';
 			document.getElementById('r_alert_type').textContent = alert.alert_type || '-';
@@ -1944,18 +1964,23 @@
 			severityEl.style.backgroundColor = severityStyle.background;
 			severityEl.style.color = severityStyle.color;
 			document.getElementById('resolveModal').style.display = 'block';
+			document.getElementById('resolveNotes')?.focus();
 		}
 
 		function closeResolveModal() {
 			document.getElementById('resolveModal').style.display = 'none';
+			clearResolveNotesError();
 			pendingResolveAlertId = null;
 		}
 
 		async function resolveAlertClient(alertId, notes) {
 			if (!notes) {
-				alert('Please add Resolution Notes before resolving this alert.');
-				return;
+				setResolveNotesError('Please enter resolution notes before resolving this alert.');
+				document.getElementById('resolveNotes')?.focus();
+				return false;
 			}
+
+			clearResolveNotesError();
 
 			const response = await fetch(`/guard/alerts/${encodeURIComponent(alertId)}/resolve`, {
 				method: 'POST',
@@ -1969,8 +1994,10 @@
 
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				throw new Error(payload.message || 'Failed to resolve alert.');
+				throw new Error(payload.message || 'Unable to resolve this alert right now. Please try again.');
 			}
+
+			return true;
 		}
 
 		document.addEventListener('click', async function (e) {
@@ -1988,7 +2015,13 @@
 			}
 			if (e.target && e.target.matches('#confirmResolveBtn')) {
 				if (!pendingResolveAlertId) return;
-				const notes = (document.getElementById('resolveNotes')?.value || '').trim();
+				const notesEl = document.getElementById('resolveNotes');
+				const notes = (notesEl?.value || '').trim();
+				if (!notes) {
+					setResolveNotesError('Please enter resolution notes before resolving this alert.');
+					notesEl?.focus();
+					return;
+				}
 				e.target.disabled = true;
 				e.target.textContent = 'Resolving...';
 				try {
@@ -1997,11 +2030,18 @@
 					closeAlertModal();
 					window.location.reload();
 				} catch (error) {
-					alert(error.message || 'Unable to resolve alert at the moment.');
+					setResolveNotesError(error.message || 'Unable to resolve this alert right now. Please try again.');
+					notesEl?.focus();
 				} finally {
 					e.target.disabled = false;
 					e.target.textContent = 'Resolve';
 				}
+			}
+		});
+
+		document.getElementById('resolveNotes')?.addEventListener('input', function () {
+			if (this.classList.contains('is-invalid')) {
+				clearResolveNotesError();
 			}
 		});
 

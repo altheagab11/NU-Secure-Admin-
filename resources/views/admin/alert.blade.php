@@ -530,8 +530,9 @@
 
 		.legend-grid {
 			display: grid;
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: 10px;
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			gap: 12px 16px;
+			align-items: start;
 		}
 
 		.legend-item {
@@ -588,6 +589,11 @@
 			color: #9333ea;
 		}
 
+		.legend-incomplete {
+			background: #e0e7ff;
+			color: #243c96;
+		}
+
 		@media (max-width: 1180px) {
 			.alert-stats {
 				grid-template-columns: 1fr;
@@ -598,12 +604,16 @@
 			}
 
 			.legend-grid {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
+				grid-template-columns: repeat(3, minmax(0, 1fr));
 			}
 		}
 		@media (max-width: 1024px) {
 			.alert-filters-row {
 				grid-template-columns: 1fr;
+			}
+
+			.legend-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
 
@@ -992,10 +1002,27 @@
 					box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 				}
 
-				.resolve-warning {
+				.resolve-notes-input.is-invalid {
+					border-color: #dc2626;
+					box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+				}
+
+				.resolve-notes-input.is-invalid:focus {
+					border-color: #dc2626;
+					box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16);
+				}
+
+				.resolve-notes-error {
+					display: none;
 					margin: 8px 0 0;
-					font-size: 12px;
-					color: #6b7280;
+					font-size: 12.5px;
+					font-weight: 600;
+					color: #b91c1c;
+					line-height: 1.35;
+				}
+
+				.resolve-notes-error.is-visible {
+					display: block;
 				}
 
 				.resolve-flow-footer {
@@ -1401,6 +1428,17 @@
 						</span>
 						<span class="legend-text">Unauthorized<span class="legend-subtext">Unauthorized access</span></span>
 					</div>
+
+					<div class="legend-item">
+						<span class="legend-icon legend-incomplete" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M12 3 4 7v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V7l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+								<path d="M12 8v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+							</svg>
+						</span>
+						<span class="legend-text">Incomplete Route<span class="legend-subtext">Exit with unvisited offices</span></span>
+					</div>
 				</div>
 			</section>
 		</main>
@@ -1538,8 +1576,8 @@
 
 					<div class="resolve-notes-wrap">
 						<label for="resolveNotes" class="resolve-notes-label">Resolution Notes</label>
-						<textarea id="resolveNotes" class="resolve-notes-input" rows="4" placeholder="Enter how the alert was resolved..."></textarea>
-						<p class="resolve-warning">⚠️ Please describe how this alert was resolved.</p>
+						<textarea id="resolveNotes" class="resolve-notes-input" rows="4" placeholder="Enter how the alert was resolved..." aria-describedby="resolveNotesError"></textarea>
+						<p id="resolveNotesError" class="resolve-notes-error" role="alert" aria-live="polite"></p>
 					</div>
 				</div>
 
@@ -1925,6 +1963,24 @@
 			}
 		}
 
+		function setResolveNotesError(message = '') {
+			const notesEl = document.getElementById('resolveNotes');
+			const errorEl = document.getElementById('resolveNotesError');
+			if (!notesEl || !errorEl) {
+				return;
+			}
+
+			const text = String(message || '').trim();
+			errorEl.textContent = text;
+			errorEl.classList.toggle('is-visible', text !== '');
+			notesEl.classList.toggle('is-invalid', text !== '');
+			notesEl.setAttribute('aria-invalid', text !== '' ? 'true' : 'false');
+		}
+
+		function clearResolveNotesError() {
+			setResolveNotesError('');
+		}
+
 		function openResolveModal(alertId) {
 			const alert = ALERTS.find(a => String(a.alert_id) === String(alertId));
 			if (!alert) return;
@@ -1947,10 +2003,12 @@
 			severityEl.style.backgroundColor = severityStyle.background;
 			severityEl.style.color = severityStyle.color;
 			resolveModal.querySelector('#resolveNotes').value = '';
+			clearResolveNotesError();
 
 			pendingResolveAlertId = alert.alert_id;
 			resolveModal.classList.add('is-open');
 			resolveModal.style.display = 'flex';
+			resolveModal.querySelector('#resolveNotes')?.focus();
 		}
 
 		function closeResolveModal() {
@@ -1959,18 +2017,22 @@
 				resolveModal.classList.remove('is-open');
 				resolveModal.style.display = 'none';
 			}
+			clearResolveNotesError();
 			pendingResolveAlertId = null;
 		}
 
 		async function resolveAlertClient(alertId, notes) {
 			if (!notes) {
-				alert('Please add Resolution Notes before resolving this alert.');
-				return;
+				setResolveNotesError('Please enter resolution notes before resolving this alert.');
+				document.getElementById('resolveNotes')?.focus();
+				return false;
 			}
+
+			clearResolveNotesError();
 
 			// update ALERTS array
 			const idx = ALERTS.findIndex(a => String(a.alert_id) === String(alertId));
-			if (idx === -1) return;
+			if (idx === -1) return false;
 			const previousStatus = String(ALERTS[idx].status || '').toLowerCase();
 
 			try {
@@ -1986,7 +2048,7 @@
 
 				const payload = await response.json().catch(() => ({}));
 				if (!response.ok) {
-					throw new Error(payload.message || 'Failed to resolve alert.');
+					throw new Error(payload.message || 'Unable to resolve this alert right now. Please try again.');
 				}
 
 				const updated = payload.alert || {};
@@ -2002,8 +2064,9 @@
 					ALERTS[idx].resolved_by = updated.resolved_by;
 				}
 			} catch (error) {
-				alert(error.message || 'Unable to resolve alert at the moment.');
-				return;
+				setResolveNotesError(error.message || 'Unable to resolve this alert right now. Please try again.');
+				document.getElementById('resolveNotes')?.focus();
+				return false;
 			}
 
 			// update DOM row
@@ -2042,6 +2105,7 @@
 
 			closeResolveModal();
 			closeAlertModal();
+			return true;
 		}
 
 		// Attach click handlers to dynamic buttons
@@ -2067,12 +2131,23 @@
 				if (!pendingResolveAlertId) return;
 				const notesEl = document.getElementById('resolveNotes');
 				const notes = notesEl ? notesEl.value.trim() : '';
+				if (!notes) {
+					setResolveNotesError('Please enter resolution notes before resolving this alert.');
+					notesEl?.focus();
+					return;
+				}
 				const confirmBtn = e.target;
 				confirmBtn.disabled = true;
 				confirmBtn.textContent = 'Resolving...';
 				await resolveAlertClient(pendingResolveAlertId, notes);
 				confirmBtn.disabled = false;
 				confirmBtn.textContent = 'Resolve';
+			}
+		});
+
+		document.getElementById('resolveNotes')?.addEventListener('input', function () {
+			if (this.classList.contains('is-invalid')) {
+				clearResolveNotesError();
 			}
 		});
 	</script>

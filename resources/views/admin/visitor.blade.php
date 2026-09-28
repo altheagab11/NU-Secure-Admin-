@@ -864,7 +864,7 @@
 		.bottom-grid {
 			display: grid;
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 12px;
+			gap: 16px;
 			margin-top: 22px;
 			align-items: stretch;
 		}
@@ -872,10 +872,10 @@
 		.right-stack {
 			display: grid;
 			grid-template-columns: 1fr;
-			grid-template-rows: 1fr 1fr;
-			gap: 12px;
+			grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.85fr);
+			gap: 16px;
 			height: 100%;
-			min-height: 360px;
+			min-height: 420px;
 		}
 
 		.panel-card {
@@ -887,130 +887,222 @@
 			display: flex;
 			flex-direction: column;
 			height: 100%;
+			min-height: 0;
 		}
 
 		.recent-panel {
-			min-height: 360px;
+			min-height: 420px;
+		}
+
+		.panel-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 14px 18px;
+			border-bottom: 1px solid #e8ecf1;
+			background: linear-gradient(180deg, #fbfcff 0%, #ffffff 100%);
 		}
 
 		.panel-title {
 			margin: 0;
-			padding: 14px 16px;
-			font-size: 20px;
-			font-weight: 600;
-			color: #1f2937;
-			border-bottom: 1px solid #d5d8de;
+			padding: 0;
+			font-size: 15px;
+			font-weight: 700;
+			letter-spacing: 0.01em;
+			color: #1e293b;
+			border-bottom: 0;
+		}
+
+		.panel-count {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 28px;
+			height: 24px;
+			padding: 0 8px;
+			border-radius: 999px;
+			background: #eef2ff;
+			color: #273b9e;
+			font-size: 12px;
+			font-weight: 700;
+			line-height: 1;
 		}
 
 		.recent-list,
-		.office-list {
+		.office-list,
+		.correct-list {
 			list-style: none;
 			margin: 0;
 			padding: 0;
-		}
-
-		.recent-panel .recent-list {
 			flex: 1;
-			display: flex;
-			flex-direction: column;
+			min-height: 0;
+			overflow-y: auto;
 		}
 
 		.recent-item {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			gap: 10px;
-			padding: 14px 16px;
-			border-bottom: 1px solid #d5d8de;
+			gap: 12px;
+			padding: 12px 18px;
+			border-bottom: 1px solid #f1f5f9;
 			flex: 0 0 auto;
-			min-height: 74px;
 		}
 
 		.recent-item:last-child {
 			border-bottom: 0;
 		}
 
+		.recent-item:hover {
+			background: #f8fafc;
+		}
+
 		.recent-left {
 			display: flex;
 			align-items: center;
-			gap: 10px;
+			gap: 12px;
+			min-width: 0;
+		}
+
+		.recent-avatar {
+			width: 36px;
+			height: 36px;
+			border-radius: 10px;
+			background: #eef2ff;
+			color: #273b9e;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		.recent-avatar svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.recent-copy {
+			min-width: 0;
+		}
+
+		.recent-name {
+			font-size: 13px;
+			font-weight: 600;
+			color: #0f172a;
+			line-height: 1.25;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.recent-meta {
 			font-size: 12px;
-			color: #4b5563;
-			margin-top: 2px;
+			color: #64748b;
+			margin-top: 3px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.recent-item .status-pill {
+			flex-shrink: 0;
+			padding: 5px 10px;
+			border-radius: 999px;
+			font-size: 11px;
+			font-weight: 600;
+		}
+
+		.office-list {
+			padding: 6px 0 10px;
 		}
 
 		.office-item {
-			padding: 12px 16px;
-			border-bottom: 1px solid #d5d8de;
+			padding: 10px 18px;
 		}
 
 		.office-item:last-child {
-			border-bottom: 0;
+			padding-bottom: 14px;
 		}
 
 		.office-row {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			font-size: 12px;
+			gap: 10px;
+			font-size: 13px;
 			color: #334155;
-			margin-bottom: 6px;
+			margin-bottom: 8px;
 		}
 
 		.office-label {
 			display: inline-flex;
 			align-items: center;
-			gap: 6px;
+			gap: 8px;
+			min-width: 0;
+			font-weight: 600;
+			color: #1e293b;
+		}
+
+		.office-label span {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.office-label svg {
-			width: 12px;
-			height: 12px;
-			color: #5b66a7;
+			width: 14px;
+			height: 14px;
+			color: #273b9e;
+			flex-shrink: 0;
+		}
+
+		.office-count {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 26px;
+			height: 22px;
+			padding: 0 7px;
+			border-radius: 999px;
+			background: #f1f5f9;
+			color: #0f172a;
+			font-size: 12px;
+			font-weight: 700;
+			flex-shrink: 0;
 		}
 
 		.bar-track {
-			height: 4px;
-			background: #e5e7eb;
+			height: 6px;
+			background: #eef2ff;
 			border-radius: 999px;
 			overflow: hidden;
 		}
 
 		.bar-fill {
 			height: 100%;
-			background: #111827;
+			width: 0;
+			background: linear-gradient(90deg, #273b9e 0%, #4b5cd1 100%);
 			border-radius: 999px;
-		}
-
-		.bar-fill.w-33 {
-			width: 33%;
+			transition: width 0.45s ease;
 		}
 
 		.vd-alerts-list.js-hidden {
 			display: none;
 		}
 
-		.correct-list {
-			list-style: none;
-			margin: 0;
-			padding: 0;
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-		}
-
 		.correct-item {
-			padding: 12px 16px;
-			border-bottom: 1px solid #d5d8de;
+			padding: 12px 18px;
+			border-bottom: 1px solid #f1f5f9;
 			flex: 0 0 auto;
-			min-height: 70px;
 		}
 
 		.correct-item:last-child {
 			border-bottom: 0;
+		}
+
+		.correct-item:hover {
+			background: #f8fafc;
 		}
 
 		.correct-head {
@@ -1019,26 +1111,67 @@
 			justify-content: space-between;
 			gap: 8px;
 			font-size: 13px;
-			color: #111827;
+			color: #0f172a;
 			font-weight: 600;
 		}
 
 		.correct-meta {
-			margin-top: 4px;
+			margin: 4px 0 0;
 			font-size: 12px;
-			color: #4b5563;
+			color: #64748b;
 		}
 
 		.correct-pill {
 			display: inline-flex;
 			align-items: center;
-			padding: 5px 8px;
+			padding: 4px 9px;
 			border-radius: 999px;
 			background: #dcfce7;
 			color: #15803d;
 			font-size: 10px;
 			font-weight: 700;
 			letter-spacing: 0.02em;
+			flex-shrink: 0;
+		}
+
+		.panel-empty {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			padding: 28px 18px;
+			text-align: center;
+			color: #64748b;
+			min-height: 140px;
+		}
+
+		.panel-empty i {
+			font-size: 22px;
+			color: #94a3b8;
+		}
+
+		.panel-empty p {
+			margin: 0;
+			font-size: 13px;
+			line-height: 1.4;
+		}
+
+		.panel-card > .table-pagination-bar {
+			margin: 0;
+			border: 0;
+			border-top: 1px solid #e8ecf1;
+			border-radius: 0;
+			background: #f8fafc;
+			padding: 8px 14px;
+		}
+
+		.panel-card .table-page-size {
+			border-color: #c7d2fe;
+		}
+
+		.panel-card .table-page-size:focus {
+			outline: 2px solid rgba(39, 59, 158, 0.22);
 		}
 
 		@media (max-width: 1180px) {
@@ -1316,6 +1449,9 @@
 										data-duration="{{ $row['duration_label'] ?? '—' }}"
 										data-exit-status="{{ $row['exit_status'] ?? '—' }}"
 										data-registered-by="{{ $row['registered_by_guard'] ?? '—' }}"
+										data-incomplete-route="{{ $row['incomplete_route_reviewed_label'] ?? 'No' }}"
+										data-incomplete-route-note="{{ $row['incomplete_route_note'] ?? '—' }}"
+										data-incomplete-route-reviewed-by="{{ $row['incomplete_route_reviewed_by'] ?? '—' }}"
 										data-status="{{ $row['status'] ?? 'Pending' }}"
 										data-alert="{{ $row['alert'] ?? 'None' }}"
 										data-alert-id="{{ $row['alert_id'] ?? '' }}"
@@ -1361,26 +1497,30 @@
 
 			<div class="bottom-grid">
 				<section class="panel-card recent-panel">
-					<h2 class="panel-title">Today's Recent Visitors</h2>
+					<div class="panel-header">
+						<h2 class="panel-title">Today's Recent Visitors</h2>
+						<span class="panel-count">{{ number_format((int) ($recentVisitors?->total() ?? 0)) }}</span>
+					</div>
 					<ul class="recent-list">
 						@forelse(($recentVisitors ?? []) as $recent)
 							<li class="recent-item">
 								<div class="recent-left">
-									<svg class="avatar-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
-									</svg>
-									<div>
-										<div>{{ $recent['visitor_name'] }}</div>
+									<span class="recent-avatar" aria-hidden="true">
+										<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.866 0-7 2.015-7 4.5V20h14v-1.5c0-2.485-3.134-4.5-7-4.5Z"/>
+										</svg>
+									</span>
+									<div class="recent-copy">
+										<div class="recent-name" title="{{ $recent['visitor_name'] }}">{{ $recent['visitor_name'] }}</div>
 										<div class="recent-meta">{{ $recent['destination'] }} • {{ $recent['time_label'] }}</div>
 									</div>
 								</div>
 								<span class="status-pill {{ $recent['status_class'] }}">{{ $recent['status'] }}</span>
 							</li>
 						@empty
-							<li class="recent-item">
-								<div class="recent-left">
-									<div class="recent-meta">No visitors yet today.</div>
-								</div>
+							<li class="panel-empty">
+								<i class="bi bi-people" aria-hidden="true"></i>
+								<p>No visitors yet today.</p>
 							</li>
 						@endforelse
 					</ul>
@@ -1393,20 +1533,23 @@
 
 				<div class="right-stack">
 					<section class="panel-card stack-panel">
-						<h2 class="panel-title">Active by Office</h2>
+						<div class="panel-header">
+							<h2 class="panel-title">Active by Office</h2>
+							<span class="panel-count">{{ number_format((int) (($activeByOffice ?? collect())->sum('count'))) }}</span>
+						</div>
 						<ul class="office-list">
 							@forelse(($activeByOffice ?? []) as $officeActivity)
 								<li class="office-item">
 									<div class="office-row">
 										<span class="office-label">
-											<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 												<path d="M7 21h10M9 21V8h6v13M8 8h8M8 4h8v4H8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
 											</svg>
-											{{ $officeActivity['office_name'] }}
+											<span title="{{ $officeActivity['office_name'] }}">{{ $officeActivity['office_name'] }}</span>
 										</span>
-										<span>{{ $officeActivity['count'] }}</span>
+										<span class="office-count">{{ $officeActivity['count'] }}</span>
 									</div>
-									<div class="bar-track">
+									<div class="bar-track" aria-hidden="true">
 										@php
 											$barWidth = (int) round((($officeActivity['count'] ?? 0) / max(1, ($maxOfficeCount ?? 1))) * 100);
 										@endphp
@@ -1414,17 +1557,19 @@
 									</div>
 								</li>
 							@empty
-								<li class="office-item">
-									<div class="office-row">
-										<span class="office-label">No active office data</span>
-									</div>
+								<li class="panel-empty">
+									<i class="bi bi-building" aria-hidden="true"></i>
+									<p>No active office data right now.</p>
 								</li>
 							@endforelse
 						</ul>
 					</section>
 
 					<section class="panel-card stack-panel">
-						<h2 class="panel-title">Today's Correct Office Scans</h2>
+						<div class="panel-header">
+							<h2 class="panel-title">Today's Correct Office Scans</h2>
+							<span class="panel-count">{{ number_format((int) ($correctOfficeScans?->total() ?? 0)) }}</span>
+						</div>
 						<ul class="correct-list" aria-label="Correct office scan results">
 							@forelse(($correctOfficeScans ?? []) as $scan)
 								<li class="correct-item">
@@ -1435,8 +1580,9 @@
 									<p class="correct-meta">{{ $scan['destination'] }} • {{ $scan['control_number'] }} • {{ $scan['time_label'] }}</p>
 								</li>
 							@empty
-								<li class="correct-item">
-									<p class="correct-meta">No correct office scans yet today.</p>
+								<li class="panel-empty">
+									<i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+									<p>No correct office scans yet today.</p>
 								</li>
 							@endforelse
 						</ul>
@@ -1508,6 +1654,9 @@
 										<tr><th>Duration</th><td id="vdDuration">—</td></tr>
 										<tr><th>Exit Status</th><td id="vdExitStatus">Still Inside</td></tr>
 										<tr><th>Registered By Guard</th><td id="vdRegisteredByGuard">—</td></tr>
+										<tr><th>Incomplete Route</th><td id="vdIncompleteRoute">No</td></tr>
+										<tr><th>Guard Note</th><td id="vdIncompleteRouteNote">—</td></tr>
+										<tr><th>Reviewed By</th><td id="vdIncompleteRouteReviewedBy">—</td></tr>
 									</tbody>
 								</table>
 							</div>
@@ -1558,7 +1707,9 @@
 		@include('admin.partials.table-pagination-script')
 
 		document.querySelectorAll('.bar-fill[data-width]').forEach(function (el) {
-			el.style.width = el.getAttribute('data-width') || '';
+			requestAnimationFrame(function () {
+				el.style.width = el.getAttribute('data-width') || '';
+			});
 		});
 
 		const userMenuGroup = document.getElementById('userMenuGroup');
@@ -1886,6 +2037,9 @@
 			setTextById('vdDuration', trigger.dataset.duration);
 			setTextById('vdExitStatus', trigger.dataset.exitStatus, status);
 			setTextById('vdRegisteredByGuard', trigger.dataset.registeredBy, '—');
+			setTextById('vdIncompleteRoute', trigger.dataset.incompleteRoute, 'No');
+			setTextById('vdIncompleteRouteNote', trigger.dataset.incompleteRouteNote, '—');
+			setTextById('vdIncompleteRouteReviewedBy', trigger.dataset.incompleteRouteReviewedBy, '—');
 
 			renderOfficeRouteRows(trigger, status);
 			renderAlertsList(trigger);

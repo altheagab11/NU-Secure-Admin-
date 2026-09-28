@@ -7497,7 +7497,7 @@
 		: ($isSelfRegisteredRole ? null : 'normal');
 	$showKioskTypePicker = $isSelfRegisteredRole && $registerType === null;
 	$registerTypeLabels = [
-		'normal' => 'Normal Visitor',
+		'normal' => 'Visitor',
 		'enrollee' => 'Enrollee',
 		'contractor' => 'Contractor',
 	];
@@ -7572,7 +7572,7 @@
 								<div class="submenu">
 									<a href="/guard/register?type=normal" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'normal' ? 'active' : '' }}">
 										<i class="bi bi-person"></i>
-										<span>Normal Visitor</span>
+										<span>Visitor</span>
 									</a>
 
 									<a href="/guard/register?type=enrollee" class="submenu-link js-privacy-consent-link {{ request()->is('guard/register*') && request('type') === 'enrollee' ? 'active' : '' }}">
@@ -7947,7 +7947,7 @@
 						<div class="kiosk-type-grid {{ $hasActiveGuard ? '' : 'is-locked' }}" id="kioskTypeGrid">
 							<a href="{{ $hasActiveGuard ? '/guard/register?type=normal' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="normal" data-href="/guard/register?type=normal" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
 								<span class="kiosk-type-icon"><i class="bi bi-person-fill"></i></span>
-								<span class="kiosk-type-name">Normal Visitor</span>
+								<span class="kiosk-type-name">Visitor</span>
 								<span class="kiosk-type-desc">Guests visiting offices, staff, or departments on campus.</span>
 							</a>
 							<a href="{{ $hasActiveGuard ? '/guard/register?type=enrollee' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="enrollee" data-href="/guard/register?type=enrollee" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
@@ -8811,7 +8811,7 @@
 												@elseif ($registerType === 'contractor')
 													Contractor
 												@else
-													Normal Visitor
+													Visitor
 												@endif
 											</span>
 										</div>

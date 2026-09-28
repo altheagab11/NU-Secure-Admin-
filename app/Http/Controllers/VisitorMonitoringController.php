@@ -8,6 +8,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class VisitorMonitoringController extends Controller
@@ -309,6 +310,7 @@ class VisitorMonitoringController extends Controller
                     $row['purpose'] ?? '',
                     $row['destination'] ?? '',
                     $row['alert'] ?? '',
+                    $row['incomplete_route_note'] ?? '',
                 ]));
                 $matchesSearch = Str::contains($haystack, Str::lower($search));
             }
@@ -332,11 +334,13 @@ class VisitorMonitoringController extends Controller
     private function fetchVisitorMonitoringRows(string $supabaseUrl, string $supabaseKey): Collection
     {
         $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,destination_text,'.
+            'incomplete_route_reviewed,incomplete_route_note,incomplete_route_reviewed_by,'.
             'visitor:visitor!visit_visitor_id_fkey(visitor_id,first_name,last_name,contact_no,visitor_photo_with_id_url,address_id),'.
             'visit_type:visit_type!visit_visit_type_id_fkey(visit_type_name),'.
             'office:office!visit_primary_office_id_fkey(office_name),'.
             'exit_status:exit_status!visit_exit_status_id_fkey(exit_status_name),'.
             'registered_guard:users!visit_guard_user_id_fkey(first_name,last_name),'.
+            'incomplete_route_reviewer:users!visit_incomplete_route_reviewed_by_fkey(first_name,last_name),'.
             'office_expectations:office_expectation!office_expectation_visit_id_fkey(expectation_id,expected_order,arrived_at,office:office!office_expectation_office_id_fkey(office_name),expectation_status(status_name)),'.
             'alerts(alert_id,alert_type,severity,message,status,created_at,resolved_at,resolved_by,resolution_notes,resolved_user:users!fk_alerts_resolved_by(first_name,last_name))';
 
@@ -408,6 +412,11 @@ class VisitorMonitoringController extends Controller
             $office = $visit['office'] ?? [];
             $exitStatusRel = $this->extractRelation($visit, 'exit_status');
             $guardRel = $this->extractRelation($visit, 'registered_guard');
+            $reviewerRel = $this->extractRelation($visit, 'incomplete_route_reviewer');
+            $incompleteRoute = $this->mapIncompleteRouteFields(
+                $visit,
+                trim(((string) ($reviewerRel['first_name'] ?? '')).' '.((string) ($reviewerRel['last_name'] ?? '')))
+            );
 
             $firstName = trim((string) ($visitor['first_name'] ?? ''));
             $lastName = trim((string) ($visitor['last_name'] ?? ''));
@@ -508,6 +517,10 @@ class VisitorMonitoringController extends Controller
                 'status' => $status,
                 'exit_status' => $exitStatusName !== '' ? $exitStatusName : $status,
                 'registered_by_guard' => $registeredBy !== '' ? $registeredBy : '—',
+                'incomplete_route_reviewed' => $incompleteRoute['reviewed'],
+                'incomplete_route_reviewed_label' => $incompleteRoute['reviewed_label'],
+                'incomplete_route_note' => $incompleteRoute['note'],
+                'incomplete_route_reviewed_by' => $incompleteRoute['reviewed_by'],
                 'office_route' => $officeRoute->toArray(),
                 'status_class' => $this->statusClass($status),
                 'alert' => $latestAlertType !== '' ? $latestAlertType : 'None',
@@ -1284,6 +1297,19 @@ class VisitorMonitoringController extends Controller
         };
     }
 
+    private function mapIncompleteRouteFields(array $visit, string $reviewerName = ''): array
+    {
+        $reviewed = filter_var($visit['incomplete_route_reviewed'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $note = trim((string) ($visit['incomplete_route_note'] ?? ''));
+
+        return [
+            'reviewed' => $reviewed,
+            'reviewed_label' => $reviewed ? 'Yes' : 'No',
+            'note' => $reviewed && $note !== '' ? $note : '—',
+            'reviewed_by' => $reviewed && $reviewerName !== '' ? $reviewerName : '—',
+        ];
+    }
+
     private function formatDurationLabel(int $minutes): string
     {
         if ($minutes < 60) {
@@ -1315,40 +1341,59 @@ class VisitorMonitoringController extends Controller
     private function fetchVisitorMonitoringRowsFromDatabase(): Collection
     {
         try {
-            $visits = DB::table('visit as v')
+            $hasIncompleteRouteColumns = Schema::hasColumn('visit', 'incomplete_route_reviewed');
+            $query = DB::table('visit as v')
                 ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
                 ->leftJoin('address as a', 'a.address_id', '=', 'vr.address_id')
                 ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
                 ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
                 ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
-                ->leftJoin('users as gu', 'gu.user_id', '=', 'v.guard_user_id')
-                ->select([
-                    'v.visit_id',
-                    'v.purpose_reason',
-                    'v.entry_time',
-                    'v.exit_time',
-                    'v.duration_minutes',
-                    'v.exit_status_id',
-                    'v.destination_text',
-                    'vr.visitor_id',
-                    'vr.first_name as visitor_first_name',
-                    'vr.last_name as visitor_last_name',
-                    'v.pass_number',
-                    'v.control_number',
-                    'vr.contact_no',
-                    'vr.visitor_photo_with_id_url',
-                    'a.house_no as address_house_no',
-                    'a.street as address_street',
-                    'a.barangay as address_barangay',
-                    'a.city_municipality as address_city_municipality',
-                    'a.province as address_province',
-                    'a.region as address_region',
-                    'vt.visit_type_name',
-                    'o.office_name',
-                    'es.exit_status_name',
-                    'gu.first_name as guard_first_name',
-                    'gu.last_name as guard_last_name',
-                ])
+                ->leftJoin('users as gu', 'gu.user_id', '=', 'v.guard_user_id');
+
+            if ($hasIncompleteRouteColumns && Schema::hasColumn('visit', 'incomplete_route_reviewed_by')) {
+                $query->leftJoin('users as iru', 'iru.user_id', '=', 'v.incomplete_route_reviewed_by');
+            }
+
+            $select = [
+                'v.visit_id',
+                'v.purpose_reason',
+                'v.entry_time',
+                'v.exit_time',
+                'v.duration_minutes',
+                'v.exit_status_id',
+                'v.destination_text',
+                'vr.visitor_id',
+                'vr.first_name as visitor_first_name',
+                'vr.last_name as visitor_last_name',
+                'v.pass_number',
+                'v.control_number',
+                'vr.contact_no',
+                'vr.visitor_photo_with_id_url',
+                'a.house_no as address_house_no',
+                'a.street as address_street',
+                'a.barangay as address_barangay',
+                'a.city_municipality as address_city_municipality',
+                'a.province as address_province',
+                'a.region as address_region',
+                'vt.visit_type_name',
+                'o.office_name',
+                'es.exit_status_name',
+                'gu.first_name as guard_first_name',
+                'gu.last_name as guard_last_name',
+            ];
+
+            if ($hasIncompleteRouteColumns) {
+                $select[] = 'v.incomplete_route_reviewed';
+                $select[] = 'v.incomplete_route_note';
+            }
+
+            if ($hasIncompleteRouteColumns && Schema::hasColumn('visit', 'incomplete_route_reviewed_by')) {
+                $select[] = 'iru.first_name as incomplete_route_reviewer_first_name';
+                $select[] = 'iru.last_name as incomplete_route_reviewer_last_name';
+            }
+
+            $visits = $query
+                ->select($select)
                 ->orderByDesc('v.visit_id')
                 ->orderByDesc('v.entry_time')
                 ->limit(200)
@@ -1499,6 +1544,10 @@ class VisitorMonitoringController extends Controller
                 $photoUrl = (string) ($photoPathMap->get($rawPhotoPath) ?? '');
                 $registeredBy = trim(((string) ($visit['guard_first_name'] ?? '')).' '.((string) ($visit['guard_last_name'] ?? '')));
                 $exitStatusName = trim((string) ($visit['exit_status_name'] ?? ''));
+                $incompleteRoute = $this->mapIncompleteRouteFields(
+                    $visit,
+                    trim(((string) ($visit['incomplete_route_reviewer_first_name'] ?? '')).' '.((string) ($visit['incomplete_route_reviewer_last_name'] ?? '')))
+                );
 
                 $scansList = collect($scansByVisit->get($visitId, []))
                     ->map(function ($scanRow) {
@@ -1556,6 +1605,10 @@ class VisitorMonitoringController extends Controller
                     'status' => $status,
                     'exit_status' => $exitStatusName !== '' ? $exitStatusName : $status,
                     'registered_by_guard' => $registeredBy !== '' ? $registeredBy : '—',
+                    'incomplete_route_reviewed' => $incompleteRoute['reviewed'],
+                    'incomplete_route_reviewed_label' => $incompleteRoute['reviewed_label'],
+                    'incomplete_route_note' => $incompleteRoute['note'],
+                    'incomplete_route_reviewed_by' => $incompleteRoute['reviewed_by'],
                     'office_route' => $officeRoute->toArray(),
                     'status_class' => $this->statusClass($status),
                     'alert' => $latestAlertType !== '' ? $latestAlertType : 'None',
