@@ -118,9 +118,20 @@ body.admin-sidebar-open .admin-nav-backdrop {
 }
 
 .brand-icon {
-	width: clamp(36px, 4.6vh, 44px) !important;
-	height: clamp(36px, 4.6vh, 44px) !important;
-	font-size: clamp(18px, 2.4vh, 22px) !important;
+	width: clamp(40px, 5vh, 52px) !important;
+	height: clamp(40px, 5vh, 52px) !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	border: 0 !important;
+	padding: 0 !important;
+	font-size: 0 !important;
+}
+
+.brand-icon img {
+	width: 100% !important;
+	height: 100% !important;
+	object-fit: contain !important;
 }
 
 .brand-title span:first-child {

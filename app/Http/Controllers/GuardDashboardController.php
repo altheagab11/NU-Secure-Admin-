@@ -97,6 +97,7 @@ class GuardDashboardController extends Controller
                 'v.duration_minutes',
                 'vr.first_name',
                 'vr.last_name',
+                'vr.visitor_photo_with_id_url',
                 'v.pass_number',
                 'v.control_number',
                 'o.office_name',
@@ -199,6 +200,7 @@ class GuardDashboardController extends Controller
             return [
                 'visit_id' => (int) ($row->visit_id ?? 0),
                 'initials' => $initials,
+                'photo_url' => $this->resolveVisitorPhotoUrl((string) ($row->visitor_photo_with_id_url ?? '')),
                 'visitor_name' => $visitorName,
                 'pass_number' => $passNumber,
                 'office_name' => trim((string) ($row->office_name ?? '')) ?: 'No destination',

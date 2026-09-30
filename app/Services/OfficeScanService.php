@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Services\ActivityLogService;
+use App\Services\OfficeIncomingVisitorNotifier;
 
 class OfficeScanService
 {
@@ -381,6 +382,11 @@ class OfficeScanService
                         'scan_method' => $scanMethod,
                         'validation' => 'Valid',
                     ]
+                );
+
+                app(OfficeIncomingVisitorNotifier::class)->notifyNextOfficeAfterCheckIn(
+                    (int) $advanceProgress['visit_id'],
+                    (int) $advanceProgress['office_id']
                 );
             }
 

@@ -751,6 +751,11 @@ class GuardVisitorController extends Controller
                 ]
             );
 
+            if (! empty($result['visit_id']) && (int) ($result['saved_office_count'] ?? 0) > 0) {
+                app(\App\Services\OfficeIncomingVisitorNotifier::class)
+                    ->notifyExpectedOffices((int) $result['visit_id'], 'registered');
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => ! empty($result['resumed_enrollment'])

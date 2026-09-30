@@ -66,6 +66,10 @@
 <style nonce="{{ $cspNonce }}">
 	@include('admin.partials.table-pagination-styles')
 
+	.office-card .table-pagination-bar {
+		margin-top: 12px;
+	}
+
 	.expected-filters__fields {
 		display: flex;
 		flex-wrap: wrap;
@@ -83,6 +87,49 @@
 	.expected-filters .btn {
 		flex: 0 0 auto;
 		white-space: nowrap;
+	}
+
+	.expected-visitor-cell {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+	}
+	.expected-avatar {
+		width: 34px;
+		height: 34px;
+		border-radius: 10px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #eef2ff;
+		color: #273b9e;
+		font-size: 11px;
+		font-weight: 800;
+		flex-shrink: 0;
+	}
+	.expected-visitor-name {
+		font-weight: 700;
+		color: #0f172a;
+		line-height: 1.25;
+	}
+	.expected-control {
+		display: inline-block;
+		padding: 3px 8px;
+		border-radius: 6px;
+		background: #f8fafc;
+		border: 1px solid #e2e8f0;
+		color: #334155;
+		font-size: 12px;
+		font-weight: 600;
+	}
+	.expected-purpose {
+		color: #64748b;
+		font-size: 13px;
+	}
+	.expected-table th:first-child,
+	.expected-table td:first-child {
+		min-width: 180px;
 	}
 </style>
 @endpush

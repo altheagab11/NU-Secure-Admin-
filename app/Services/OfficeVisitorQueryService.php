@@ -462,7 +462,16 @@ class OfficeVisitorQueryService
                 ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
                 ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
                 ->whereIn('v.visit_id', $activeVisitIds)
-                ->select('v.visit_id', 'v.control_number', 'v.purpose_reason', 'v.entry_time', 'vr.first_name', 'vr.last_name', 'vt.visit_type_name')
+                ->select(
+                    'v.visit_id',
+                    'v.control_number',
+                    'v.purpose_reason',
+                    'v.entry_time',
+                    'vr.first_name',
+                    'vr.last_name',
+                    'vr.visitor_photo_with_id_url',
+                    'vt.visit_type_name'
+                )
                 ->get()
                 ->keyBy('visit_id');
 
@@ -487,18 +496,35 @@ class OfficeVisitorQueryService
                 }
 
                 $sequential = $this->scanService->isSequentialRoute($visit);
-                $current = null;
                 $lastDone = null;
                 foreach ($steps as $step) {
                     if ($this->scanService->isExpectationDone($step)) {
                         $lastDone = $step;
-                    } elseif ($current === null) {
-                        $current = $step;
                     }
                 }
 
+                $current = null;
                 if ($sequential) {
-                    if (! $current || (int) $current->office_id !== $officeId) {
+                    $current = $this->scanService->resolveCurrentExpectation($steps);
+                    $matchesCurrent = $current && (int) $current->office_id === $officeId;
+
+                    if (! $matchesCurrent) {
+                        $optionalAtOffice = $steps->first(function ($step) use ($officeId) {
+                            return (int) $step->office_id === $officeId
+                                && ! $this->scanService->isExpectationDone($step)
+                                && $this->scanService->isOptionalRouteOffice($step);
+                        });
+
+                        if (
+                            $optionalAtOffice
+                            && ! $this->scanService->findBlockingPreviousExpectation($steps, (int) $optionalAtOffice->expected_order)
+                        ) {
+                            $current = $optionalAtOffice;
+                            $matchesCurrent = true;
+                        }
+                    }
+
+                    if (! $matchesCurrent) {
                         continue;
                     }
                 } else {
@@ -523,6 +549,9 @@ class OfficeVisitorQueryService
                     'route_progress' => $this->routeProgressLabel($steps),
                     'status' => 'Ready for Office Check-in',
                     'current_office' => $current->office_name,
+                    'photo_url' => $this->scanService->resolveVisitorPhotoUrl(
+                        $visit->visitor_photo_with_id_url ?? null
+                    ),
                 ];
             }
         }

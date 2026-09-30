@@ -38,6 +38,13 @@ class OfficeDashboardController extends Controller
             'expected_per_page'
         );
         $live = $this->queries->liveMonitoring($officeId);
+        $liveWaiting = $this->paginateCollection(
+            collect($live['waiting'] ?? []),
+            $request,
+            'ready_page',
+            'ready_per_page',
+            5
+        );
         $notifications = $this->queries->unreadNotifications((int) $office->user_id, 10);
 
         $staffName = trim(trim((string) ($office->first_name ?? '')).' '.trim((string) ($office->last_name ?? '')));
@@ -55,6 +62,7 @@ class OfficeDashboardController extends Controller
             'recentActivity' => $recentActivity,
             'expectedPreview' => $expectedPreview,
             'live' => $live,
+            'liveWaiting' => $liveWaiting,
             'notifications' => $notifications,
             'officeStatus' => ! empty($office->office_is_active) ? 'Open' : 'Inactive',
         ]);
@@ -77,11 +85,23 @@ class OfficeDashboardController extends Controller
             'expected_page',
             'expected_per_page'
         );
+        $live = $this->queries->liveMonitoring($officeId);
+        $liveWaiting = $this->paginateCollection(
+            collect($live['waiting'] ?? []),
+            $request,
+            'ready_page',
+            'ready_per_page',
+            5
+        );
 
         return response()->json([
             'success' => true,
             'stats' => $this->queries->dashboardStats($officeId),
-            'live' => $this->queries->liveMonitoring($officeId),
+            'live' => [
+                'waiting' => $liveWaiting->getCollection()->values()->all(),
+                'latest_scan' => $live['latest_scan'] ?? null,
+                'meta' => $this->paginatorMeta($liveWaiting),
+            ],
             'recent_activity' => [
                 'data' => $this->formatRecentActivityForLive($recentActivity->getCollection()),
                 'meta' => $this->paginatorMeta($recentActivity),
@@ -171,10 +191,11 @@ class OfficeDashboardController extends Controller
                 'visit_id' => (int) ($row->visit_id ?? 0),
                 'control_number' => (string) (($row->control_number ?? '') !== '' ? $row->control_number : '—'),
                 'visitor_name' => (string) ($row->visitor_name ?? 'Visitor'),
-                'purpose' => Str::limit((string) (($row->purpose_reason ?? '') !== '' ? $row->purpose_reason : '—'), 40),
+                'purpose' => Str::limit((string) (($row->purpose_reason ?? '') !== '' ? $row->purpose_reason : '—'), 32),
                 'previous_office' => (string) ($row->previous_office ?? '—'),
                 'expected_label' => $arrival,
                 'route_status' => (string) ($row->route_status ?? 'Expected'),
+                'route_status_key' => $statusKey,
                 'badge' => (string) ($row->badge ?? 'info'),
                 'view_url' => route('office.visitors.show', (int) ($row->visit_id ?? 0)),
                 'scan_url' => $statusKey === 'ready'

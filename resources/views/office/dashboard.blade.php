@@ -39,22 +39,52 @@
 		</div>
 	</div>
 	<div class="col-lg-7">
-		<div class="office-card h-100">
-			<div class="d-flex justify-content-between align-items-center mb-2">
+		<div class="office-card h-100 ready-scan-card">
+			<div class="d-flex justify-content-between align-items-start mb-3 gap-2">
 				<div>
 					<h2 class="mb-0">Ready to Scan</h2>
 					<p class="card-muted mb-0">Visitors whose next stop is {{ $office->office_name }}</p>
 				</div>
 				<span class="badge-status badge-info" id="livePulse">Live</span>
 			</div>
-			<div id="liveWaiting">
-				@forelse($live['waiting'] as $item)
-					<div class="d-flex justify-content-between align-items-center border-bottom py-2 gap-2">
-						<div class="min-w-0">
-							<div class="fw-semibold text-truncate">{{ $item['visitor_name'] }}</div>
-							<div class="small text-muted text-truncate">{{ $item['control_number'] ?: '—' }} · from {{ $item['previous_office'] }}</div>
+			<div id="liveWaiting" class="ready-scan-list">
+				@forelse(($liveWaiting ?? collect()) as $item)
+					@php
+						$readyName = trim((string) ($item['visitor_name'] ?? 'Visitor'));
+						$readyInitials = collect(preg_split('/\s+/', $readyName) ?: [])
+							->filter()
+							->take(2)
+							->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+							->implode('');
+						if ($readyInitials === '') {
+							$readyInitials = 'V';
+						}
+					@endphp
+					<div class="ready-scan-row">
+						<div class="ready-scan-main">
+							@if(!empty($item['photo_url']))
+								<img
+									src="{{ $item['photo_url'] }}"
+									alt="{{ $readyName }}"
+									class="ready-scan-photo"
+									loading="lazy"
+									onerror="this.classList.add('is-hidden'); this.nextElementSibling?.classList.remove('is-hidden');"
+								>
+								<span class="ready-scan-avatar is-hidden" aria-hidden="true">{{ $readyInitials }}</span>
+							@else
+								<span class="ready-scan-avatar" aria-hidden="true">{{ $readyInitials }}</span>
+							@endif
+							<div class="ready-scan-copy">
+								<div class="ready-scan-name text-truncate">{{ $readyName }}</div>
+								<div class="ready-scan-meta text-truncate">
+									{{ $item['control_number'] ?: '—' }} · from {{ $item['previous_office'] ?? 'Main Lobby' }}
+								</div>
+							</div>
 						</div>
-						<a href="{{ route('office.scanner') }}?visit={{ $item['visit_id'] }}" class="btn btn-sm btn-nu-primary flex-shrink-0">Scan</a>
+						<div class="ready-scan-actions">
+							<span class="ready-scan-chip">Ready</span>
+							<a href="{{ route('office.scanner') }}?visit={{ $item['visit_id'] }}" class="btn btn-sm btn-nu-primary">Scan</a>
+						</div>
 					</div>
 				@empty
 					<div class="empty-state py-4">
@@ -63,7 +93,14 @@
 					</div>
 				@endforelse
 			</div>
-			@if($live['latest_scan'])
+			<div id="readyPagination">
+				@include('admin.partials.table-pagination', [
+					'paginator' => $liveWaiting,
+					'perPageParam' => 'ready_per_page',
+					'ariaLabel' => 'Ready to scan pagination',
+				])
+			</div>
+			@if(!empty($live['latest_scan']))
 				<div class="small text-muted mt-3 pt-2 border-top">
 					Latest scan:
 					<strong id="latestScanStatus">
@@ -171,6 +208,140 @@
 	.office-card .table-pagination-bar {
 		margin-top: 12px;
 	}
+
+	.expected-visitor-cell {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+	}
+
+	.expected-avatar,
+	.ready-scan-avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #eef2ff;
+		color: #273b9e;
+		font-size: 12px;
+		font-weight: 800;
+		flex-shrink: 0;
+	}
+
+	.ready-scan-photo {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		object-fit: cover;
+		object-position: center;
+		flex-shrink: 0;
+		border: 1px solid #e2e8f0;
+		background: #f8fafc;
+	}
+
+	.ready-scan-photo.is-hidden,
+	.ready-scan-avatar.is-hidden {
+		display: none !important;
+	}
+
+	.expected-visitor-name,
+	.ready-scan-name {
+		font-weight: 700;
+		color: #0f172a;
+		line-height: 1.25;
+	}
+
+	.expected-control {
+		display: inline-block;
+		padding: 3px 8px;
+		border-radius: 6px;
+		background: #f8fafc;
+		border: 1px solid #e2e8f0;
+		color: #334155;
+		font-size: 12px;
+		font-weight: 600;
+	}
+
+	.expected-purpose {
+		color: #64748b;
+		font-size: 13px;
+	}
+
+	.expected-table th:first-child,
+	.expected-table td:first-child {
+		min-width: 180px;
+	}
+
+	.ready-scan-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-height: 120px;
+	}
+
+	.ready-scan-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 14px;
+		width: 100%;
+		padding: 12px 14px;
+		border: 1px solid #e8ecf1;
+		border-radius: 12px;
+		background: #fff;
+	}
+
+	.ready-scan-row:hover {
+		border-color: #c7d2fe;
+		background: #f8faff;
+	}
+
+	.ready-scan-main {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.ready-scan-copy {
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.ready-scan-meta {
+		font-size: 12px;
+		color: #64748b;
+		margin-top: 2px;
+	}
+
+	.ready-scan-actions {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-shrink: 0;
+		margin-left: auto;
+	}
+
+	.ready-scan-chip {
+		display: none;
+		padding: 4px 9px;
+		border-radius: 999px;
+		background: #e8f0ff;
+		color: #0B57B7;
+		font-size: 11px;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	@media (min-width: 768px) {
+		.ready-scan-chip {
+			display: inline-flex;
+		}
+	}
 </style>
 @endpush
 
@@ -185,10 +356,13 @@ OfficeScan.init({
 
 (function () {
 	const liveUrl = @json(route('office.dashboard.live'));
+	const scannerUrl = @json(route('office.scanner'));
 	const recentWrap = document.getElementById('recentActivityWrap');
 	const expectedWrap = document.getElementById('expectedVisitorsWrap');
+	const liveWaiting = document.getElementById('liveWaiting');
 	const scansPagination = document.getElementById('scansPagination');
 	const expectedPagination = document.getElementById('expectedPagination');
+	const readyPagination = document.getElementById('readyPagination');
 
 	const badgeClass = function (status) {
 		const key = String(status || '').toLowerCase();
@@ -201,8 +375,27 @@ OfficeScan.init({
 			warning: 'badge-warning',
 			info: 'badge-info',
 			muted: 'badge-muted',
+			ready: 'badge-info',
+			waiting: 'badge-warning',
+			checked_in: 'badge-success',
 		};
 		return map[key] || 'badge-info';
+	};
+	const initialsOf = function (name) {
+		return String(name || 'V')
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((part) => part.charAt(0).toUpperCase())
+			.join('') || 'V';
+	};
+	const statusLabel = function (row) {
+		const key = String(row.route_status_key || '').toLowerCase();
+		if (key === 'ready') return 'Ready to scan';
+		if (key === 'waiting') return 'Waiting';
+		if (key === 'checked_in') return 'Checked in';
+		return row.route_status || 'Expected';
 	};
 	const escapeHtml = function (value) {
 		return String(value ?? '')
@@ -292,36 +485,41 @@ OfficeScan.init({
 		if (!Array.isArray(rows) || rows.length === 0) {
 			expectedWrap.innerHTML = `
 				<div class="empty-state">
-					<i class="bi bi-inbox" aria-hidden="true"></i>
+					<i class="bi bi-people" aria-hidden="true"></i>
 					<p class="mb-0">No visitors are currently expected at your office.</p>
 				</div>
 			`;
 			return;
 		}
 		expectedWrap.innerHTML = `
-			<div class="table-scroll">
-				<table class="table-office">
+			<div class="table-scroll expected-table-wrap">
+				<table class="table-office expected-table">
 					<thead>
 						<tr>
-							<th>Control No.</th>
 							<th>Visitor</th>
+							<th>Control No.</th>
 							<th>Purpose</th>
 							<th>Previous Office</th>
 							<th>Expected</th>
-							<th>Route Status</th>
-							<th>Action</th>
+							<th>Status</th>
+							<th class="text-end">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						${rows.map((row) => `
 							<tr>
-								<td>${escapeHtml(row.control_number)}</td>
-								<td>${escapeHtml(row.visitor_name)}</td>
-								<td>${escapeHtml(row.purpose)}</td>
+								<td>
+									<div class="expected-visitor-cell">
+										<span class="expected-avatar" aria-hidden="true">${escapeHtml(initialsOf(row.visitor_name))}</span>
+										<span class="expected-visitor-name">${escapeHtml(row.visitor_name)}</span>
+									</div>
+								</td>
+								<td><code class="expected-control">${escapeHtml(row.control_number)}</code></td>
+								<td><span class="expected-purpose">${escapeHtml(row.purpose)}</span></td>
 								<td>${escapeHtml(row.previous_office)}</td>
-								<td>${escapeHtml(row.expected_label)}</td>
-								<td><span class="badge-status ${badgeClass(row.badge)}">${escapeHtml(row.route_status)}</span></td>
-								<td class="text-nowrap">
+								<td class="text-nowrap">${escapeHtml(row.expected_label)}</td>
+								<td><span class="badge-status ${badgeClass(row.badge)}">${escapeHtml(statusLabel(row))}</span></td>
+								<td class="text-end text-nowrap">
 									<a href="${escapeHtml(row.view_url)}" class="btn btn-sm btn-nu-outline">View</a>
 									${row.scan_url ? `<a href="${escapeHtml(row.scan_url)}" class="btn btn-sm btn-nu-primary">Scan</a>` : ''}
 								</td>
@@ -331,6 +529,47 @@ OfficeScan.init({
 				</table>
 			</div>
 		`;
+	};
+	const renderReadyToScan = function (rows) {
+		if (!liveWaiting) return;
+		if (!Array.isArray(rows) || rows.length === 0) {
+			liveWaiting.innerHTML = `
+				<div class="empty-state py-4">
+					<i class="bi bi-inbox" aria-hidden="true"></i>
+					<p class="mb-0">No visitors waiting to be scanned.</p>
+				</div>
+			`;
+			return;
+		}
+		liveWaiting.innerHTML = rows.map((item) => {
+			const name = item.visitor_name || 'Visitor';
+			const photo = item.photo_url ? `
+				<img
+					src="${escapeHtml(item.photo_url)}"
+					alt="${escapeHtml(name)}"
+					class="ready-scan-photo"
+					loading="lazy"
+					onerror="this.classList.add('is-hidden'); this.nextElementSibling && this.nextElementSibling.classList.remove('is-hidden');"
+				>
+				<span class="ready-scan-avatar is-hidden" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>
+			` : `<span class="ready-scan-avatar" aria-hidden="true">${escapeHtml(initialsOf(name))}</span>`;
+
+			return `
+			<div class="ready-scan-row">
+				<div class="ready-scan-main">
+					${photo}
+					<div class="ready-scan-copy">
+						<div class="ready-scan-name text-truncate">${escapeHtml(name)}</div>
+						<div class="ready-scan-meta text-truncate">${escapeHtml(item.control_number || '—')} · from ${escapeHtml(item.previous_office || 'Main Lobby')}</div>
+					</div>
+				</div>
+				<div class="ready-scan-actions">
+					<span class="ready-scan-chip">Ready</span>
+					<a href="${escapeHtml(scannerUrl)}?visit=${encodeURIComponent(item.visit_id)}" class="btn btn-sm btn-nu-primary">Scan</a>
+				</div>
+			</div>
+		`;
+		}).join('');
 	};
 
 	setInterval(async () => {
@@ -356,6 +595,10 @@ OfficeScan.init({
 			if (payload.expected_visitors) {
 				renderExpectedVisitors(payload.expected_visitors.data || []);
 				updatePagination(expectedPagination, payload.expected_visitors.meta);
+			}
+			if (payload.live) {
+				renderReadyToScan(payload.live.waiting || []);
+				updatePagination(readyPagination, payload.live.meta);
 			}
 			const pulse = document.getElementById('livePulse');
 			if (pulse) {

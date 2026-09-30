@@ -349,7 +349,7 @@ class EnrolleeProgressController extends Controller
                 'title' => (string) ($step['title'] ?? 'Enrollment Step'),
                 'floor' => trim((string) ($step['floor'] ?? '')),
                 'subtitle' => $isOptional && ! $isDone
-                    ? 'Optional stop — you may skip this and continue to the next office.'
+                    ? 'Optional — uniforms, NU merchandise, and other campus items. You may skip this and continue to the next office.'
                     : (string) ($step['subtitle'] ?? ''),
                 'state' => $state,
                 'badge' => match ($state) {
@@ -415,7 +415,7 @@ class EnrolleeProgressController extends Controller
             'registrar' => 'Issuance of Assessment and Registration Documents',
             'treasury' => 'Cashier Payment / Debit Card / Credit Card',
             'student development' => 'Issuance of ID Lace and Required Forms',
-            'bulldogs' => 'Optional — Fitting and Payment of Uniform (you may skip and continue)',
+            'bulldogs' => 'Optional — uniforms, NU merchandise, and other campus items. You may skip this and continue to the next office.',
             'information technology' => 'Printing and Issuance of NU Lipa ID Card',
             'admission' => 'Proceed to Admissions Office and present your QR pass for validation.',
         ];

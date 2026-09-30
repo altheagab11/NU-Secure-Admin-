@@ -5,6 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Daily Reports</title>
+	<link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: time() }}" sizes="any">
+	<link rel="icon" type="image/png" href="{{ asset('images/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('images/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
+	<link rel="apple-touch-icon" href="{{ asset('images/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('images/nu-secure-apple-touch.png')) ?: time() }}">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<style nonce="{{ $cspNonce }}">
@@ -51,15 +54,27 @@
 		}
 
 		.brand-icon {
-			width: 44px;
-			height: 44px;
-			border-radius: 12px;
-			background: rgba(255, 255, 255, 0.14);
+			width: 52px;
+			height: 52px;
+			border-radius: 0;
+			background: transparent;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 22px;
 			flex-shrink: 0;
+			overflow: visible;
+			padding: 0;
+			box-shadow: none;
+			border: 0;
+		}
+
+		.brand-icon img {
+			width: 52px;
+			height: 52px;
+			object-fit: contain;
+			display: block;
+			background: transparent;
+			filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
 		}
 
 		.brand-title {
@@ -394,8 +409,8 @@
 		<aside class="sidebar d-flex flex-column justify-content-between">
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
-					<div class="brand-icon">
-						<i class="bi bi-person-badge-fill"></i>
+					<div class="brand-icon" aria-hidden="true">
+						<img src="{{ asset('images/nu-secure-logo.png') }}?v={{ @filemtime(public_path('images/nu-secure-logo.png')) ?: time() }}" alt="NU Secure">
 					</div>
 					<div>
 						<h4 class="brand-title mb-0"><span>VMS</span> <span>Admin</span></h4>
