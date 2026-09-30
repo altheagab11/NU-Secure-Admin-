@@ -7,9 +7,9 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}</title>
-	<link rel="icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="any">
-	<link rel="icon" type="image/png" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="32x32">
-	<link rel="apple-touch-icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}">
+	<link rel="icon" href="{{ asset('picture/nu-secure-favicon.ico') }}?v={{ @filemtime(public_path('picture/nu-secure-favicon.ico')) ?: time() }}" sizes="any">
+	<link rel="icon" type="image/png" href="{{ asset('picture/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('picture/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
+	<link rel="apple-touch-icon" href="{{ asset('picture/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('picture/nu-secure-apple-touch.png')) ?: time() }}">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<style nonce="{{ $cspNonce }}">
@@ -883,7 +883,7 @@
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon" aria-hidden="true">
-						<img src="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" alt="NU Secure">
+						<img src="{{ asset('picture/nu-secure-logo.png') }}?v={{ @filemtime(public_path('picture/nu-secure-logo.png')) ?: time() }}" onerror="this.onerror=null;this.src='{{ asset('picture/nu-logo.png') }}';" alt="NU Secure">
 					</div>
 					<div>
 						<h4 class="brand-title mb-0"><span>VMS</span> <span>Admin</span></h4>
@@ -1132,7 +1132,11 @@
 						<select name="office" class="filter-select" aria-label="Filter by office" data-auto-submit>
 							<option value="">All offices</option>
 							@foreach($officeOptions ?? [] as $opt)
-								<option value="{{ $opt->office_id ?? $opt->id }}" @selected(request('office') == ($opt->office_id ?? $opt->id))>{{ $opt->office_name ?? $opt->name }}</option>
+								@php
+									$optOfficeId = data_get($opt, 'office_id', data_get($opt, 'id'));
+									$optOfficeName = data_get($opt, 'office_name', data_get($opt, 'name'));
+								@endphp
+								<option value="{{ $optOfficeId }}" @selected(request('office') == $optOfficeId)>{{ $optOfficeName }}</option>
 							@endforeach
 						</select>
 
@@ -1200,29 +1204,43 @@
 						</thead>
 						<tbody>
 							@forelse($offices ?? [] as $office)
+								@php
+									$officeFirst = (string) data_get($office, 'first_name', '');
+									$officeLast = (string) data_get($office, 'last_name', '');
+									$officeFull = trim($officeFirst.' '.$officeLast);
+									$officeName = (string) (
+										data_get($office, 'name')
+										?: ($officeFull !== '' ? $officeFull : data_get($office, 'full_name', ''))
+									);
+									$officeEmail = (string) data_get($office, 'email', '');
+									$officeLabel = (string) (data_get($office, 'office_name') ?: data_get($office, 'office') ?: '—');
+									$officePosition = (string) (data_get($office, 'position') ?: '—');
+									$officeUserId = data_get($office, 'user_id', '');
+									$officeId = data_get($office, 'office_id', '');
+								@endphp
 								<tr>
-									<td>{{ $office->name ?? ($office->first_name ? ($office->first_name . ' ' . ($office->last_name ?? '')) : ($office->full_name ?? '')) }}</td>
+									<td>{{ $officeName }}</td>
 									<td>
 										<span class="email-cell">
 											<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 												<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
 												<path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											{{ $office->email ?? '' }}
+											{{ $officeEmail }}
 										</span>
 									</td>
-									<td><span class="badge-pill">{{ $office->office_name ?? $office->office ?? '—' }}</span></td>
-									<td>{{ $office->position ?? '—' }}</td>
+									<td><span class="badge-pill">{{ $officeLabel }}</span></td>
+									<td>{{ $officePosition }}</td>
 									<td>
 										<span class="action-icons">
 											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-office-btn"
-												 data-user-id="{{ $office->user_id ?? '' }}"
-												 data-name="{{ $office->name ?? '' }}"
-												 data-email="{{ $office->email ?? '' }}"
-												 data-office-id="{{ $office->office_id ?? '' }}"
-												 data-position="{{ $office->position ?? '' }}"
+												 data-user-id="{{ $officeUserId }}"
+												 data-name="{{ $officeName }}"
+												 data-email="{{ $officeEmail }}"
+												 data-office-id="{{ $officeId }}"
+												 data-position="{{ $officePosition }}"
 											/>
-											<form method="POST" action="/admin/user/offices/{{ $office->user_id ?? '' }}" class="inline-form" data-confirm="Move this office user to recycle bin?">
+											<form method="POST" action="/admin/user/offices/{{ $officeUserId }}" class="inline-form" data-confirm="Move this office user to recycle bin?">
 												@csrf
 												@method('DELETE')
 												<button type="submit" class="icon-btn" aria-label="Delete">
@@ -1255,10 +1273,10 @@
 						} else {
 							// Fallback: build office summary from current $offices (may be paginated - this will reflect current page only)
 							$collectionForSummary = (isset($offices) && method_exists($offices, 'items')) ? collect($offices->items()) : collect($offices ?? []);
-							$officeSummaries = $collectionForSummary->groupBy(function($item) {
+							$officeSummaries = $collectionForSummary->groupBy(function ($item) {
 								return data_get($item, 'office_name') ?? data_get($item, 'office') ?? 'Unknown Office';
-							})->map(function($group, $name) {
-								return ['name' => $name, 'count' => count($group)];
+							})->map(function ($group, $name) {
+								return ['name' => $name, 'count' => $group->count()];
 							})->values();
 						}
 					@endphp
@@ -1551,7 +1569,7 @@
 					<select name="office_id" class="user-modal-select" required>
 						<option value="" disabled selected>Select Office</option>
 						@foreach($officeOptions ?? [] as $officeOption)
-							<option value="{{ $officeOption->office_id }}">{{ $officeOption->office_name }}</option>
+							<option value="{{ data_get($officeOption, 'office_id') }}">{{ data_get($officeOption, 'office_name') }}</option>
 						@endforeach
 					</select>
 				</div>
