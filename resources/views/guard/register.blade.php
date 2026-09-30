@@ -5,9 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Register Visitor</title>
-	<link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: time() }}" sizes="any">
-	<link rel="icon" type="image/png" href="{{ asset('images/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('images/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
-	<link rel="apple-touch-icon" href="{{ asset('images/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('images/nu-secure-apple-touch.png')) ?: time() }}">
+	<link rel="icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="any">
+	<link rel="icon" type="image/png" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="32x32">
+	<link rel="apple-touch-icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -7583,7 +7583,7 @@
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon" aria-hidden="true">
-						<img src="{{ asset('images/nu-secure-logo.png') }}?v={{ @filemtime(public_path('images/nu-secure-logo.png')) ?: time() }}" alt="NU Secure">
+						<img src="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" alt="NU Secure">
 					</div>
 					<div>
 						<h4 class="brand-title mb-0"><span>VMS</span> <span>Guard</span></h4>
@@ -7894,7 +7894,7 @@
 					<div class="self-registration-brand">
 						<div class="self-registration-brand-row">
 							<div class="brand-icon" aria-hidden="true">
-								<img src="{{ asset('images/nu-secure-logo.png') }}?v={{ @filemtime(public_path('images/nu-secure-logo.png')) ?: time() }}" alt="NU Secure">
+								<img src="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" alt="NU Secure">
 							</div>
 							<div>
 								<h4 class="brand-title mb-0"><span>VMS</span></h4>
@@ -12451,9 +12451,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="${viewportContent}">
 <title>Visitor ticket</title>
-	<link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: time() }}" sizes="any">
-	<link rel="icon" type="image/png" href="{{ asset('images/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('images/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
-	<link rel="apple-touch-icon" href="{{ asset('images/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('images/nu-secure-apple-touch.png')) ?: time() }}">
+	<link rel="icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="any">
+	<link rel="icon" type="image/png" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="32x32">
+	<link rel="apple-touch-icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}">
 <style nonce="{{ $cspNonce }}">
 /* size: auto avoids Chrome centering a narrow mm box on Letter/A4 (causes right-shift on thermal). */
 /* Asymmetric margins: mas malaki sa kanan — maraming thermal na mas kinakain ang kanan. */

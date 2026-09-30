@@ -5,9 +5,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>@yield('title', $pageTitle ?? 'Office Portal') — NU-Secure</title>
-	<link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: time() }}" sizes="any">
-	<link rel="icon" type="image/png" href="{{ asset('images/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('images/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
-	<link rel="apple-touch-icon" href="{{ asset('images/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('images/nu-secure-apple-touch.png')) ?: time() }}">
+	<link rel="icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="any">
+	<link rel="icon" type="image/png" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" sizes="32x32">
+	<link rel="apple-touch-icon" href="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -480,7 +480,7 @@
 		<div>
 			<div class="sidebar-brand d-flex align-items-center">
 				<div class="brand-icon" aria-hidden="true">
-					<img src="{{ asset('images/nu-secure-logo.png') }}?v={{ @filemtime(public_path('images/nu-secure-logo.png')) ?: time() }}" alt="NU Secure">
+					<img src="{{ asset('picture/nu-logo.png') }}?v={{ @filemtime(public_path('picture/nu-logo.png')) ?: time() }}" alt="NU Secure">
 				</div>
 				<div>
 					<h4 class="brand-title mb-0"><span>NU</span> <span>Secure</span></h4>
