@@ -92,9 +92,12 @@ class EnrolleeProgressController extends Controller
         $total = count($classified);
         $completed = collect($classified)->where('state', 'done')->count();
         $current = collect($classified)->firstWhere('state', 'current');
-        $remaining = max(0, $total - $completed);
-        $percent = $total > 0 ? (int) round(($completed / $total) * 100) : 0;
-        $isComplete = $total > 0 && $completed >= $total;
+        $requiredSteps = collect($classified)->whereIn('state', ['done', 'current', 'pending']);
+        $requiredTotal = $requiredSteps->count();
+        $requiredDone = $requiredSteps->where('state', 'done')->count();
+        $remaining = max(0, $requiredTotal - $requiredDone);
+        $percent = $requiredTotal > 0 ? (int) round(($requiredDone / $requiredTotal) * 100) : 0;
+        $isComplete = $requiredTotal > 0 && $requiredDone >= $requiredTotal;
 
         $passCode = trim((string) ($visit->pass_number ?? ''));
         if ($passCode === '') {
@@ -328,9 +331,12 @@ class EnrolleeProgressController extends Controller
 
         foreach ($steps as $step) {
             $isDone = $this->isStepDone($step);
+            $isOptional = $this->isOptionalEnrolleeOffice((string) ($step['title'] ?? ''));
 
             if ($isDone) {
                 $state = 'done';
+            } elseif ($isOptional) {
+                $state = 'optional';
             } elseif (! $foundCurrent) {
                 $state = 'current';
                 $foundCurrent = true;
@@ -342,13 +348,27 @@ class EnrolleeProgressController extends Controller
                 'order' => (int) ($step['order'] ?? 0),
                 'title' => (string) ($step['title'] ?? 'Enrollment Step'),
                 'floor' => trim((string) ($step['floor'] ?? '')),
-                'subtitle' => (string) ($step['subtitle'] ?? ''),
+                'subtitle' => $isOptional && ! $isDone
+                    ? 'Optional stop — you may skip this and continue to the next office.'
+                    : (string) ($step['subtitle'] ?? ''),
                 'state' => $state,
-                'badge' => $state === 'done' ? 'Done' : ($state === 'current' ? 'Current' : 'Pending'),
+                'badge' => match ($state) {
+                    'done' => 'Done',
+                    'current' => 'Current',
+                    'optional' => 'Optional',
+                    default => 'Pending',
+                },
             ];
         }
 
         return $classified;
+    }
+
+    protected function isOptionalEnrolleeOffice(string $officeName): bool
+    {
+        $name = Str::lower(trim($officeName));
+
+        return $name !== '' && str_contains($name, 'bulldogs');
     }
 
     protected function isStepDone(array $step): bool
@@ -395,7 +415,7 @@ class EnrolleeProgressController extends Controller
             'registrar' => 'Issuance of Assessment and Registration Documents',
             'treasury' => 'Cashier Payment / Debit Card / Credit Card',
             'student development' => 'Issuance of ID Lace and Required Forms',
-            'bulldogs' => 'Fitting and Payment of Uniform',
+            'bulldogs' => 'Optional — Fitting and Payment of Uniform (you may skip and continue)',
             'information technology' => 'Printing and Issuance of NU Lipa ID Card',
             'admission' => 'Proceed to Admissions Office and present your QR pass for validation.',
         ];

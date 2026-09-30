@@ -8863,7 +8863,7 @@
 									</section>
 
 									<section class="qr-success-qr-card">
-										<p class="qr-success-qr-title">Present this QR code</p>
+										<p class="qr-success-qr-title">Scan this QR code</p>
 										<div class="qr-success-qr-frame">
 											<span class="qr-success-corner qr-success-corner-tl"></span>
 											<span class="qr-success-corner qr-success-corner-tr"></span>
@@ -8871,7 +8871,7 @@
 											<span class="qr-success-corner qr-success-corner-br"></span>
 											<div class="qr-box" id="qrCodeContainer"></div>
 										</div>
-										<p class="qr-success-qr-hint">at each stop on your route.</p>
+										<p class="qr-success-qr-hint">to track your progress at each stop on your route.</p>
 									</section>
 								</div>
 

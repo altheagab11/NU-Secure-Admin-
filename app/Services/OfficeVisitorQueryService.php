@@ -338,6 +338,15 @@ class OfficeVisitorQueryService
             $row->route_status = 'Ready for Office Check-in';
             $row->route_status_key = 'ready';
             $row->badge = 'info';
+        } elseif (
+            $sequential
+            && (int) $row->office_id === $officeId
+            && $this->scanService->isOptionalRouteOffice($row)
+            && ! $this->scanService->findBlockingPreviousExpectation($route, (int) $row->expected_order)
+        ) {
+            $row->route_status = 'Optional / Ready for Check-in';
+            $row->route_status_key = 'ready';
+            $row->badge = 'info';
         } elseif ($sequential && $current && (int) $current->expected_order < (int) $row->expected_order) {
             $row->route_status = 'Waiting for Previous Office';
             $row->route_status_key = 'waiting';

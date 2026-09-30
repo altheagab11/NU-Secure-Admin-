@@ -573,6 +573,7 @@
 		.legend .done { background: var(--green); }
 		.legend .current { background: var(--orange); }
 		.legend .pending { background: var(--gray); }
+		.legend .optional { background: #6366f1; }
 
 		.step-list {
 			display: grid;
@@ -604,6 +605,11 @@
 			border-color: var(--gray-border);
 		}
 
+		.step-row.optional {
+			background: #eef2ff;
+			border-color: #c7d2fe;
+		}
+
 		.step-num {
 			width: 38px;
 			height: 38px;
@@ -619,6 +625,7 @@
 		.step-row.done .step-num { background: var(--green); }
 		.step-row.current .step-num { background: var(--orange); }
 		.step-row.pending .step-num { background: #94a3b8; }
+		.step-row.optional .step-num { background: #6366f1; }
 
 		.step-body {
 			flex: 1;
@@ -690,6 +697,11 @@
 		.step-row.pending .step-badge {
 			background: #f1f5f9;
 			color: #64748b;
+		}
+
+		.step-row.optional .step-badge {
+			background: #e0e7ff;
+			color: #3730a3;
 		}
 
 		.footer-note {
@@ -906,11 +918,12 @@
 			<div class="route-head">
 				<div>
 					<h2>Visit Route in Order</h2>
-					<p>Complete each office step as staff scan and validate your QR.</p>
+					<p>Complete each required office step. Bulldogs Exchange is optional and may be skipped.</p>
 				</div>
 				<div class="legend" aria-label="Status legend">
 					<span><i class="done"></i> Done</span>
 					<span><i class="current"></i> Current</span>
+					<span><i class="optional"></i> Optional</span>
 					<span><i class="pending"></i> Pending</span>
 				</div>
 			</div>

@@ -113,43 +113,53 @@ class OfficeScanService
             return $this->error('INACTIVE_VISIT', 'This visit is no longer active.', 422);
         }
 
-        // Previous office incomplete: staff office matches a later step, but earlier steps pending.
-        if ((int) $current->office_id !== $officeId) {
-            $matchingPending = $route
-                ->where('office_id', $officeId)
-                ->filter(fn ($row) => ! $this->isExpectationDone($row))
-                ->sortBy('expected_order')
-                ->first();
+        $staffTarget = $this->resolveStaffOfficeExpectation($route, $officeId);
 
-            if ($matchingPending && (int) $matchingPending->expected_order > (int) $current->expected_order) {
-                $previousOffice = $this->findPreviousOfficeName($route, (int) $matchingPending->expected_order);
+        // Allow the staff office when earlier required (non-optional) steps are done.
+        // Optional offices such as Bulldogs Exchange do not block later offices.
+        if ($staffTarget) {
+            $blockingPrevious = $this->findBlockingPreviousExpectation($route, (int) $staffTarget->expected_order);
+
+            if ($blockingPrevious) {
                 $this->recordFailedScan(
                     $visit,
                     $officeId,
                     $userId,
                     'Unauthorized',
-                    'Previous office incomplete. Next expected: '.($current->office_name ?? 'Unknown'),
+                    'Previous office incomplete. Next expected: '.($blockingPrevious->office_name ?? 'Unknown'),
                     $scanMethod
                 );
                 $this->audit('previous_office_incomplete', [
                     'office_id' => $officeId,
                     'user_id' => $userId,
                     'visit_id' => (int) $visit->visit_id,
-                    'expected_office_id' => (int) $current->office_id,
+                    'expected_office_id' => (int) $blockingPrevious->office_id,
                 ]);
 
                 return $this->error(
                     'PREVIOUS_INCOMPLETE',
                     'The visitor must complete the previous office check-in before proceeding.'
-                        .($previousOffice ? ' Previous office: '.$previousOffice.'.' : ''),
+                        .' Previous office: '.trim((string) ($blockingPrevious->office_name ?? 'Unknown')).'.',
                     422,
                     [
-                        'expected_office' => (string) ($current->office_name ?? ''),
+                        'expected_office' => (string) ($blockingPrevious->office_name ?? ''),
                         'data' => $this->buildVisitorPayload($visit, $route, $current, $officeContext),
                     ]
                 );
             }
 
+            $payload = $this->buildVisitorPayload($visit, $route, $staffTarget, $officeContext);
+
+            return [
+                'success' => true,
+                'message' => 'Visitor verified successfully.',
+                'http' => 200,
+                'data' => $payload,
+            ];
+        }
+
+        // Staff office is not on the remaining route.
+        if ((int) $current->office_id !== $officeId) {
             $scanId = $this->recordFailedScan(
                 $visit,
                 $officeId,
@@ -192,20 +202,6 @@ class OfficeScanService
                     'expected_office' => (string) ($current->office_name ?? ''),
                     'data' => $this->buildVisitorPayload($visit, $route, $current, $officeContext),
                 ]
-            );
-        }
-
-        // Ensure earlier route steps are complete.
-        $previousIncomplete = $route
-            ->filter(fn ($row) => (int) $row->expected_order < (int) $current->expected_order)
-            ->first(fn ($row) => ! $this->isExpectationDone($row));
-
-        if ($previousIncomplete) {
-            return $this->error(
-                'PREVIOUS_INCOMPLETE',
-                'The visitor must complete the previous office check-in before proceeding.',
-                422,
-                ['expected_office' => (string) ($previousIncomplete->office_name ?? '')]
             );
         }
 
@@ -264,8 +260,9 @@ class OfficeScanService
 
                 $visit = $this->findVisitById($visitId);
                 if ($visit && $this->isSequentialRoute($visit)) {
-                    // Re-check previous steps under lock (enrollee / sequential routes only).
+                    // Re-check previous required steps under lock (optional offices do not block).
                     $previousIncomplete = DB::table('office_expectation as oe')
+                        ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
                         ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
                         ->where('oe.visit_id', $visitId)
                         ->where('oe.expected_order', '<', (int) $expectation->expected_order)
@@ -276,7 +273,17 @@ class OfficeScanService
                                     'arrived', 'completed', 'complete', 'skipped',
                                 ]);
                         })
-                        ->exists();
+                        ->select([
+                            'oe.expectation_id',
+                            'oe.office_id',
+                            'oe.expected_order',
+                            'oe.arrived_at',
+                            'o.office_name',
+                            'xs.status_name',
+                        ])
+                        ->orderBy('oe.expected_order')
+                        ->get()
+                        ->first(fn ($row) => $this->isBlockingIncompleteExpectation($row));
 
                     if ($previousIncomplete) {
                         return $this->error(
@@ -612,6 +619,14 @@ class OfficeScanService
 
     public function resolveCurrentExpectation($route): ?object
     {
+        // Prefer the next required office. Optional offices (e.g. Bulldogs Exchange) can be skipped.
+        foreach ($route as $row) {
+            if ($this->isBlockingIncompleteExpectation($row)) {
+                return $row;
+            }
+        }
+
+        // If only optional stops remain, keep them available for check-in.
         foreach ($route as $row) {
             if (! $this->isExpectationDone($row)) {
                 return $row;
@@ -619,6 +634,33 @@ class OfficeScanService
         }
 
         return null;
+    }
+
+    /**
+     * Enrollee route offices that may be skipped without blocking later stops.
+     */
+    public function isOptionalRouteOffice(object|array $row): bool
+    {
+        $name = is_array($row)
+            ? (string) ($row['office_name'] ?? $row['title'] ?? '')
+            : (string) ($row->office_name ?? '');
+
+        $name = Str::lower(trim($name));
+
+        return $name !== '' && str_contains($name, 'bulldogs');
+    }
+
+    public function isBlockingIncompleteExpectation(object $row): bool
+    {
+        return ! $this->isExpectationDone($row) && ! $this->isOptionalRouteOffice($row);
+    }
+
+    public function findBlockingPreviousExpectation($route, int $beforeOrder): ?object
+    {
+        return collect($route)
+            ->filter(fn ($row) => (int) $row->expected_order < $beforeOrder)
+            ->sortBy('expected_order')
+            ->first(fn ($row) => $this->isBlockingIncompleteExpectation($row));
     }
 
     public function isSequentialRoute(object $visit): bool
@@ -759,10 +801,14 @@ class OfficeScanService
         $foundCurrent = false;
         foreach ($route as $step) {
             $done = $this->isExpectationDone($step);
+            $optional = $this->isOptionalRouteOffice($step);
+
             if ($done) {
                 $state = 'done';
             } elseif ($flexibleRoute) {
                 $state = 'current';
+            } elseif ($optional) {
+                $state = 'optional';
             } elseif (! $foundCurrent) {
                 $state = 'current';
                 $foundCurrent = true;
@@ -778,6 +824,7 @@ class OfficeScanService
                 'arrived_at' => $step->arrived_at,
                 'status_name' => (string) ($step->status_name ?? ''),
                 'state' => $state,
+                'optional' => $optional,
             ];
         }
 
@@ -789,7 +836,7 @@ class OfficeScanService
                 ->first();
         }
 
-        $remaining = collect($classified)->whereIn('state', ['current', 'pending'])->values()->all();
+        $remaining = collect($classified)->whereIn('state', ['current', 'pending', 'optional'])->values()->all();
 
         return [
             'visit' => [
@@ -842,10 +889,11 @@ class OfficeScanService
 
     protected function findPreviousOfficeName($route, int $beforeOrder): ?string
     {
-        $previous = collect($route)
-            ->filter(fn ($row) => (int) $row->expected_order < $beforeOrder)
-            ->sortByDesc('expected_order')
-            ->first();
+        $previous = $this->findBlockingPreviousExpectation($route, $beforeOrder)
+            ?: collect($route)
+                ->filter(fn ($row) => (int) $row->expected_order < $beforeOrder)
+                ->sortByDesc('expected_order')
+                ->first();
 
         return $previous ? trim((string) ($previous->office_name ?? '')) : null;
     }
