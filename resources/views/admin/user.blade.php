@@ -7,9 +7,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}</title>
-	<link rel="icon" href="{{ asset('picture/nu-secure-favicon.ico') }}?v={{ @filemtime(public_path('picture/nu-secure-favicon.ico')) ?: time() }}" sizes="any">
-	<link rel="icon" type="image/png" href="{{ asset('picture/nu-secure-favicon-32.png') }}?v={{ @filemtime(public_path('picture/nu-secure-favicon-32.png')) ?: time() }}" sizes="32x32">
-	<link rel="apple-touch-icon" href="{{ asset('picture/nu-secure-apple-touch.png') }}?v={{ @filemtime(public_path('picture/nu-secure-apple-touch.png')) ?: time() }}">
+	@include('partials.favicons')
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 	<style nonce="{{ $cspNonce }}">
@@ -883,7 +881,7 @@
 			<div>
 				<div class="sidebar-brand d-flex align-items-center">
 					<div class="brand-icon" aria-hidden="true">
-						<img src="{{ asset('picture/nu-secure-logo.png') }}?v={{ @filemtime(public_path('picture/nu-secure-logo.png')) ?: time() }}" onerror="this.onerror=null;this.src='{{ asset('picture/nu-logo.png') }}';" alt="NU Secure">
+						@include('partials.brand-logo')
 					</div>
 					<div>
 						<h4 class="brand-title mb-0"><span>VMS</span> <span>Admin</span></h4>

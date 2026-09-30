@@ -1,1 +1,5 @@
-<img src="{{ asset('picture/nu-secure-logo.png') }}?v={{ @filemtime(public_path('picture/nu-secure-logo.png')) ?: time() }}" onerror="this.onerror=null;this.src='{{ asset('picture/nu-logo.png') }}';" alt="NU Secure">
+<img
+	src="{{ versioned_asset('picture/nu-secure-logo.png') }}"
+	alt="NU Secure"
+	onerror="this.onerror=null;this.src='{{ versioned_asset('picture/nu-logo.png') }}';"
+>

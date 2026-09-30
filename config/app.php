@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Asset Version
+    |--------------------------------------------------------------------------
+    |
+    | Used by versioned_asset() when the file is not present under public_path
+    | (e.g. Hostinger public_html assets). Bump this when you replace logos.
+    |
+    */
+
+    'asset_version' => env('ASSET_VERSION', '20261001'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
