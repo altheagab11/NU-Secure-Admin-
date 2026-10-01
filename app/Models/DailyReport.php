@@ -9,6 +9,8 @@ class DailyReport extends Model
 {
     public const TYPE_DAILY_VISITOR = 'daily_visitor';
 
+    public const TYPE_DAILY_VISITOR_OFFICE = 'daily_visitor_office';
+
     public const TYPE_DATE_RANGE = 'date_range';
 
     public const STATUS_PENDING = 'pending';
@@ -25,6 +27,7 @@ class DailyReport extends Model
         'report_date',
         'date_range_end',
         'report_type',
+        'office_id',
         'file_name',
         'file_path',
         'record_count',
@@ -39,6 +42,7 @@ class DailyReport extends Model
         return [
             'report_date' => 'date',
             'date_range_end' => 'date',
+            'office_id' => 'integer',
             'generated_at' => 'datetime',
             'record_count' => 'integer',
             'generated_by' => 'integer',
@@ -60,5 +64,10 @@ class DailyReport extends Model
     public function isDateRangeReport(): bool
     {
         return $this->report_type === self::TYPE_DATE_RANGE;
+    }
+
+    public function isOfficeDailyReport(): bool
+    {
+        return $this->report_type === self::TYPE_DAILY_VISITOR_OFFICE;
     }
 }

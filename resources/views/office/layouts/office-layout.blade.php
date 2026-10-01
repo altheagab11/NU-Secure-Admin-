@@ -504,6 +504,10 @@
 					<span class="sidebar-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
 					<span class="sidebar-text">Visit History</span>
 				</a>
+				<a href="{{ route('office.daily-reports') }}" class="sidebar-link {{ $active === 'reports' ? 'active' : '' }}">
+					<span class="sidebar-icon"><i class="bi bi-file-earmark-excel-fill" aria-hidden="true"></i></span>
+					<span class="sidebar-text">Daily Reports</span>
+				</a>
 			</div>
 
 			<div class="sidebar-section">

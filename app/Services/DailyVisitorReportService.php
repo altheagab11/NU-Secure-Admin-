@@ -27,6 +27,8 @@ class DailyVisitorReportService
 {
     public const REPORT_TYPE = DailyReport::TYPE_DAILY_VISITOR;
 
+    public const OFFICE_REPORT_TYPE = DailyReport::TYPE_DAILY_VISITOR_OFFICE;
+
     public const DATE_RANGE_REPORT_TYPE = DailyReport::TYPE_DATE_RANGE;
 
     public const DISK = 'local';
@@ -179,6 +181,166 @@ class DailyVisitorReportService
     }
 
     /**
+     * Generate (or regenerate) a daily visitor Excel report scoped to one office.
+     *
+     * Includes visits that had an office scan at the given office during the calendar day.
+     *
+     * @param  string|\DateTimeInterface  $date
+     */
+    public function generateForOffice(
+        string|\DateTimeInterface $date,
+        int $officeId,
+        string $officeName = '',
+        ?int $generatedByUserId = null,
+        bool $regenerate = false
+    ): DailyReport {
+        $officeId = max(1, $officeId);
+        $reportDate = $this->normalizeReportDate($date);
+        $dateString = $reportDate->toDateString();
+        $resolvedOfficeName = $this->resolveOfficeName($officeId, $officeName);
+        $fileName = $this->buildOfficeFileName($dateString, $officeId);
+        $relativePath = $this->buildOfficeRelativePath($dateString, $officeId, $fileName);
+
+        $report = DailyReport::query()->firstOrNew([
+            'report_date' => $dateString,
+            'report_type' => self::OFFICE_REPORT_TYPE,
+            'office_id' => $officeId,
+        ]);
+
+        if (
+            $report->exists
+            && $report->generation_status === DailyReport::STATUS_COMPLETED
+            && ! $regenerate
+        ) {
+            if ($this->reportFileExists($report)) {
+                Log::info('Office daily visitor report already exists; skipping duplicate generation.', [
+                    'report_date' => $dateString,
+                    'report_id' => $report->id,
+                    'office_id' => $officeId,
+                    'action' => 'office_daily_report_duplicate_skipped',
+                ]);
+
+                return $report;
+            }
+
+            Log::warning('Office daily visitor report marked completed but file is missing; regenerating.', [
+                'report_date' => $dateString,
+                'report_id' => $report->id,
+                'office_id' => $officeId,
+                'file_path' => $report->file_path,
+                'action' => 'office_daily_report_missing_file_regenerate',
+            ]);
+            $regenerate = true;
+        }
+
+        if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING) {
+            throw new RuntimeException('A report for this date is already being generated. Please wait and try again.');
+        }
+
+        $previousPath = $report->exists ? (string) $report->file_path : null;
+
+        $report->fill([
+            'date_range_end' => null,
+            'office_id' => $officeId,
+            'file_name' => $fileName,
+            'file_path' => $relativePath,
+            'generation_status' => DailyReport::STATUS_GENERATING,
+            'error_message' => null,
+            'generated_by' => $generatedByUserId,
+        ]);
+        $report->save();
+
+        try {
+            $rows = $this->fetchVisitorRowsForOfficeDate($reportDate, $officeId);
+            $absolutePath = $this->writeExcelFile($reportDate, $rows, $relativePath, $resolvedOfficeName);
+
+            if (! is_file($absolutePath)) {
+                throw new RuntimeException('The Excel report file could not be saved to secure storage.');
+            }
+
+            if ($previousPath && $previousPath !== $relativePath && Storage::disk(self::DISK)->exists($previousPath)) {
+                Storage::disk(self::DISK)->delete($previousPath);
+            }
+
+            $report->fill([
+                'file_name' => $fileName,
+                'file_path' => $relativePath,
+                'record_count' => $rows->count(),
+                'generation_status' => DailyReport::STATUS_COMPLETED,
+                'generated_at' => now('Asia/Manila'),
+                'generated_by' => $generatedByUserId,
+                'error_message' => null,
+            ]);
+            $report->save();
+
+            $action = $regenerate ? 'office_daily_report_regenerated' : (
+                $generatedByUserId ? 'office_daily_report_manually_generated' : 'office_daily_report_automatically_generated'
+            );
+
+            Log::info('Office daily visitor report generated successfully.', [
+                'action' => $action,
+                'report_id' => $report->id,
+                'report_date' => $dateString,
+                'office_id' => $officeId,
+                'record_count' => $report->record_count,
+                'file_name' => $fileName,
+                'user_id' => $generatedByUserId,
+            ]);
+
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            $prettyDate = $reportDate->format('F j, Y');
+            $recordLabel = (int) $report->record_count.' visitor record'.((int) $report->record_count === 1 ? '' : 's');
+            ActivityLogService::log(
+                action: $regenerate ? 'Regenerated Report' : 'Generated Daily Report',
+                module: 'Reports',
+                description: $actor.' generated the Daily Visitor Report for '.$resolvedOfficeName.' on '.$prettyDate.' containing '.$recordLabel.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                userId: $generatedByUserId,
+                newValues: [
+                    'report_date' => $dateString,
+                    'office_id' => $officeId,
+                    'office_name' => $resolvedOfficeName,
+                    'file_name' => $fileName,
+                    'record_count' => $report->record_count,
+                    'generation_status' => $report->generation_status,
+                ]
+            );
+
+            return $report->fresh();
+        } catch (Throwable $e) {
+            $report->fill([
+                'generation_status' => DailyReport::STATUS_FAILED,
+                'error_message' => $this->safeErrorMessage($e),
+                'generated_by' => $generatedByUserId,
+            ]);
+            $report->save();
+
+            Log::error('Office daily visitor report generation failed.', [
+                'action' => 'office_daily_report_generation_failed',
+                'report_id' => $report->id,
+                'report_date' => $dateString,
+                'office_id' => $officeId,
+                'user_id' => $generatedByUserId,
+                'error' => $e->getMessage(),
+            ]);
+
+            $actor = $generatedByUserId ? ActivityLogService::actorLabel() : 'System';
+            ActivityLogService::log(
+                action: 'Failed Report Generation',
+                module: 'Reports',
+                description: $actor.' failed to generate the Daily Visitor Report for '.$resolvedOfficeName.' on '.$dateString.'.',
+                entityType: 'DailyReport',
+                entityId: $report->id,
+                status: ActivityLogService::STATUS_FAILED,
+                userId: $generatedByUserId
+            );
+
+            throw $e;
+        }
+    }
+
+    /**
      * Create any missing (or failed) daily visitor reports for the last N complete Asia/Manila days.
      * Skips today because the current calendar day is not complete until midnight.
      *
@@ -222,6 +384,69 @@ class DailyVisitorReportService
                 Log::warning('Daily visitor report catch-up failed for date.', [
                     'action' => 'daily_report_catchup_failed',
                     'report_date' => $dateString,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Create any missing (or failed) office-scoped daily reports for the last N complete days.
+     *
+     * @return array{generated: int, skipped: int, failed: int}
+     */
+    public function ensureMissingOfficeDailyReports(
+        int $officeId,
+        string $officeName = '',
+        int $days = 7,
+        ?int $generatedByUserId = null
+    ): array {
+        $officeId = max(1, $officeId);
+        $days = max(1, min($days, 31));
+        $yesterday = now('Asia/Manila')->startOfDay()->subDay();
+        $stats = ['generated' => 0, 'skipped' => 0, 'failed' => 0];
+
+        for ($offset = $days - 1; $offset >= 0; $offset--) {
+            $date = $yesterday->copy()->subDays($offset);
+            $dateString = $date->toDateString();
+
+            $existing = DailyReport::query()
+                ->where('report_type', self::OFFICE_REPORT_TYPE)
+                ->where('office_id', $officeId)
+                ->whereDate('report_date', $dateString)
+                ->first();
+
+            $completedWithFile = $existing
+                && $existing->generation_status === DailyReport::STATUS_COMPLETED
+                && $this->reportFileExists($existing);
+
+            if ($completedWithFile) {
+                $stats['skipped']++;
+
+                continue;
+            }
+
+            $needsFileRepair = $existing
+                && $existing->generation_status === DailyReport::STATUS_COMPLETED
+                && ! $this->reportFileExists($existing);
+
+            try {
+                $this->generateForOffice(
+                    $dateString,
+                    $officeId,
+                    $officeName,
+                    $generatedByUserId,
+                    $needsFileRepair
+                );
+                $stats['generated']++;
+            } catch (Throwable $e) {
+                $stats['failed']++;
+                Log::warning('Office daily visitor report catch-up failed for date.', [
+                    'action' => 'office_daily_report_catchup_failed',
+                    'report_date' => $dateString,
+                    'office_id' => $officeId,
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -468,6 +693,21 @@ class DailyVisitorReportService
         return 'reports/daily/'.$year.'/'.$month.'/'.$safeName;
     }
 
+    public function buildOfficeFileName(string $dateString, int $officeId): string
+    {
+        return 'NU-Secure_Office_'.$officeId.'_Visitor_Report_'.$this->sanitizeDateToken($dateString).'.xlsx';
+    }
+
+    public function buildOfficeRelativePath(string $dateString, int $officeId, string $fileName): string
+    {
+        $safeName = $this->sanitizeFileName($fileName);
+        $parts = explode('-', $this->sanitizeDateToken($dateString));
+        $year = $parts[0] ?? date('Y');
+        $month = $parts[1] ?? date('m');
+
+        return 'reports/daily/office/'.$officeId.'/'.$year.'/'.$month.'/'.$safeName;
+    }
+
     public function buildDateRangeRelativePath(string $startDate, string $fileName): string
     {
         $safeName = $this->sanitizeFileName($fileName);
@@ -491,6 +731,93 @@ class DailyVisitorReportService
         return $this->fetchVisitorRowsUsingWindows([
             [$start->toDateTimeString(), $end->toDateTimeString()],
         ]);
+    }
+
+    /**
+     * Calendar-day fetch for an office: visits scanned at that office during the day.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function fetchVisitorRowsForOfficeDate(Carbon $reportDate, int $officeId): Collection
+    {
+        $start = $reportDate->copy()->timezone('Asia/Manila')->startOfDay()->toDateTimeString();
+        $end = $reportDate->copy()->timezone('Asia/Manila')->endOfDay()->toDateTimeString();
+        $officeId = max(1, $officeId);
+
+        $visitIds = DB::table('office_scan')
+            ->where('office_id', $officeId)
+            ->whereBetween('scan_time', [$start, $end])
+            ->distinct()
+            ->pluck('visit_id')
+            ->filter()
+            ->values();
+
+        if ($visitIds->isEmpty()) {
+            return collect();
+        }
+
+        $query = DB::table('visit as v')
+            ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
+            ->leftJoin('address as a', 'a.address_id', '=', 'vr.address_id')
+            ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
+            ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
+            ->leftJoin('exit_status as es', 'es.exit_status_id', '=', 'v.exit_status_id')
+            ->leftJoin('users as gu', 'gu.user_id', '=', 'v.guard_user_id')
+            ->leftJoin('contractor as c', 'c.visit_id', '=', 'v.visit_id')
+            ->whereIn('v.visit_id', $visitIds)
+            ->orderBy('v.entry_time')
+            ->orderBy('v.visit_id');
+
+        $select = [
+            'v.visit_id',
+            'v.purpose_reason',
+            'v.entry_time',
+            'v.exit_time',
+            'v.duration_minutes',
+            'v.exit_status_id',
+            'v.destination_text',
+            'v.visit_type_id',
+            'v.control_number',
+            'v.guard_user_id',
+            'vr.first_name',
+            'vr.last_name',
+            'vr.birthday',
+            'vr.contact_no',
+            'v.pass_number',
+            'a.house_no',
+            'a.street',
+            'a.barangay',
+            'a.city_municipality',
+            'a.province',
+            'a.region',
+            'vt.visit_type_name',
+            'o.office_name',
+            'es.exit_status_name',
+            'gu.first_name as guard_first_name',
+            'gu.last_name as guard_last_name',
+            'gu.role_id as guard_role_id',
+            'c.contact_person as contractor_contact_person',
+        ];
+
+        if (Schema::hasColumn('visit', 'on_duty_guard_id')) {
+            $query->leftJoin('users as od', 'od.user_id', '=', 'v.on_duty_guard_id');
+            $select[] = 'v.on_duty_guard_id';
+            $select[] = 'od.first_name as on_duty_guard_first_name';
+            $select[] = 'od.last_name as on_duty_guard_last_name';
+        }
+
+        if (Schema::hasColumn('visit', 'incomplete_route_reviewed')) {
+            $select[] = 'v.incomplete_route_reviewed';
+            $select[] = 'v.incomplete_route_note';
+
+            if (Schema::hasColumn('visit', 'incomplete_route_reviewed_by')) {
+                $query->leftJoin('users as iru', 'iru.user_id', '=', 'v.incomplete_route_reviewed_by');
+                $select[] = 'iru.first_name as incomplete_route_reviewer_first_name';
+                $select[] = 'iru.last_name as incomplete_route_reviewer_last_name';
+            }
+        }
+
+        return $this->mapVisitRows($query->select($select)->get());
     }
 
     /**
@@ -547,15 +874,18 @@ class DailyVisitorReportService
      *
      * @param  Collection<int, array<string, mixed>>  $rows
      */
-    public function buildSpreadsheet(Carbon $reportDate, Collection $rows): Spreadsheet
+    public function buildSpreadsheet(Carbon $reportDate, Collection $rows, string $officeName = ''): Spreadsheet
     {
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Daily Visitors');
 
         $lastColumn = 'V';
+        $title = $officeName !== ''
+            ? 'NU-Secure Daily Visitor Report — '.$officeName
+            : 'NU-Secure Daily Visitor Report';
 
-        $sheet->setCellValue('A1', 'NU-Secure Daily Visitor Report');
+        $sheet->setCellValue('A1', $title);
         $sheet->mergeCells('A1:'.$lastColumn.'1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -946,8 +1276,12 @@ class DailyVisitorReportService
             ->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
     }
 
-    protected function writeExcelFile(Carbon $reportDate, Collection $rows, string $relativePath): string
-    {
+    protected function writeExcelFile(
+        Carbon $reportDate,
+        Collection $rows,
+        string $relativePath,
+        string $officeName = ''
+    ): string {
         $disk = Storage::disk(self::DISK);
         $directory = dirname($relativePath);
 
@@ -955,7 +1289,7 @@ class DailyVisitorReportService
             throw new RuntimeException('Unable to create the secure report storage directory.');
         }
 
-        $spreadsheet = $this->buildSpreadsheet($reportDate, $rows);
+        $spreadsheet = $this->buildSpreadsheet($reportDate, $rows, $officeName);
         $absolutePath = $disk->path($relativePath);
 
         $writer = new Xlsx($spreadsheet);
@@ -1085,6 +1419,18 @@ class DailyVisitorReportService
         ])->map(fn ($value) => trim((string) $value))
             ->filter(fn ($value) => $value !== '')
             ->implode(', ');
+    }
+
+    protected function resolveOfficeName(int $officeId, string $fallback = ''): string
+    {
+        $fallback = trim($fallback);
+        if ($fallback !== '') {
+            return $fallback;
+        }
+
+        $name = trim((string) (DB::table('office')->where('office_id', $officeId)->value('office_name') ?? ''));
+
+        return $name !== '' ? $name : 'Office #'.$officeId;
     }
 
     protected function resolveOfficeOrPerson(array $visit): string

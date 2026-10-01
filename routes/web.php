@@ -16,6 +16,7 @@ use App\Http\Controllers\GuardDutyController;
 use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\LiveDataController;
 use App\Http\Controllers\LoginAttemptController;
+use App\Http\Controllers\Office\OfficeDailyReportController;
 use App\Http\Controllers\Office\OfficeDashboardController;
 use App\Http\Controllers\Office\OfficeProfileController;
 use App\Http\Controllers\Office\OfficeScannerController;
@@ -70,6 +71,15 @@ Route::middleware(['auth', 'office.staff'])->prefix('office')->name('office.')->
     Route::get('/visitors/{visit}/details', [OfficeVisitorController::class, 'detailsJson'])->whereNumber('visit')->name('visitors.details');
 
     Route::get('/visit-history', [OfficeVisitHistoryController::class, 'index'])->name('visit-history');
+
+    Route::get('/daily-reports', [OfficeDailyReportController::class, 'index'])->name('daily-reports');
+    Route::post('/daily-reports/generate', [OfficeDailyReportController::class, 'generate'])->name('daily-reports.generate');
+    Route::post('/daily-reports/{id}/regenerate', [OfficeDailyReportController::class, 'regenerate'])
+        ->whereNumber('id')
+        ->name('daily-reports.regenerate');
+    Route::get('/daily-reports/{id}/download', [OfficeDailyReportController::class, 'download'])
+        ->whereNumber('id')
+        ->name('daily-reports.download');
 
     Route::get('/notifications', [OfficeProfileController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{notifId}/read', [OfficeProfileController::class, 'markNotificationRead'])
