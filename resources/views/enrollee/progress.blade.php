@@ -876,8 +876,8 @@
 						<div class="current-num" aria-hidden="true">{{ $current_step['order'] }}</div>
 						<div>
 							<h3>{{ $current_step['title'] }}</h3>
-							@if (!empty($current_step['floor']))
-								<p class="current-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $current_step['floor'] }}</p>
+							@if (!empty($current_step['location']))
+								<p class="current-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $current_step['location'] }}</p>
 							@endif
 							<p>{{ $current_step['subtitle'] ?: 'Proceed to the assigned office and present your QR pass.' }}</p>
 						</div>
@@ -937,8 +937,8 @@
 							<div class="step-num">{{ $step['order'] }}</div>
 							<div class="step-body">
 								<strong>{{ $step['title'] }}</strong>
-								@if (!empty($step['floor']))
-									<span class="step-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $step['floor'] }}</span>
+								@if (!empty($step['location']))
+									<span class="step-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>{{ $step['location'] }}</span>
 								@endif
 								@if (!empty($step['subtitle']))
 									<span>{{ $step['subtitle'] }}</span>

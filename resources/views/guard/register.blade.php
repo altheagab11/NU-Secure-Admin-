@@ -13092,6 +13092,13 @@ body.android-thermal-print .foot {
 		visitorProvince?.addEventListener('input', syncRegionFromProvince);
 		visitorProvince?.addEventListener('change', syncRegionFromProvince);
 
+		const officeRoomNumbers = @json(config('office_rooms'));
+
+		const formatOfficeLocation = (officeName, floor) => {
+			const room = officeRoomNumbers[String(officeName || '').trim().toLowerCase()];
+			return [normalizeOfficeFloor(floor), room ? `Room ${room}` : ''].filter(Boolean).join(' · ');
+		};
+
 		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select', floor = '') => {
 			const choice = document.createElement('div');
 			choice.className = 'kiosk-office-choice';
@@ -13127,8 +13134,8 @@ body.android-thermal-print .foot {
 			const strong = document.createElement('strong');
 			strong.textContent = officeName;
 			const small = document.createElement('small');
-			const floorLabel = normalizeOfficeFloor(floor);
-			small.textContent = floorLabel || subtitle;
+			const locationLabel = formatOfficeLocation(officeName, floor);
+			small.textContent = locationLabel || subtitle;
 			details.appendChild(strong);
 			details.appendChild(small);
 
@@ -13222,8 +13229,9 @@ body.android-thermal-print .foot {
 				destinationOffice.appendChild(createKioskOfficeChoice(OTHERS_OFFICE_VALUE, 'Others', 'Tap to enter destination'));
 			} else {
 				normalizedOffices.forEach((office) => {
-					const labelText = office.floor
-						? `${office.office_name} — ${office.floor}`
+					const locationLabel = formatOfficeLocation(office.office_name, office.floor);
+					const labelText = locationLabel
+						? `${office.office_name} — ${locationLabel}`
 						: office.office_name;
 					appendGuardOfficeOption(office.office_id, labelText, office.floor);
 				});

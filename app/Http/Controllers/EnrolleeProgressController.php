@@ -231,13 +231,24 @@ class EnrolleeProgressController extends Controller
     protected function formatOfficeWithFloor(?string $officeName, ?string $floor): string
     {
         $name = trim((string) $officeName);
-        $floorLabel = trim((string) $floor);
+        $floorLabel = $this->formatOfficeLocation($name, $floor);
 
         if ($name === '') {
             return $floorLabel;
         }
 
         return $floorLabel !== '' ? $name.' ('.$floorLabel.')' : $name;
+    }
+
+    protected function formatOfficeLocation(?string $officeName, ?string $floor): string
+    {
+        $rooms = config('office_rooms', []);
+        $room = $rooms[Str::lower(trim((string) $officeName))] ?? null;
+
+        return implode(' · ', array_filter([
+            trim((string) $floor),
+            $room ? 'Room '.$room : '',
+        ]));
     }
 
     protected function extractExpectedOfficeFromRemarks(string $remarks): string
@@ -348,6 +359,7 @@ class EnrolleeProgressController extends Controller
                 'order' => (int) ($step['order'] ?? 0),
                 'title' => (string) ($step['title'] ?? 'Enrollment Step'),
                 'floor' => trim((string) ($step['floor'] ?? '')),
+                'location' => $this->formatOfficeLocation($step['title'] ?? '', $step['floor'] ?? ''),
                 'subtitle' => $isOptional && ! $isDone
                     ? 'Optional — uniforms, NU merchandise, and other campus items. You may skip this and continue to the next office.'
                     : (string) ($step['subtitle'] ?? ''),
