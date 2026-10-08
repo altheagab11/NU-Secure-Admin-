@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use App\Services\ActivityLogService;
+use App\Services\OfficeScanService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,11 +12,24 @@ class GuardAlertController extends Controller
 {
     public function index(Request $request)
     {
+        $filters = $request->validate([
+            'list' => ['nullable', 'in:completed,alerts'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'severity' => ['nullable', 'in:Critical,High,Medium,Low'],
+            'type' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:Completed,Ready to Exit'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,75,100'],
+        ]);
+        $kind = $filters['list'] ?? null;
+        $perPage = $kind ? (int) ($filters['per_page'] ?? 5) : 5;
+        $alertTypes = DB::table('alerts')->whereRaw("LOWER(TRIM(COALESCE(status, ''))) = ?", ['unresolved'])
+            ->distinct()->orderBy('alert_type')->pluck('alert_type')->filter()->values();
         $unresolvedAlertsCount = DB::table('alerts')
             ->whereRaw('LOWER(TRIM(COALESCE(status, \'\'))) = ?', ['unresolved'])
             ->count();
 
-        $unresolvedAlertsRows = DB::table('alerts as al')
+        $unresolvedAlertsQuery = DB::table('alerts as al')
             ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'al.visitor_id')
             ->leftJoin('visit as v', 'v.visit_id', '=', 'al.visit_id')
             ->leftJoin('office_scan as os', 'os.scan_id', '=', 'al.scan_id')
@@ -53,8 +67,24 @@ class GuardAlertController extends Controller
             ->whereRaw('LOWER(TRIM(COALESCE(al.status, \'\'))) = ?', ['unresolved'])
             ->orderByDesc('al.created_at')
             ->orderByDesc('al.alert_id')
-            ->limit(20)
-            ->get();
+            ->when($kind === 'alerts', function ($query) use ($filters) {
+                if (! empty($filters['search'])) {
+                    $query->where(function ($search) use ($filters) {
+                        foreach (['vr.first_name', 'vr.last_name', 'v.pass_number', 'v.control_number', 'al.message'] as $column) {
+                            $search->orWhereRaw('LOWER(COALESCE('.$column.", '')) LIKE ?", ['%'.mb_strtolower($filters['search']).'%']);
+                        }
+                        $search->orWhereRaw("LOWER(CONCAT(COALESCE(vr.first_name, ''), ' ', COALESCE(vr.last_name, ''))) LIKE ?", ['%'.mb_strtolower($filters['search']).'%']);
+                    });
+                }
+                if (! empty($filters['severity'])) {
+                    $query->whereRaw('LOWER(al.severity) = ?', [strtolower($filters['severity'])]);
+                }
+                if (! empty($filters['type'])) {
+                    $query->where('al.alert_type', $filters['type']);
+                }
+            });
+        $alertPaginator = $kind === 'completed' ? null : $unresolvedAlertsQuery->paginate($perPage, ['*'], 'page', $kind ? null : 1);
+        $unresolvedAlertsRows = $kind === 'completed' ? collect() : ($alertPaginator ? $alertPaginator->getCollection() : $unresolvedAlertsQuery->limit(5)->get());
 
         $pendingExpectedOfficesByVisit = $this->resolveCurrentExpectedOfficesByVisit(
             $unresolvedAlertsRows
@@ -69,7 +99,7 @@ class GuardAlertController extends Controller
         $unresolvedAlerts = $unresolvedAlertsRows->map(function ($row) use ($pendingExpectedOfficesByVisit) {
             $firstName = trim((string) ($row->first_name ?? ''));
             $lastName = trim((string) ($row->last_name ?? ''));
-            $visitorName = trim($firstName . ' ' . $lastName);
+            $visitorName = trim($firstName.' '.$lastName);
 
             $passNumber = trim((string) ($row->pass_number ?? ''));
             if ($passNumber === '') {
@@ -94,14 +124,14 @@ class GuardAlertController extends Controller
 
             $createdAtLabel = '—';
             try {
-                if (!empty($row->created_at)) {
-                    $createdAtLabel = Carbon::parse($row->created_at)->format('M d, Y g:i A');
+                if (! empty($row->created_at)) {
+                    $createdAtLabel = Carbon::parse($row->created_at, 'Asia/Manila')->format('M d, Y g:i A');
                 }
             } catch (\Throwable $e) {
                 $createdAtLabel = '—';
             }
 
-            $scannedBy = trim(((string) ($row->scanned_by_first_name ?? '')) . ' ' . ((string) ($row->scanned_by_last_name ?? '')));
+            $scannedBy = trim(((string) ($row->scanned_by_first_name ?? '')).' '.((string) ($row->scanned_by_last_name ?? '')));
             $severity = trim((string) ($row->severity ?? ''));
             $alertType = trim((string) ($row->alert_type ?? ''));
             $alertTypeLabel = $alertType !== ''
@@ -109,7 +139,7 @@ class GuardAlertController extends Controller
                 : 'General Alert';
 
             if ($message === '') {
-                $message = $alertTypeLabel . ' detected';
+                $message = $alertTypeLabel.' detected';
             }
 
             return [
@@ -172,8 +202,7 @@ class GuardAlertController extends Controller
                                             ->whereNull('oe_pending.expectation_status_id')
                                             ->orWhereNull('xs_pending.status_name')
                                             ->orWhereIn(
-                                                DB::raw('LOWER(TRIM(COALESCE(xs_pending.status_name, \'\')))')
-                                                ,
+                                                DB::raw('LOWER(TRIM(COALESCE(xs_pending.status_name, \'\')))'),
                                                 $pendingExpectationNames
                                             );
                                     });
@@ -183,7 +212,7 @@ class GuardAlertController extends Controller
 
         $readyToExitCount = (clone $readyToExitBaseQuery)->count('v.visit_id');
 
-        $completedVisitorsRows = (clone $readyToExitBaseQuery)
+        $completedVisitorsQuery = (clone $readyToExitBaseQuery)
             ->leftJoin('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
             ->leftJoin('office as o', 'o.office_id', '=', 'v.primary_office_id')
             ->leftJoin('visit_type as vt', 'vt.visit_type_id', '=', 'v.visit_type_id')
@@ -204,15 +233,36 @@ class GuardAlertController extends Controller
                 'es.exit_status_name',
                 'vt.visit_type_name',
             ])
+            ->selectSub(function ($query) {
+                $query->from('office_expectation as finished')->selectRaw('MAX(finished.arrived_at)')
+                    ->whereColumn('finished.visit_id', 'v.visit_id');
+            }, 'completed_at_source')
+            ->orderByDesc('completed_at_source')
             ->orderByDesc('v.entry_time')
             ->orderByDesc('v.visit_id')
-            ->limit(20)
-            ->get();
+            ->when($kind === 'completed', function ($query) use ($filters) {
+                if (! empty($filters['search'])) {
+                    $query->where(function ($search) use ($filters) {
+                        foreach (['vr.first_name', 'vr.last_name', 'v.control_number', 'v.pass_number', 'o.office_name'] as $column) {
+                            $search->orWhereRaw('LOWER(COALESCE('.$column.", '')) LIKE ?", ['%'.mb_strtolower($filters['search']).'%']);
+                        }
+                        $search->orWhereRaw("LOWER(CONCAT(COALESCE(vr.first_name, ''), ' ', COALESCE(vr.last_name, ''))) LIKE ?", ['%'.mb_strtolower($filters['search']).'%']);
+                    });
+                }
+                if (($filters['status'] ?? '') === 'Completed') {
+                    $query->whereRaw("LOWER(TRIM(COALESCE(es.exit_status_name, ''))) = ?", ['completed']);
+                }
+                if (($filters['status'] ?? '') === 'Ready to Exit') {
+                    $query->whereRaw("LOWER(TRIM(COALESCE(es.exit_status_name, ''))) <> ?", ['completed']);
+                }
+            });
+        $completedPaginator = $kind === 'alerts' ? null : $completedVisitorsQuery->paginate($perPage, ['*'], 'page', $kind ? null : 1);
+        $completedVisitorsRows = $kind === 'alerts' ? collect() : ($completedPaginator ? $completedPaginator->getCollection() : $completedVisitorsQuery->limit(5)->get());
 
         $completedVisitors = $completedVisitorsRows->map(function ($row) {
             $firstName = trim((string) ($row->first_name ?? ''));
             $lastName = trim((string) ($row->last_name ?? ''));
-            $fullName = trim($firstName . ' ' . $lastName);
+            $fullName = trim($firstName.' '.$lastName);
 
             $officeName = trim((string) ($row->office_name ?? ''));
             if ($officeName === '') {
@@ -224,18 +274,18 @@ class GuardAlertController extends Controller
                 $passNumber = trim((string) ($row->control_number ?? ''));
             }
 
-            $completedAtSource = $row->exit_time ?: $row->entry_time;
+            $completedAtSource = $row->completed_at_source ?? null;
             $completedAtLabel = '—';
 
             try {
-                if (!empty($completedAtSource)) {
-                    $completedAtLabel = Carbon::parse($completedAtSource)->format('g:i A');
+                if (! empty($completedAtSource)) {
+                    $completedAtLabel = Carbon::parse($completedAtSource, 'Asia/Manila')->format('M d, g:i A');
                 }
             } catch (\Throwable $e) {
                 $completedAtLabel = '—';
             }
 
-            $initials = strtoupper(substr($firstName, 0, 1) . substr($lastName, 0, 1));
+            $initials = strtoupper(substr($firstName, 0, 1).substr($lastName, 0, 1));
             if ($initials === '') {
                 $initials = 'NA';
             }
@@ -243,13 +293,27 @@ class GuardAlertController extends Controller
             return [
                 'visit_id' => (int) ($row->visit_id ?? 0),
                 'initials' => $initials,
+                'photo_url' => app(OfficeScanService::class)->resolveVisitorPhotoUrl($row->visitor_photo_with_id_url ?? null),
                 'visitor_name' => $fullName !== '' ? $fullName : 'Unknown Visitor',
                 'office_name' => $officeName !== '' ? $officeName : 'No office assigned',
                 'pass_number' => $passNumber !== '' ? $passNumber : 'No pass/control number',
+                'control_number' => trim((string) ($row->control_number ?? '')),
                 'completed_at' => $completedAtLabel,
                 'status' => trim((string) ($row->exit_status_name ?? 'Ready to Exit')) ?: 'Ready to Exit',
             ];
         })->values();
+
+        if ($kind) {
+            $paginator = $kind === 'completed' ? $completedPaginator : $alertPaginator;
+            $rows = $kind === 'completed' ? $completedVisitors : $unresolvedAlerts;
+
+            return response()->json([
+                'success' => true,
+                'html' => view('guard.partials.active-alert-records', compact('kind', 'rows'))->render(),
+                'alerts' => $kind === 'alerts' ? $unresolvedAlerts : [],
+                'meta' => ['current_page' => $paginator->currentPage(), 'last_page' => $paginator->lastPage(), 'total' => $paginator->total(), 'from' => $paginator->firstItem() ?? 0, 'to' => $paginator->lastItem() ?? 0],
+            ]);
+        }
 
         return view('guard.alert', [
             'unresolvedAlertsCount' => $unresolvedAlertsCount,
@@ -257,6 +321,9 @@ class GuardAlertController extends Controller
             'activeAlertsCount' => $unresolvedAlertsCount,
             'completedVisitors' => $completedVisitors,
             'unresolvedAlerts' => $unresolvedAlerts,
+            'alertTypes' => $alertTypes,
+            'completedPaginator' => $completedPaginator,
+            'alertPaginator' => $alertPaginator,
         ]);
     }
 

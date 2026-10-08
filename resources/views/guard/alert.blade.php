@@ -1386,6 +1386,7 @@
 			padding: 12px;
 			background: #f8fafc;
 		}
+		@include('guard.partials.active-alert-styles')
 	</style>
 </head>
 <body>
@@ -1516,135 +1517,7 @@
 					</div>
 				</div>
 
-				<div class="alerts-summary-grid">
-					<div class="alerts-summary-card">
-						<div class="summary-top">
-							<span class="summary-label">All Alerts</span>
-							<div class="summary-icon soft-red">
-								<i class="fas fa-circle-xmark"></i>
-							</div>
-						</div>
-						<h2 class="summary-number">{{ number_format((int) ($unresolvedAlertsCount ?? 0)) }}</h2>
-						<p class="summary-text">Unresolved alerts</p>
-					</div>
-
-					<div class="alerts-summary-card">
-						<div class="summary-top">
-							<span class="summary-label">Completed</span>
-							<div class="summary-icon soft-green">
-								<i class="fas fa-circle-check"></i>
-							</div>
-						</div>
-						<h2 class="summary-number">{{ number_format((int) ($readyToExitCount ?? 0)) }}</h2>
-						<p class="summary-text">Ready to exit</p>
-					</div>
-				</div>
-
-				<div class="alerts-panel-card">
-					<div class="alerts-panel-header">
-						<div class="alerts-panel-title-wrap">
-							<div class="section-icon soft-green-lite">
-								<i class="fas fa-check-circle"></i>
-							</div>
-							<div>
-								<h3>Completed Visitors</h3>
-								<p>Visitors who have completed their business and are ready to exit.</p>
-							</div>
-						</div>
-
-						<div class="alerts-panel-actions">
-							<input type="text" class="alerts-search-input" placeholder="Search visitor..." />
-							<select class="alerts-filter-select">
-								<option>All</option>
-								<option>Ready to Exit</option>
-								<option>Completed</option>
-								<option>Unresolved Alerts</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="alerts-list" id="completedVisitorsList">
-						@forelse(($completedVisitors ?? []) as $visitor)
-							<div class="alert-visitor-item completed">
-								<div class="alert-visitor-left">
-									<div class="alert-avatar">{{ $visitor['initials'] ?? 'NA' }}</div>
-									<div class="alert-visitor-info">
-										<h4>{{ $visitor['visitor_name'] ?? 'Unknown Visitor' }}</h4>
-										<p>{{ $visitor['office_name'] ?? 'No office assigned' }} • {{ $visitor['pass_number'] ?? 'No pass/control number' }}</p>
-										<span>Completed at: {{ $visitor['completed_at'] ?? '—' }}</span>
-									</div>
-								</div>
-
-								<div class="alert-visitor-right">
-									<span class="alert-status-badge ready">{{ $visitor['status'] ?? 'Ready to Exit' }}</span>
-									<a href="/guard/exit" class="alert-action-btn">Process Exit</a>
-								</div>
-							</div>
-						@empty
-							<div class="alerts-empty-card">
-								<div class="alerts-empty-icon">
-									<i class="fas fa-user-check"></i>
-								</div>
-								<h3>No completed visitors yet</h3>
-								<p>Visitors with "Ready to Exit" or "Completed" status will appear here.</p>
-							</div>
-						@endforelse
-					</div>
-					<div class="pagination-wrap js-hidden" id="completedVisitorsPagination">
-						<div class="pagination-info" id="completedVisitorsPaginationInfo"></div>
-						<div class="pagination-controls" id="completedVisitorsPaginationControls"></div>
-					</div>
-				</div>
-
-				<div class="alerts-panel-card">
-					<div class="alerts-panel-header">
-						<div class="alerts-panel-title-wrap">
-							<div class="section-icon soft-red">
-								<i class="fas fa-triangle-exclamation"></i>
-							</div>
-							<div>
-								<h3>All Alerts (Unresolved)</h3>
-								<p>Shows all unresolved alerts across all alert types.</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="alerts-list" id="unresolvedAlertsList">
-						@forelse(($unresolvedAlerts ?? []) as $alert)
-							<div class="alert-visitor-item">
-								<div class="alert-visitor-left">
-									<div class="alert-avatar">{{ strtoupper(substr((string) ($alert['visitor_name'] ?? 'NA'), 0, 2)) }}</div>
-									<div class="alert-visitor-info">
-										<h4>[{{ $alert['severity'] ?? 'High' }}] {{ $alert['alert_type'] ?? 'General Alert' }}</h4>
-										<p>Visitor: {{ $alert['visitor_name'] ?? 'Unknown Visitor' }}</p>
-										<p>Pass No: {{ $alert['pass_number'] ?? 'No pass/control number' }}</p>
-										<p>Expected Office: {{ $alert['expected_office'] ?? 'No expected office' }}</p>
-										<p>Scanned Office: {{ $alert['scanned_office'] ?? 'No scanned office' }}</p>
-										<p>Message: {{ $alert['message'] ?? 'Visitor scanned at wrong office' }}</p>
-										<p>Status: {{ $alert['status'] ?? 'Unresolved' }}</p>
-										<span>Time: {{ $alert['time'] ?? '—' }}</span>
-									</div>
-								</div>
-
-								<div class="alert-visitor-right">
-									<button type="button" class="alert-action-btn view-btn" data-alert-id="{{ $alert['alert_id'] ?? 0 }}">View Details</button>
-								</div>
-							</div>
-						@empty
-							<div class="alerts-empty-card">
-								<div class="alerts-empty-icon">
-									<i class="fas fa-shield-check"></i>
-								</div>
-								<h3>No unresolved alerts</h3>
-								<p>All alerts are currently resolved.</p>
-							</div>
-						@endforelse
-					</div>
-					<div class="pagination-wrap js-hidden" id="unresolvedAlertsPagination">
-						<div class="pagination-info" id="unresolvedAlertsPaginationInfo"></div>
-						<div class="pagination-controls" id="unresolvedAlertsPaginationControls"></div>
-					</div>
-				</div>
+				@include('guard.partials.active-alert-content')
 			</div>
 		</main>
 	</div>
@@ -1897,6 +1770,7 @@
 			resolveBtn.disabled = isResolved;
 
 			modal.style.display = 'block';
+			modal.querySelector('#closeAlertBtn')?.focus();
 
 			if (!alert.visit_id) return;
 
@@ -2062,79 +1936,9 @@
 			}
 		});
 
-		const ALERTS_PER_PAGE = 10;
-
-		function setupCardPagination(listId, paginationId, infoId, controlsId, itemLabel) {
-			const list = document.getElementById(listId);
-			const paginationWrap = document.getElementById(paginationId);
-			const infoTarget = document.getElementById(infoId);
-			const controlsTarget = document.getElementById(controlsId);
-			if (!list || !paginationWrap || !infoTarget || !controlsTarget) return;
-
-			const rows = Array.from(list.querySelectorAll('.alert-visitor-item'));
-			const totalRows = rows.length;
-			const totalPages = Math.ceil(totalRows / ALERTS_PER_PAGE);
-			let currentPage = 1;
-
-			const renderPage = (page) => {
-				if (totalPages <= 1) {
-					paginationWrap.style.display = 'none';
-					return;
-				}
-
-				currentPage = Math.min(Math.max(page, 1), totalPages);
-				const start = (currentPage - 1) * ALERTS_PER_PAGE;
-				const end = start + ALERTS_PER_PAGE;
-
-				rows.forEach((row, index) => {
-					row.style.display = index >= start && index < end ? '' : 'none';
-				});
-
-				paginationWrap.style.display = 'flex';
-				infoTarget.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows} ${itemLabel}`;
-				controlsTarget.innerHTML = '';
-
-				const createButton = (label, targetPage, isDisabled = false, isActive = false) => {
-					const button = document.createElement('button');
-					button.type = 'button';
-					button.className = `pagination-btn${isActive ? ' active' : ''}`;
-					button.textContent = label;
-					button.disabled = isDisabled;
-					button.addEventListener('click', () => renderPage(targetPage));
-					return button;
-				};
-
-				controlsTarget.appendChild(createButton('Prev', currentPage - 1, currentPage === 1));
-
-				for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
-					controlsTarget.appendChild(
-						createButton(String(pageNumber), pageNumber, false, pageNumber === currentPage)
-					);
-				}
-
-				controlsTarget.appendChild(createButton('Next', currentPage + 1, currentPage === totalPages));
-			};
-
-			renderPage(1);
-		}
-
-		setupCardPagination(
-			'completedVisitorsList',
-			'completedVisitorsPagination',
-			'completedVisitorsPaginationInfo',
-			'completedVisitorsPaginationControls',
-			'completed visitors'
-		);
-
-		setupCardPagination(
-			'unresolvedAlertsList',
-			'unresolvedAlertsPagination',
-			'unresolvedAlertsPaginationInfo',
-			'unresolvedAlertsPaginationControls',
-			'unresolved alerts'
-		);
+		@include('guard.partials.active-alert-script')
 	</script>
 	@include('guard.partials.guard-responsive-script')
-	@include('partials.live-auto-refresh')
+	@include('partials.live-auto-refresh', ['liveRefreshPauseSelectors' => ['#alertModal', '#resolveModal']])
 </body>
 </html>
