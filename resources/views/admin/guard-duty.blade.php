@@ -1102,6 +1102,7 @@
 	<script nonce="{{ $cspNonce }}">
 		(function () {
 			const listUrl = @json(route('api.admin.guard-duty'));
+			const summaryUrl = @json(route('api.admin.guard-duty.summary'));
 			const filtersUrl = @json(route('api.admin.guard-duty.filters'));
 			const showUrlBase = @json(url('/api/admin/guard-duty'));
 
@@ -1116,6 +1117,8 @@
 				activeShiftId: null,
 				visitorsPage: 1,
 				visitorsPerPage: 5,
+				historyRequest: null,
+				summaryRequest: null,
 			};
 
 			const els = {
@@ -1168,6 +1171,7 @@
 					page: String(state.page),
 					per_page: String(state.perPage),
 					date_range: els.dateRange.value || 'all',
+					include_summary: '0',
 				});
 				if (els.search.value.trim()) params.set('search', els.search.value.trim());
 				if (els.station.value) params.set('station', els.station.value);
@@ -1183,8 +1187,9 @@
 				els.customRange.classList.toggle('is-visible', els.dateRange.value === 'custom');
 			}
 
-			async function fetchJson(url) {
+			async function fetchJson(url, signal) {
 				const response = await fetch(url, {
+					signal,
 					headers: {
 						'Accept': 'application/json',
 						'X-Requested-With': 'XMLHttpRequest',
@@ -1280,16 +1285,43 @@
 			}
 
 			async function loadDuty() {
+				const url = listUrl + '?' + queryParams().toString();
+				if (state.historyRequest && state.historyRequest.url === url) return state.historyRequest.promise;
+				if (state.historyRequest) state.historyRequest.controller.abort();
+				const request = { url, controller: new AbortController(), promise: null };
+				state.historyRequest = request;
 				hideError();
+				els.body.setAttribute('aria-busy', 'true');
+				request.promise = (async function () {
 				try {
-					const payload = await fetchJson(listUrl + '?' + queryParams().toString());
-					renderCurrent(payload.current || [], payload.last_completed || null);
+					const payload = await fetchJson(url, request.controller.signal);
+					if (state.historyRequest !== request) return;
 					renderHistory(payload);
 					state.lastUpdatedAt = Date.now();
 					els.lastUpdated.textContent = 'Last updated: just now';
 				} catch (error) {
+					if (error.name === 'AbortError' || state.historyRequest !== request) return;
 					showError(error.message || 'Unable to load Guard Duty data.');
+				} finally {
+					if (state.historyRequest === request) {
+						state.historyRequest = null;
+						els.body.setAttribute('aria-busy', 'false');
+					}
 				}
+				})();
+				return request.promise;
+			}
+
+			function loadSummary() {
+				if (state.summaryRequest) return state.summaryRequest;
+				state.summaryRequest = fetchJson(summaryUrl).then(function (payload) {
+					renderCurrent(payload.current || [], payload.last_completed || null);
+				}).catch(function (error) {
+					showError(error.message || 'Unable to load current guard duty.');
+				}).finally(function () {
+					state.summaryRequest = null;
+				});
+				return state.summaryRequest;
 			}
 
 			async function loadFilters() {
@@ -1499,7 +1531,10 @@
 				state.page = 1;
 				loadDuty();
 			});
-			document.getElementById('refreshDutyBtn').addEventListener('click', loadDuty);
+			document.getElementById('refreshDutyBtn').addEventListener('click', function () {
+				loadDuty();
+				loadSummary();
+			});
 			els.dateRange.addEventListener('change', toggleCustomRange);
 			els.search.addEventListener('input', function () {
 				clearTimeout(state.searchTimer);
@@ -1546,11 +1581,13 @@
 			setInterval(function () {
 				if (document.hidden || state.drawerOpen) return;
 				loadDuty();
+				loadSummary();
 			}, 45000);
 
 			toggleCustomRange();
-			loadFilters();
 			loadDuty();
+			loadSummary();
+			loadFilters();
 		})();
 	</script>
 	@include('admin.partials.admin-responsive-script')

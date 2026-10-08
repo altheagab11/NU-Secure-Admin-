@@ -9,6 +9,7 @@
 		<div>
 			<h2>Daily Reports</h2>
 			<p class="card-muted mb-0">Daily visitor Excel reports for {{ $office->office_name }}</p>
+			<p class="card-muted small mb-0">The previous day's report is generated automatically at 12:00 AM Philippine time when the scheduler is active.</p>
 		</div>
 		<button type="button" class="btn btn-nu-primary" data-bs-toggle="modal" data-bs-target="#generateReportModal">
 			<i class="bi bi-plus-circle me-1"></i> Generate Daily Report

@@ -23,16 +23,6 @@ class AdminDashboardController extends Controller
             $dateFilter = '';
         }
 
-        $allowedPerPage = [5, 10, 25, 50, 75, 100];
-        $livePerPage = (int) $request->query('live_per_page', 5);
-        $alertsPerPage = (int) $request->query('alerts_per_page', 5);
-        if (! in_array($livePerPage, $allowedPerPage, true)) {
-            $livePerPage = 5;
-        }
-        if (! in_array($alertsPerPage, $allowedPerPage, true)) {
-            $alertsPerPage = 5;
-        }
-
         $applyDateFilter = function ($query, string $column) use ($dateFilter) {
             if ($dateFilter === 'today') {
                 $query->whereDate($column, today());
@@ -281,43 +271,42 @@ class AdminDashboardController extends Controller
             ->when($statusFilter === 'inside', fn ($query) => $query->whereNull('v.exit_time'))
             ->when(in_array($statusFilter, ['exited', 'completed'], true), fn ($query) => $query->whereNotNull('v.exit_time'))
             ->orderByDesc('v.entry_time')
-            ->paginate($livePerPage, ['*'], 'live_page')
-            ->withQueryString();
+            ->orderByDesc('v.visit_id')
+            ->limit(5)
+            ->get();
 
-        $liveVisitorRows->setCollection(
-            $liveVisitorRows->getCollection()->map(function ($row) {
-                $name = trim(((string) ($row->first_name ?? '')).' '.((string) ($row->last_name ?? '')));
-                if ($name === '') {
-                    $name = 'Unknown Visitor';
+        $liveVisitorRows = $liveVisitorRows->map(function ($row) {
+            $name = trim(((string) ($row->first_name ?? '')).' '.((string) ($row->last_name ?? '')));
+            if ($name === '') {
+                $name = 'Unknown Visitor';
+            }
+
+            $status = 'Inside';
+            if (! empty($row->exit_time)) {
+                $status = 'Exited';
+            }
+
+            $timeIn = '—';
+            try {
+                if (! empty($row->entry_time)) {
+                    $timeIn = Carbon::parse($row->entry_time)->format('h:i A');
                 }
-
-                $status = 'Inside';
-                if (! empty($row->exit_time)) {
-                    $status = 'Exited';
-                }
-
+            } catch (\Throwable $e) {
                 $timeIn = '—';
-                try {
-                    if (! empty($row->entry_time)) {
-                        $timeIn = Carbon::parse($row->entry_time)->format('h:i A');
-                    }
-                } catch (\Throwable $e) {
-                    $timeIn = '—';
-                }
+            }
 
-                return [
-                    'visit_id' => (int) ($row->visit_id ?? 0),
-                    'name' => $name,
-                    'status' => $status,
-                    'location' => trim((string) ($row->office_name ?? '')) !== ''
-                        ? trim((string) ($row->office_name ?? ''))
-                        : (trim((string) ($row->destination_text ?? '')) !== ''
-                            ? trim((string) ($row->destination_text ?? ''))
-                            : 'No office set'),
-                    'time_in' => $timeIn,
-                ];
-            })
-        );
+            return [
+                'visit_id' => (int) ($row->visit_id ?? 0),
+                'name' => $name,
+                'status' => $status,
+                'location' => trim((string) ($row->office_name ?? '')) !== ''
+                    ? trim((string) ($row->office_name ?? ''))
+                    : (trim((string) ($row->destination_text ?? '')) !== ''
+                        ? trim((string) ($row->destination_text ?? ''))
+                        : 'No office set'),
+                'time_in' => $timeIn,
+            ];
+        });
 
         $recentAlertRows = DB::table('alerts as a')
             ->leftJoin('visit as v', 'v.visit_id', '=', 'a.visit_id')
@@ -348,43 +337,41 @@ class AdminDashboardController extends Controller
             ->when(in_array($statusFilter, ['resolved', 'unresolved'], true), fn ($query) => $query->whereRaw("LOWER(TRIM(COALESCE(a.status, ''))) = ?", [$statusFilter]))
             ->orderByDesc('a.created_at')
             ->orderByDesc('a.alert_id')
-            ->paginate($alertsPerPage, ['*'], 'alerts_page')
-            ->withQueryString();
+            ->limit(5)
+            ->get();
 
-        $recentAlertRows->setCollection(
-            $recentAlertRows->getCollection()->map(function ($row) {
-                $firstName = trim((string) ($row->direct_first_name ?? ''));
-                $lastName = trim((string) ($row->direct_last_name ?? ''));
+        $recentAlertRows = $recentAlertRows->map(function ($row) {
+            $firstName = trim((string) ($row->direct_first_name ?? ''));
+            $lastName = trim((string) ($row->direct_last_name ?? ''));
 
-                if ($firstName === '' && $lastName === '') {
-                    $firstName = trim((string) ($row->visit_first_name ?? ''));
-                    $lastName = trim((string) ($row->visit_last_name ?? ''));
+            if ($firstName === '' && $lastName === '') {
+                $firstName = trim((string) ($row->visit_first_name ?? ''));
+                $lastName = trim((string) ($row->visit_last_name ?? ''));
+            }
+
+            $visitorName = trim($firstName.' '.$lastName);
+            if ($visitorName === '') {
+                $visitorName = 'Unknown Visitor';
+            }
+
+            $timeLabel = '—';
+            try {
+                if (! empty($row->created_at)) {
+                    $timeLabel = Carbon::parse($row->created_at)->format('h:i A');
                 }
-
-                $visitorName = trim($firstName.' '.$lastName);
-                if ($visitorName === '') {
-                    $visitorName = 'Unknown Visitor';
-                }
-
+            } catch (\Throwable $e) {
                 $timeLabel = '—';
-                try {
-                    if (! empty($row->created_at)) {
-                        $timeLabel = Carbon::parse($row->created_at)->format('h:i A');
-                    }
-                } catch (\Throwable $e) {
-                    $timeLabel = '—';
-                }
+            }
 
-                return [
-                    'alert_id' => (int) ($row->alert_id ?? 0),
-                    'time' => $timeLabel,
-                    'visitor' => $visitorName,
-                    'type' => trim((string) ($row->alert_type ?? '')) ?: 'General Alert',
-                    'severity' => ucfirst(strtolower(trim((string) ($row->severity ?? '')) ?: 'Low')),
-                    'status' => ucfirst(strtolower(trim((string) ($row->status ?? '')) ?: 'Unresolved')),
-                ];
-            })
-        );
+            return [
+                'alert_id' => (int) ($row->alert_id ?? 0),
+                'time' => $timeLabel,
+                'visitor' => $visitorName,
+                'type' => trim((string) ($row->alert_type ?? '')) ?: 'General Alert',
+                'severity' => ucfirst(strtolower(trim((string) ($row->severity ?? '')) ?: 'Low')),
+                'status' => ucfirst(strtolower(trim((string) ($row->status ?? '')) ?: 'Unresolved')),
+            ];
+        });
 
         $officeOptions = DB::table('office')
             ->select('office_id', 'office_name')
@@ -506,9 +493,12 @@ class AdminDashboardController extends Controller
             'selectedVisitorTypeFilter' => $visitorTypeFilter,
             'selectedStatusFilter' => $statusFilterRaw,
             'peakVisitorHourInsight' => $peakVisitorHourInsight,
+            'peakVisitorHourValue' => isset($hourStart, $hourEnd) ? $hourStart.' – '.$hourEnd : 'No entries yet',
             'topOfficeTodayInsight' => $topOfficeTodayInsight,
+            'topOfficeTodayValue' => $topOfficeTodayRow->office_name ?? 'No office visits yet',
             'unresolvedAlertsInsight' => $unresolvedAlertsInsight,
             'longestAvgDurationInsight' => $longestAvgDurationInsight,
+            'longestAvgDurationValue' => isset($avgDuration) ? $longestAvgDurationOfficeRow->office_name.' · '.$avgDuration.'m' : 'No completed visits yet',
             'guardsOnDutyCount' => $guardsOnDutyCount,
             'successfulLoginsToday' => $successfulLoginsToday,
             'failedLoginsToday' => $failedLoginsToday,

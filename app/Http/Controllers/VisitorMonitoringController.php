@@ -15,7 +15,11 @@ class VisitorMonitoringController extends Controller
 {
     public function index(Request $request)
     {
-        [$rows, $fetchError] = $this->loadRowsAndFetchError();
+        if ($request->query('summary') === 'scans') {
+            return $this->summaryResponse($request, 'scans', $this->loadCorrectOfficeScans(Carbon::now('Asia/Manila')->toDateString()));
+        }
+
+        [$rows, $fetchError] = $this->loadRowsAndFetchError($request->query('summary') !== 'recent');
         $filters = $this->extractFilters($request);
 
         $officeOptions = $rows
@@ -40,11 +44,11 @@ class VisitorMonitoringController extends Controller
         if (! in_array($perPage, $allowedPerPage, true)) {
             $perPage = 5;
         }
-        $recentPerPage = (int) $request->query('recent_per_page', 5);
+        $recentPerPage = 5;
         if (! in_array($recentPerPage, $allowedPerPage, true)) {
             $recentPerPage = 5;
         }
-        $scansPerPage = (int) $request->query('scans_per_page', 5);
+        $scansPerPage = 5;
         if (! in_array($scansPerPage, $allowedPerPage, true)) {
             $scansPerPage = 5;
         }
@@ -116,7 +120,7 @@ class VisitorMonitoringController extends Controller
 
         $maxOfficeCount = max(1, (int) $activeByOffice->max('count'));
 
-        $recentCardFilters = $filters;
+        $recentCardFilters = $this->extractFilters(new Request);
         $recentCardFilters['date_from'] = $manilaToday;
         $recentCardFilters['date_to'] = $manilaToday;
 
@@ -131,10 +135,16 @@ class VisitorMonitoringController extends Controller
                 'time_label' => $row['entry_time_label_short'],
                 'status' => $row['status'],
                 'status_class' => $row['status_class'],
+                'control_number' => $row['control_number'],
+                'visit_type' => $row['visit_type'],
             ])
             ->values();
 
-        $recentPage = max(1, (int) $request->query('recent_page', 1));
+        if ($request->query('summary') === 'recent') {
+            return $this->summaryResponse($request, 'recent', $recentVisitorsSource);
+        }
+
+        $recentPage = 1;
         $recentVisitors = new LengthAwarePaginator(
             $recentVisitorsSource->forPage($recentPage, $recentPerPage)->values(),
             $recentVisitorsSource->count(),
@@ -147,25 +157,9 @@ class VisitorMonitoringController extends Controller
             ]
         );
 
-        $supabaseUrl = env('SUPABASE_URL');
-        $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
+        $correctOfficeScansSource = $this->loadCorrectOfficeScans($manilaToday);
 
-        $correctOfficeScansSource = collect([]);
-        if ($supabaseUrl && $supabaseKey) {
-            try {
-                $correctOfficeScansSource = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey, $manilaToday);
-            } catch (\Throwable $e) {
-                logger()->warning('Correct office scan fetch failed: '.$e->getMessage());
-            }
-        }
-
-        if ($correctOfficeScansSource->isEmpty()) {
-            $correctOfficeScansSource = $this->fetchCorrectOfficeScansFromDatabase($manilaToday);
-        }
-
-        $correctOfficeScansSource = $this->applyCorrectScanCardFilters($correctOfficeScansSource, $filters);
-
-        $scansPage = max(1, (int) $request->query('scans_page', 1));
+        $scansPage = 1;
         $correctOfficeScans = new LengthAwarePaginator(
             $correctOfficeScansSource->forPage($scansPage, $scansPerPage)->values(),
             $correctOfficeScansSource->count(),
@@ -223,7 +217,56 @@ class VisitorMonitoringController extends Controller
         ]);
     }
 
-    private function loadRowsAndFetchError(): array
+    private function summaryResponse(Request $request, string $kind, Collection $source)
+    {
+        $modalFilters = $this->extractFilters(new Request([
+            'search' => $request->query('summary_search', ''),
+            'office' => $request->query('summary_office', ''),
+            'status' => $request->query('summary_status', ''),
+            'visit_type' => $request->query('summary_visit_type', ''),
+        ]));
+        $source = $kind === 'recent'
+            ? $this->applyFilters($source, $modalFilters)->values()
+            : $this->applyCorrectScanCardFilters($source, $modalFilters);
+        $allowedPerPage = [5, 10, 25, 50, 75, 100];
+        $modalPerPage = (int) $request->query('summary_per_page', 5);
+        if (! in_array($modalPerPage, $allowedPerPage, true)) {
+            $modalPerPage = 5;
+        }
+        $modalPage = min(max(1, (int) $request->query('summary_page', 1)), max(1, (int) ceil($source->count() / $modalPerPage)));
+        $records = new LengthAwarePaginator(
+            $source->forPage($modalPage, $modalPerPage)->values(),
+            $source->count(), $modalPerPage, $modalPage,
+            ['path' => $request->url(), 'query' => $request->query(), 'pageName' => 'summary_page']
+        );
+
+        return response()->json([
+            'html' => view('admin.partials.visitor-summary-records', compact('records', 'kind'))->render(),
+        ]);
+    }
+
+    private function loadCorrectOfficeScans(string $manilaToday): Collection
+    {
+        $supabaseUrl = env('SUPABASE_URL');
+        $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
+
+        $correctOfficeScansSource = collect([]);
+        if ($supabaseUrl && $supabaseKey) {
+            try {
+                $correctOfficeScansSource = $this->fetchCorrectOfficeScans($supabaseUrl, $supabaseKey, $manilaToday);
+            } catch (\Throwable $e) {
+                logger()->warning('Correct office scan fetch failed: '.$e->getMessage());
+            }
+        }
+
+        if ($correctOfficeScansSource->isEmpty()) {
+            $correctOfficeScansSource = $this->fetchCorrectOfficeScansFromDatabase($manilaToday);
+        }
+
+        return $correctOfficeScansSource;
+    }
+
+    private function loadRowsAndFetchError(bool $includePhotos = true): array
     {
         $supabaseUrl = env('SUPABASE_URL');
         $supabaseKey = env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY');
@@ -238,10 +281,10 @@ class VisitorMonitoringController extends Controller
         }
 
         try {
-            $rows = $this->fetchVisitorMonitoringRows($supabaseUrl, $supabaseKey);
+            $rows = $this->fetchVisitorMonitoringRows($supabaseUrl, $supabaseKey, $includePhotos);
 
             if ($rows->isEmpty()) {
-                $fallbackRows = $this->fetchVisitorMonitoringRowsFromDatabase();
+                $fallbackRows = $this->fetchVisitorMonitoringRowsFromDatabase($includePhotos);
 
                 if ($fallbackRows->isNotEmpty()) {
                     $rows = $fallbackRows;
@@ -261,7 +304,7 @@ class VisitorMonitoringController extends Controller
         } catch (\Throwable $e) {
             logger()->error('Visitor monitoring Supabase fetch failed: '.$e->getMessage());
 
-            $fallbackRows = $this->fetchVisitorMonitoringRowsFromDatabase();
+            $fallbackRows = $this->fetchVisitorMonitoringRowsFromDatabase($includePhotos);
             if ($fallbackRows->isNotEmpty()) {
                 $rows = $fallbackRows;
                 $fetchError = 'Unable to fetch Visitor Monitoring data from Supabase. Showing database fallback data.';
@@ -331,7 +374,7 @@ class VisitorMonitoringController extends Controller
         });
     }
 
-    private function fetchVisitorMonitoringRows(string $supabaseUrl, string $supabaseKey): Collection
+    private function fetchVisitorMonitoringRows(string $supabaseUrl, string $supabaseKey, bool $includePhotos = true): Collection
     {
         $select = 'visit_id,visitor_id,guard_user_id,purpose_reason,entry_time,exit_time,duration_minutes,pass_number,control_number,destination_text,'.
             'incomplete_route_reviewed,incomplete_route_note,incomplete_route_reviewed_by,'.
@@ -391,7 +434,7 @@ class VisitorMonitoringController extends Controller
             ->values();
 
         $addressMap = $this->fetchAddressMapFromRest($baseUrl, $supabaseKey, $addressIds);
-        $photoPathMap = $this->buildSignedPhotoUrlMap(
+        $photoPathMap = $includePhotos ? $this->buildSignedPhotoUrlMap(
             collect($visits)
                 ->map(function (array $visit) {
                     $visitor = is_array($visit['visitor'] ?? null) ? $visit['visitor'] : [];
@@ -402,7 +445,7 @@ class VisitorMonitoringController extends Controller
                 ->values(),
             $baseUrl,
             $supabaseKey
-        );
+        ) : collect([]);
         $officeRouteMap = $this->fetchOfficeRouteMapFromRest($baseUrl, $supabaseKey, $visitIds);
         $officeScanMap = $this->fetchLatestOfficeScanMapFromRest($baseUrl, $supabaseKey, $visitIds);
 
@@ -1338,7 +1381,7 @@ class VisitorMonitoringController extends Controller
         return $name !== '' ? $name : '—';
     }
 
-    private function fetchVisitorMonitoringRowsFromDatabase(): Collection
+    private function fetchVisitorMonitoringRowsFromDatabase(bool $includePhotos = true): Collection
     {
         try {
             $hasIncompleteRouteColumns = Schema::hasColumn('visit', 'incomplete_route_reviewed');
@@ -1473,7 +1516,7 @@ class VisitorMonitoringController extends Controller
             $supabaseUrl = rtrim((string) env('SUPABASE_URL', ''), '/');
             $supabaseKey = (string) (env('SUPABASE_SERVICE_ROLE_KEY') ?: env('SUPABASE_KEY') ?: '');
 
-            $photoPathMap = $this->buildSignedPhotoUrlMap(
+            $photoPathMap = $includePhotos ? $this->buildSignedPhotoUrlMap(
                 $visits
                     ->pluck('visitor_photo_with_id_url')
                     ->map(fn ($value) => (string) $value)
@@ -1481,7 +1524,7 @@ class VisitorMonitoringController extends Controller
                     ->values(),
                 $supabaseUrl,
                 $supabaseKey
-            );
+            ) : collect([]);
 
             return $visits->map(function ($row) use ($alertsByVisit, $officeExpectationsByVisit, $photoPathMap, $scansByVisit) {
                 $visit = (array) $row;

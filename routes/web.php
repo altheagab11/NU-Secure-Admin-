@@ -175,6 +175,7 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
     Route::get('/login-attempts/summary', [LoginAttemptController::class, 'summary'])->name('api.admin.login-attempts.summary');
 
     Route::get('/guard-duty', [AdminGuardDutyController::class, 'list'])->name('api.admin.guard-duty');
+    Route::get('/guard-duty/summary', [AdminGuardDutyController::class, 'summary'])->name('api.admin.guard-duty.summary');
     Route::get('/guard-duty/filters', [AdminGuardDutyController::class, 'filters'])->name('api.admin.guard-duty.filters');
     Route::get('/guard-duty/{shift}/visitors', [AdminGuardDutyController::class, 'visitors'])
         ->whereNumber('shift')

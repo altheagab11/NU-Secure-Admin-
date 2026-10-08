@@ -36,3 +36,17 @@ Schedule::command('generate:daily-visitor-report --catch-up=7')
     ->timezone('Asia/Manila')
     ->withoutOverlapping(30)
     ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));
+
+// Generate yesterday's office-scoped reports even when no office staff are logged in.
+Schedule::command('generate:office-daily-visitor-reports')
+    ->dailyAt('00:00')
+    ->timezone('Asia/Manila')
+    ->withoutOverlapping(60)
+    ->appendOutputTo(storage_path('logs/office-daily-visitor-report-scheduler.log'));
+
+// Retry missed/failed days separately from the admin's hourly catch-up.
+Schedule::command('generate:office-daily-visitor-reports --catch-up=7')
+    ->hourlyAt(15)
+    ->timezone('Asia/Manila')
+    ->withoutOverlapping(60)
+    ->appendOutputTo(storage_path('logs/office-daily-visitor-report-scheduler.log'));

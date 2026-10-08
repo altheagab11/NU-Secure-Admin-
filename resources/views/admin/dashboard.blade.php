@@ -315,410 +315,9 @@
 			overflow-y: auto;
 		}
 
-		.dashboard-title {
-			margin: 0 0 14px 0;
-			font-size: 28px;
-			font-weight: 700;
-			letter-spacing: -0.02em;
-			color: #0b111b;
-		}
-
-		.stats-grid {
-			display: grid;
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: 14px;
-			margin-bottom: 16px;
-		}
-
-		.stat-card {
-			position: relative;
-			background: #ffffff;
-			border-radius: 10px;
-			padding: 14px 14px 10px;
-			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-			border: 1px solid #cfd3d8;
-		}
-
-		.stat-card.visitors {
-			background: #e9eef8;
-		}
-
-		.stat-card.inside {
-			background: #e9f7ef;
-		}
-
-		.stat-card.offices {
-			background: #f8f3e9;
-		}
-
-		.stat-card.duration {
-			background: #f3edf8;
-		}
-
-		.stat-icon {
-			width: 24px;
-			height: 24px;
-			border-radius: 6px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			margin-bottom: 10px;
-		}
-
-		.stat-icon svg {
-			width: 14px;
-			height: 14px;
-		}
-
-		.stat-card.visitors .stat-icon {
-			background: #e8f0ff;
-			color: #4b5cd1;
-		}
-
-		.stat-card.inside .stat-icon {
-			background: #e8ffe8;
-			color: #10b981;
-		}
-
-		.stat-card.offices .stat-icon {
-			background: #fff5e6;
-			color: #f59e0b;
-		}
-
-		.stat-card.duration .stat-icon {
-			background: #f3e8ff;
-			color: #a855f7;
-		}
-
-		.stat-number {
-			font-size: 34px;
-			font-weight: 500;
-			color: #0f172a;
-			margin: 4px 0 0;
-			line-height: 1.1;
-		}
-
-		.stat-label {
-			font-size: 13px;
-			color: #111827;
-			margin: 2px 0 0;
-		}
-
-		.stat-trend {
-			position: absolute;
-			right: 12px;
-			top: 8px;
-			color: #94a3b8;
-		}
-
-		.stat-trend svg {
-			width: 12px;
-			height: 12px;
-		}
-
-		.charts-grid {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 16px 14px;
-			margin-bottom: 18px;
-		}
-
-		.chart-card {
-			background: #ffffff;
-			border-radius: 10px;
-			padding: 10px 12px 12px;
-			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
-			border: 1px solid #cfd3d8;
-		}
-
-		.chart-title {
-			font-size: 22px;
-			font-weight: 500;
-			color: #0f172a;
-			margin: 0 0 8px;
-			text-align: center;
-		}
-
-		.chart-body {
-			height: 230px;
-			background: #f4f5f6;
-			border-radius: 8px;
-			padding: 10px;
-			border: 1px solid #e5e7eb;
-			overflow: hidden;
-		}
-
-		.chart-svg {
-			width: 100%;
-			height: 100%;
-			display: block;
-		}
-
-		.axis,
-		.grid-line {
-			stroke: #d6d7d9;
-			stroke-width: 1;
-		}
-
-		.x-label,
-		.y-label,
-		.chart-note {
-			font-size: 12px;
-			fill: #374151;
-			font-family: inherit;
-		}
-
-		@include('admin.partials.table-pagination-styles')
-
-		.plot-line {
-			fill: none;
-			stroke: #f0c512;
-			stroke-width: 4;
-			stroke-linejoin: round;
-			stroke-linecap: round;
-		}
-
-		.plot-dot {
-			fill: #f0c512;
-			stroke: #f0c512;
-			stroke-width: 3;
-		}
-
-		.bar-vertical {
-			fill: #343b8f;
-			rx: 5;
-		}
-
-		.bar-horizontal {
-			fill: #f4cc17;
-			rx: 8;
-		}
-
-		.insights-card {
-			background: #d7d9e4;
-			border-radius: 10px;
-			padding: 14px 16px;
-			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-			border: 1px solid #9aa3c5;
-		}
-
-		.insights-title {
-			font-size: 30px;
-			font-weight: 600;
-			color: #111827;
-			margin: 0 0 6px;
-			display: flex;
-			align-items: center;
-			gap: 8px;
-
-		.alert-summary-card {
-			border: 1px solid #e9ecef;
-			transition: all 0.25s ease;
-			box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
-			position: relative;
-			overflow: hidden;
-		}
-
-		.alert-summary-card:hover {
-			transform: translateY(-4px);
-			box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-		}
-
-		.critical-card {
-			background: linear-gradient(135deg, #ffe5e8, #ffd6db);
-			border-left: 4px solid #dc3545;
-		}
-
-		.high-card {
-			background: linear-gradient(135deg, #fff4d6, #ffe9ad);
-			border-left: 4px solid #f0ad00;
-		}
-
-		.medium-card {
-			background: linear-gradient(135deg, #dff6fb, #c8edf7);
-			border-left: 4px solid #0dcaf0;
-		}
-
-		.low-card {
-			background: linear-gradient(135deg, #f1f3f5, #e2e6ea);
-			border-left: 4px solid #6c757d;
-		}
-
-		.alert-icon {
-			width: 42px;
-			height: 42px;
-			border-radius: 12px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 1.1rem;
-		}
-
-		.critical-icon {
-			background: rgba(220, 53, 69, 0.12);
-			color: #dc3545;
-		}
-
-		.high-icon {
-			background: rgba(255, 193, 7, 0.18);
-			color: #c58b00;
-		}
-
-		.medium-icon {
-			background: rgba(13, 202, 240, 0.16);
-			color: #0aa2c0;
-		}
-
-		.low-icon {
-			background: rgba(108, 117, 125, 0.14);
-			color: #6c757d;
-		}
-
-		.mini-summary-box {
-			background: #f8f9fa;
-			border: 1px solid #e9ecef;
-			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		}
-		}
-
-		.insights-title svg {
-			width: 30px;
-			height: 30px;
-			color: #404c93;
-		}
-
-		.insights-list {
-			list-style: none;
-			margin: 0;
-			padding: 0 0 0 2px;
-			display: flex;
-			flex-direction: column;
-			gap: 2px;
-		}
-
-		.insights-list li {
-			font-size: 33px;
-			line-height: 1.22;
-			color: #111827;
-			display: flex;
-			align-items: flex-start;
-			gap: 8px;
-		}
-
-		.insights-list li:before {
-			content: "•";
-			color: #1f2937;
-			font-weight: bold;
-			margin-right: 4px;
-			flex-shrink: 0;
-			line-height: 1.1;
-		}
-
-		@media (max-width: 1680px) {
-			.dashboard-title {
-				font-size: 28px;
-			}
-
-			.insights-title {
-				font-size: 22px;
-			}
-
-			.insights-title svg {
-				width: 22px;
-				height: 22px;
-			}
-
-			.insights-list li {
-				font-size: 28px;
-			}
-		}
-
-		@media (max-width: 1440px) {
-			.layout {
-				min-width: 0;
-			}
-
-			.main {
-				padding: 18px;
-			}
-
-			.dashboard-title {
-				font-size: 28px;
-			}
-
-			.chart-title {
-				font-size: 18px;
-			}
-
-			.insights-list li {
-				font-size: 18px;
-			}
-		}
-
-		@media (max-width: 1200px) {
-			.stats-grid {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-			}
-
-			.charts-grid {
-				grid-template-columns: 1fr;
-			}
-		}
-
-		@media (max-width: 720px) {
-			.sidebar-link,
-			.admin-info h6,
-			.logout-btn {
-				font-size: 14px;
-			}
-
-			.layout {
-				min-width: 0;
-			}
-
-			.brand-title {
-				font-size: 18px;
-			}
-		}
 		@include('admin.partials.admin-topbar-styles')
 		@include('admin.partials.admin-responsive-styles')
-		.progress-h-6 { height: 6px; }
-		.progress-w-75 { width: 75%; }
-		.progress-w-60 { width: 60%; }
-		.progress-w-40 { width: 40%; }
-		.progress-w-20 { width: 20%; }
-		.chart-box-300 { height: 300px; }
-		.chart-box-280 { height: 280px; }
-
-		.dash-chart-card {
-			background: #fff;
-			border: 1px solid #e8ecf1;
-			border-radius: 14px;
-			box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-			height: 100%;
-		}
-
-		.dash-chart-card .card-body {
-			padding: 18px 18px 16px;
-		}
-
-		.dash-chart-title {
-			margin: 0 0 14px;
-			font-size: 15px;
-			font-weight: 700;
-			color: #1e293b;
-			letter-spacing: 0.01em;
-			text-align: left;
-		}
-
-		.dash-chart-canvas {
-			height: 280px;
-			position: relative;
-		}
-
-		.dash-chart-canvas.is-tall {
-			height: 300px;
-		}
+		@include('admin.partials.dashboard-styles')
 	</style>
 </head>
 <body>
@@ -823,11 +422,11 @@
 			</div>
 		</aside>
 
-		<main class="main">
+		<main class="main dashboard-main">
 			<div class="container-fluid pt-0 pb-4">
 				@include('admin.partials.admin-topbar', ['title' => 'Dashboard'])
 
-				<div class="d-flex justify-content-end align-items-center mb-4 gap-3 flex-wrap">
+				<div class="dashboard-meta d-flex justify-content-end align-items-center gap-3 flex-wrap">
 					<a href="{{ route('admin.guard-duty') }}" class="text-decoration-none">
 						<div class="card shadow-sm border-0 rounded-4">
 							<div class="card-body py-2 px-3 d-flex align-items-center gap-3">
@@ -839,51 +438,41 @@
 					<div class="text-muted small">Last updated: just now</div>
 				</div>
 
-				<div class="row g-3 mb-4">
+				<div class="row g-3 mb-3">
 					<div class="col-md-6 col-xl-3">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<div class="text-muted small mb-2">Total Visitors Today</div>
-								<h2 class="fw-bold mb-0">{{ $totalVisitorsToday ?? 3 }}</h2>
+							<div class="card-body metric-body"><span class="metric-icon tone-blue" aria-hidden="true"><i class="bi bi-people-fill"></i></span><div><div class="text-muted small mb-1">Total Visitors Today</div><h2 class="fw-bold mb-0">{{ $totalVisitorsToday ?? 0 }}</h2></div>
 							</div>
 						</div>
 					</div>
 
 					<div class="col-md-6 col-xl-3">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<div class="text-muted small mb-2">Currently Inside</div>
-								<h2 class="fw-bold mb-0">{{ $currentlyInside ?? 3 }}</h2>
+							<div class="card-body metric-body"><span class="metric-icon tone-green" aria-hidden="true"><i class="bi bi-person-check-fill"></i></span><div><div class="text-muted small mb-1">Currently Inside</div><h2 class="fw-bold mb-0">{{ $currentlyInside ?? 0 }}</h2></div>
 							</div>
 						</div>
 					</div>
 
 					<div class="col-md-6 col-xl-3">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<div class="text-muted small mb-2">Active Offices</div>
-								<h2 class="fw-bold mb-0">{{ $activeOffices ?? 8 }}</h2>
+							<div class="card-body metric-body"><span class="metric-icon tone-purple" aria-hidden="true"><i class="bi bi-buildings-fill"></i></span><div><div class="text-muted small mb-1">Active Offices</div><h2 class="fw-bold mb-0">{{ $activeOffices ?? 0 }}</h2></div>
 							</div>
 						</div>
 					</div>
 
 					<div class="col-md-6 col-xl-3">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<div class="text-muted small mb-2">Average Duration</div>
-								<h2 class="fw-bold mb-0">{{ $averageDuration ?? '45m' }}</h2>
+							<div class="card-body metric-body"><span class="metric-icon tone-amber" aria-hidden="true"><i class="bi bi-clock-fill"></i></span><div><div class="text-muted small mb-1">Average Duration</div><h2 class="fw-bold mb-0">{{ $averageDuration ?? '0m' }}</h2></div>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="row g-3 mb-4">
+				<div class="row g-3 mb-3">
 					<div class="col-md-4">
 						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
 							<div class="card shadow-sm border-0 rounded-4 h-100">
-								<div class="card-body">
-									<div class="text-muted small mb-2">Successful Logins Today</div>
-									<h2 class="fw-bold mb-0 text-success">{{ $successfulLoginsToday ?? 0 }}</h2>
+								<div class="card-body metric-body"><span class="metric-icon tone-green" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><div class="text-muted small mb-1">Successful Logins Today</div><h2 class="fw-bold mb-0 text-success">{{ $successfulLoginsToday ?? 0 }}</h2></div>
 								</div>
 							</div>
 						</a>
@@ -891,9 +480,7 @@
 					<div class="col-md-4">
 						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
 							<div class="card shadow-sm border-0 rounded-4 h-100">
-								<div class="card-body">
-									<div class="text-muted small mb-2">Failed Login Attempts Today</div>
-									<h2 class="fw-bold mb-0 text-danger">{{ $failedLoginsToday ?? 0 }}</h2>
+								<div class="card-body metric-body"><span class="metric-icon tone-red" aria-hidden="true"><i class="bi bi-shield-x"></i></span><div><div class="text-muted small mb-1">Failed Login Attempts Today</div><h2 class="fw-bold mb-0 text-danger">{{ $failedLoginsToday ?? 0 }}</h2></div>
 								</div>
 							</div>
 						</a>
@@ -901,180 +488,17 @@
 					<div class="col-md-4">
 						<a href="{{ route('admin.login-attempts') }}" class="text-decoration-none">
 							<div class="card shadow-sm border-0 rounded-4 h-100">
-								<div class="card-body">
-									<div class="text-muted small mb-2">Blocked Attempts Today</div>
-									<h2 class="fw-bold mb-0 text-warning">{{ $blockedLoginsToday ?? 0 }}</h2>
+								<div class="card-body metric-body"><span class="metric-icon tone-amber" aria-hidden="true"><i class="bi bi-shield-lock-fill"></i></span><div><div class="text-muted small mb-1">Blocked Attempts Today</div><h2 class="fw-bold mb-0 text-warning">{{ $blockedLoginsToday ?? 0 }}</h2></div>
 								</div>
 							</div>
 						</a>
 					</div>
 				</div>
 
-				<div class="row g-4 mb-4">
-					<div class="col-lg-8">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<div class="d-flex justify-content-between align-items-center mb-3">
-									<h5 class="fw-semibold mb-0">Alerts Summary</h5>
-									<a href="/admin/alerts" class="btn btn-sm btn-outline-primary rounded-3">
-										View All Alerts
-									</a>
-								</div>
-
-								<div class="row g-3">
-									<div class="col-md-6 col-xl-3">
-										<a href="{{ url('/admin/alerts') . '?severity=Critical' }}" class="text-decoration-none">
-											<div class="alert-summary-card critical-card p-3 rounded-4 h-100">
-												<div class="d-flex justify-content-between align-items-start mb-2">
-													<div>
-														<div class="small text-muted fw-medium">Critical Alerts</div>
-														<h2 class="fw-bold text-danger mb-0">{{ $criticalAlerts ?? 2 }}</h2>
-													</div>
-													<div class="alert-icon critical-icon">
-														<i class="bi bi-exclamation-octagon-fill"></i>
-													</div>
-												</div>
-
-												<div class="small text-danger fw-semibold mb-1">
-													<i class="bi bi-arrow-up-short"></i> +1 from yesterday
-												</div>
-												<div class="small text-muted mb-1">
-													Top Issue: Unauthorized
-												</div>
-												<div class="small text-muted mb-2">
-													Last alert: 5 mins ago
-												</div>
-
-												<div class="progress rounded-pill progress-h-6">
-													<div class="progress-bar bg-danger progress-w-75"></div>
-												</div>
-											</div>
-										</a>
-									</div>
-
-									<div class="col-md-6 col-xl-3">
-										<a href="{{ url('/admin/alerts') . '?severity=High' }}" class="text-decoration-none">
-											<div class="alert-summary-card high-card p-3 rounded-4 h-100">
-												<div class="d-flex justify-content-between align-items-start mb-2">
-													<div>
-														<div class="small text-muted fw-medium">High Alerts</div>
-														<h2 class="fw-bold text-warning mb-0">{{ $highAlerts ?? 5 }}</h2>
-													</div>
-													<div class="alert-icon high-icon">
-														<i class="bi bi-lightning-charge-fill"></i>
-													</div>
-												</div>
-
-												<div class="small text-warning fw-semibold mb-1">
-													<i class="bi bi-arrow-down-short"></i> -2 this week
-												</div>
-												<div class="small text-muted mb-1">
-													Top Issue: Wrong Office
-												</div>
-												<div class="small text-muted mb-2">
-													Last alert: 12 mins ago
-												</div>
-
-												<div class="progress rounded-pill progress-h-6">
-													<div class="progress-bar bg-warning progress-w-60"></div>
-												</div>
-											</div>
-										</a>
-									</div>
-
-									<div class="col-md-6 col-xl-3">
-										<a href="{{ url('/admin/alerts') . '?severity=Medium' }}" class="text-decoration-none">
-											<div class="alert-summary-card medium-card p-3 rounded-4 h-100">
-												<div class="d-flex justify-content-between align-items-start mb-2">
-													<div>
-														<div class="small text-muted fw-medium">Medium Alerts</div>
-														<h2 class="fw-bold text-info mb-0">{{ $mediumAlerts ?? 3 }}</h2>
-													</div>
-													<div class="alert-icon medium-icon">
-														<i class="bi bi-info-circle-fill"></i>
-													</div>
-												</div>
-
-												<div class="small text-info fw-semibold mb-1">
-													<i class="bi bi-dash"></i> No change today
-												</div>
-												<div class="small text-muted mb-1">
-													Top Issue: Overstay
-												</div>
-												<div class="small text-muted mb-2">
-													Last alert: 20 mins ago
-												</div>
-
-												<div class="progress rounded-pill progress-h-6">
-													<div class="progress-bar bg-info progress-w-40"></div>
-												</div>
-											</div>
-										</a>
-									</div>
-
-									<div class="col-md-6 col-xl-3">
-										<a href="{{ url('/admin/alerts') . '?severity=Low' }}" class="text-decoration-none">
-											<div class="alert-summary-card low-card p-3 rounded-4 h-100">
-												<div class="d-flex justify-content-between align-items-start mb-2">
-													<div>
-														<div class="small text-muted fw-medium">Low Alerts</div>
-														<h2 class="fw-bold text-secondary mb-0">{{ $lowAlerts ?? 1 }}</h2>
-													</div>
-													<div class="alert-icon low-icon">
-														<i class="bi bi-bell-fill"></i>
-													</div>
-												</div>
-
-												<div class="small text-secondary fw-semibold mb-1">
-													<i class="bi bi-arrow-down-short"></i> -1 from yesterday
-												</div>
-												<div class="small text-muted mb-1">
-													Top Issue: Minor Delay
-												</div>
-												<div class="small text-muted mb-2">
-													Last alert: 35 mins ago
-												</div>
-
-												<div class="progress rounded-pill progress-h-6">
-													<div class="progress-bar bg-secondary progress-w-20"></div>
-												</div>
-											</div>
-										</a>
-									</div>
-								</div>
-
-								<div class="row mt-4 g-3">
-									<div class="col-md-4">
-										<div class="mini-summary-box p-3 rounded-4">
-											<div class="small text-muted">Total Alerts Today</div>
-											<div class="fw-bold fs-4">{{ $totalAlertsToday ?? 0 }}</div>
-										</div>
-									</div>
-									<div class="col-md-4">
-										<div class="mini-summary-box p-3 rounded-4">
-											<div class="small text-muted">Unresolved Alerts</div>
-											<div class="fw-bold fs-4 text-danger">{{ $unresolvedAlerts ?? 6 }}</div>
-										</div>
-									</div>
-									<div class="col-md-4">
-										<div class="mini-summary-box p-3 rounded-4">
-											<div class="small text-muted">Most Common Alert</div>
-											<div class="fw-bold fs-6">{{ $mostCommonAlert ?? 'N/A' }}</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="col-lg-4">
-						<div class="card shadow-sm border-0 rounded-4 h-100">
-							<div class="card-body">
-								<h5 class="fw-semibold mb-3">Filters</h5>
-								<form method="GET" action="/admin/dashboard">
-									<div class="mb-3">
-										<label class="form-label">Date Range</label>
-										<select name="date_filter" class="form-select">
+<section class="dashboard-filter-bar mb-3" aria-label="Dashboard filters"><form method="GET" action="/admin/dashboard" class="dashboard-filter-form"><div class="filter-heading"><span class="metric-icon tone-blue" aria-hidden="true"><i class="bi bi-funnel-fill"></i></span><strong>Filters</strong></div>
+									<div class="filter-field">
+										<label class="form-label" for="dashboard-date_filter">Date Range</label>
+										<select id="dashboard-date_filter" name="date_filter" class="form-select">
 											<option value="" {{ ($selectedDateFilter ?? '') === '' ? 'selected' : '' }}>All</option>
 											<option value="today" {{ ($selectedDateFilter ?? '') === 'today' ? 'selected' : '' }}>Today</option>
 											<option value="week" {{ ($selectedDateFilter ?? '') === 'week' ? 'selected' : '' }}>This Week</option>
@@ -1082,9 +506,9 @@
 										</select>
 									</div>
 
-									<div class="mb-3">
-										<label class="form-label">Office</label>
-										<select name="office" class="form-select">
+									<div class="filter-field">
+										<label class="form-label" for="dashboard-office">Office</label>
+										<select id="dashboard-office" name="office" class="form-select">
 											<option value="">All Offices</option>
 											@foreach(($officeOptions ?? []) as $officeOption)
 												<option value="{{ $officeOption->office_id }}" {{ ((int) ($selectedOfficeFilter ?? 0) === (int) $officeOption->office_id) ? 'selected' : '' }}>
@@ -1094,9 +518,9 @@
 										</select>
 									</div>
 
-									<div class="mb-3">
-										<label class="form-label">Visitor Type</label>
-										<select name="visitor_type" class="form-select">
+									<div class="filter-field">
+										<label class="form-label" for="dashboard-visitor_type">Visitor Type</label>
+										<select id="dashboard-visitor_type" name="visitor_type" class="form-select">
 											<option value="">All Types</option>
 											@foreach(($visitTypeOptions ?? []) as $visitTypeOption)
 												<option value="{{ $visitTypeOption->visit_type_id }}" {{ ((int) ($selectedVisitorTypeFilter ?? 0) === (int) $visitTypeOption->visit_type_id) ? 'selected' : '' }}>
@@ -1106,9 +530,9 @@
 										</select>
 									</div>
 
-									<div class="mb-3">
-										<label class="form-label">Status</label>
-										<select name="status" class="form-select">
+									<div class="filter-field">
+										<label class="form-label" for="dashboard-status">Status</label>
+										<select id="dashboard-status" name="status" class="form-select">
 											<option value="">All Status</option>
 											@foreach(($statusOptions ?? []) as $statusOption)
 												<option value="{{ $statusOption }}" {{ strtolower((string) ($selectedStatusFilter ?? '')) === strtolower((string) $statusOption) ? 'selected' : '' }}>
@@ -1118,34 +542,77 @@
 										</select>
 									</div>
 
-									<div class="d-flex gap-2">
-										<a href="/admin/dashboard" class="btn btn-outline-secondary w-50">Reset</a>
-										<button type="submit" class="btn btn-primary w-50">Apply</button>
+									<div class="filter-actions">
+										<a href="/admin/dashboard" class="btn btn-outline-secondary">Reset</a>
+										<button type="submit" class="btn btn-primary">Apply Filters</button>
 									</div>
 								</form>
+@if(($selectedDateFilter ?? '') !== '' || ($selectedOfficeFilter ?? 0) > 0 || ($selectedVisitorTypeFilter ?? 0) > 0 || ($selectedStatusFilter ?? '') !== '')
+<div class="active-filter-note"><i class="bi bi-check-circle" aria-hidden="true"></i> Filters applied to visitor and alert data. Login security statistics remain today's totals.</div>
+@endif</section>
+				<div class="row g-4 mb-4">
+					<div class="col-12">
+						<div class="card shadow-sm border-0 rounded-4 h-100">
+							<div class="card-body">
+								<div class="d-flex justify-content-between align-items-center mb-3">
+									<h5 class="fw-semibold mb-0">Alerts Summary</h5>
+									<a href="/admin/alerts" class="btn btn-sm btn-outline-primary rounded-3">
+										View All Alerts
+									</a>
+								</div>
+
+								<div class="severity-grid">
+@foreach([
+ ['Critical', $criticalAlerts ?? 0, 'red', 'exclamation-octagon-fill'],
+ ['High', $highAlerts ?? 0, 'amber', 'exclamation-triangle-fill'],
+ ['Medium', $mediumAlerts ?? 0, 'blue', 'info-circle-fill'],
+ ['Low', $lowAlerts ?? 0, 'gray', 'info-circle-fill'],
+] as [$severity, $count, $tone, $icon])
+@php($share = ($totalAlertsToday ?? 0) > 0 ? round($count / $totalAlertsToday * 100, 1) : 0)
+<a href="{{ url('/admin/alerts') . '?severity=' . $severity }}" class="severity-card tone-{{ $tone }}">
+<div class="metric-body"><span class="metric-icon" aria-hidden="true"><i class="bi bi-{{ $icon }}"></i></span><div><div class="small text-muted">{{ $severity }} Alerts</div><div class="severity-count">{{ $count }}</div></div></div>
+<div class="severity-share">{{ $share }}% of matching alerts</div>
+<progress class="severity-progress" value="{{ $count }}" max="{{ max(1, $totalAlertsToday ?? 0) }}" aria-label="{{ $severity }} share of matching alerts">{{ $share }}%</progress>
+</a>
+@endforeach
+</div>
+<div class="row mt-1 g-3">
+									<div class="col-md-4">
+										<div class="mini-summary-box metric-body"><span class="metric-icon tone-purple" aria-hidden="true"><i class="bi bi-shield-fill-check"></i></span><div><div class="small text-muted">Total Alerts Today</div><div class="fw-bold fs-4">{{ $totalAlertsToday ?? 0 }}</div></div></div>
+									</div>
+									<div class="col-md-4">
+										<div class="mini-summary-box metric-body"><span class="metric-icon tone-red" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></span><div><div class="small text-muted">Unresolved Alerts</div><div class="fw-bold fs-4 text-danger">{{ $unresolvedAlerts ?? 0 }}</div></div></div>
+									</div>
+									<div class="col-md-4">
+										<div class="mini-summary-box metric-body"><span class="metric-icon tone-blue" aria-hidden="true"><i class="bi bi-file-earmark-text-fill"></i></span><div><div class="small text-muted">Most Common Alert</div><div class="fw-bold fs-6">{{ $mostCommonAlert ?? 'N/A' }}</div></div></div>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
+
 				</div>
 
 				<div class="row g-4 mb-4">
-					<div class="col-lg-7">
+					<div class="col-xl-6">
 						<div class="dash-chart-card">
 							<div class="card-body">
 								<h4 class="dash-chart-title">7-Day Visitor Trend</h4>
 								<div class="dash-chart-canvas is-tall">
-									<canvas id="visitorTrendChart"></canvas>
+									<canvas id="visitorTrendChart" role="img" aria-label="7-Day Visitor Trend">7-Day Visitor Trend</canvas>
+@if(array_sum($visitorTrendData ?? []) === 0)<p class="chart-empty">No visitor data for this chart.</p>@endif
 								</div>
 							</div>
 						</div>
 					</div>
 
-					<div class="col-lg-5">
+					<div class="col-xl-6">
 						<div class="dash-chart-card">
 							<div class="card-body">
 								<h4 class="dash-chart-title">Visitors by Status</h4>
 								<div class="dash-chart-canvas is-tall">
-									<canvas id="visitorStatusChart"></canvas>
+									<canvas id="visitorStatusChart" role="img" aria-label="Visitors by Status">Visitors by Status</canvas>
+@if(array_sum($visitorStatusData ?? []) === 0)<p class="chart-empty">No visitor data for this chart.</p>@endif
 								</div>
 							</div>
 						</div>
@@ -1153,12 +620,12 @@
 				</div>
 
 				<div class="row g-4 mb-4">
-					<div class="col-lg-5">
+					<div class="col-xl-6">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<div class="d-flex justify-content-between align-items-center mb-3">
 									<h5 class="fw-semibold mb-0">Real-Time Visitor List</h5>
-									<span class="badge bg-success">Live</span>
+									<div class="d-flex align-items-center gap-2"><span class="badge bg-success">Live</span><a href="/admin/visitor" class="btn btn-sm btn-outline-primary">View All</a></div>
 								</div>
 
 								<div class="table-responsive">
@@ -1189,22 +656,17 @@
 												</tr>
 											@empty
 												<tr>
-													<td colspan="4" class="text-center text-muted">No active visitors right now.</td>
+													<td colspan="4" class="text-center text-muted">No visitors match the current filters.</td>
 												</tr>
 											@endforelse
 										</tbody>
 									</table>
 								</div>
-								@include('admin.partials.table-pagination', [
-									'paginator' => $liveVisitors,
-									'perPageParam' => 'live_per_page',
-									'ariaLabel' => 'Real-time visitor list pagination',
-								])
 							</div>
 						</div>
 					</div>
 
-					<div class="col-lg-7">
+					<div class="col-xl-6">
 						<div class="card shadow-sm border-0 rounded-4 h-100">
 							<div class="card-body">
 								<div class="d-flex justify-content-between align-items-center mb-3">
@@ -1260,34 +722,31 @@
 										</tbody>
 									</table>
 								</div>
-								@include('admin.partials.table-pagination', [
-									'paginator' => $recentAlerts,
-									'perPageParam' => 'alerts_per_page',
-									'ariaLabel' => 'Recent alerts pagination',
-								])
 							</div>
 						</div>
 					</div>
 				</div>
 
 				<div class="row g-4 mb-4">
-					<div class="col-lg-7">
+					<div class="col-xl-6">
 						<div class="dash-chart-card">
 							<div class="card-body">
 								<h4 class="dash-chart-title">Visitors by Hour</h4>
 								<div class="dash-chart-canvas">
-									<canvas id="visitorHourChart"></canvas>
+									<canvas id="visitorHourChart" role="img" aria-label="Visitors by Hour">Visitors by Hour</canvas>
+@if(array_sum($visitorHourData ?? []) === 0)<p class="chart-empty">No visitor data for this chart.</p>@endif
 								</div>
 							</div>
 						</div>
 					</div>
 
-					<div class="col-lg-5">
+					<div class="col-xl-6">
 						<div class="dash-chart-card">
 							<div class="card-body">
 								<h4 class="dash-chart-title">Visitors by Office</h4>
 								<div class="dash-chart-canvas">
-									<canvas id="visitorOfficeChart"></canvas>
+									<canvas id="visitorOfficeChart" role="img" aria-label="Visitors by Office">Visitors by Office</canvas>
+@if(array_sum($visitorOfficeData ?? []) === 0)<p class="chart-empty">No visitor data for this chart.</p>@endif
 								</div>
 							</div>
 						</div>
@@ -1298,13 +757,41 @@
 					<div class="col-12">
 						<div class="card shadow-sm border-0 rounded-4">
 							<div class="card-body">
-								<h4 class="fw-bold mb-3">Key Insights</h4>
-								<ul class="mb-0 fs-5">
-									<li>{{ $peakVisitorHourInsight ?? 'No visitor entries yet today.' }}</li>
-									<li>{{ $topOfficeTodayInsight ?? 'No office visits recorded today.' }}</li>
-									<li>{{ $unresolvedAlertsInsight ?? '0 unresolved alerts need immediate attention.' }}</li>
-									<li>{{ $longestAvgDurationInsight ?? 'No completed visit duration data yet.' }}</li>
-								</ul>
+								<h4 class="dash-chart-title">Key Insights</h4>
+								<div class="dashboard-insights">
+                                    <article class="insight-tile">
+                                        <span class="metric-icon tone-blue" aria-hidden="true"><i class="bi bi-clock-fill"></i></span>
+                                        <div>
+                                            <h5>Peak Visitor Hour</h5>
+                                            <div class="insight-value">{{ $peakVisitorHourValue ?? 'No entries yet' }}</div>
+                                            <p title="{{ $peakVisitorHourInsight ?? '' }}">Entry activity today</p>
+                                        </div>
+                                    </article>
+                                    <article class="insight-tile">
+                                        <span class="metric-icon tone-purple" aria-hidden="true"><i class="bi bi-buildings-fill"></i></span>
+                                        <div>
+                                            <h5>Busiest Office</h5>
+                                            <div class="insight-value">{{ $topOfficeTodayValue ?? 'No office visits yet' }}</div>
+                                            <p title="{{ $topOfficeTodayInsight ?? '' }}">Office visits today</p>
+                                        </div>
+                                    </article>
+                                    <article class="insight-tile">
+                                        <span class="metric-icon tone-red" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                                        <div>
+                                            <h5>Unresolved Alerts</h5>
+                                            <div class="insight-value">{{ $unresolvedAlerts ?? '0' }}</div>
+                                            <p title="{{ $unresolvedAlertsInsight ?? '' }}">Alerts needing review</p>
+                                        </div>
+                                    </article>
+                                    <article class="insight-tile">
+                                        <span class="metric-icon tone-blue" aria-hidden="true"><i class="bi bi-people-fill"></i></span>
+                                        <div>
+                                            <h5>Longest Average Visit</h5>
+                                            <div class="insight-value">{{ $longestAvgDurationValue ?? 'No completed visits yet' }}</div>
+                                            <p title="{{ $longestAvgDurationInsight ?? '' }}">Completed visit durations</p>
+                                        </div>
+                                    </article>
+                                </div>
 							</div>
 						</div>
 					</div>
@@ -1316,7 +803,7 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<script nonce="{{ $cspNonce }}">
-		@include('admin.partials.table-pagination-script')
+
 
 		const userMenuGroup = document.getElementById('userMenuGroup');
 		const userMenuToggle = document.getElementById('userMenuToggle');
@@ -1352,7 +839,7 @@
 
 		const integerTicks = {
 			precision: 0,
-			stepSize: 1,
+			maxTicksLimit: 6,
 			color: chartColors.tick,
 			font: { size: 11, weight: '500' },
 			callback: (value) => (Number.isInteger(value) ? value : null),
@@ -1450,9 +937,10 @@
 					responsive: true,
 					maintainAspectRatio: false,
 					cutout: '68%',
+                    onResize(chart, size) { chart.options.plugins.legend.position = size.width < 430 ? 'bottom' : 'right'; },
 					plugins: {
 						legend: {
-							position: 'right',
+							position: window.innerWidth < 600 ? 'bottom' : 'right',
 							labels: {
 								boxWidth: 12,
 								boxHeight: 12,
@@ -1472,7 +960,7 @@
 											fillStyle: (dataset.backgroundColor || [])[index],
 											strokeStyle: '#fff',
 											lineWidth: 0,
-											hidden: false,
+											hidden: !chart.getDataVisibility(index),
 											index,
 										};
 									});
@@ -1550,8 +1038,8 @@
 							ticks: {
 								color: chartColors.tick,
 								font: { size: 10 },
-								maxRotation: 45,
-								minRotation: 45,
+								maxRotation: 0,
+								minRotation: 0,
 								autoSkip: true,
 								maxTicksLimit: 12,
 							},
@@ -1570,6 +1058,7 @@
 
 		const officeCtx = document.getElementById('visitorOfficeChart')?.getContext('2d');
 		if (officeCtx) {
+            officeCtx.canvas.parentElement.style.height = `${Math.max(220, officeLabels.length * 34 + 40)}px`;
 			new Chart(officeCtx, {
 				type: 'bar',
 				data: {
@@ -1588,6 +1077,7 @@
 					indexAxis: 'y',
 					responsive: true,
 					maintainAspectRatio: false,
+					layout: { padding: { right: 30 } },
 					plugins: {
 						legend: { display: false },
 						tooltip: {
@@ -1609,11 +1099,28 @@
 							grid: { display: false, drawBorder: false },
 							ticks: {
 								color: '#334155',
-								font: { size: 12, weight: '600' },
+								font: { size: 11, weight: '600' },
+                            autoSkip: false,
+                            callback(value) { const label = this.getLabelForValue(value); return label.length > 28 ? label.slice(0, 27) + '…' : label; },
 							},
 						},
 					},
 				},
+				plugins: [{
+					id: 'officeVisitorCounts',
+					afterDatasetsDraw(chart) {
+						const ctx = chart.ctx;
+						ctx.save();
+						ctx.font = '600 11px system-ui, sans-serif';
+						ctx.fillStyle = '#42547d';
+						ctx.textAlign = 'left';
+						ctx.textBaseline = 'middle';
+						chart.getDatasetMeta(0).data.forEach((bar, index) => {
+							ctx.fillText(String(officeData[index] ?? 0), bar.x + 6, bar.y);
+						});
+						ctx.restore();
+					},
+				}],
 			});
 		}
 	</script>

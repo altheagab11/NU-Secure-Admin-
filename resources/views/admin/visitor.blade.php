@@ -876,20 +876,13 @@
 
 		.bottom-grid {
 			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 16px;
 			margin-top: 22px;
 			align-items: stretch;
 		}
 
-		.right-stack {
-			display: grid;
-			grid-template-columns: 1fr;
-			grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.85fr);
-			gap: 16px;
-			height: 100%;
-			min-height: 420px;
-		}
+		.right-stack { display: contents; }
 
 		.panel-card {
 			overflow: hidden;
@@ -903,9 +896,7 @@
 			min-height: 0;
 		}
 
-		.recent-panel {
-			min-height: 420px;
-		}
+		.recent-panel { min-height: 0; }
 
 		.panel-header {
 			display: flex;
@@ -1235,7 +1226,31 @@
 
 		@include('admin.partials.admin-topbar-styles')
 		@include('admin.partials.admin-responsive-styles')
-	</style>
+
+        .summary-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        .summary-view-all { border: 1px solid #c7d2fe; background: #eef2ff; color: #273b9e; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 600; }
+        .bottom-grid .panel-header { flex-wrap: wrap; }
+        .bottom-grid .office-list { max-height: 350px; }
+        .summary-modal { border: 0; border-radius: 16px; padding: 0; width: min(1100px, calc(100% - 24px)); max-width: calc(100% - 24px); max-height: calc(100dvh - 32px); color: #1e293b; box-shadow: 0 24px 70px #0f172a55; }
+        .summary-modal::backdrop { background: #0f172a88; }
+        .summary-modal[open] { display: flex; flex-direction: column; }
+        .summary-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; gap: 12px; }
+        .summary-modal-header h2 { font-size: 20px; margin: 0; }
+        .summary-modal-close { border: 0; background: #eef2ff; border-radius: 8px; padding: 6px 12px; }
+        .summary-modal-filters { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 20px; }
+        .summary-modal-filters label { flex: 1 1 150px; font-size: 12px; }
+        .summary-modal-filters input, .summary-modal-filters select { display: block; width: 100%; border: 1px solid #cbd5e1; padding: 8px; border-radius: 8px; }
+        .summary-modal-results { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+        .summary-modal-table { overflow: auto; min-height: 0; }
+        .summary-modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .summary-modal th, .summary-modal td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; overflow-wrap: anywhere; }
+        .summary-modal th { background: #f8fafc; }
+        .summary-modal .table-pagination-left, .summary-modal .table-pagination-right { flex-wrap: wrap; }
+        .summary-modal .table-pagination-bar { flex-shrink: 0; margin: 0; border-radius: 0; }
+        .summary-modal-message { padding: 20px; color: #64748b; }
+        @media (min-width: 769px) and (max-width: 1180px) { .bottom-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 768px) { .bottom-grid { grid-template-columns: 1fr; } .summary-modal-filters { max-height: 30dvh; overflow-y: auto; } }
+    </style>
 </head>
 <body>
 	<div class="layout">
@@ -1512,7 +1527,7 @@
 				<section class="panel-card recent-panel">
 					<div class="panel-header">
 						<h2 class="panel-title">Today's Recent Visitors</h2>
-						<span class="panel-count">{{ number_format((int) ($recentVisitors?->total() ?? 0)) }}</span>
+						<div class="summary-actions"><span class="panel-count">{{ number_format((int) ($recentVisitors?->total() ?? 0)) }}</span><button type="button" class="summary-view-all" data-summary="recent">View All</button></div>
 					</div>
 					<ul class="recent-list">
 						@forelse(($recentVisitors ?? []) as $recent)
@@ -1537,11 +1552,7 @@
 							</li>
 						@endforelse
 					</ul>
-					@include('admin.partials.table-pagination', [
-						'paginator' => $recentVisitors,
-						'perPageParam' => 'recent_per_page',
-						'ariaLabel' => "Today's recent visitors pagination",
-					])
+
 				</section>
 
 				<div class="right-stack">
@@ -1581,7 +1592,7 @@
 					<section class="panel-card stack-panel">
 						<div class="panel-header">
 							<h2 class="panel-title">Today's Correct Office Scans</h2>
-							<span class="panel-count">{{ number_format((int) ($correctOfficeScans?->total() ?? 0)) }}</span>
+							<div class="summary-actions"><span class="panel-count">{{ number_format((int) ($correctOfficeScans?->total() ?? 0)) }}</span><button type="button" class="summary-view-all" data-summary="scans">View All</button></div>
 						</div>
 						<ul class="correct-list" aria-label="Correct office scan results">
 							@forelse(($correctOfficeScans ?? []) as $scan)
@@ -1599,18 +1610,15 @@
 								</li>
 							@endforelse
 						</ul>
-						@include('admin.partials.table-pagination', [
-							'paginator' => $correctOfficeScans,
-							'perPageParam' => 'scans_per_page',
-							'ariaLabel' => "Today's correct office scans pagination",
-						])
+
 					</section>
 				</div>
 			</div>
 		</main>
 	</div>
 
-	<div id="visitorDetailModal" class="visitor-detail-modal" aria-hidden="true">
+	@include('admin.partials.visitor-summary-modal')
+    <div id="visitorDetailModal" class="visitor-detail-modal" aria-hidden="true">
 		<div class="visitor-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="vdTitle">
 			<div class="vd-header">
 				<div class="vd-header-left">
@@ -2102,7 +2110,7 @@
 			}
 		});
 	</script>
-	@include('partials.live-auto-refresh')
+	@include('partials.live-auto-refresh', ['liveRefreshPauseSelectors' => ['#visitorDetailModal.open', '#visitorSummaryModal[open]']])
 	@include('admin.partials.admin-responsive-script')
 </body>
 </html>

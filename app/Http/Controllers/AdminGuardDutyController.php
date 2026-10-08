@@ -11,9 +11,7 @@ use Throwable;
 
 class AdminGuardDutyController extends Controller
 {
-    public function __construct(protected GuardDutyService $guardDutyService)
-    {
-    }
+    public function __construct(protected GuardDutyService $guardDutyService) {}
 
     public function index(): View
     {
@@ -33,10 +31,8 @@ class AdminGuardDutyController extends Controller
                 ->map(fn (GuardDutyShift $shift) => $this->guardDutyService->serializeAdminShift($shift))
                 ->values();
 
-            return response()->json([
+            $payload = [
                 'success' => true,
-                'current' => $this->guardDutyService->currentDutyShifts(),
-                'last_completed' => $this->guardDutyService->lastCompletedShift(),
                 'history' => [
                     'data' => $rows,
                     'meta' => [
@@ -48,13 +44,41 @@ class AdminGuardDutyController extends Controller
                         'total' => $paginator->total(),
                     ],
                 ],
-            ]);
+            ];
+
+            // Preserve the existing response for clients that still request both sections.
+            if ($request->boolean('include_summary', true)) {
+                $payload['current'] = $this->guardDutyService->currentDutyShifts();
+                $payload['last_completed'] = $this->guardDutyService->lastCompletedShift();
+            }
+
+            return response()->json($payload);
         } catch (Throwable $e) {
             report($e);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to load guard duty records. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function summary(): JsonResponse
+    {
+        try {
+            $current = $this->guardDutyService->currentDutyShifts();
+
+            return response()->json([
+                'success' => true,
+                'current' => $current,
+                'last_completed' => $current->isEmpty() ? $this->guardDutyService->lastCompletedShift() : null,
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to load current guard duty. Please try again.',
             ], 500);
         }
     }
