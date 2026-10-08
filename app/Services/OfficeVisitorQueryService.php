@@ -4,14 +4,14 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OfficeVisitorQueryService
 {
-    public function __construct(protected OfficeScanService $scanService)
-    {
-    }
+    public function __construct(protected OfficeScanService $scanService) {}
 
     public function philippinesTodayBounds(): array
     {
@@ -186,8 +186,16 @@ class OfficeVisitorQueryService
         $rows = $this->expectedVisitorsQuery($officeId)
             ->get()
             ->unique('visit_id')
-            ->values()
-            ->map(fn ($row) => $this->enrichExpectedRow($row, $officeId));
+            ->values();
+        // Routing needs every step, but not a separate database round trip per visitor.
+        $routes = $rows->isEmpty() ? collect() : DB::table('office_expectation as oe')
+            ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
+            ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
+            ->whereIn('oe.visit_id', $rows->pluck('visit_id'))
+            ->select('oe.*', 'o.office_name', 'xs.status_name')
+            ->orderBy('oe.expected_order')->orderBy('oe.expectation_id')
+            ->get()->groupBy('visit_id');
+        $rows = $rows->map(fn ($row) => $this->enrichExpectedRow($row, $officeId, $routes->get($row->visit_id, collect())));
 
         if ($limit !== null) {
             $rows = $rows->take($limit)->values();
@@ -247,7 +255,7 @@ class OfficeVisitorQueryService
         $total = $mapped->count();
         $items = $mapped->slice(($page - 1) * $perPage, $perPage)->values();
 
-        return new \Illuminate\Pagination\LengthAwarePaginator(
+        return new LengthAwarePaginator(
             $items,
             $total,
             $perPage,
@@ -300,10 +308,10 @@ class OfficeVisitorQueryService
             ->orderBy('v.visit_id');
     }
 
-    protected function enrichExpectedRow(object $row, int $officeId): object
+    protected function enrichExpectedRow(object $row, int $officeId, ?Collection $route = null): object
     {
         $row->visitor_name = trim(trim((string) $row->first_name).' '.trim((string) $row->last_name));
-        $route = $this->scanService->loadRoute((int) $row->visit_id);
+        $route ??= $this->scanService->loadRoute((int) $row->visit_id);
         $visit = (object) [
             'visit_id' => (int) $row->visit_id,
             'visit_type_name' => (string) ($row->visit_type_name ?? ''),
@@ -452,11 +460,16 @@ class OfficeVisitorQueryService
             });
     }
 
-    public function liveMonitoring(int $officeId): array
+    public function liveMonitoring(int $officeId, bool $resolvePhotos = true): array
     {
         $waiting = [];
 
-        $activeVisitIds = DB::table('visit')->whereNull('exit_time')->pluck('visit_id');
+        $activeVisitIds = DB::table('visit')->whereNull('exit_time')
+            ->whereExists(function ($query) use ($officeId) {
+                $query->selectRaw('1')->from('office_expectation as candidate')
+                    ->whereColumn('candidate.visit_id', 'visit.visit_id')
+                    ->where('candidate.office_id', $officeId);
+            })->pluck('visit_id');
         if ($activeVisitIds->isNotEmpty()) {
             $visits = DB::table('visit as v')
                 ->join('visitor as vr', 'vr.visitor_id', '=', 'v.visitor_id')
@@ -549,9 +562,10 @@ class OfficeVisitorQueryService
                     'route_progress' => $this->routeProgressLabel($steps),
                     'status' => 'Ready for Office Check-in',
                     'current_office' => $current->office_name,
-                    'photo_url' => $this->scanService->resolveVisitorPhotoUrl(
+                    'photo_url' => $resolvePhotos ? $this->scanService->resolveVisitorPhotoUrl(
                         $visit->visitor_photo_with_id_url ?? null
-                    ),
+                    ) : null,
+                    ...($resolvePhotos ? [] : ['photo_path' => $visit->visitor_photo_with_id_url ?? null]),
                 ];
             }
         }
@@ -567,6 +581,16 @@ class OfficeVisitorQueryService
             'waiting' => $waiting,
             'latest_scan' => $latestScan,
         ];
+    }
+
+    public function resolveWaitingPhotos(array $rows): array
+    {
+        return array_map(function ($row) {
+            $row['photo_url'] = $this->scanService->resolveVisitorPhotoUrl($row['photo_path'] ?? null);
+            unset($row['photo_path']);
+
+            return $row;
+        }, $rows);
     }
 
     public function visitDetails(int $visitId, int $officeId): ?array

@@ -540,8 +540,12 @@
 					<i class="bi bi-list" aria-hidden="true"></i>
 				</button>
 				<div>
+					@hasSection('dashboardHeader')
+						@yield('dashboardHeader')
+					@else
 					<h1 class="page-heading">{{ $pageTitle ?? 'Office Portal' }}</h1>
 					<p class="page-sub">{{ $currentDate }}</p>
+					@endif
 				</div>
 			</div>
 			<div class="topbar-right">

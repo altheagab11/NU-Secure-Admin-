@@ -1085,6 +1085,9 @@
 		.drawer-info-grid.mt-10 {
 			margin-top: 10px;
 		}
+		@include('admin.partials.table-pagination-styles')
+		#activeVisitorsPagination { padding: 12px 20px; }
+		#activeVisitorsPagination .table-pagination-bar { margin-top: 0; }
 	</style>
 </head>
 <body>
@@ -1397,9 +1400,12 @@
 							</tbody>
 						</table>
 					</div>
-					<div class="pagination-wrap js-hidden" id="activeVisitorsPagination">
-						<div class="pagination-info" id="activeVisitorsPaginationInfo"></div>
-						<div class="pagination-controls" id="activeVisitorsPaginationControls"></div>
+					<div id="activeVisitorsPagination" hidden>
+						@include('admin.partials.table-pagination', [
+							'paginator' => new \Illuminate\Pagination\LengthAwarePaginator(collect($activeVisitors ?? [])->take(5), count($activeVisitors ?? []), 5),
+							'perPageParam' => 'active_visitors_per_page',
+							'ariaLabel' => 'Active visitors pagination',
+						])
 					</div>
 				</div>
 			</div>
@@ -1656,72 +1662,46 @@
 			openVisitorDetails(visitId);
 		});
 
-		const ACTIVE_VISITORS_PER_PAGE = 10;
 		const activeVisitorsTableBody = document.querySelector('.visitor-table tbody');
 		const activeVisitorsPagination = document.getElementById('activeVisitorsPagination');
-		const activeVisitorsPaginationInfo = document.getElementById('activeVisitorsPaginationInfo');
-		const activeVisitorsPaginationControls = document.getElementById('activeVisitorsPaginationControls');
-
-		if (activeVisitorsTableBody) {
-			const activeVisitorRows = Array.from(activeVisitorsTableBody.querySelectorAll('tr'))
-				.filter((row) => !row.querySelector('td[colspan]'));
-			const totalRows = activeVisitorRows.length;
-			const totalPages = Math.ceil(totalRows / ACTIVE_VISITORS_PER_PAGE);
+		if (activeVisitorsTableBody && activeVisitorsPagination) {
+			const rows = Array.from(activeVisitorsTableBody.querySelectorAll('tr'))
+				.filter(row => !row.querySelector('td[colspan]'));
+			const size = activeVisitorsPagination.querySelector('.table-page-size');
+			const range = activeVisitorsPagination.querySelector('.table-pagination-range');
+			const pageLabel = activeVisitorsPagination.querySelector('.table-pagination-page');
+			const links = activeVisitorsPagination.querySelectorAll('.table-pagination-nav');
+			let perPage = 5;
 			let currentPage = 1;
-
-			const renderActiveVisitorsPage = (page) => {
-				if (totalPages <= 1) {
-					if (activeVisitorsPagination) {
-						activeVisitorsPagination.style.display = 'none';
-					}
-					return;
-				}
-
-				currentPage = Math.min(Math.max(page, 1), totalPages);
-				const start = (currentPage - 1) * ACTIVE_VISITORS_PER_PAGE;
-				const end = start + ACTIVE_VISITORS_PER_PAGE;
-
-				activeVisitorRows.forEach((row, index) => {
-					row.style.display = index >= start && index < end ? '' : 'none';
+			function renderPage(page) {
+				const lastPage = Math.max(1, Math.ceil(rows.length / perPage));
+				currentPage = Math.min(Math.max(page, 1), lastPage);
+				const start = (currentPage - 1) * perPage;
+				rows.forEach((row, index) => { row.hidden = index < start || index >= start + perPage; });
+				activeVisitorsPagination.hidden = rows.length === 0;
+				range.textContent = `${rows.length ? start + 1 : 0} to ${Math.min(start + perPage, rows.length)} of ${rows.length}`;
+				pageLabel.innerHTML = `Page <strong>${currentPage}</strong> of ${lastPage}`;
+				const targets = [1, currentPage - 1, currentPage + 1, lastPage];
+				links.forEach((link, index) => {
+					const disabled = index < 2 ? currentPage === 1 : currentPage === lastPage;
+					link.dataset.page = targets[index];
+					link.href = '#';
+					link.classList.toggle('is-disabled', disabled);
+					link.setAttribute('aria-disabled', String(disabled));
+					link.tabIndex = disabled ? -1 : 0;
 				});
-
-				if (activeVisitorsPagination) {
-					activeVisitorsPagination.style.display = 'flex';
-				}
-
-				if (activeVisitorsPaginationInfo) {
-					activeVisitorsPaginationInfo.textContent = `Showing ${start + 1}-${Math.min(end, totalRows)} of ${totalRows} visitors`;
-				}
-
-				if (!activeVisitorsPaginationControls) return;
-				activeVisitorsPaginationControls.innerHTML = '';
-
-				const createPageButton = (label, targetPage, isDisabled = false, isActive = false) => {
-					const button = document.createElement('button');
-					button.type = 'button';
-					button.className = `pagination-btn${isActive ? ' active' : ''}`;
-					button.textContent = label;
-					button.disabled = isDisabled;
-					button.addEventListener('click', () => renderActiveVisitorsPage(targetPage));
-					return button;
-				};
-
-				activeVisitorsPaginationControls.appendChild(
-					createPageButton('Prev', currentPage - 1, currentPage === 1)
-				);
-
-				for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
-					activeVisitorsPaginationControls.appendChild(
-						createPageButton(String(pageNumber), pageNumber, false, pageNumber === currentPage)
-					);
-				}
-
-				activeVisitorsPaginationControls.appendChild(
-					createPageButton('Next', currentPage + 1, currentPage === totalPages)
-				);
-			};
-
-			renderActiveVisitorsPage(1);
+			}
+			size.addEventListener('change', () => {
+				perPage = Number(size.value);
+				renderPage(1);
+			});
+			activeVisitorsPagination.addEventListener('click', event => {
+				const link = event.target.closest('.table-pagination-nav');
+				if (!link) return;
+				event.preventDefault();
+				if (link.getAttribute('aria-disabled') !== 'true') renderPage(Number(link.dataset.page));
+			});
+			renderPage(1);
 		}
 	</script>
 	@include('guard.partials.guard-responsive-script')

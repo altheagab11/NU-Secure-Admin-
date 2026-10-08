@@ -30,7 +30,7 @@ class OfficeScannerController extends Controller
             'staffName' => $staffName !== '' ? $staffName : 'Office Staff',
             'staffRole' => trim((string) ($office->position ?? 'Office Staff')) ?: 'Office Staff',
             'currentDate' => Carbon::now('Asia/Manila')->format('l, F j, Y'),
-            'recentScans' => $this->paginateRecentScans($request, $office),
+            'recentScans' => $this->paginateRecentScans(Request::create($request->url()), $office, 1),
             'notifications' => $this->queries->unreadNotifications((int) $office->user_id, 10),
         ]);
     }

@@ -15,9 +15,7 @@ class OfficeDashboardController extends Controller
 {
     private const ALLOWED_PER_PAGE = [5, 10, 25, 50, 75, 100];
 
-    public function __construct(protected OfficeVisitorQueryService $queries)
-    {
-    }
+    public function __construct(protected OfficeVisitorQueryService $queries) {}
 
     public function index(Request $request): View
     {
@@ -25,22 +23,23 @@ class OfficeDashboardController extends Controller
         $officeId = (int) $office->office_id;
 
         $stats = $this->queries->dashboardStats($officeId);
+        $previewRequest = Request::create($request->url());
         $recentActivity = $this->paginateCollection(
-            $this->queries->recentActivity($officeId, 500, true),
-            $request,
+            $this->queries->recentActivity($officeId, 5, true),
+            $previewRequest,
             'scans_page',
             'scans_per_page'
         );
         $expectedPreview = $this->paginateCollection(
-            $this->queries->expectedVisitorsPreview($officeId, null),
-            $request,
+            $this->queries->expectedVisitorsPreview($officeId, null)->sortByDesc('entry_time')->values(),
+            $previewRequest,
             'expected_page',
             'expected_per_page'
         );
         $live = $this->queries->liveMonitoring($officeId);
         $liveWaiting = $this->paginateCollection(
-            collect($live['waiting'] ?? []),
-            $request,
+            collect($live['waiting'] ?? [])->sortByDesc('previous_arrived_at')->values(),
+            $previewRequest,
             'ready_page',
             'ready_per_page',
             5
@@ -73,6 +72,10 @@ class OfficeDashboardController extends Controller
         $office = $request->attributes->get('office_context');
         $officeId = (int) $office->office_id;
 
+        if ($request->has('dashboard_list')) {
+            return $this->dashboardList($request, $officeId);
+        }
+
         $recentActivity = $this->paginateCollection(
             $this->queries->recentActivity($officeId, 500, true),
             $request,
@@ -80,14 +83,14 @@ class OfficeDashboardController extends Controller
             'scans_per_page'
         );
         $expectedPreview = $this->paginateCollection(
-            $this->queries->expectedVisitorsPreview($officeId, null),
+            $this->queries->expectedVisitorsPreview($officeId, null)->sortByDesc('entry_time')->values(),
             $request,
             'expected_page',
             'expected_per_page'
         );
         $live = $this->queries->liveMonitoring($officeId);
         $liveWaiting = $this->paginateCollection(
-            collect($live['waiting'] ?? []),
+            collect($live['waiting'] ?? [])->sortByDesc('previous_arrived_at')->values(),
             $request,
             'ready_page',
             'ready_per_page',
@@ -112,6 +115,53 @@ class OfficeDashboardController extends Controller
             ],
             'server_time' => Carbon::now('Asia/Manila')->toDateTimeString(),
         ]);
+    }
+
+    private function dashboardList(Request $request, int $officeId)
+    {
+        $filters = $request->validate([
+            'dashboard_list' => ['required', 'in:ready,scans,expected'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', 'max:80'],
+            'previous_office' => ['nullable', 'string', 'max:255'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,75,100'],
+        ]);
+        $kind = $filters['dashboard_list'];
+        $perPage = (int) ($filters['per_page'] ?? 10);
+
+        if ($kind === 'scans') {
+            $today = Carbon::now('Asia/Manila')->toDateString();
+            $historyRequest = Request::create($request->url(), 'GET', array_merge($filters, ['from' => $today, 'to' => $today]));
+            $paginator = $this->queries->visitHistoryPaginated($historyRequest, $officeId, $perPage);
+            $data = $this->formatRecentActivityForLive($paginator->getCollection(), false);
+            $options = ['statuses' => ['Valid', 'Invalid', 'Unauthorized'], 'previous_offices' => []];
+        } else {
+            $rows = $kind === 'ready'
+                ? collect($this->queries->liveMonitoring($officeId, false)['waiting'] ?? [])->sortByDesc('previous_arrived_at')->values()
+                : collect($this->formatExpectedVisitorsForLive($this->queries->expectedVisitorsPreview($officeId, null)->sortByDesc('entry_time')->values(), false));
+            $statusField = $kind === 'ready' ? 'status' : 'route_status_key';
+            $options = [
+                'statuses' => $rows->pluck($statusField)->filter()->unique()->values()->all(),
+                'previous_offices' => $rows->pluck('previous_office')->filter()->unique()->sort()->values()->all(),
+            ];
+            $needle = Str::lower(trim($filters['search'] ?? ''));
+            $rows = $rows->filter(function ($row) use ($filters, $needle, $statusField) {
+                $searchable = implode(' ', [data_get($row, 'visitor_name'), data_get($row, 'control_number'), data_get($row, 'purpose'), data_get($row, 'previous_office')]);
+
+                return ($needle === '' || str_contains(Str::lower($searchable), $needle))
+                    && (empty($filters['status']) || Str::lower((string) data_get($row, $statusField)) === Str::lower($filters['status']))
+                    && (empty($filters['previous_office']) || data_get($row, 'previous_office') === $filters['previous_office']);
+            })->values();
+            $paginationRequest = Request::create($request->url(), 'GET', ['page' => $filters['page'] ?? 1, 'per_page' => $perPage]);
+            $paginator = $this->paginateCollection($rows, $paginationRequest, 'page', 'per_page', 10);
+            $data = $paginator->getCollection()->values()->all();
+            if ($kind === 'ready') {
+                $data = $this->queries->resolveWaitingPhotos($data);
+            }
+        }
+
+        return response()->json(['success' => true, 'data' => $data, 'meta' => $this->paginatorMeta($paginator), 'filters' => $options]);
     }
 
     protected function paginateCollection(
@@ -162,26 +212,26 @@ class OfficeDashboardController extends Controller
         ];
     }
 
-    protected function formatRecentActivityForLive($rows): array
+    protected function formatRecentActivityForLive($rows, bool $compact = true): array
     {
-        return collect($rows)->map(function ($row) {
+        return collect($rows)->map(function ($row) use ($compact) {
             $status = trim((string) ($row->validation_status ?? ''));
 
             return [
                 'visit_id' => (int) ($row->visit_id ?? 0),
                 'visitor_name' => (string) ($row->visitor_name ?? 'Visitor'),
                 'control_number' => (string) (($row->control_number ?? '') !== '' ? $row->control_number : '—'),
-                'purpose' => Str::limit((string) (($row->purpose_reason ?? '') !== '' ? $row->purpose_reason : '—'), 28),
-                'time_label' => (string) ($row->scan_time_label ?? '—'),
+                'purpose' => $compact ? Str::limit((string) ($row->purpose_reason ?? '—'), 28) : (string) ($row->purpose_reason ?? '—'),
+                'time_label' => (string) ($row->scan_time_label ?? (! empty($row->scan_time) ? Carbon::parse($row->scan_time)->timezone('Asia/Manila')->format('g:i A') : '—')),
                 'validation_status' => $status !== '' ? $status : '—',
                 'view_url' => route('office.visitors.show', (int) ($row->visit_id ?? 0)),
             ];
         })->values()->all();
     }
 
-    protected function formatExpectedVisitorsForLive($rows): array
+    protected function formatExpectedVisitorsForLive($rows, bool $compact = true): array
     {
-        return collect($rows)->map(function ($row) {
+        return collect($rows)->map(function ($row) use ($compact) {
             $arrival = ! empty($row->expected_arrival)
                 ? Carbon::parse($row->expected_arrival)->timezone('Asia/Manila')->format('M j, g:i A')
                 : '—';
@@ -191,7 +241,7 @@ class OfficeDashboardController extends Controller
                 'visit_id' => (int) ($row->visit_id ?? 0),
                 'control_number' => (string) (($row->control_number ?? '') !== '' ? $row->control_number : '—'),
                 'visitor_name' => (string) ($row->visitor_name ?? 'Visitor'),
-                'purpose' => Str::limit((string) (($row->purpose_reason ?? '') !== '' ? $row->purpose_reason : '—'), 32),
+                'purpose' => $compact ? Str::limit((string) ($row->purpose_reason ?? '—'), 32) : (string) ($row->purpose_reason ?? '—'),
                 'previous_office' => (string) ($row->previous_office ?? '—'),
                 'expected_label' => $arrival,
                 'route_status' => (string) ($row->route_status ?? 'Expected'),

@@ -253,11 +253,6 @@
 		.scan-layout { grid-template-columns: 1fr; }
 	}
 
-	@include('admin.partials.table-pagination-styles')
-
-	.side-card .table-pagination-bar {
-		margin-top: 12px;
-	}
 </style>
 @endpush
 
@@ -386,7 +381,7 @@
 		<div class="side-card">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h3 class="mb-0">Today's Recent Scans</h3>
-				<a href="{{ route('office.visit-history') }}" class="btn btn-sm btn-nu-outline">History</a>
+				<a href="{{ route('office.visit-history', ['from' => now('Asia/Manila')->toDateString(), 'to' => now('Asia/Manila')->toDateString()]) }}" class="btn btn-sm btn-nu-outline">View All</a>
 			</div>
 			<div id="scannerRecentScans">
 			@if($recentScans->isEmpty())
@@ -406,7 +401,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							@foreach($recentScans as $row)
+							@foreach(collect($recentScans->items())->take(5) as $row)
 								<tr>
 									<td>
 										<div class="fw-semibold">{{ $row->visitor_name }}</div>
@@ -425,13 +420,6 @@
 					</table>
 				</div>
 			@endif
-			</div>
-			<div id="scannerRecentPagination">
-				@include('admin.partials.table-pagination', [
-					'paginator' => $recentScans,
-					'perPageParam' => 'scans_per_page',
-					'ariaLabel' => "Today's recent scans pagination",
-				])
 			</div>
 		</div>
 	</div>
@@ -511,10 +499,9 @@
 
 	function renderRecentScans(payload) {
 		const wrap = document.getElementById('scannerRecentScans');
-		const pagination = document.getElementById('scannerRecentPagination');
 		if (!wrap) return;
-		const rows = Array.isArray(payload) ? payload : (payload?.data || []);
-		const meta = Array.isArray(payload) ? null : (payload?.meta || null);
+		const records = Array.isArray(payload) ? payload : (payload?.data || []);
+		const rows = Array.isArray(records) ? records.slice(0, 5) : [];
 		if (!Array.isArray(rows) || rows.length === 0) {
 			wrap.innerHTML = `
 				<div class="empty-state py-3">
@@ -523,7 +510,6 @@
 					<p class="card-muted mb-0">Today's QR scans at this office will appear here.</p>
 				</div>
 			`;
-			if (meta) updateScannerPagination(pagination, meta);
 			return;
 		}
 		wrap.innerHTML = `
@@ -551,43 +537,6 @@
 				</table>
 			</div>
 		`;
-		if (meta) updateScannerPagination(pagination, meta);
-	}
-
-	function updateScannerPagination(root, meta) {
-		if (!root || !meta) return;
-		const range = root.querySelector('.table-pagination-range');
-		const pageLabel = root.querySelector('.table-pagination-page');
-		const pageSize = root.querySelector('.table-page-size');
-		const links = root.querySelectorAll('.table-pagination-nav');
-		if (range) {
-			range.textContent = (meta.from || 0) + ' to ' + (meta.to || 0) + ' of ' + (meta.total || 0);
-		}
-		if (pageLabel) {
-			pageLabel.innerHTML = 'Page <strong>' + (meta.current_page || 1) + '</strong> of ' + (meta.last_page || 1);
-		}
-		if (pageSize && String(pageSize.value) !== String(meta.per_page)) {
-			pageSize.value = String(meta.per_page);
-		}
-		const onFirst = (meta.current_page || 1) <= 1;
-		const onLast = (meta.current_page || 1) >= (meta.last_page || 1);
-		const setNav = function (link, disabled, href) {
-			if (!link) return;
-			link.classList.toggle('is-disabled', disabled);
-			if (disabled) {
-				link.setAttribute('aria-disabled', 'true');
-				link.setAttribute('tabindex', '-1');
-				link.setAttribute('href', '#');
-			} else {
-				link.removeAttribute('aria-disabled');
-				link.removeAttribute('tabindex');
-				if (href) link.setAttribute('href', href);
-			}
-		};
-		setNav(links[0], onFirst, meta.first_url);
-		setNav(links[1], onFirst, meta.prev_url);
-		setNav(links[2], onLast, meta.next_url);
-		setNav(links[3], onLast, meta.last_url);
 	}
 
 	function showCameraError(message) {
@@ -862,8 +811,5 @@
 
 	focusScannerInput();
 })();
-</script>
-<script nonce="{{ $cspNonce }}">
-	@include('admin.partials.table-pagination-script')
 </script>
 @endpush
