@@ -10,11 +10,18 @@
 </IfModule>
 
 <IfModule mod_headers.c>
-    Header always set Strict-Transport-Security "max-age=300" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
+    Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on' || %{HTTP:X-Forwarded-Proto} == 'https'"
 
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions Policy
+    # Keep camera available for QR scanning and OCR
+    Header always set Permissions-Policy "microphone=(), geolocation=()"
 
     # Safe fallback CSP for responses without Laravel's generated nonce policy.
     Header always set Content-Security-Policy "default-src 'none'; frame-ancestors 'self'; form-action 'self'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
