@@ -8194,18 +8194,8 @@
 											<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
 											<span>Recapture</span>
 										</button>
-										<div class="divider kiosk-or-divider">
-											<span></span>
-											<small>OR</small>
-											<span></span>
-										</div>
-										<button type="button" class="upload-button gallery-action is-hidden" id="galleryAction">
-											<i class="bi bi-cloud-upload"></i>
-											Upload ID Image
-										</button>
 									</div>
-									<input type="file" id="idGalleryInput" class="is-hidden" accept="image/jpeg,image/png,image/webp,image/*">
-									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually or upload a clear image of the ID.</p>
+									<p class="upload-hint gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually.</p>
 								</section>
 
 							</aside>
@@ -8286,10 +8276,8 @@
 								<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
 								<span>Recapture</span>
 							</button>
-							<button type="button" class="gallery-action is-hidden" id="galleryAction">Import ID from Gallery</button>
 						</div>
-						<input type="file" id="idGalleryInput" class="is-hidden" accept="image/*">
-						<p class="gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually or upload a clear photo of the ID.</p>
+						<p class="gallery-hint is-hidden" id="galleryHint">If the ID cannot be scanned, enter the visitor information manually.</p>
 						<div class="id-types is-hidden" id="idTypesPanel">
 							<p class="id-types-title">Supported ID Types:</p>
 							<ul class="id-types-list">
@@ -9616,7 +9604,7 @@
 		const hasRegisterFlow = Boolean(
 			flowStepName && flowStepCount && scannerCard && pictureGuide && idGuide &&
 			(isSelfRegistrationKiosk || idTypesPanel) && hasFinalStepPanel && scanAction && scanActionText &&
-			galleryAction && galleryHint && loadingOverlay && loadingText
+			galleryHint && loadingOverlay && loadingText
 		);
 		let activeStream = null;
 		/** @type {'environment'|'user'} */
@@ -10341,7 +10329,7 @@
 			if (idTypesPanel) {
 				idTypesPanel.classList.toggle('is-hidden', !isIdStep);
 			}
-			galleryAction.classList.toggle('is-hidden', !isIdStep);
+			galleryAction?.classList.toggle('is-hidden', !isIdStep);
 			galleryHint.classList.toggle('is-hidden', !isIdStep);
 			updateScanActionButton();
 			if (!isPictureStep || isCompleteStep) {
@@ -11926,7 +11914,7 @@
 			loadingOverlay.classList.remove('is-hidden');
 			loadingText.textContent = progressText;
 			scanAction.disabled = true;
-			galleryAction.disabled = true;
+			if (galleryAction) galleryAction.disabled = true;
 
 			const stayOnIdScan = (message) => {
 				existingVisitorMatch = null;
@@ -11941,7 +11929,7 @@
 					loadingOverlay.classList.add('is-hidden');
 					clearFrozenFrame();
 					scanAction.disabled = false;
-					galleryAction.disabled = false;
+					if (galleryAction) galleryAction.disabled = false;
 					idCaptureLocked = false;
 					currentStep = 1;
 					updateStepUI();
@@ -11980,7 +11968,7 @@
 					}
 					loadingOverlay.classList.add('is-hidden');
 					scanAction.disabled = false;
-					galleryAction.disabled = false;
+					if (galleryAction) galleryAction.disabled = false;
 					idCaptureLocked = false;
 					manualEntryMode = false;
 					document.body.classList.remove('is-manual-entry');
