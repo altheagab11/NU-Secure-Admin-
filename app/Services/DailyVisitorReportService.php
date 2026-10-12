@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\DailyReport;
 use App\Models\User;
-use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -43,41 +43,35 @@ class DailyVisitorReportService
     public function generate(string|\DateTimeInterface $date, ?int $generatedByUserId = null, bool $regenerate = false): DailyReport
     {
         $reportDate = $this->normalizeReportDate($date);
+
+        return $this->withDailyReportLock(self::REPORT_TYPE, $reportDate, 0,
+            fn () => $this->generateLocked($reportDate, $generatedByUserId, $regenerate));
+    }
+
+    protected function generateLocked(Carbon $reportDate, ?int $generatedByUserId, bool $regenerate): DailyReport
+    {
         $dateString = $reportDate->toDateString();
         $fileName = $this->buildFileName($dateString);
         $relativePath = $this->buildRelativePath($dateString, $fileName);
 
-        $report = DailyReport::query()->firstOrNew([
-            'report_date' => $dateString,
-            'report_type' => self::REPORT_TYPE,
-        ]);
+        $report = DailyReport::query()
+            ->whereDate('report_date', $dateString)
+            ->where('report_type', self::REPORT_TYPE)
+            ->first() ?? new DailyReport([
+                'report_date' => $dateString,
+                'report_type' => self::REPORT_TYPE,
+            ]);
 
         if (
             $report->exists
             && $report->generation_status === DailyReport::STATUS_COMPLETED
             && ! $regenerate
         ) {
-            if ($this->reportFileExists($report)) {
-                Log::info('Daily visitor report already exists; skipping duplicate generation.', [
-                    'report_date' => $dateString,
-                    'report_id' => $report->id,
-                    'action' => 'daily_report_duplicate_skipped',
-                ]);
-
-                return $report;
-            }
-
-            // DB says completed but the Excel file is gone — rebuild it.
-            Log::warning('Daily visitor report marked completed but file is missing; regenerating.', [
-                'report_date' => $dateString,
-                'report_id' => $report->id,
-                'file_path' => $report->file_path,
-                'action' => 'daily_report_missing_file_regenerate',
-            ]);
-            $regenerate = true;
+            // Only explicit regeneration may replace a completed record or its file.
+            return $report;
         }
 
-        if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING) {
+        if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING && ! $regenerate) {
             throw new RuntimeException('A report for this date is already being generated. Please wait and try again.');
         }
 
@@ -184,8 +178,6 @@ class DailyVisitorReportService
      * Generate (or regenerate) a daily visitor Excel report scoped to one office.
      *
      * Includes visits that had an office scan at the given office during the calendar day.
-     *
-     * @param  string|\DateTimeInterface  $date
      */
     public function generateForOffice(
         string|\DateTimeInterface $date,
@@ -196,44 +188,43 @@ class DailyVisitorReportService
     ): DailyReport {
         $officeId = max(1, $officeId);
         $reportDate = $this->normalizeReportDate($date);
+
+        return $this->withDailyReportLock(self::OFFICE_REPORT_TYPE, $reportDate, $officeId,
+            fn () => $this->generateForOfficeLocked($reportDate, $officeId, $officeName, $generatedByUserId, $regenerate));
+    }
+
+    protected function generateForOfficeLocked(
+        Carbon $reportDate,
+        int $officeId,
+        string $officeName,
+        ?int $generatedByUserId,
+        bool $regenerate
+    ): DailyReport {
         $dateString = $reportDate->toDateString();
         $resolvedOfficeName = $this->resolveOfficeName($officeId, $officeName);
         $fileName = $this->buildOfficeFileName($dateString, $officeId);
         $relativePath = $this->buildOfficeRelativePath($dateString, $officeId, $fileName);
 
-        $report = DailyReport::query()->firstOrNew([
-            'report_date' => $dateString,
-            'report_type' => self::OFFICE_REPORT_TYPE,
-            'office_id' => $officeId,
-        ]);
+        $report = DailyReport::query()
+            ->whereDate('report_date', $dateString)
+            ->where('report_type', self::OFFICE_REPORT_TYPE)
+            ->where('office_id', $officeId)
+            ->first() ?? new DailyReport([
+                'report_date' => $dateString,
+                'report_type' => self::OFFICE_REPORT_TYPE,
+                'office_id' => $officeId,
+            ]);
 
         if (
             $report->exists
             && $report->generation_status === DailyReport::STATUS_COMPLETED
             && ! $regenerate
         ) {
-            if ($this->reportFileExists($report)) {
-                Log::info('Office daily visitor report already exists; skipping duplicate generation.', [
-                    'report_date' => $dateString,
-                    'report_id' => $report->id,
-                    'office_id' => $officeId,
-                    'action' => 'office_daily_report_duplicate_skipped',
-                ]);
-
-                return $report;
-            }
-
-            Log::warning('Office daily visitor report marked completed but file is missing; regenerating.', [
-                'report_date' => $dateString,
-                'report_id' => $report->id,
-                'office_id' => $officeId,
-                'file_path' => $report->file_path,
-                'action' => 'office_daily_report_missing_file_regenerate',
-            ]);
-            $regenerate = true;
+            // Only explicit regeneration may replace a completed record or its file.
+            return $report;
         }
 
-        if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING) {
+        if ($report->exists && $report->generation_status === DailyReport::STATUS_GENERATING && ! $regenerate) {
             throw new RuntimeException('A report for this date is already being generated. Please wait and try again.');
         }
 
@@ -340,119 +331,21 @@ class DailyVisitorReportService
         }
     }
 
-    /**
-     * Create any missing (or failed) daily visitor reports for the last N complete Asia/Manila days.
-     * Skips today because the current calendar day is not complete until midnight.
-     *
-     * @return array{generated: int, skipped: int, failed: int}
-     */
-    public function ensureMissingDailyReports(int $days = 7, ?int $generatedByUserId = null): array
+    /** Serialize scheduled and manual writers for the same date and scope. */
+    protected function withDailyReportLock(string $type, Carbon $date, int $officeId, callable $generate): DailyReport
     {
-        $days = max(1, min($days, 31));
-        // Anchor on yesterday so incomplete "today" reports are never auto-generated.
-        $yesterday = now('Asia/Manila')->startOfDay()->subDay();
-        $stats = ['generated' => 0, 'skipped' => 0, 'failed' => 0];
+        $key = 'daily-report:generation:'.$type.':'.$officeId.':'.$date->toDateString();
+        $lock = Cache::lock($key, 3600);
 
-        for ($offset = $days - 1; $offset >= 0; $offset--) {
-            $date = $yesterday->copy()->subDays($offset);
-            $dateString = $date->toDateString();
-
-            $existing = DailyReport::query()
-                ->where('report_type', self::REPORT_TYPE)
-                ->whereDate('report_date', $dateString)
-                ->first();
-
-            $completedWithFile = $existing
-                && $existing->generation_status === DailyReport::STATUS_COMPLETED
-                && $this->reportFileExists($existing);
-
-            if ($completedWithFile) {
-                $stats['skipped']++;
-
-                continue;
-            }
-
-            $needsFileRepair = $existing
-                && $existing->generation_status === DailyReport::STATUS_COMPLETED
-                && ! $this->reportFileExists($existing);
-
-            try {
-                $this->generate($dateString, $generatedByUserId, $needsFileRepair);
-                $stats['generated']++;
-            } catch (Throwable $e) {
-                $stats['failed']++;
-                Log::warning('Daily visitor report catch-up failed for date.', [
-                    'action' => 'daily_report_catchup_failed',
-                    'report_date' => $dateString,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+        if (! $lock->get()) {
+            throw new RuntimeException('A report for this date is already being generated. Please wait and try again.');
         }
 
-        return $stats;
-    }
-
-    /**
-     * Create any missing (or failed) office-scoped daily reports for the last N complete days.
-     *
-     * @return array{generated: int, skipped: int, failed: int}
-     */
-    public function ensureMissingOfficeDailyReports(
-        int $officeId,
-        string $officeName = '',
-        int $days = 7,
-        ?int $generatedByUserId = null
-    ): array {
-        $officeId = max(1, $officeId);
-        $days = max(1, min($days, 31));
-        $yesterday = now('Asia/Manila')->startOfDay()->subDay();
-        $stats = ['generated' => 0, 'skipped' => 0, 'failed' => 0];
-
-        for ($offset = $days - 1; $offset >= 0; $offset--) {
-            $date = $yesterday->copy()->subDays($offset);
-            $dateString = $date->toDateString();
-
-            $existing = DailyReport::query()
-                ->where('report_type', self::OFFICE_REPORT_TYPE)
-                ->where('office_id', $officeId)
-                ->whereDate('report_date', $dateString)
-                ->first();
-
-            $completedWithFile = $existing
-                && $existing->generation_status === DailyReport::STATUS_COMPLETED
-                && $this->reportFileExists($existing);
-
-            if ($completedWithFile) {
-                $stats['skipped']++;
-
-                continue;
-            }
-
-            $needsFileRepair = $existing
-                && $existing->generation_status === DailyReport::STATUS_COMPLETED
-                && ! $this->reportFileExists($existing);
-
-            try {
-                $this->generateForOffice(
-                    $dateString,
-                    $officeId,
-                    $officeName,
-                    $generatedByUserId,
-                    $needsFileRepair
-                );
-                $stats['generated']++;
-            } catch (Throwable $e) {
-                $stats['failed']++;
-                Log::warning('Office daily visitor report catch-up failed for date.', [
-                    'action' => 'office_daily_report_catchup_failed',
-                    'report_date' => $dateString,
-                    'office_id' => $officeId,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+        try {
+            return $generate();
+        } finally {
+            $lock->release();
         }
-
-        return $stats;
     }
 
     /**
@@ -483,8 +376,6 @@ class DailyVisitorReportService
     /**
      * Generate a manual multi-day visitor Excel report (complete calendar days, Asia/Manila).
      *
-     * @param  string|\DateTimeInterface  $startDate
-     * @param  string|\DateTimeInterface  $endDate
      * @param  User|int|null  $adminUser  Admin user model or user id
      */
     public function generateDateRangeReport(

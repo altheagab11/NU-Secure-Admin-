@@ -8,45 +8,21 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-/*
-|--------------------------------------------------------------------------
-| Daily Visitor Report Scheduler
-|--------------------------------------------------------------------------
-|
-| Generate the COMPLETE previous day's report at 12:01 AM Asia/Manila,
-| plus an hourly catch-up so missed days are filled when the scheduler
-| is running. Hostinger cron should call `php artisan schedule:run`
-| every minute; do not add a second cron mechanism here.
-|
-| Windows (local): run every minute via Task Scheduler, or keep this open:
-|   php artisan schedule:work
-|
-| Linux / production cron:
-|   * * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
-|
-*/
+// One Hostinger cron entry invokes schedule:run every minute.
+// Both commands start at Manila midnight and generate yesterday only.
+// Background execution prevents the admin task from delaying the office task.
 Schedule::command('generate:daily-visitor-report')
-    ->dailyAt('00:01')
+    ->dailyAt('00:00')
     ->timezone('Asia/Manila')
-    ->withoutOverlapping(30)
+    ->onOneServer()
+    ->withoutOverlapping(60)
+    ->runInBackground()
     ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));
 
-Schedule::command('generate:daily-visitor-report --catch-up=7')
-    ->hourly()
-    ->timezone('Asia/Manila')
-    ->withoutOverlapping(30)
-    ->appendOutputTo(storage_path('logs/daily-visitor-report-scheduler.log'));
-
-// Generate yesterday's office-scoped reports even when no office staff are logged in.
 Schedule::command('generate:office-daily-visitor-reports')
     ->dailyAt('00:00')
     ->timezone('Asia/Manila')
+    ->onOneServer()
     ->withoutOverlapping(60)
-    ->appendOutputTo(storage_path('logs/office-daily-visitor-report-scheduler.log'));
-
-// Retry missed/failed days separately from the admin's hourly catch-up.
-Schedule::command('generate:office-daily-visitor-reports --catch-up=7')
-    ->hourlyAt(15)
-    ->timezone('Asia/Manila')
-    ->withoutOverlapping(60)
+    ->runInBackground()
     ->appendOutputTo(storage_path('logs/office-daily-visitor-report-scheduler.log'));

@@ -8,6 +8,7 @@ use App\Services\ActivityLogService;
 use App\Services\DailyVisitorReportService;
 use App\Services\OfficeVisitorQueryService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -32,8 +33,6 @@ class OfficeDailyReportController extends Controller
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
         ]);
-
-        $this->catchUpMissingReports($officeId, (string) ($office->office_name ?? ''));
 
         $query = DailyReport::query()
             ->with(['generator:user_id,first_name,last_name,email'])
@@ -171,7 +170,7 @@ class OfficeDailyReportController extends Controller
         }
     }
 
-    public function download(Request $request, int $id): StreamedResponse|\Illuminate\Http\RedirectResponse
+    public function download(Request $request, int $id): StreamedResponse|RedirectResponse
     {
         $office = $request->attributes->get('office_context');
         $officeId = (int) $office->office_id;
@@ -210,41 +209,19 @@ class OfficeDailyReportController extends Controller
                 ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
         }
 
+        // Downloads are read-only; missing files require explicit regeneration.
         if (! $disk->exists($normalized)) {
-            try {
-                $report = $this->reportService->generateForOffice(
-                    $report->report_date->toDateString(),
-                    $officeId,
-                    (string) ($office->office_name ?? ''),
-                    (int) $request->user()->getAuthIdentifier(),
-                    true
-                );
-                $normalized = str_replace('\\', '/', (string) $report->file_path);
-            } catch (Throwable $e) {
-                Log::warning('Office daily report download failed because the file is missing and regeneration failed.', [
-                    'action' => 'office_daily_report_download_missing',
-                    'report_id' => $report->id,
-                    'report_date' => $report->report_date?->toDateString(),
-                    'office_id' => $officeId,
-                    'user_id' => $request->user()?->getAuthIdentifier(),
-                    'error' => $e->getMessage(),
-                ]);
+            Log::warning('Office daily report download failed because the file is missing.', [
+                'action' => 'office_daily_report_download_missing',
+                'report_id' => $report->id,
+                'report_date' => $report->report_date?->toDateString(),
+                'office_id' => $officeId,
+                'user_id' => $request->user()?->getAuthIdentifier(),
+            ]);
 
-                return redirect()
-                    ->route('office.daily-reports')
-                    ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
-            }
-
-            if (
-                $normalized === ''
-                || str_contains($normalized, '..')
-                || ! str_starts_with($normalized, $expectedPrefix)
-                || ! $disk->exists($normalized)
-            ) {
-                return redirect()
-                    ->route('office.daily-reports')
-                    ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
-            }
+            return redirect()
+                ->route('office.daily-reports')
+                ->with('error', 'The report file could not be found in secure storage. Please regenerate the report.');
         }
 
         Log::info('Office daily visitor report downloaded.', [
@@ -275,26 +252,5 @@ class OfficeDailyReportController extends Controller
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]
         );
-    }
-
-    protected function catchUpMissingReports(int $officeId, string $officeName): void
-    {
-        $cacheKey = 'office-daily-visitor-report:page-catch-up:'.$officeId;
-
-        if (cache()->has($cacheKey)) {
-            return;
-        }
-
-        cache()->put($cacheKey, true, now()->addMinutes(10));
-
-        try {
-            $this->reportService->ensureMissingOfficeDailyReports($officeId, $officeName, 7, null);
-        } catch (Throwable $e) {
-            Log::warning('Office daily report page catch-up failed.', [
-                'action' => 'office_daily_report_page_catchup_failed',
-                'office_id' => $officeId,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 }

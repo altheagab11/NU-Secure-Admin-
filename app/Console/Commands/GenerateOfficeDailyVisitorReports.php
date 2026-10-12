@@ -12,14 +12,30 @@ use Throwable;
 class GenerateOfficeDailyVisitorReports extends Command
 {
     protected $signature = 'generate:office-daily-visitor-reports
-                            {--catch-up=1 : Generate missing reports for the last N complete Asia/Manila days (1–31)}';
+                            {date? : Explicit manual report date (YYYY-MM-DD); otherwise yesterday at Manila midnight}
+                            {--force : Explicitly regenerate existing reports; requires a date}';
 
-    protected $description = 'Generate separate daily visitor Excel reports for each active office';
+    protected $description = 'Generate separate previous-day reports for active offices at Manila midnight';
 
     public function handle(DailyVisitorReportService $service): int
     {
-        $days = max(1, min(31, (int) $this->option('catch-up')));
-        // Share one lock across the midnight and catch-up commands.
+        $now = now('Asia/Manila');
+        $manualDate = $this->argument('date');
+
+        if (! $manualDate && $this->option('force')) {
+            $this->error('Explicit regeneration requires a report date.');
+
+            return self::FAILURE;
+        }
+
+        if (! $manualDate && $now->format('H:i') !== '00:00') {
+            $this->info('Automatic office daily reports only run at 00:00 Asia/Manila. No reports generated.');
+
+            return self::SUCCESS;
+        }
+
+        // Capture yesterday once; a long run must not change dates between offices.
+        $date = $manualDate ?: $now->copy()->subDay()->toDateString();
         $lock = Cache::lock('office-daily-visitor-reports:generation', 3600);
 
         if (! $lock->get()) {
@@ -29,30 +45,33 @@ class GenerateOfficeDailyVisitorReports extends Command
         }
 
         try {
+            $service->normalizeReportDate($date);
             $offices = DB::table('office')
                 ->select('office_id', 'office_name')
                 ->where('is_active', true)
                 ->orderBy('office_id')
                 ->get();
-
-            $totals = ['generated' => 0, 'skipped' => 0, 'failed' => 0];
+            $ready = 0;
+            $failed = 0;
 
             foreach ($offices as $office) {
                 try {
-                    // Reuse office-scoped generation, duplicate checks, and missing-file repair.
-                    $stats = $service->ensureMissingOfficeDailyReports(
+                    $report = $service->generateForOffice(
+                        $date,
                         (int) $office->office_id,
                         (string) $office->office_name,
-                        $days,
-                        null
+                        null,
+                        (bool) $this->option('force')
                     );
-
-                    foreach (array_keys($totals) as $key) {
-                        $totals[$key] += $stats[$key];
+                    if ($report->generation_status === 'completed') {
+                        $ready++;
+                    } else {
+                        $failed++;
                     }
                 } catch (Throwable $e) {
-                    $totals['failed']++;
-                    Log::error('Scheduled office daily report generation failed.', [
+                    $failed++;
+                    Log::error('Office daily report generation failed.', [
+                        'report_date' => $date,
                         'office_id' => $office->office_id,
                         'error' => $e->getMessage(),
                     ]);
@@ -61,11 +80,11 @@ class GenerateOfficeDailyVisitorReports extends Command
             }
 
             $this->info('Office daily report generation finished.');
-            $this->line('Generated: '.$totals['generated']);
-            $this->line('Skipped (already complete): '.$totals['skipped']);
-            $this->line('Failed: '.$totals['failed']);
+            $this->line('Date: '.$date);
+            $this->line('Ready: '.$ready);
+            $this->line('Failed: '.$failed);
 
-            return $totals['failed'] > 0 ? self::FAILURE : self::SUCCESS;
+            return $failed > 0 ? self::FAILURE : self::SUCCESS;
         } catch (Throwable $e) {
             report($e);
             $this->error('Unable to generate office daily reports: '.$e->getMessage());

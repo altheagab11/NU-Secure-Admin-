@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\DailyReport;
 use App\Services\DailyVisitorReportService;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -31,50 +32,58 @@ class OfficeDailyReportSchedulerTest extends TestCase
         ]));
     }
 
-    public function test_midnight_generation_processes_active_offices_separately_as_system(): void
+    private function fakeService(string $date): DailyVisitorReportService
     {
-        Carbon::setTestNow(Carbon::parse('2026-10-10 00:00:00', 'Asia/Manila'));
-        $this->fakeOffices();
         $service = Mockery::mock(DailyVisitorReportService::class);
-        foreach ([[2, 'Registrar'], [7, 'Admissions']] as [$id, $name]) {
-            $service->shouldReceive('ensureMissingOfficeDailyReports')->once()->with($id, $name, 1, null)
-                ->andReturn(['generated' => 1, 'skipped' => 0, 'failed' => 0]);
-        }
-        $service->shouldNotReceive('generate');
+        $service->shouldReceive('normalizeReportDate')->once()->with($date)->andReturn(Carbon::parse($date, 'Asia/Manila'));
         $this->app->instance(DailyVisitorReportService::class, $service);
 
-        $this->artisan('generate:office-daily-visitor-reports')
-            ->expectsOutput('Generated: 2')->assertSuccessful();
+        return $service;
     }
 
-    public function test_catchup_reuses_duplicate_checks_and_continues_after_an_office_failure(): void
+    public function test_midnight_generation_processes_only_yesterday_for_each_active_office_as_system(): void
     {
+        Carbon::setTestNow(Carbon::parse('2026-10-13 00:00:00', 'Asia/Manila'));
         $this->fakeOffices();
-        $service = Mockery::mock(DailyVisitorReportService::class);
-        $service->shouldReceive('ensureMissingOfficeDailyReports')->once()->with(2, 'Registrar', 7, null)
-            ->andThrow(new \RuntimeException('Report storage unavailable'));
-        $service->shouldReceive('ensureMissingOfficeDailyReports')->once()->with(7, 'Admissions', 7, null)
-            ->andReturn(['generated' => 0, 'skipped' => 7, 'failed' => 0]);
-        $this->app->instance(DailyVisitorReportService::class, $service);
+        $service = $this->fakeService('2026-10-12');
+        foreach ([[2, 'Registrar'], [7, 'Admissions']] as [$id, $name]) {
+            $service->shouldReceive('generateForOffice')->once()->with('2026-10-12', $id, $name, null, false)
+                ->andReturn(new DailyReport(['generation_status' => 'completed']));
+        }
+        $service->shouldNotReceive('generate');
 
-        $this->artisan('generate:office-daily-visitor-reports --catch-up=7')
-            ->expectsOutput('Skipped (already complete): 7')
-            ->expectsOutput('Failed: 1')->assertFailed();
+        $this->artisan('generate:office-daily-visitor-reports')
+            ->expectsOutput('Ready: 2')->assertSuccessful();
+    }
+
+    public function test_manual_generation_continues_after_an_office_failure_and_releases_lock(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-12 18:00:00', 'Asia/Manila'));
+        $this->fakeOffices();
+        $service = $this->fakeService('2026-10-05');
+        $service->shouldReceive('generateForOffice')->once()->with('2026-10-05', 2, 'Registrar', null, true)
+            ->andThrow(new \RuntimeException('Report storage unavailable'));
+        $service->shouldReceive('generateForOffice')->once()->with('2026-10-05', 7, 'Admissions', null, true)
+            ->andReturn(new DailyReport(['generation_status' => 'completed']));
+
+        $this->artisan('generate:office-daily-visitor-reports 2026-10-05 --force')
+            ->expectsOutput('Ready: 1')->expectsOutput('Failed: 1')->assertFailed();
         $releasedLock = Cache::lock('office-daily-visitor-reports:generation', 60);
         $this->assertTrue($releasedLock->get());
         $releasedLock->release();
     }
 
-    public function test_midnight_and_catchup_do_not_run_concurrently(): void
+    public function test_office_commands_do_not_run_concurrently(): void
     {
+        Carbon::setTestNow(Carbon::parse('2026-10-13 00:00:00', 'Asia/Manila'));
         $lock = Cache::lock('office-daily-visitor-reports:generation', 3600);
         $this->assertTrue($lock->get());
         $service = Mockery::mock(DailyVisitorReportService::class);
-        $service->shouldNotReceive('ensureMissingOfficeDailyReports');
+        $service->shouldNotReceive('generateForOffice');
         $this->app->instance(DailyVisitorReportService::class, $service);
 
         try {
-            $this->artisan('generate:office-daily-visitor-reports --catch-up=7')
+            $this->artisan('generate:office-daily-visitor-reports')
                 ->expectsOutput('Another office daily report generation process is already running.')
                 ->assertSuccessful();
         } finally {
@@ -82,18 +91,48 @@ class OfficeDailyReportSchedulerTest extends TestCase
         }
     }
 
-    public function test_office_generation_is_scheduled_at_manila_midnight_with_hourly_catchup(): void
+    public function test_both_scopes_are_scheduled_only_at_manila_midnight(): void
     {
         $this->artisan('list')->assertSuccessful();
         $events = collect($this->app->make(Schedule::class)->events());
-        $daily = $events->first(fn ($event) => str_contains($event->command ?? '', 'generate:office-daily-visitor-reports') && ! str_contains($event->command, '--catch-up'));
-        $catchUp = $events->first(fn ($event) => str_contains($event->command ?? '', 'generate:office-daily-visitor-reports --catch-up=7'));
+        $reports = $events->filter(fn ($event) => str_contains($event->command ?? '', 'generate:'));
+        $this->assertCount(2, $reports);
+        foreach ($reports as $event) {
+            $this->assertSame('0 0 * * *', $event->expression);
+            $this->assertSame('Asia/Manila', $event->timezone);
+            $this->assertTrue($event->withoutOverlapping);
+            $this->assertTrue($event->onOneServer);
+            $this->assertTrue($event->runInBackground);
+            $this->assertStringNotContainsString('--catch-up', $event->command);
+            Carbon::setTestNow(Carbon::parse('2026-10-12 18:15:00', 'Asia/Manila'));
+            $this->assertFalse($event->isDue($this->app));
+            Carbon::setTestNow(Carbon::parse('2026-10-13 00:00:00', 'Asia/Manila'));
+            $this->assertTrue($event->isDue($this->app));
+        }
+    }
 
-        $this->assertNotNull($daily);
-        $this->assertSame('0 0 * * *', $daily->expression);
-        $this->assertSame('Asia/Manila', $daily->timezone);
-        $this->assertTrue($daily->withoutOverlapping);
-        $this->assertNotNull($catchUp);
-        $this->assertSame('15 * * * *', $catchUp->expression);
+    public function test_automatic_commands_do_nothing_outside_midnight(): void
+    {
+        config(['app.timezone' => 'UTC']);
+        Carbon::setTestNow(Carbon::parse('2026-10-12 18:15:00', 'Asia/Manila'));
+        $service = Mockery::mock(DailyVisitorReportService::class);
+        $service->shouldNotReceive('generate');
+        $service->shouldNotReceive('generateForOffice');
+        $this->app->instance(DailyVisitorReportService::class, $service);
+        $this->artisan('generate:daily-visitor-report')->assertSuccessful();
+        $this->artisan('generate:office-daily-visitor-reports')->assertSuccessful();
+        $this->artisan('generate:daily-visitor-report --force')->assertFailed();
+        $this->artisan('generate:office-daily-visitor-reports --force')->assertFailed();
+    }
+
+    public function test_admin_midnight_command_generates_only_the_previous_manila_day(): void
+    {
+        config(['app.timezone' => 'UTC']);
+        Carbon::setTestNow(Carbon::parse('2026-10-12 16:00:00', 'UTC'));
+        $service = Mockery::mock(DailyVisitorReportService::class);
+        $service->shouldReceive('generate')->once()->with('2026-10-12', null, false)
+            ->andReturn(new DailyReport(['report_date' => '2026-10-12', 'generation_status' => 'completed']));
+        $this->app->instance(DailyVisitorReportService::class, $service);
+        $this->artisan('generate:daily-visitor-report')->assertSuccessful();
     }
 }

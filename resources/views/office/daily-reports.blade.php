@@ -68,7 +68,7 @@
 		<div class="empty-state">
 			<i class="bi bi-folder2-open" aria-hidden="true"></i>
 			<p class="mb-2 fw-semibold">No daily reports found</p>
-			<p class="mb-3 card-muted">Missing reports are auto-filled when you open this page. Generate a report for any past date as needed.</p>
+			<p class="mb-3 card-muted">Use Generate Daily Report to create a missing report for a selected date.</p>
 			<button type="button" class="btn btn-nu-primary" data-bs-toggle="modal" data-bs-target="#generateReportModal">
 				Generate Daily Report
 			</button>
