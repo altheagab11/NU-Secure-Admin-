@@ -12473,6 +12473,15 @@ body {
 	padding: 1mm 5mm 0 1mm;
 	text-align: left;
 }
+.receipt-brand {
+	margin: 0.35em 0;
+	padding: 0;
+	text-align: center;
+	font-size: 16pt;
+	font-weight: 900;
+	letter-spacing: 0.04em;
+	line-height: 1.2;
+}
 .receipt-title {
 	margin: 0.35em 0;
 	padding: 0;
@@ -12631,6 +12640,9 @@ body.android-thermal-print .receipt {
 	padding: 2mm;
 	text-align: left;
 }
+body.android-thermal-print .receipt-brand {
+	font-size: 20pt;
+}
 body.android-thermal-print .receipt-title {
 	font-size: 16pt;
 	font-weight: 900;
@@ -12748,6 +12760,7 @@ body.android-thermal-print .foot {
 </head>
 <body class="${isAndroid ? 'android-thermal-print' : ''}">
 <div class="receipt">
+	<p class="receipt-brand">NU-SECURE</p>
 	<p class="dash-line" aria-hidden="true">${dashedLineText}</p>
 	<p class="receipt-title">VISITOR QR PASS</p>
 	<p class="dash-line dash-after-title" aria-hidden="true">${dashedLineText}</p>
