@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\ActivityLog;
+use App\Services\OfficeScanService;
 
 class GuardDashboardController extends Controller
 {
@@ -369,7 +371,26 @@ class GuardDashboardController extends Controller
             return strtolower(trim((string) ($alert['status'] ?? ''))) === 'unresolved';
         }) ?: $alertPayload->first();
 
+        $scanner = app(OfficeScanService::class);
+        $canAdjustOffice = $scanner->isActiveVisit($visit)
+            && $scanner->resolveCurrentExpectation($scanner->loadRoute($visitId)) !== null;
+        $adjustmentOffices = $canAdjustOffice
+            ? DB::table('office')->where('is_active', true)->whereNotIn('office_id', function ($query) use ($visitId) {
+                $query->select('office_id')->from('office_expectation')->where('visit_id', $visitId);
+            })->orderBy('office_name')->get(['office_id', 'office_name'])
+            : collect();
+        $adjustments = ActivityLog::with('user')->where('module', 'Office Adjustments')
+            ->where('new_values->visit_id', $visitId)->orderByDesc('log_id')->get()->map(fn ($log) => [
+                'action' => $log->action,
+                'office_name' => $log->new_values['office_name'] ?? '',
+                'reason' => $log->new_values['reason'] ?? '',
+                'performed_by' => \App\Services\ActivityLogService::userDisplayName($log->user),
+                'created_at' => $log->created_at?->toIso8601String(),
+            ])->values();
+
         return response()->json([
+            'office_adjustment_options' => $adjustmentOffices,
+            'office_adjustments' => $adjustments,
             'visitor' => [
                 'visitor_id' => (int) ($visit->visitor_id ?? 0),
                 'name' => trim(((string) ($visit->first_name ?? '')) . ' ' . ((string) ($visit->last_name ?? ''))) ?: 'Unknown Visitor',

@@ -20,8 +20,8 @@
 			<i class="bi bi-list" aria-hidden="true"></i>
 		</button>
 		<div class="admin-topbar-copy">
-			<h1 class="admin-topbar-title">{{ $topTitle }}</h1>
-			<p class="admin-topbar-date">{{ $topbarDate }}</p>
+			<h1 class="admin-topbar-title">@if(!empty($icon))<i class="bi {{ $icon }}" aria-hidden="true"></i>@endif{{ $topTitle }}</h1>
+			<p class="admin-topbar-date">{{ $subtitle ?? $topbarDate }}</p>
 		</div>
 	</div>
 	<div class="admin-topbar-right">

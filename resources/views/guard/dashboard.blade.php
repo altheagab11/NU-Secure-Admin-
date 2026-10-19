@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
 	<meta charset="utf-8">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Guard Dashboard</title>
 	@include('partials.favicons')
@@ -1492,6 +1493,52 @@
 				.replace(/'/g, '&#039;');
 		}
 
+		function renderOfficeAdjustments(details) {
+			const offices = details.office_adjustment_options || [];
+			const history = details.office_adjustments || [];
+			return `<div class="drawer-card">
+				<div class="drawer-section-title"><h3>Office Adjustments</h3></div>
+				${offices.length ? `<form id="guardAddOfficeForm" data-visit-id="${escapeHtml(details.visit.visit_id)}">
+					<label for="guardAdditionalOffice">Additional Office</label>
+					<select id="guardAdditionalOffice" class="form-select mb-3" required><option value="">Select an office</option>${offices.map(office => `<option value="${escapeHtml(office.office_id)}">${escapeHtml(office.office_name)}</option>`).join('')}</select>
+					<label for="guardOfficeReason">Reason for Visit</label>
+					<textarea id="guardOfficeReason" class="form-control mb-2" rows="3" maxlength="255" required placeholder="Enter the reason for visiting this office..."></textarea>
+					<p class="small text-muted">Office staff will record check-in when the visitor arrives.</p>
+					<button type="submit" class="btn btn-primary">Add Office</button>
+				</form>` : ''}
+				<p id="guardOfficeAdjustmentMessage" role="status" aria-live="polite"></p>
+				<div class="scan-list mt-3">${history.length ? history.map(item => `<div class="scan-card">
+					<div class="scan-head"><h4>${escapeHtml(item.action)} · ${escapeHtml(item.office_name)}</h4></div>
+					<p>${escapeHtml(item.reason)}</p><div class="scan-meta"><span>${escapeHtml(item.performed_by)}</span><span>${escapeHtml(formatTime(item.created_at))}</span></div>
+				</div>`).join('') : '<div class="drawer-empty">No office adjustments recorded.</div>'}</div>
+			</div>`;
+		}
+
+		async function submitGuardOfficeAdjustment(event) {
+			event.preventDefault();
+			const form = event.target;
+			const button = form.querySelector('button[type="submit"]');
+			if (button.disabled) return;
+			const message = document.getElementById('guardOfficeAdjustmentMessage');
+			const reason = document.getElementById('guardOfficeReason').value.trim();
+			if (!reason) { message.textContent = 'Please enter a reason for visiting this office.'; return; }
+			button.disabled = true;
+			button.textContent = 'Saving...';
+			message.textContent = '';
+			try {
+				const response = await fetch(`/guard/dashboard/visits/${encodeURIComponent(form.dataset.visitId)}/add-office`, {
+					method: 'POST',
+					headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+					body: JSON.stringify({ office_id: Number(document.getElementById('guardAdditionalOffice').value), reason }),
+				});
+				const result = await response.json();
+				if (!response.ok || !result.success) throw new Error(Object.values(result.errors || {}).flat().join(' ') || result.message || 'Unable to add office.');
+				await openVisitorDetails(form.dataset.visitId);
+				document.getElementById('guardOfficeAdjustmentMessage').textContent = result.message;
+			} catch (error) { message.textContent = error.message || 'Unable to save. Please try again.'; }
+			finally { button.disabled = false; button.textContent = 'Add Office'; }
+		}
+
 		function renderVisitorDrawer(details) {
 			const visitor = details?.visitor || {};
 			const visit = details?.visit || {};
@@ -1625,8 +1672,10 @@
 					<div class="scan-list">${scansHtml}</div>
 				</div>
 
+				${renderOfficeAdjustments(details)}
 				${alertsHtml}
 			`;
+			document.getElementById('guardAddOfficeForm')?.addEventListener('submit', submitGuardOfficeAdjustment);
 
 			drawerResolveAlertBtn.style.display = hasUnresolvedAlert ? 'inline-block' : 'none';
 			drawerResolveAlertBtn.onclick = () => window.location.href = '/guard/alert';

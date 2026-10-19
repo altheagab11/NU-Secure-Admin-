@@ -788,11 +788,12 @@
 	});
 
 	OfficeScan.init({
-		onSuccess: function () {
+		onSuccess: function (result) {
+			const status = result?.data?.checked_in ? 'Check-in recorded.' : 'Office adjustment saved.';
 			if (currentMode === 'hardware') {
-				setHardwareStatus('Check-in recorded.', 'Ready for the next scan.');
+				setHardwareStatus(status, 'Ready for the next scan.');
 			} else {
-				setCameraStatus('Check-in recorded.', 'Ready for the next scan.');
+				setCameraStatus(status, 'Ready for the next scan.');
 			}
 		},
 		onRecentScans: function (rows) {

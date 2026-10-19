@@ -8000,7 +8000,7 @@
 							</a>
 							<a href="{{ $hasActiveGuard ? '/guard/register?type=enrollee' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="enrollee" data-href="/guard/register?type=enrollee" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
 								<span class="kiosk-type-icon"><i class="bi bi-mortarboard-fill"></i></span>
-								<span class="kiosk-type-name">Enrollee</span>
+								<span class="kiosk-type-name">New Enrollee</span>
 								<span class="kiosk-type-desc">Prospective or incoming students for enrollment-related visits.</span>
 							</a>
 							<a href="{{ $hasActiveGuard ? '/guard/register?type=contractor' : '#' }}" class="kiosk-type-card js-privacy-consent-link {{ $hasActiveGuard ? '' : 'is-disabled' }}" data-type="contractor" data-href="/guard/register?type=contractor" @if (! $hasActiveGuard) aria-disabled="true" tabindex="-1" @endif>
@@ -8190,6 +8190,11 @@
 											<i class="bi bi-keyboard-fill" id="scanActionIcon" aria-hidden="true"></i>
 											<span id="scanActionText">Manual Entry</span>
 										</button>
+										<button type="button" class="upload-button gallery-action" id="galleryAction">
+											<i class="bi bi-image" aria-hidden="true"></i>
+											<span>Upload Image</span>
+										</button>
+										<input type="file" id="idGalleryInput" accept="image/*" hidden aria-label="Upload identification card image">
 										<button type="button" class="retake-capture-btn is-hidden" id="retakeCaptureBtn" aria-label="Recapture photo">
 											<i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
 											<span>Recapture</span>
@@ -9610,6 +9615,7 @@
 		/** @type {'environment'|'user'} */
 		let preferredFacingMode = 'environment';
 		let currentStep = 1;
+		let officeFetchSequence = 0;
 		let capturedPictureData = '';
 		let selectedOfficeIds = [];
 		let selectedOfficeId = null;
@@ -10129,6 +10135,7 @@
 		const proceedFromIdentityStep = async (lookup) => {
 			await promptForExistingVisitorDecision(lookup || null);
 			lastExistingVisitorLookupKey = getCurrentIdentityLookupKey();
+			if (registerType !== 'contractor') await fetchOffices();
 
 			releaseCamera();
 			clearFrozenFrame();
@@ -10440,13 +10447,18 @@
 
 		const normalizeOfficeFloor = (floor) => String(floor || '').trim();
 
-		const formatOfficeDestinationLabel = (officeName, floor) => {
+		const formatOfficeLocation = (floor, roomNumber = '') => {
+			const room = String(roomNumber || '').trim();
+			return [normalizeOfficeFloor(floor), room ? `Room ${room}` : ''].filter(Boolean).join(' · ');
+		};
+
+		const formatOfficeDestinationLabel = (officeName, floor, roomNumber = '') => {
 			const name = String(officeName || '').trim();
-			const floorLabel = normalizeOfficeFloor(floor);
+			const location = formatOfficeLocation(floor, roomNumber);
 			if (!name) {
-				return floorLabel || '';
+				return location;
 			}
-			return floorLabel ? `${name} — ${floorLabel}` : name;
+			return location ? `${name} — ${location}` : name;
 		};
 
 		const getSelectedDestinationOffices = () => {
@@ -10461,6 +10473,7 @@
 					.map((office) => ({
 						name: office.name,
 						floor: normalizeOfficeFloor(office.floor),
+						room_number: String(office.room_number || '').trim(),
 					}));
 			}
 
@@ -10468,10 +10481,14 @@
 				.filter((input) => input.checked)
 				.map((input) => {
 					const floor = normalizeOfficeFloor(input.dataset.floor);
+					const room_number = String(input.dataset.roomNumber || '').trim();
+					if (input.dataset.officeName) {
+						return { name: input.dataset.officeName, floor, room_number };
+					}
 					const label = input.closest('label') || input.parentElement?.querySelector('label') || input.parentElement;
 					const named = label?.querySelector('.office-details strong, strong');
 					if (named?.textContent) {
-						return { name: named.textContent.trim(), floor };
+						return { name: named.textContent.trim(), floor, room_number };
 					}
 
 					const text = label?.textContent || input.parentElement?.textContent || '';
@@ -10481,7 +10498,7 @@
 						.replace(/\s*\([\w\s]+Floor\)\s*/gi, '')
 						.trim();
 
-					return { name, floor };
+					return { name, floor, room_number };
 				})
 				.filter((office) => office.name);
 
@@ -10502,7 +10519,7 @@
 			}
 
 			return offices
-				.map((office) => formatOfficeDestinationLabel(office.name, office.floor))
+				.map((office) => formatOfficeDestinationLabel(office.name, office.floor, office.room_number))
 				.filter(Boolean)
 				.join(', ');
 		};
@@ -10516,9 +10533,9 @@
 			const items = offices.length ? offices : [{ name: 'No destination specified', floor: '' }];
 
 			ticketRouteList.innerHTML = items.map((office, index) => {
-				const floorLabel = normalizeOfficeFloor(office.floor);
-				const floorHtml = floorLabel
-					? `<small class="qr-success-route-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>${escapeTicketHtml(floorLabel)}</small>`
+				const location = formatOfficeLocation(office.floor, office.room_number);
+				const floorHtml = location
+					? `<small class="qr-success-route-floor"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>${escapeTicketHtml(location)}</small>`
 					: '';
 
 				return `
@@ -11961,6 +11978,7 @@
 
 					await promptForExistingVisitorDecision(parseResult?.existingVisitor || null);
 					lastExistingVisitorLookupKey = getCurrentIdentityLookupKey();
+					if (registerType !== 'contractor') await fetchOffices();
 
 					releaseCamera();
 					if (!showFrozenAfterSuccess) {
@@ -13093,14 +13111,7 @@ body.android-thermal-print .foot {
 		visitorProvince?.addEventListener('input', syncRegionFromProvince);
 		visitorProvince?.addEventListener('change', syncRegionFromProvince);
 
-		const officeRoomNumbers = @json(config('office_rooms'));
-
-		const formatOfficeLocation = (officeName, floor) => {
-			const room = officeRoomNumbers[String(officeName || '').trim().toLowerCase()];
-			return [normalizeOfficeFloor(floor), room ? `Room ${room}` : ''].filter(Boolean).join(' · ');
-		};
-
-		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select', floor = '') => {
+		const createKioskOfficeChoice = (officeId, officeName, subtitle = 'Tap to select', floor = '', roomNumber = '') => {
 			const choice = document.createElement('div');
 			choice.className = 'kiosk-office-choice';
 			if (officeId === OTHERS_OFFICE_VALUE) {
@@ -13116,6 +13127,8 @@ body.android-thermal-print .foot {
 			input.name = officeId === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 			input.className = 'office-checkbox';
 			input.value = String(officeId);
+			input.dataset.officeName = officeName;
+			input.dataset.roomNumber = String(roomNumber || '').trim();
 			if (floor) {
 				input.dataset.floor = floor;
 			}
@@ -13135,7 +13148,7 @@ body.android-thermal-print .foot {
 			const strong = document.createElement('strong');
 			strong.textContent = officeName;
 			const small = document.createElement('small');
-			const locationLabel = formatOfficeLocation(officeName, floor);
+			const locationLabel = formatOfficeLocation(floor, roomNumber);
 			small.textContent = locationLabel || subtitle;
 			details.appendChild(strong);
 			details.appendChild(small);
@@ -13173,6 +13186,7 @@ body.android-thermal-print .foot {
 						office_id: Number(office?.office_id),
 						office_name: String(office?.office_name || '').trim(),
 						floor: normalizeOfficeFloor(office?.floor),
+						room_number: String(office?.room_number || '').trim(),
 					}))
 					.filter((office) => Number.isInteger(office.office_id) && office.office_id > 0 && office.office_name)
 				: [];
@@ -13182,6 +13196,7 @@ body.android-thermal-print .foot {
 				autoEnrolleeOffices = normalizedOffices.map((office) => ({
 					name: office.office_name,
 					floor: office.floor,
+					room_number: office.room_number,
 				}));
 				return;
 			}
@@ -13200,7 +13215,7 @@ body.android-thermal-print .foot {
 				return;
 			}
 
-			const appendGuardOfficeOption = (value, text, floor = '') => {
+			const appendGuardOfficeOption = (value, text, floor = '', roomNumber = '', officeName = '') => {
 				const label = document.createElement('label');
 				label.className = 'office-option';
 				label.tabIndex = 0;
@@ -13210,6 +13225,8 @@ body.android-thermal-print .foot {
 				input.name = value === OTHERS_OFFICE_VALUE ? 'destination_office_others' : 'destination_office_ids[]';
 				input.className = 'office-checkbox';
 				input.value = String(value);
+				input.dataset.officeName = officeName;
+				input.dataset.roomNumber = String(roomNumber || '').trim();
 				if (floor) {
 					input.dataset.floor = floor;
 				}
@@ -13224,17 +13241,17 @@ body.android-thermal-print .foot {
 			if (isSelfRegistrationKiosk) {
 				normalizedOffices.forEach((office) => {
 					destinationOffice.appendChild(
-						createKioskOfficeChoice(office.office_id, office.office_name, 'Tap to select', office.floor)
+						createKioskOfficeChoice(office.office_id, office.office_name, 'Tap to select', office.floor, office.room_number)
 					);
 				});
 				destinationOffice.appendChild(createKioskOfficeChoice(OTHERS_OFFICE_VALUE, 'Others', 'Tap to enter destination'));
 			} else {
 				normalizedOffices.forEach((office) => {
-					const locationLabel = formatOfficeLocation(office.office_name, office.floor);
+					const locationLabel = formatOfficeLocation(office.floor, office.room_number);
 					const labelText = locationLabel
 						? `${office.office_name} — ${locationLabel}`
 						: office.office_name;
-					appendGuardOfficeOption(office.office_id, labelText, office.floor);
+					appendGuardOfficeOption(office.office_id, labelText, office.floor, office.room_number, office.office_name);
 				});
 				appendGuardOfficeOption(OTHERS_OFFICE_VALUE, 'Others — Tap to enter destination');
 			}
@@ -13243,13 +13260,15 @@ body.android-thermal-print .foot {
 		};
 
 		const fetchOffices = async () => {
+			const sequence = ++officeFetchSequence;
 			if (officeListNote) {
 				officeListNote.textContent = 'Loading offices...';
 			}
 
 			try {
-				const response = await fetch(`/guard/offices?register_type=${encodeURIComponent(registerType || 'normal')}`);
+				const response = await fetch(`/guard/offices?register_type=${encodeURIComponent(registerType || 'normal')}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
 				const data = await response.json();
+				if (sequence !== officeFetchSequence) return;
 
 				if (!response.ok || !data.success) {
 					throw new Error(data.message || 'Failed to load offices');
@@ -13257,6 +13276,7 @@ body.android-thermal-print .foot {
 
 				renderOfficeList(data.offices || []);
 			} catch (error) {
+				if (sequence !== officeFetchSequence) return;
 				selectedOfficeIds = [];
 				selectedOfficeId = null;
 				isOtherDestination = false;

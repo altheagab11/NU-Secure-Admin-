@@ -6,7 +6,7 @@
 	@endphp
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Offices' : 'User Management') }}</title>
+	<title>{{ $activeSection === 'guards' ? 'Guards' : ($activeSection === 'offices' ? 'Office Management' : 'User Management') }}</title>
 	@include('partials.favicons')
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -873,9 +873,10 @@
 
 		@include('admin.partials.admin-topbar-styles')
 		@include('admin.partials.admin-responsive-styles')
+		@if($activeSection === 'offices') @include('admin.partials.office-directory-styles') @endif
 	</style>
 </head>
-<body>
+<body class="{{ $activeSection === 'offices' ? 'office-management-page' : '' }}">
 	<div class="layout">
 		<aside class="sidebar d-flex flex-column justify-content-between">
 			<div>
@@ -980,9 +981,11 @@
 
 		<main class="main">
 			@include('admin.partials.admin-topbar', [
+				'subtitle' => $activeSection === 'offices' ? 'Manage university offices and their locations.' : null,
+				'icon' => $activeSection === 'offices' ? 'bi-building' : null,
 				'title' => $activeSection === 'guards'
 					? 'Guard Management'
-					: ($activeSection === 'offices' ? 'Office User Management' : 'User Management'),
+					: ($activeSection === 'offices' ? 'Office Management' : 'User Management'),
 			])
 			@if ($activeSection === 'guards')
 				<div class="header-row">
@@ -1100,59 +1103,7 @@
 					])
 				</section>
 			@elseif ($activeSection === 'offices')
-				<div class="header-row">
-					<div></div>
-					<div class="header-actions">
-						<button type="button" id="openRecycleBinBtn" class="add-guard-btn btn-recycle">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							Recycle Bin ({{ isset($recycledOffices) ? count($recycledOffices) : 0 }})
-						</button>
-						<button type="button" id="openAddOfficeBtn" class="add-guard-btn">
-							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-								<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-								<path d="M22 8h-6M19 5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							</svg>
-							Add Office User
-						</button>
-					</div>
-				</div>
-
-				{{-- Filters for offices (placed between page title and Office User Accounts) --}}
-				<form method="GET" action="" class="office-filters-form">
-					<div class="filters-card" role="search" aria-label="Office filters">
-						<div class="search-wrap">
-							<input class="filter-input" type="text" name="search" value="{{ request('search', '') }}" placeholder="Search name or email" aria-label="Search users">
-						</div>
-
-						<select name="office" class="filter-select" aria-label="Filter by office" data-auto-submit>
-							<option value="">All offices</option>
-							@foreach($officeOptions ?? [] as $opt)
-								@php
-									$optOfficeId = data_get($opt, 'office_id', data_get($opt, 'id'));
-									$optOfficeName = data_get($opt, 'office_name', data_get($opt, 'name'));
-								@endphp
-								<option value="{{ $optOfficeId }}" @selected(request('office') == $optOfficeId)>{{ $optOfficeName }}</option>
-							@endforeach
-						</select>
-
-						<select name="position" class="filter-select" aria-label="Filter by position" data-auto-submit>
-							<option value="">All positions</option>
-							@foreach($positions ?? [] as $pos)
-								@if(!empty($pos))
-									<option value="{{ $pos }}" @selected(request('position') === (string) $pos)>{{ $pos }}</option>
-								@endif
-							@endforeach
-						</select>
-
-						<div class="filter-actions">
-							<button type="submit" class="add-guard-btn">Apply</button>
-							<a href="/admin/user/offices" class="clear-filters-btn">Clear</a>
-						</div>
-					</div>
-				</form>
+				@include('admin.partials.office-directory')
 
 				@if(session('success'))
 					<div id="officeSuccessAlert" class="flash-success">{{ session('success') }}</div>
@@ -1179,25 +1130,36 @@
 					</div>
 				@endif
 
-				<section class="office-card">
-					<div class="office-card-head">
-						<h2 class="office-title">
+				<section class="office-card" id="officeAccounts" aria-labelledby="officeAccountsHeading">
+<div class="office-management-card-head">
+ <div class="office-management-heading"><i class="bi bi-person-vcard" aria-hidden="true"></i><div><h2 id="officeAccountsHeading">Office User Accounts</h2><p>List of office staff accounts assigned to each office.</p></div></div>
+ <div class="header-actions">
+						<button type="button" id="openRecycleBinBtn" class="add-guard-btn btn-recycle">
 							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M4 21h16M7 21V6h10v15M10 9h1M13 9h1M10 12h1M13 12h1M10 15h1M13 15h1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
-							Office User Accounts
-						</h2>
-						<p class="office-total">Total Users: {{ isset($totalUsers) ? $totalUsers : count($offices ?? []) }} across {{ isset($totalOffices) ? $totalOffices : count($officeOptions ?? []) }} offices</p>
+							Recycle Bin ({{ isset($recycledOffices) ? count($recycledOffices) : 0 }})
+						</button>
+						<button type="button" id="openAddOfficeBtn" class="add-guard-btn">
+							<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+								<circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+								<path d="M22 8h-6M19 5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+							</svg>
+							Add Office User
+						</button>
 					</div>
-
-					<table class="office-table" aria-label="Office user accounts table">
+</div>
+@include('admin.partials.office-account-filters')
+<div class="office-management-table-wrap">
+<table class="office-table" aria-label="Office user accounts table">
 						<thead>
 							<tr>
-								<th>Name</th>
+								<th>#</th><th>Name</th>
 								<th>Email</th>
 								<th>Office</th>
 								<th>Position</th>
-								<th>Actions</th>
+								<th>Status</th><th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -1217,7 +1179,7 @@
 									$officeId = data_get($office, 'office_id', '');
 								@endphp
 								<tr>
-									<td>{{ $officeName }}</td>
+									<td>{{ $offices->firstItem() + $loop->index }}</td><td>{{ $officeName }}</td>
 									<td>
 										<span class="email-cell">
 											<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1228,14 +1190,14 @@
 										</span>
 									</td>
 									<td><span class="badge-pill">{{ $officeLabel }}</span></td>
-									<td>{{ $officePosition }}</td>
+									<td>{{ $officePosition }}</td><td><span class="directory-status {{ strtolower((string) data_get($office, 'status', 'active')) === 'active' ? 'is-active' : 'is-inactive' }}">{{ ucfirst((string) data_get($office, 'status', 'Active')) }}</span></td>
 									<td>
 										<span class="action-icons">
 											<img src="{{ asset('picture/bx_edit.png') }}" alt="Edit" class="action-edit edit-office-btn"
 												 data-user-id="{{ $officeUserId }}"
 												 data-name="{{ $officeName }}"
 												 data-email="{{ $officeEmail }}"
-												 data-office-id="{{ $officeId }}"
+												 data-office-id="{{ $officeId }}" data-office-name="{{ $officeLabel }}"
 												 data-position="{{ $officePosition }}"
 											/>
 											<form method="POST" action="/admin/user/offices/{{ $officeUserId }}" class="inline-form" data-confirm="Move this office user to recycle bin?">
@@ -1250,11 +1212,12 @@
 								</tr>
 							@empty
 								<tr>
-									<td colspan="5" class="table-empty-cell">No users found.</td>
+									<td colspan="7" class="table-empty-cell">No users found.</td>
 								</tr>
 							@endforelse
 						</tbody>
 					</table>
+</div>
 
 					@include('admin.partials.table-pagination', [
 						'paginator' => $offices,
@@ -1810,6 +1773,7 @@
 						emailInput.style.background = '';
 						emailInput.style.cursor = '';
 					}
+					form.querySelector('option[data-current-inactive]')?.remove();
 					const title = document.getElementById('addOfficeTitle'); if (title) title.textContent = 'Add Office User Account';
 					const submitBtn = form.querySelector('button[type=submit]'); if (submitBtn) submitBtn.textContent = 'Add User';
 				}
@@ -1842,7 +1806,17 @@
 							emailInput.style.background = '#f8fafc';
 							emailInput.style.cursor = 'not-allowed';
 						}
-						const sel = form.querySelector('select[name="office_id"]'); if (sel) sel.value = ds.officeId || ds.office_id || '';
+						const sel = form.querySelector('select[name="office_id"]');
+						if (sel) {
+							sel.querySelector('[data-current-inactive]')?.remove();
+							const currentOfficeId = ds.officeId || ds.office_id || '';
+							if (currentOfficeId && !Array.from(sel.options).some(option => option.value === currentOfficeId)) {
+								const option = new Option((ds.officeName || 'Current office') + ' (Inactive)', currentOfficeId);
+								option.dataset.currentInactive = 'true';
+								sel.add(option);
+							}
+							sel.value = currentOfficeId;
+						}
 						form.querySelector('input[name="position"]').value = ds.position || '';
 
 						// add method override _method = PUT
@@ -1907,5 +1881,10 @@
 		})();
 	</script>
 	@include('admin.partials.admin-responsive-script')
-	</body>
+	@if($activeSection === 'offices')
+@include('admin.partials.office-directory-modals')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+@include('admin.partials.office-directory-scripts')
+@endif
+</body>
 	</html>

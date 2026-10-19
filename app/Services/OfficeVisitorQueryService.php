@@ -70,10 +70,7 @@ class OfficeVisitorQueryService
             ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
             ->whereIn('oe.visit_id', $activeVisitIds)
             ->select([
-                'oe.visit_id',
-                'oe.office_id',
-                'oe.expected_order',
-                'oe.arrived_at',
+                'oe.*',
                 'xs.status_name',
             ])
             ->orderBy('oe.visit_id')
@@ -88,7 +85,7 @@ class OfficeVisitorQueryService
                 continue;
             }
 
-            if (! $this->scanService->isSequentialRoute($visit)) {
+            if (! $this->scanService->isSequentialRoute($visit) || $steps->contains(fn ($step) => (int) $step->office_id === $officeId && $this->scanService->isAdditionalOffice($step) && ! $this->scanService->isExpectationDone($step))) {
                 $pendingAtOffice = $steps->first(fn ($step) => (int) $step->office_id === $officeId
                     && ! $this->scanService->isExpectationDone($step));
 
@@ -338,7 +335,7 @@ class OfficeVisitorQueryService
             $row->route_status = 'Checked In';
             $row->route_status_key = 'checked_in';
             $row->badge = 'success';
-        } elseif (! $sequential && (int) $row->office_id === $officeId) {
+        } elseif ((! $sequential || $this->scanService->isAdditionalOffice($route->firstWhere('expectation_id', $row->expectation_id) ?? $row)) && (int) $row->office_id === $officeId) {
             $row->route_status = 'Ready for Office Check-in';
             $row->route_status_key = 'ready';
             $row->badge = 'info';
@@ -520,6 +517,13 @@ class OfficeVisitorQueryService
                 if ($sequential) {
                     $current = $this->scanService->resolveCurrentExpectation($steps);
                     $matchesCurrent = $current && (int) $current->office_id === $officeId;
+
+                    $additionalAtOffice = $steps->first(fn ($step) => (int) $step->office_id === $officeId
+                        && $this->scanService->isAdditionalOffice($step) && ! $this->scanService->isExpectationDone($step));
+                    if ($additionalAtOffice) {
+                        $current = $additionalAtOffice;
+                        $matchesCurrent = true;
+                    }
 
                     if (! $matchesCurrent) {
                         $optionalAtOffice = $steps->first(function ($step) use ($officeId) {

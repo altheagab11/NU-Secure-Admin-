@@ -863,13 +863,14 @@ class GuardVisitorController extends Controller
                             'office_id' => (int) $row['office_id'],
                             'office_name' => (string) $row['office_name'],
                             'floor' => (string) ($row['floor'] ?? ''),
+                            'room_number' => (string) ($row['room_number'] ?? ''),
                             'step_order' => (int) ($row['step_order'] ?? 0),
                         ];
                     })
                     ->values();
             } else {
                 $offices = DB::table('office')
-                    ->select('office_id', 'office_name', 'floor')
+                    ->select('office.*')
                     ->where('is_active', true)
                     ->orderBy('office_name')
                     ->get();
@@ -3264,8 +3265,7 @@ class GuardVisitorController extends Controller
             ->select(
                 'es.step_id',
                 'es.office_id',
-                'o.office_name',
-                'o.floor',
+                'o.*',
                 'es.step_order'
             )
             ->orderBy('es.step_order')
@@ -3277,6 +3277,7 @@ class GuardVisitorController extends Controller
                     'office_id' => (int) $row->office_id,
                     'office_name' => (string) $row->office_name,
                     'floor' => trim((string) ($row->floor ?? '')),
+                    'room_number' => trim((string) ($row->room_number ?? '')),
                     'step_order' => (int) $row->step_order,
                 ];
             })

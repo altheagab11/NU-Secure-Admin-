@@ -354,6 +354,189 @@
 		.scan-photo-icon {
 			font-size: 3rem;
 		}
+		/* Shared Visitor Verification modal; keep these styles local to this dialog. */
+		#scanResultModal {
+			--verification-navy: #0F1F50;
+			--verification-blue: #0056B3;
+			--verification-light: #EFF6FF;
+			--verification-danger: #DC3545;
+			color: var(--verification-navy);
+		}
+		#scanResultModal .verification-dialog { max-width: 1040px; }
+		#scanResultModal .scan-modal-content {
+			background: #FFFFFF;
+			border-radius: 20px;
+			box-shadow: 0 24px 70px rgba(15, 31, 80, .22);
+			overflow: hidden;
+		}
+		#scanResultModal .verification-header {
+			padding: 20px 24px 16px;
+			border: 0;
+			box-shadow: 0 3px 12px rgba(15, 31, 80, .035);
+			flex-shrink: 0;
+		}
+		#scanResultModal .verification-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+		#scanResultModal .verification-heading > i { font-size: 27px; color: var(--verification-blue); }
+		#scanResultModal .modal-title { font-size: 21px; font-weight: 800; line-height: 1.3; }
+		#scanResultModal .btn-close { margin-left: auto; margin-right: 0; flex-shrink: 0; }
+		#scanResultModal .verification-body { padding: 16px 24px 24px; }
+		#scanResultModal .verification-alert {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			border-radius: 12px;
+			padding: 14px 16px;
+			margin-bottom: 22px;
+			font-size: 13px;
+			line-height: 1.6;
+			overflow-wrap: anywhere;
+		}
+		#scanResultModal .verification-alert.alert-warning { background: #FFF3CD; border-color: #ffe49b; color: #805000; }
+		#scanResultModal .verification-alert > i { font-size: 24px; flex-shrink: 0; }
+		#scanResultModal .verification-info {
+			display: grid;
+			grid-template-columns: minmax(180px, .9fr) minmax(0, 1.8fr) minmax(180px, .85fr);
+			gap: 18px;
+			align-items: stretch;
+		}
+		#scanResultModal .verification-info > * { min-width: 0; }
+		#scanResultModal .verification-photo-column { text-align: center; padding-top: 2px; }
+		#scanResultModal .scan-visitor-photo,
+		#scanResultModal .scan-visitor-photo-fallback {
+			width: 100%;
+			height: 224px;
+			max-height: none;
+			object-fit: contain;
+			border: 1px solid #e4eaf3;
+			border-radius: 14px;
+			background: #f3f6fa;
+		}
+		#scanResultModal .verification-auth-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 7px 10px;
+			border-radius: 30px;
+			font-size: 11px;
+			font-weight: 700;
+			line-height: 1.4;
+			background: #FFF3CD;
+			color: #805000;
+		}
+		#scanResultModal .verification-auth-badge.is-authorized { background: #d9f4e8; color: #116347; }
+		#scanResultModal .verification-details {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+			align-content: start;
+			gap: 11px 14px;
+			margin: 0;
+			padding: 14px;
+			border-radius: 12px;
+			background: linear-gradient(145deg, #fff, #f4f9ff);
+			font-size: 13px;
+			line-height: 1.5;
+		}
+		#scanResultModal .verification-details dt {
+			display: flex;
+			align-items: baseline;
+			gap: 8px;
+			color: #526074;
+			font-size: 12px;
+			font-weight: 650;
+		}
+		#scanResultModal .verification-details dt i { font-size: 15px; flex-shrink: 0; }
+		#scanResultModal .verification-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+		#scanResultModal .verification-name { font-weight: 800; }
+		#scanResultModal .verification-office { color: var(--verification-blue); font-weight: 700; }
+		#scanResultModal #scanStaffOffice.is-mismatch { color: var(--verification-danger); font-weight: 700; }
+		#scanResultModal .verification-status { display: inline-block; padding: 4px 12px; border-radius: 30px; background: #edf1f7; font-weight: 750; }
+		#scanResultModal .verification-status.is-active { background: #d1f1e4; color: #0d6648; }
+		#scanResultModal .verification-route { background: var(--verification-light); border-radius: 12px; overflow: hidden; }
+		#scanResultModal .verification-route h3 {
+			display: flex; align-items: center; gap: 8px;
+			margin: 0; padding: 16px 12px; background: #e3f0ff;
+			font-size: 12px; font-weight: 800; line-height: 1.4;
+		}
+		#scanResultModal .verification-route h3 i { color: var(--verification-blue); font-size: 18px; }
+		#scanResultModal .verification-route-list { list-style: none; margin: 0; padding: 16px 12px; }
+		#scanResultModal .verification-route-step { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding-bottom: 18px; }
+		#scanResultModal .verification-route-step:last-child { padding-bottom: 0; }
+		#scanResultModal .verification-route-step:not(:last-child)::before { content: ''; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: #c5d9f2; }
+		#scanResultModal .verification-route-number { display: grid; place-items: center; width: 22px; height: 22px; background: #fff; border: 1.5px solid #a9bfde; border-radius: 50%; color: #667b99; font-size: 11px; font-weight: 750; }
+		#scanResultModal .verification-route-name { display: block; padding: 4px 7px; border-radius: 7px; font-size: 11px; line-height: 1.5; font-weight: 650; overflow-wrap: anywhere; }
+		#scanResultModal .verification-route-note { display: block; margin: 5px 0 0 7px; font-size: 10px; color: #60728f; }
+		#scanResultModal .verification-route-step.is-next .verification-route-number { border-color: var(--verification-blue); color: var(--verification-blue); }
+		#scanResultModal .verification-route-step.is-next .verification-route-name { background: #FFF3CD; color: #805000; }
+		#scanResultModal .verification-route-empty { font-size: 12px; color: #60728f; }
+		#scanResultModal .verification-actions { border-top: 1px solid #dbe3ef; margin-top: 22px; padding-top: 20px; }
+		#scanResultModal .verification-section-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+		#scanResultModal .verification-section-heading > i { font-size: 29px; }
+		#scanResultModal .verification-section-heading h3 { margin: 0 0 4px; font-size: 16px; font-weight: 800; }
+		#scanResultModal .verification-section-heading p { margin: 0; font-size: 12px; line-height: 1.6; color: #60708c; }
+		#scanResultModal .verification-action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+		#scanResultModal .verification-action {
+			display: grid;
+			grid-template-columns: 56px minmax(0, 1fr) 14px;
+			grid-template-rows: 1fr auto;
+			align-items: center;
+			gap: 14px;
+			min-width: 0;
+			padding: 18px;
+			border: 1px solid var(--verification-blue);
+			border-radius: 14px;
+			background: #FFFFFF;
+			color: var(--verification-navy);
+			text-align: left;
+			font: inherit;
+			cursor: pointer;
+			transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+		}
+		#scanResultModal .verification-action-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #e1efff; color: var(--verification-blue); font-size: 26px; }
+		#scanResultModal .verification-action-copy { display: grid; gap: 6px; }
+		#scanResultModal .verification-action-copy strong { font-size: 15px; line-height: 1.4; font-weight: 800; }
+		#scanResultModal .verification-action-copy > span { font-size: 11px; line-height: 1.7; color: #526482; overflow-wrap: anywhere; }
+		#scanResultModal .verification-action-chevron { align-self: start; margin-top: 5px; color: var(--verification-blue); }
+		#scanResultModal .verification-action-helper { grid-column: 1 / -1; padding: 8px; border-radius: 9px; text-align: center; font-size: 10px; line-height: 1.5; background: var(--verification-light); color: var(--verification-blue); }
+		#scanResultModal .verification-action-wrong { border-color: var(--verification-danger); }
+		#scanResultModal .verification-action-wrong .verification-action-icon { background: #ffe5e9; color: var(--verification-danger); }
+		#scanResultModal .verification-action-wrong strong,
+		#scanResultModal .verification-action-wrong .verification-action-chevron { color: var(--verification-danger); }
+		#scanResultModal .verification-action-wrong .verification-action-helper { background: #fff0f2; color: #b52735; }
+		#scanResultModal .verification-action-add:hover:not(:disabled),
+		#scanResultModal .verification-action-add[aria-expanded="true"] { background: var(--verification-light); }
+		#scanResultModal .verification-action-wrong:hover:not(:disabled),
+		#scanResultModal .verification-action-wrong[aria-expanded="true"] { background: #fff0f2; }
+		#scanResultModal .verification-action:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(15, 31, 80, .07); }
+		#scanResultModal button:focus-visible { outline: 3px solid var(--verification-blue); outline-offset: 3px; }
+		#scanResultModal .verification-action-wrong:focus-visible { outline-color: var(--verification-danger); }
+		#scanResultModal .verification-action:disabled { opacity: .65; cursor: wait; }
+		#scanResultModal .form-control:focus { border-color: var(--verification-blue); box-shadow: 0 0 0 .2rem rgba(0, 86, 179, .15); }
+		@media (max-width: 991.98px) {
+			#scanResultModal .verification-dialog { max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 12px; }
+			#scanResultModal .verification-info { grid-template-columns: minmax(160px, .7fr) minmax(0, 1.5fr); }
+			#scanResultModal .verification-route { grid-column: 1 / -1; }
+			#scanResultModal .verification-action { padding: 14px; gap: 10px; grid-template-columns: 44px minmax(0, 1fr) 12px; }
+			#scanResultModal .verification-action-icon { width: 44px; height: 44px; font-size: 22px; }
+		}
+		@media (max-width: 767.98px) {
+			#scanResultModal .verification-action-grid { grid-template-columns: minmax(0, 1fr); }
+		}
+		@media (max-width: 575.98px) {
+			#scanResultModal .verification-dialog { --bs-modal-margin: 12px; margin: 12px auto; }
+			#scanResultModal .verification-header { padding: 16px; }
+			#scanResultModal .modal-title { font-size: 18px; }
+			#scanResultModal .verification-body { padding: 12px 16px 18px; }
+			#scanResultModal .verification-info { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+			#scanResultModal .verification-photo-column { width: 100%; max-width: 260px; justify-self: center; }
+			#scanResultModal .verification-details { padding: 12px; gap: 12px; }
+			#scanResultModal .verification-section-heading { align-items: flex-start; gap: 10px; }
+			#scanResultModal .verification-action-copy strong { font-size: 14px; }
+		}
+		@media (prefers-reduced-motion: reduce) {
+			#scanResultModal .verification-action { transition: none; }
+			#scanResultModal .verification-action:hover { transform: none; }
+		}
 		.visitor-detail-photo {
 			max-height: 220px;
 			object-fit: cover;

@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminGuardDutyController;
 use App\Http\Controllers\AdminGuardPersonnelController;
+use App\Http\Controllers\AdminOfficeDirectoryController;
 use App\Http\Controllers\AlertsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DailyReportController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\EnrolleeProgressController;
 use App\Http\Controllers\GuardAlertController;
 use App\Http\Controllers\GuardController;
 use App\Http\Controllers\GuardDashboardController;
+use App\Http\Controllers\GuardOfficeAdjustmentController;
 use App\Http\Controllers\GuardDutyController;
 use App\Http\Controllers\GuardVisitorController;
 use App\Http\Controllers\LiveDataController;
@@ -65,6 +67,8 @@ Route::middleware(['auth', 'office.staff'])->prefix('office')->name('office.')->
     Route::get('/scanner', [OfficeScannerController::class, 'index'])->name('scanner');
     Route::post('/scanner/verify', [OfficeScannerController::class, 'verify'])->middleware('throttle:30,1')->name('scanner.verify');
     Route::post('/scanner/check-in', [OfficeScannerController::class, 'checkIn'])->middleware('throttle:20,1')->name('scanner.check-in');
+    Route::post('/scanner/add-office', [OfficeScannerController::class, 'addOffice'])->middleware('throttle:20,1')->name('scanner.add-office');
+    Route::post('/scanner/wrong-office', [OfficeScannerController::class, 'wrongOffice'])->middleware('throttle:20,1')->name('scanner.wrong-office');
 
     Route::get('/expected-visitors', [OfficeVisitorController::class, 'expected'])->name('expected-visitors');
     Route::get('/visitors/{visit}', [OfficeVisitorController::class, 'show'])->whereNumber('visit')->name('visitors.show');
@@ -127,6 +131,9 @@ Route::middleware(['auth', 'role:1'])->prefix('admin')->group(function () {
     Route::delete('/user/guards/{id}/force', [GuardController::class, 'forceDestroy']);
 
     Route::get('/user/offices', [OfficeController::class, 'index']);
+    Route::post('/offices', [AdminOfficeDirectoryController::class, 'store'])->name('admin.offices.store');
+    Route::put('/offices/{office}', [AdminOfficeDirectoryController::class, 'update'])->whereNumber('office')->name('admin.offices.update');
+    Route::patch('/offices/{office}/status', [AdminOfficeDirectoryController::class, 'status'])->whereNumber('office')->name('admin.offices.status');
     Route::post('/user/offices', [OfficeController::class, 'store']);
     Route::put('/user/offices/{id}', [OfficeController::class, 'update']);
     Route::delete('/user/offices/{id}', [OfficeController::class, 'recycle']);
@@ -203,6 +210,8 @@ Route::middleware(['auth', 'role:1'])->prefix('api/admin')->group(function () {
 Route::middleware(['auth', 'role:2'])->prefix('guard')->group(function () {
     Route::get('/dashboard', [GuardDashboardController::class, 'index']);
     Route::get('/dashboard/visits/{visitId}/details', [GuardDashboardController::class, 'visitDetails']);
+    Route::post('/dashboard/visits/{visitId}/add-office', [GuardOfficeAdjustmentController::class, 'store'])
+        ->whereNumber('visitId')->middleware('throttle:20,1')->name('guard.visits.add-office');
 
     Route::get('/exit', function () {
         $activeAlertsCount = DB::table('alerts')

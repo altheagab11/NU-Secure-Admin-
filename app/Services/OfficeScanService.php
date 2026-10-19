@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use App\Services\ActivityLogService;
-use App\Services\OfficeIncomingVisitorNotifier;
+use Illuminate\Validation\ValidationException;
 
 class OfficeScanService
 {
@@ -119,7 +120,8 @@ class OfficeScanService
         // Allow the staff office when earlier required (non-optional) steps are done.
         // Optional offices such as Bulldogs Exchange do not block later offices.
         if ($staffTarget) {
-            $blockingPrevious = $this->findBlockingPreviousExpectation($route, (int) $staffTarget->expected_order);
+            $blockingPrevious = $this->isAdditionalOffice($staffTarget)
+                ? null : $this->findBlockingPreviousExpectation($route, (int) $staffTarget->expected_order);
 
             if ($blockingPrevious) {
                 $this->recordFailedScan(
@@ -196,12 +198,15 @@ class OfficeScanService
 
             return $this->error(
                 'WRONG_OFFICE',
-                'This visitor is not currently expected at your office. The next expected destination is '
+                'This visitor is not registered for your office. Expected destination is '
                     .trim((string) ($current->office_name ?? 'another office')).'.',
                 422,
                 [
                     'expected_office' => (string) ($current->office_name ?? ''),
-                    'data' => $this->buildVisitorPayload($visit, $route, $current, $officeContext),
+                    'data' => array_merge($this->buildVisitorPayload($visit, $route, $current, $officeContext), [
+                        'wrong_office_scan_id' => $scanId,
+                        'can_adjust_office' => $scanId !== null && $staffOfficeExpectations->isEmpty(),
+                    ]),
                 ]
             );
         }
@@ -241,6 +246,12 @@ class OfficeScanService
 
         try {
             $result = DB::transaction(function () use ($visitId, $expectationId, $officeId, $userId, $scanMethod, $remarks, $officeContext, &$advanceProgress) {
+                DB::table('visit')->where('visit_id', $visitId)->lockForUpdate()->first();
+                $visit = $this->findVisitById($visitId);
+                if (! $visit || ! $this->isActiveVisit($visit)) {
+                    return $this->error('INACTIVE_VISIT', 'This visit is no longer active.', 422);
+                }
+
                 $expectation = DB::table('office_expectation')
                     ->where('expectation_id', $expectationId)
                     ->where('visit_id', $visitId)
@@ -260,7 +271,7 @@ class OfficeScanService
                 }
 
                 $visit = $this->findVisitById($visitId);
-                if ($visit && $this->isSequentialRoute($visit)) {
+                if ($visit && $this->isSequentialRoute($visit) && ! $this->isAdditionalOffice($expectation)) {
                     // Re-check previous required steps under lock (optional offices do not block).
                     $previousIncomplete = DB::table('office_expectation as oe')
                         ->leftJoin('office as o', 'o.office_id', '=', 'oe.office_id')
@@ -322,6 +333,7 @@ class OfficeScanService
                     'office_id' => $officeId,
                     'expected_order' => (int) $expectation->expected_order,
                     'checked_at' => $now,
+                    'additional_office' => $this->isAdditionalOffice($expectation),
                 ];
 
                 $visit = $this->findVisitById($visitId);
@@ -357,12 +369,14 @@ class OfficeScanService
             });
 
             if (($result['success'] ?? false) && is_array($advanceProgress)) {
-                $this->advanceEnrolleeProgress(
-                    (int) $advanceProgress['visit_id'],
-                    (int) $advanceProgress['office_id'],
-                    (int) $advanceProgress['expected_order'],
-                    $advanceProgress['checked_at']
-                );
+                if (! $advanceProgress['additional_office']) {
+                    $this->advanceEnrolleeProgress(
+                        (int) $advanceProgress['visit_id'],
+                        (int) $advanceProgress['office_id'],
+                        (int) $advanceProgress['expected_order'],
+                        $advanceProgress['checked_at']
+                    );
+                }
 
                 $visitorName = (string) ($result['data']['visitor']['full_name'] ?? 'visitor');
                 $officeName = (string) ($officeContext->office_name ?? $result['data']['staff_office']['office_name'] ?? 'the office');
@@ -403,6 +417,173 @@ class OfficeScanService
                 'Unable to record office check-in. Please try again.',
                 500
             );
+        }
+    }
+
+    /** Append an independently authorized stop without renumbering enrollee steps. */
+    public function addOffice(string $rawQr, object $officeContext, string $reason, bool $checkIn = true, ?int $scanId = null, string $scanMethod = 'manual'): array
+    {
+        $reason = trim($reason);
+        Validator::make(['reason' => $reason], ['reason' => ['required', 'string', 'max:255']])->validate();
+        $this->authorizeAdjustment($officeContext);
+
+        return DB::transaction(function () use ($rawQr, $officeContext, $reason, $checkIn, $scanId, $scanMethod) {
+            $visit = $this->lockAdjustmentVisit($rawQr);
+            $officeId = (int) $officeContext->office_id;
+            $visitId = (int) $visit->visit_id;
+            $route = $this->loadRoute($visitId);
+            if ($route->contains('office_id', $officeId)) {
+                return $this->error('OFFICE_ALREADY_REGISTERED', 'This office is already registered for this visit.', 409);
+            }
+            if (! $this->resolveCurrentExpectation($route)) {
+                return $this->error('INACTIVE_VISIT', 'This visit has no remaining active office route.', 422);
+            }
+            if ($scanId !== null) {
+                $this->lockWrongOfficeScan($visitId, $officeId, $scanId);
+            } elseif ((int) Auth::user()->role_id === 3) {
+                abort(422, 'Scan the visitor QR code before adding this office.');
+            }
+
+            $expectationId = DB::table('office_expectation')->insertGetId([
+                'visit_id' => $visitId,
+                'office_id' => $officeId,
+                'expected_order' => (int) $route->max('expected_order') + 1,
+                'expectation_status_id' => $this->resolveExpectationStatusId(['pending', 'expected', 'not arrived']),
+                'created_at' => $this->philippinesNow(),
+                'arrived_at' => null,
+                'added_by_user_id' => (int) Auth::id(),
+                'addition_reason' => $reason,
+            ], 'expectation_id');
+
+            $route = $this->loadRoute($visitId);
+            $result = [
+                'success' => true,
+                'http' => 200,
+                'data' => $this->buildVisitorPayload($visit, $route, $route->firstWhere('expectation_id', $expectationId), $officeContext),
+            ];
+            if ($checkIn) {
+                $result = $this->checkIn($rawQr, $officeContext, $scanMethod, 'Additional office visit: '.$reason);
+                if (! ($result['success'] ?? false)) {
+                    // Roll back the route addition as well if check-in cannot complete.
+                    throw ValidationException::withMessages(['reason' => $result['message'] ?? 'Unable to check in.']);
+                }
+            } else {
+                $result['data']['checked_in'] = false;
+                app(OfficeIncomingVisitorNotifier::class)->notifyExpectedOffices($visitId, 'office added');
+            }
+
+            $this->logAdjustment('Office Added', $visitId, [
+                'office_id' => $officeId,
+                'office_name' => $officeContext->office_name,
+                'expectation_id' => $expectationId,
+                'reason' => $reason,
+                'scan_id' => $scanId,
+                'check_in_scan_id' => $result['data']['scan_id'] ?? null,
+                'automatic_check_in' => $checkIn,
+            ]);
+            $result['data']['can_adjust_office'] = false;
+            $result['message'] = "Office Added Successfully! Your office has been added to the visitor's route."
+                .($checkIn ? ' The visitor has been successfully checked in.' : '');
+
+            return $result;
+        });
+    }
+
+    public function markWrongOffice(string $rawQr, object $officeContext, int $scanId, string $remarks): array
+    {
+        $remarks = trim($remarks);
+        Validator::make(['remarks' => $remarks], ['remarks' => ['required', 'string', 'max:500']])->validate();
+        $this->authorizeAdjustment($officeContext, allowGuard: false);
+
+        return DB::transaction(function () use ($rawQr, $officeContext, $scanId, $remarks) {
+            $visit = $this->lockAdjustmentVisit($rawQr);
+            $visitId = (int) $visit->visit_id;
+            $officeId = (int) $officeContext->office_id;
+            $route = $this->loadRoute($visitId);
+            if ($route->contains('office_id', $officeId)) {
+                return $this->error('OFFICE_ALREADY_REGISTERED', 'This office is already registered for this visit.', 409);
+            }
+            $scan = $this->lockWrongOfficeScan($visitId, $officeId, $scanId);
+            $saved = ActivityLog::where('action', 'Wrong Office Recorded')
+                ->where('entity_type', 'OfficeScan')->where('entity_id', $scanId)->first();
+            if (! $saved) {
+                DB::table('office_scan')->where('scan_id', $scanId)->update([
+                    'remarks' => trim((string) $scan->remarks)."\nStaff remarks: ".$remarks,
+                ]);
+                $this->logAdjustment('Wrong Office Recorded', $visitId, [
+                    'office_id' => $officeId,
+                    'office_name' => $officeContext->office_name,
+                    'scan_id' => $scanId,
+                    'reason' => $remarks,
+                    'original_remarks' => $scan->remarks,
+                ], 'OfficeScan', $scanId);
+            } elseif (($saved->new_values['reason'] ?? '') !== $remarks) {
+                return $this->error('ALREADY_RECORDED', 'Remarks have already been saved for this scan.', 409);
+            }
+
+            $payload = $this->buildVisitorPayload($visit, $route, $this->resolveCurrentExpectation($route), $officeContext);
+            $payload['can_adjust_office'] = false;
+            $payload['wrong_office_scan_id'] = $scanId;
+
+            return [
+                'success' => true,
+                'http' => 200,
+                'message' => "Wrong Office Recorded Successfully. The remarks have been saved, and the visitor's registered destination remains unchanged.",
+                'data' => $payload,
+            ];
+        });
+    }
+
+    protected function authorizeAdjustment(object $officeContext, bool $allowGuard = true): void
+    {
+        $user = Auth::user();
+        $role = (int) ($user->role_id ?? 0);
+        abort_unless($user && ($role === 3 || ($allowGuard && $role === 2)), 403);
+        abort_unless((int) $officeContext->user_id === (int) $user->user_id, 403);
+        abort_unless(DB::table('office')->where('office_id', $officeContext->office_id)->where('is_active', true)->exists(), 403);
+        if ($role === 3) {
+            abort_unless(DB::table('office_staff')->where('user_id', $user->user_id)
+                ->where('office_id', $officeContext->office_id)->exists(), 403);
+        }
+    }
+
+    protected function lockAdjustmentVisit(string $rawQr): object
+    {
+        $parsed = $this->parseQrPayload($rawQr);
+        abort_unless(array_filter($parsed), 422, 'Invalid QR code.');
+        $visit = $this->findVisitByPayload($parsed, includeExited: true);
+        abort_unless($visit, 404, 'Visit not found.');
+        DB::table('visit')->where('visit_id', $visit->visit_id)->lockForUpdate()->first();
+        $visit = $this->findVisitById((int) $visit->visit_id);
+        abort_unless($visit && $this->isActiveVisit($visit), 422, 'This visit is no longer active.');
+
+        return $visit;
+    }
+
+    protected function lockWrongOfficeScan(int $visitId, int $officeId, int $scanId): object
+    {
+        $scan = DB::table('office_scan')->where('scan_id', $scanId)->where('visit_id', $visitId)
+            ->where('office_id', $officeId)->lockForUpdate()->first();
+        abort_unless($scan && str_starts_with((string) $scan->remarks, 'Wrong office scan.'), 422, 'The wrong-office scan does not match this visit and office.');
+        $status = DB::table('validation_status')->where('validation_status_id', $scan->validation_status_id)->value('status_name');
+        abort_unless(in_array(Str::lower(trim((string) $status)), ['unauthorized', 'invalid', 'wrong office'], true), 422, 'This scan is not a wrong-office scan.');
+
+        return $scan;
+    }
+
+    protected function logAdjustment(string $action, int $visitId, array $values, string $entityType = 'Visit', ?int $entityId = null): void
+    {
+        $log = ActivityLogService::log(
+            action: $action,
+            module: 'Office Adjustments',
+            description: ActivityLogService::actorLabel().' '.strtolower($action).' for visit #'.$visitId.' at '.$values['office_name'].'.',
+            entityType: $entityType,
+            entityId: $entityId ?? $visitId,
+            newValues: array_merge($values, ['visit_id' => $visitId]),
+            userId: (int) Auth::id()
+        );
+        if (! $log) {
+            throw new \RuntimeException('Unable to save the office adjustment audit record.');
         }
     }
 
@@ -608,13 +789,7 @@ class OfficeScanService
             ->leftJoin('expectation_status as xs', 'xs.expectation_status_id', '=', 'oe.expectation_status_id')
             ->where('oe.visit_id', $visitId)
             ->select([
-                'oe.expectation_id',
-                'oe.visit_id',
-                'oe.office_id',
-                'oe.expected_order',
-                'oe.expectation_status_id',
-                'oe.arrived_at',
-                'oe.created_at',
+                'oe.*',
                 'o.office_name',
                 'xs.status_name',
             ])
@@ -747,7 +922,10 @@ class OfficeScanService
                 422,
                 [
                     'expected_office' => $expectedLabel,
-                    'data' => $this->buildVisitorPayload($visit, $route, $firstPending, $officeContext),
+                    'data' => array_merge($this->buildVisitorPayload($visit, $route, $firstPending, $officeContext), [
+                        'wrong_office_scan_id' => $scanId,
+                        'can_adjust_office' => $scanId !== null,
+                    ]),
                 ]
             );
         }
@@ -796,6 +974,19 @@ class OfficeScanService
         return false;
     }
 
+    public function isAdditionalOffice(object $row): bool
+    {
+        return trim((string) ($row->addition_reason ?? '')) !== '';
+    }
+
+    public function isActiveVisit(object $visit): bool
+    {
+        $status = Str::lower(trim((string) ($visit->exit_status_name ?? '')));
+
+        return empty($visit->exit_time)
+            && ! Str::contains($status, ['cancel', 'void', 'complete', 'exit', 'inactive', 'expired', 'closed']);
+    }
+
     protected function buildVisitorPayload(object $visit, $route, ?object $current, object $officeContext): array
     {
         $fullName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? '')));
@@ -811,7 +1002,7 @@ class OfficeScanService
 
             if ($done) {
                 $state = 'done';
-            } elseif ($flexibleRoute) {
+            } elseif ($flexibleRoute || $this->isAdditionalOffice($step)) {
                 $state = 'current';
             } elseif ($optional) {
                 $state = 'optional';
@@ -907,45 +1098,56 @@ class OfficeScanService
     protected function recordFailedScan(object $visit, int $officeId, int $userId, string $validationName, string $remarks, string $scanMethod): ?int
     {
         try {
-            $validationId = $this->resolveValidationStatusId([$validationName, 'unauthorized', 'invalid']) ?? 3;
-            $scanId = DB::table('office_scan')->insertGetId([
-                'visit_id' => (int) $visit->visit_id,
-                'office_id' => $officeId,
-                'scanned_by_user_id' => $userId,
-                'scan_time' => $this->philippinesNow(),
-                'validation_status_id' => $validationId,
-                'remarks' => $remarks.' ['.$scanMethod.']',
-            ], 'scan_id');
+            return DB::transaction(function () use ($visit, $officeId, $userId, $validationName, $remarks, $scanMethod) {
+                DB::table('visit')->where('visit_id', $visit->visit_id)->lockForUpdate()->first();
+                $validationId = $this->resolveValidationStatusId([$validationName, 'unauthorized', 'invalid']) ?? 3;
+                $recent = DB::table('office_scan')->where('visit_id', $visit->visit_id)->where('office_id', $officeId)
+                    ->where('scanned_by_user_id', $userId)->where('validation_status_id', $validationId)
+                    ->where('remarks', $remarks.' ['.$scanMethod.']')
+                    ->where('scan_time', '>=', $this->philippinesNow()->subSeconds(10))
+                    ->orderByDesc('scan_id')->value('scan_id');
+                if ($recent) {
+                    return (int) $recent;
+                }
+                $scanId = DB::table('office_scan')->insertGetId([
+                    'visit_id' => (int) $visit->visit_id,
+                    'office_id' => $officeId,
+                    'scanned_by_user_id' => $userId,
+                    'scan_time' => $this->philippinesNow(),
+                    'validation_status_id' => $validationId,
+                    'remarks' => $remarks.' ['.$scanMethod.']',
+                ], 'scan_id');
 
-            $notifTypeId = $this->resolveNotifTypeId(['Wrong Office', 'Unauthorized']) ?? 1;
-            DB::table('notification')->insert([
-                'scan_id' => $scanId,
-                'recipient_user_id' => $userId,
-                'notif_type_id' => $notifTypeId,
-                'message' => $remarks,
-                'sent_at' => $this->philippinesNow(),
-                'read_at' => null,
-            ]);
+                $notifTypeId = $this->resolveNotifTypeId(['Wrong Office', 'Unauthorized']) ?? 1;
+                DB::table('notification')->insert([
+                    'scan_id' => $scanId,
+                    'recipient_user_id' => $userId,
+                    'notif_type_id' => $notifTypeId,
+                    'message' => $remarks,
+                    'sent_at' => $this->philippinesNow(),
+                    'read_at' => null,
+                ]);
 
-            if (! str_contains(strtolower($remarks), 'wrong office')) {
-                $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? ''))) ?: 'visitor';
-                $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'the office';
-                ActivityLogService::log(
-                    action: 'Scan Rejected',
-                    module: 'Office Scanning',
-                    description: ActivityLogService::actorLabel().' rejected a scan for '.$visitorName.' at '.$officeName.'.',
-                    entityType: 'OfficeScan',
-                    entityId: (int) $scanId,
-                    status: ActivityLogService::STATUS_WARNING,
-                    newValues: [
-                        'visit_id' => (int) $visit->visit_id,
-                        'office_id' => $officeId,
-                        'remarks' => $remarks,
-                    ]
-                );
-            }
+                if (! str_contains(strtolower($remarks), 'wrong office')) {
+                    $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? ''))) ?: 'visitor';
+                    $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'the office';
+                    ActivityLogService::log(
+                        action: 'Scan Rejected',
+                        module: 'Office Scanning',
+                        description: ActivityLogService::actorLabel().' rejected a scan for '.$visitorName.' at '.$officeName.'.',
+                        entityType: 'OfficeScan',
+                        entityId: (int) $scanId,
+                        status: ActivityLogService::STATUS_WARNING,
+                        newValues: [
+                            'visit_id' => (int) $visit->visit_id,
+                            'office_id' => $officeId,
+                            'remarks' => $remarks,
+                        ]
+                    );
+                }
 
-            return (int) $scanId;
+                return (int) $scanId;
+            });
         } catch (\Throwable $e) {
             Log::warning('Failed to record office failed scan audit: '.$e->getMessage());
 
@@ -956,44 +1158,50 @@ class OfficeScanService
     protected function createWrongOfficeAlert(object $visit, int $officeId, string $expectedOfficeName, ?int $scanId = null): void
     {
         try {
-            $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'Office';
-            $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? '')));
-            if ($visitorName === '') {
-                $visitorName = 'Visitor';
-            }
+            DB::transaction(function () use ($visit, $officeId, $expectedOfficeName, $scanId) {
+                DB::table('visit')->where('visit_id', $visit->visit_id)->lockForUpdate()->first();
+                if ($scanId !== null && DB::table('alerts')->where('scan_id', $scanId)->where('alert_type', 'Wrong Office')->exists()) {
+                    return;
+                }
+                $officeName = DB::table('office')->where('office_id', $officeId)->value('office_name') ?: 'Office';
+                $visitorName = trim(trim((string) ($visit->first_name ?? '')).' '.trim((string) ($visit->last_name ?? '')));
+                if ($visitorName === '') {
+                    $visitorName = 'Visitor';
+                }
 
-            DB::table('alerts')->insert([
-                'visit_id' => (int) $visit->visit_id,
-                'visitor_id' => (int) $visit->visitor_id,
-                'scan_id' => $scanId,
-                'alert_type' => 'Wrong Office',
-                'severity' => 'Medium',
-                'message' => $visitorName.' checked in at '.$officeName.' but was expected at '.$expectedOfficeName.'.',
-                'status' => 'Unresolved',
-                'created_at' => $this->philippinesNow(),
-            ]);
-
-            $alertId = DB::table('alerts')
-                ->where('visit_id', (int) $visit->visit_id)
-                ->where('scan_id', $scanId)
-                ->orderByDesc('alert_id')
-                ->value('alert_id');
-
-            ActivityLogService::log(
-                action: 'Alert Generated',
-                module: 'Alerts',
-                description: 'Unauthorized visitor alert generated for '.$visitorName.'.',
-                entityType: 'Alert',
-                entityId: $alertId ? (int) $alertId : null,
-                newValues: [
+                DB::table('alerts')->insert([
+                    'visit_id' => (int) $visit->visit_id,
+                    'visitor_id' => (int) $visit->visitor_id,
+                    'scan_id' => $scanId,
                     'alert_type' => 'Wrong Office',
                     'severity' => 'Medium',
-                    'visitor_name' => $visitorName,
-                    'visit_id' => (int) $visit->visit_id,
-                    'scanned_office' => $officeName,
-                    'expected_office' => $expectedOfficeName,
-                ]
-            );
+                    'message' => $visitorName.' scanned at '.$officeName.' but was expected at '.$expectedOfficeName.'.',
+                    'status' => 'Unresolved',
+                    'created_at' => $this->philippinesNow(),
+                ]);
+
+                $alertId = DB::table('alerts')
+                    ->where('visit_id', (int) $visit->visit_id)
+                    ->where('scan_id', $scanId)
+                    ->orderByDesc('alert_id')
+                    ->value('alert_id');
+
+                ActivityLogService::log(
+                    action: 'Alert Generated',
+                    module: 'Alerts',
+                    description: 'Unauthorized visitor alert generated for '.$visitorName.'.',
+                    entityType: 'Alert',
+                    entityId: $alertId ? (int) $alertId : null,
+                    newValues: [
+                        'alert_type' => 'Wrong Office',
+                        'severity' => 'Medium',
+                        'visitor_name' => $visitorName,
+                        'visit_id' => (int) $visit->visit_id,
+                        'scanned_office' => $officeName,
+                        'expected_office' => $expectedOfficeName,
+                    ]
+                );
+            });
         } catch (\Throwable $e) {
             Log::warning('Failed to create wrong-office alert: '.$e->getMessage());
         }

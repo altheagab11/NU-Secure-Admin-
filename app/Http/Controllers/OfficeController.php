@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserMail;
+use App\Models\Office;
+use Illuminate\Validation\Rule;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,20 +108,20 @@ class OfficeController extends Controller
                 // build search across available user columns
                 $staffQuery->where(function ($q) use ($filterSearch) {
                     if (Schema::hasColumn('users', 'first_name')) {
-                        $q->orWhere('u.first_name', 'ilike', "%{$filterSearch}%");
+                        $q->orWhereRaw("LOWER(COALESCE(u.first_name, '')) LIKE ?", ['%'.mb_strtolower($filterSearch).'%']);
                     }
                     if (Schema::hasColumn('users', 'last_name')) {
-                        $q->orWhere('u.last_name', 'ilike', "%{$filterSearch}%");
+                        $q->orWhereRaw("LOWER(COALESCE(u.last_name, '')) LIKE ?", ['%'.mb_strtolower($filterSearch).'%']);
                     }
                     if (Schema::hasColumn('users', 'name')) {
-                        $q->orWhere('u.name', 'ilike', "%{$filterSearch}%");
+                        $q->orWhereRaw("LOWER(COALESCE(u.name, '')) LIKE ?", ['%'.mb_strtolower($filterSearch).'%']);
                     }
                     if (Schema::hasColumn('users', 'email')) {
-                        $q->orWhere('u.email', 'ilike', "%{$filterSearch}%");
+                        $q->orWhereRaw("LOWER(COALESCE(u.email, '')) LIKE ?", ['%'.mb_strtolower($filterSearch).'%']);
                     }
                     // fallback: search in office_staff email column if exists
                     if (Schema::hasColumn('office_staff', 'email')) {
-                        $q->orWhere('s.email', 'ilike', "%{$filterSearch}%");
+                        $q->orWhereRaw("LOWER(COALESCE(s.email, '')) LIKE ?", ['%'.mb_strtolower($filterSearch).'%']);
                     }
                 });
             }
@@ -177,6 +179,7 @@ class OfficeController extends Controller
                     'office_id' => $r->office_id ?? $r->office ?? null,
                     'office_name' => $office->office_name ?? ($office->name ?? ($r->office_name ?? '—')),
                     'position' => $r->position ?? '—',
+                    'status' => $user->status ?? 'Active',
                 ];
             });
 
@@ -345,7 +348,15 @@ class OfficeController extends Controller
             $recycledOffices = collect([]);
         }
 
+        $directory = Office::query()
+            ->when(trim((string) $request->query('directory_search', '')) !== '', fn ($query) => $query->whereRaw('LOWER(office_name) LIKE ?', ['%'.mb_strtolower(trim((string) $request->query('directory_search'))).'%']))
+            ->when(in_array($request->query('directory_status'), ['active', 'inactive'], true), fn ($query) => $query->where('is_active', $request->query('directory_status') === 'active'))
+            ->orderBy('office_name')->orderBy('office_id')
+            ->paginate($this->resolvePerPage($request, 'directory_per_page', 10), ['*'], 'directory_page')->withQueryString();
+
         return view('admin.user', [
+            'directoryOffices' => $directory,
+            'officeFilterOptions' => Office::orderBy('office_name')->get(['office_id', 'office_name']),
             'section' => 'offices',
             // pass officeOptions for dropdown
             'officeOptions' => $offices,
@@ -372,7 +383,7 @@ class OfficeController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'office_id' => ['required', 'integer'],
+            'office_id' => ['required', 'integer', Rule::exists('office', 'office_id')->where('is_active', true)],
             'position' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -491,10 +502,11 @@ class OfficeController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $assignedOffice = DB::table('office_staff')->where('user_id', $id)->value('office_id');
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'office_id' => ['required', 'integer'],
+            'office_id' => ['required', 'integer', Rule::exists('office', 'office_id')->where(fn ($query) => $query->where('is_active', true)->orWhere('office_id', $assignedOffice))],
             'position' => ['nullable', 'string', 'max:255'],
         ]);
 

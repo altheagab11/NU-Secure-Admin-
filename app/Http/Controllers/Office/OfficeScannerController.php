@@ -16,8 +16,7 @@ class OfficeScannerController extends Controller
     public function __construct(
         protected OfficeScanService $scanService,
         protected OfficeVisitorQueryService $queries
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -115,6 +114,40 @@ class OfficeScannerController extends Controller
             (string) ($validated['scan_method'] ?? 'camera'),
             $validated['remarks'] ?? null
         );
+        $result['recent_scans'] = $this->recentScansPayload($request, $office);
+
+        return response()->json($this->formatJson($result), (int) ($result['http'] ?? 400));
+    }
+
+    public function addOffice(Request $request)
+    {
+        return $this->adjustOffice($request, true);
+    }
+
+    public function wrongOffice(Request $request)
+    {
+        return $this->adjustOffice($request, false);
+    }
+
+    protected function adjustOffice(Request $request, bool $adding)
+    {
+        $office = $request->attributes->get('office_context');
+        abort_unless($office, 403);
+        // The authenticated office assignment is the only permitted destination.
+        abort_if($request->has('office_id') && (int) $request->input('office_id') !== (int) $office->office_id, 403);
+        $validated = $request->validate([
+            'qr_payload' => ['required', 'string', 'max:4000'],
+            'scan_id' => ['required', 'integer', 'min:1'],
+            'reason' => [$adding ? 'required' : 'exclude', 'string', 'max:255'],
+            'remarks' => [$adding ? 'exclude' : 'required', 'string', 'max:500'],
+            'automatic_check_in' => ['sometimes', 'boolean'],
+            'scan_method' => ['nullable', 'in:camera,manual,hardware'],
+            'scans_per_page' => ['nullable', 'integer', 'in:5,10,25,50,75,100'],
+        ]);
+        $result = $adding
+            ? $this->scanService->addOffice($validated['qr_payload'], $office, $validated['reason'],
+                (bool) ($validated['automatic_check_in'] ?? true), (int) $validated['scan_id'], $validated['scan_method'] ?? 'camera')
+            : $this->scanService->markWrongOffice($validated['qr_payload'], $office, (int) $validated['scan_id'], $validated['remarks']);
         $result['recent_scans'] = $this->recentScansPayload($request, $office);
 
         return response()->json($this->formatJson($result), (int) ($result['http'] ?? 400));
