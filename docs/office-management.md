@@ -29,6 +29,26 @@ For another deployment:
 php artisan migrate --path=database/migrations/2026_10_19_010000_add_room_number_to_office_table.php
 ```
 
+If adding an office fails with `office_pkey` / `Key (office_id) already exists`,
+the PostgreSQL identity sequence is behind the existing office IDs. Apply:
+
+```powershell
+php artisan migrate --path=database/migrations/2026_10_19_020000_sync_office_id_sequence.php
+```
+
+This migration synchronizes the counter while blocking concurrent inserts. It
+preserves existing records and never rewinds a counter already ahead of the
+records. Its rollback intentionally leaves the counter in place.
+
+The PostgreSQL regression tests use temporary tables, leaving application records
+untouched. To run against the PostgreSQL connection configured in `.env`:
+
+```powershell
+$env:OFFICE_SEQUENCE_TESTS = '1'
+php vendor/bin/phpunit --no-configuration --bootstrap vendor/autoload.php tests/Feature/OfficeSequenceMigrationTest.php
+Remove-Item Env:OFFICE_SEQUENCE_TESTS
+```
+
 ## Files modified
 
 - `app/Http/Controllers/OfficeController.php`: existing account page data, independent directory pagination, active-office assignment validation, legacy inactive assignment support.
